@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import { Calendar as CalendarIcon, CreditCard, ChevronLeft, ChevronRight, List, LayoutGrid, Tag } from 'lucide-react'
 import type { RecurringObligation } from '../types/finance.types'
-import { getLenderLogo } from '../utils/lenderLogos'
+import { getLenderLogo, countRemainingPayments } from '../utils/lenderLogos'
 
 interface ProjectedPayment {
     id: string
@@ -65,6 +65,10 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
         const firstDay = new Date(year, month, 1)
         const lastDay = new Date(year, month + 1, 0, 23, 59, 59)
 
+        // Only show today and future payments — never past dates
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+
         const payments: ProjectedPayment[] = []
         filteredObligations.forEach(obs => {
             let current = new Date(obs.next_due_date)
@@ -79,9 +83,9 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                 else if (obs.frequency === 'yearly') current.setFullYear(current.getFullYear() - 1)
                 else break
             }
-            // Now wind forward collecting payments within this calendar month
+            // Wind forward collecting only future payments within this calendar month
             while (current <= lastDay) {
-                if (current >= firstDay && current <= obsEnd) {
+                if (current >= firstDay && current >= today && current <= obsEnd) {
                     payments.push({
                         id: `${obs.id}-${current.getTime()}`,
                         name: obs.name,
@@ -147,16 +151,9 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
             groups[name].o.push(obs)
 
             if (obs.end_date) {
-                const end = new Date(obs.end_date)
-                if (end > now) {
-                    const monthsLeft = Math.max(0, (end.getFullYear() - now.getFullYear()) * 12 + (end.getMonth() - now.getMonth()))
-                    let paymentsLeft = 0
-                    if (obs.frequency === 'monthly') paymentsLeft = monthsLeft
-                    else if (obs.frequency === 'weekly') paymentsLeft = Math.round(monthsLeft * (52 / 12))
-                    else if (obs.frequency === 'bi-weekly') paymentsLeft = Math.round(monthsLeft * (26 / 12))
-                    else if (obs.frequency === 'yearly') paymentsLeft = Math.max(1, Math.round(monthsLeft / 12))
-                    groups[name].totalRemaining += obs.amount * paymentsLeft
-                }
+                // Use exact payment iteration for accuracy
+                const paymentsLeft = countRemainingPayments(obs.next_due_date, obs.end_date, obs.frequency, now)
+                groups[name].totalRemaining += obs.amount * paymentsLeft
             }
         })
         return Object.entries(groups).sort((a, b) => b[1].totalRemaining - a[1].totalRemaining)

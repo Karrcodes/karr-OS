@@ -357,7 +357,13 @@ function RecurringObligationsSettings() {
                                                     setForm({ ...form, name: l.name, emoji: l.emoji, category: l.id === 'other' ? 'other' : 'bills' });
                                                 }}
                                                 className={`flex items-center gap-2 p-3 rounded-xl border transition-all ${form.name === l.name ? 'bg-white border-[#7c3aed] shadow-sm' : 'bg-black/[0.02] border-black/[0.05] hover:bg-black/[0.04]'}`}>
-                                                <span className="text-xl">{l.emoji}</span>
+                                                {getLenderLogo(l.name) ? (
+                                                    <div className="w-7 h-7 rounded-lg bg-white border border-black/[0.07] flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
+                                                        <img src={getLenderLogo(l.name)!} alt={l.name} className="w-full h-full object-contain p-0.5" />
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-xl">{l.emoji}</span>
+                                                )}
                                                 <span className="text-[11px] font-bold text-black/60 uppercase tracking-tight">{l.name}</span>
                                             </button>
                                         ))}

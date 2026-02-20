@@ -3,6 +3,7 @@
 import { useMemo, useState, useEffect } from 'react'
 import { DollarSign, TrendingDown, Wallet, RefreshCw } from 'lucide-react'
 import { InfoTooltip } from './InfoTooltip'
+import { countRemainingPayments } from '../utils/lenderLogos'
 import { usePockets } from '../hooks/usePockets'
 import { useRecurring } from '../hooks/useRecurring'
 import { useGoals } from '../hooks/useGoals'
@@ -28,27 +29,14 @@ export function CommandCenter() {
         const totalLiquid = pockets.reduce((s, p) => s + p.balance, 0)
         let totalDebt = 0
         let monthlyObligations = 0
+        const now = new Date()
+        now.setHours(0, 0, 0, 0)
 
         obligations.forEach(o => {
             if (o.end_date) {
-                const end = new Date(o.end_date)
-                const now = new Date()
-                if (end > now) {
-                    // Number of whole calendar months remaining until the end date
-                    const monthsLeft = Math.max(
-                        0,
-                        (end.getFullYear() - now.getFullYear()) * 12 + (end.getMonth() - now.getMonth())
-                    )
-
-                    // Convert months remaining into number of payments, based on frequency
-                    let paymentsLeft = 0
-                    if (o.frequency === 'monthly') paymentsLeft = monthsLeft
-                    else if (o.frequency === 'weekly') paymentsLeft = Math.round(monthsLeft * (52 / 12))
-                    else if (o.frequency === 'bi-weekly') paymentsLeft = Math.round(monthsLeft * (26 / 12))
-                    else if (o.frequency === 'yearly') paymentsLeft = Math.max(1, Math.round(monthsLeft / 12))
-
-                    totalDebt += o.amount * paymentsLeft
-                }
+                // Exact count of remaining payment occurrences from next_due_date → end_date
+                const paymentsLeft = countRemainingPayments(o.next_due_date, o.end_date, o.frequency, now)
+                totalDebt += o.amount * paymentsLeft
             }
 
             if (o.frequency === 'monthly') monthlyObligations += o.amount
@@ -65,7 +53,7 @@ export function CommandCenter() {
     return (
         <div className="flex flex-col h-full bg-white">
             {/* Page Header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-black/[0.06] bg-white">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-black/[0.06] bg-white flex-shrink-0 shadow-sm z-10">
                 <div>
                     <h1 className="text-[22px] font-bold text-black tracking-tight">Command Center</h1>
                     <p className="text-[12px] text-black/35 mt-0.5">Finance Module · {activeProfile === 'personal' ? 'Personal' : 'Studio Karrtesian'}</p>
