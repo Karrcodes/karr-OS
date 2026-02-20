@@ -38,10 +38,14 @@ function TaskList({ category, title, icon: Icon }: { category: 'todo' | 'grocery
             return a.is_completed ? 1 : -1
         }
         if (!a.is_completed && !b.is_completed && category === 'todo') {
-            return PRIORITY_CONFIG[a.priority].sort - PRIORITY_CONFIG[b.priority].sort
+            const aPriority = a.priority || 'low'
+            const bPriority = b.priority || 'low'
+            const aSort = PRIORITY_CONFIG[aPriority]?.sort ?? 3
+            const bSort = PRIORITY_CONFIG[bPriority]?.sort ?? 3
+            return aSort - bSort
         }
         // Default to newest first
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
     })
 
     return (
@@ -204,7 +208,7 @@ function TaskRow({ task, toggleTask, deleteTask, category }: { task: Task, toggl
                         )}>
                             {task.title}
                         </span>
-                        {category === 'todo' && !task.is_completed && task.priority !== 'low' && (
+                        {category === 'todo' && !task.is_completed && task.priority && task.priority !== 'low' && PRIORITY_CONFIG[task.priority] && (
                             <span className={cn(
                                 "text-[10px] w-fit px-1.5 py-0.5 rounded uppercase font-bold tracking-wider mt-1 border",
                                 PRIORITY_CONFIG[task.priority].color
