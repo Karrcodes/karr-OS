@@ -77,10 +77,12 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
             if (obsEnd) obsEnd.setHours(23, 59, 59, 999)
 
             let occurrences = 0
-            const maxOccurrences = (obs.payments_left && obs.payments_left > 0) ? obs.payments_left : Infinity
+            const hasLimit = obs.payments_left != null && obs.payments_left > 0
+            const maxOccurrences = hasLimit ? obs.payments_left : Infinity
 
             // Strictly wind forward from next_due_date
-            while (current <= lastDay && occurrences < maxOccurrences) {
+            while (current <= lastDay) {
+                if (hasLimit && occurrences >= maxOccurrences!) break
                 if (obsEnd && current > obsEnd) break
 
                 // If this occurrence lands in the viewed month AND is >= today, collect it
@@ -133,9 +135,11 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
             if (obsEnd) obsEnd.setHours(23, 59, 59, 999)
 
             let occurrences = 0
-            const maxOccurrences = (obs.payments_left && obs.payments_left > 0) ? obs.payments_left : Infinity
+            const hasLimit = obs.payments_left != null && obs.payments_left > 0
+            const maxOccurrences = hasLimit ? obs.payments_left : Infinity
 
-            while (current <= end && occurrences < maxOccurrences) {
+            while (current <= end) {
+                if (hasLimit && occurrences >= maxOccurrences!) break
                 if (obsEnd && current > obsEnd) break
 
                 if (current >= today) total += obs.amount
