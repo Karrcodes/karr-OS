@@ -17,10 +17,12 @@ export function KarrAIChat() {
     ])
     const [input, setInput] = useState('')
     const [loading, setLoading] = useState(false)
-    const bottomRef = useRef<HTMLDivElement>(null)
+    const chatContainerRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+        if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
+        }
     }, [messages])
 
     const sendMessage = async () => {
@@ -81,13 +83,16 @@ export function KarrAIChat() {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto space-y-3 pr-1 max-h-[340px]">
+            <div
+                ref={chatContainerRef}
+                className="flex-1 overflow-y-auto space-y-3 pr-1 max-h-[340px] scroll-smooth"
+            >
                 {messages.map((msg, i) => (
                     <div key={i} className={`flex gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                         <div
                             className={`w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center ${msg.role === 'assistant'
-                                    ? 'bg-[#7c3aed]/10 border border-[#7c3aed]/15'
-                                    : 'bg-black/[0.06]'
+                                ? 'bg-[#7c3aed]/10 border border-[#7c3aed]/15'
+                                : 'bg-black/[0.06]'
                                 }`}
                         >
                             {msg.role === 'assistant'
@@ -97,8 +102,8 @@ export function KarrAIChat() {
                         </div>
                         <div
                             className={`max-w-[80%] rounded-xl px-3 py-2 text-[13px] leading-relaxed ${msg.role === 'assistant'
-                                    ? 'bg-black/[0.03] border border-black/[0.06] text-black/75'
-                                    : 'bg-[#7c3aed]/10 border border-[#7c3aed]/15 text-black/85'
+                                ? 'bg-black/[0.03] border border-black/[0.06] text-black/75'
+                                : 'bg-[#7c3aed]/10 border border-[#7c3aed]/15 text-black/85'
                                 }`}
                         >
                             {msg.content}
@@ -115,7 +120,6 @@ export function KarrAIChat() {
                         </div>
                     </div>
                 )}
-                <div ref={bottomRef} />
             </div>
 
             {/* Input */}

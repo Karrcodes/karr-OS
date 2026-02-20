@@ -85,17 +85,27 @@ function PocketsSettings() {
     const handleAdd = async () => {
         if (!form.name) return
         setSaving(true)
-        await createPocket({ name: form.name!, target_budget: form.target_budget ?? 0, current_balance: form.current_balance ?? 0, balance: 0, type: (form.type as Pocket['type']) ?? 'general' })
-        setForm({ type: 'general', target_budget: 0, current_balance: 0 })
-        setAdding(false)
-        setSaving(false)
+        try {
+            await createPocket({ name: form.name!, target_budget: form.target_budget ?? 0, current_balance: form.current_balance ?? 0, balance: 0, type: (form.type as Pocket['type']) ?? 'general' })
+            setForm({ type: 'general', target_budget: 0, current_balance: 0 })
+            setAdding(false)
+        } catch (e: any) {
+            alert(`Failed to create pocket: ${e.message || 'Unknown error'}`)
+        } finally {
+            setSaving(false)
+        }
     }
 
     const handleUpdate = async (id: string) => {
         setSaving(true)
-        await updatePocket(id, { name: form.name, target_budget: form.target_budget, type: form.type as Pocket['type'] })
-        setEditId(null)
-        setSaving(false)
+        try {
+            await updatePocket(id, { name: form.name, target_budget: form.target_budget, type: form.type as Pocket['type'] })
+            setEditId(null)
+        } catch (e: any) {
+            alert(`Failed to update pocket: ${e.message || 'Unknown error'}`)
+        } finally {
+            setSaving(false)
+        }
     }
 
     const startEdit = (p: Pocket) => {
