@@ -3,10 +3,10 @@
 import { useState } from 'react'
 import { Plus, Trash2, Pencil, Check, X, Loader2, Settings, ArrowUp, ArrowDown } from 'lucide-react'
 import { usePockets } from '@/features/finance/hooks/usePockets'
-import { useDebts } from '@/features/finance/hooks/useDebts'
+import { useRecurring } from '@/features/finance/hooks/useRecurring'
 import { useGoals } from '@/features/finance/hooks/useGoals'
 import { useSettings } from '@/features/finance/hooks/useSettings'
-import type { Pocket, Debt, Goal } from '@/features/finance/types/finance.types'
+import type { Pocket, Goal, RecurringObligation } from '@/features/finance/types/finance.types'
 
 export default function SettingsPage() {
     return (
@@ -25,7 +25,7 @@ export default function SettingsPage() {
             <div className="flex-1 overflow-y-auto bg-[#fafafa] p-6 space-y-8">
                 <GlobalSettings />
                 <PocketsSettings />
-                <DebtsSettings />
+                <RecurringObligationsSettings />
                 <GoalsSettings />
             </div>
         </div>
@@ -192,62 +192,108 @@ function PocketsSettings() {
     )
 }
 
-/* ─── Debts ──────────────────────────────────────── */
-function DebtsSettings() {
-    const { debts, loading, createDebt, deleteDebt } = useDebts()
+/* ─── Recurring Obligations ──────────────────────── */
+function RecurringObligationsSettings() {
+    const { obligations, loading, createObligation, deleteObligation } = useRecurring()
     const [adding, setAdding] = useState(false)
-    const [form, setForm] = useState<Partial<Debt>>({ type: 'Short-Term', monthly_payment: 0, total_amount: 0 })
+    const [form, setForm] = useState<Partial<RecurringObligation>>({
+        frequency: 'monthly',
+        amount: 0
+    })
     const [saving, setSaving] = useState(false)
 
     const handleAdd = async () => {
-        if (!form.name || !form.total_amount) return
+        if (!form.name || !form.amount || !form.next_due_date || !form.frequency) return
         setSaving(true)
-        await createDebt({
-            name: form.name!,
-            total_amount: form.total_amount!,
-            remaining_balance: form.remaining_balance ?? form.total_amount!,
-            monthly_payment: form.monthly_payment ?? 0,
-            due_date_of_month: form.due_date_of_month ?? null,
-            type: (form.type as Debt['type']) ?? 'Short-Term',
-        })
-        setForm({ type: 'Short-Term', monthly_payment: 0, total_amount: 0 })
-        setAdding(false)
-        setSaving(false)
+        try {
+            await createObligation({
+                name: form.name,
+                amount: form.amount,
+                frequency: form.frequency,
+                next_due_date: form.next_due_date,
+                end_date: form.end_date || null,
+                group_name: form.group_name || null
+            })
+            setForm({ frequency: 'monthly', amount: 0 })
+            setAdding(false)
+        } catch (e: any) {
+            alert(`Failed to add obligation: ${e.message || 'Unknown error'}`)
+        } finally {
+            setSaving(false)
+        }
     }
 
     return (
-        <Section title="Credit Agreements" desc="Track your active debts and payment schedules">
+        <Section title="Recurring Obligations" desc="Track active subscriptions, rent, and debt schedules">
             {loading ? <Spinner /> : (
-                <div className="space-y-2">
-                    {debts.map((d) => (
-                        <div key={d.id} className="flex items-center gap-3 rounded-xl border border-black/[0.07] bg-white p-3">
-                            <span className="flex-1 text-[13px] text-black/80 font-medium">{d.name}</span>
-                            <span className="text-[11px] text-black/35">{d.type}</span>
-                            <span className="text-[12px] text-black/50">£{d.remaining_balance.toFixed(2)} / £{d.total_amount.toFixed(2)}</span>
-                            <span className="text-[12px] text-amber-600 font-medium">£{d.monthly_payment.toFixed(2)}/mo</span>
-                            <button onClick={() => deleteDebt(d.id)} className="icon-btn text-black/20 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
+                <div className="space-y-4">
+                    {obligations.length > 0 && (
+                        <div className="space-y-2">
+                            {obligations.map((o) => (
+                                <div key={o.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-3 rounded-xl border border-black/[0.07] bg-white p-3">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[13px] text-black/80 font-bold truncate">{o.name}</span>
+                                            {o.group_name && <span className="text-[10px] uppercase font-bold tracking-wider text-black/40 bg-black/[0.04] px-1.5 py-0.5 rounded">{o.group_name}</span>}
+                                        </div>
+                                        <div className="text-[11px] text-black/40 mt-0.5">
+                                            Next due: {new Date(o.next_due_date).toLocaleDateString()}
+                                            {o.end_date && ` • Ends: ${new Date(o.end_date).toLocaleDateString()}`}
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3 sm:ml-auto">
+                                        <span className="text-[11px] text-black/40 capitalize px-2 py-1 bg-black/[0.03] rounded-lg border border-black/[0.05]">{o.frequency}</span>
+                                        <span className="text-[13px] text-red-600 font-bold w-20 text-right">£{o.amount.toFixed(2)}</span>
+                                        <button onClick={() => deleteObligation(o.id)} className="icon-btn text-black/20 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    ))}
+                    )}
 
                     {adding ? (
-                        <div className="grid grid-cols-2 gap-2 rounded-xl border border-[#7c3aed]/20 bg-[#7c3aed]/5 p-3">
-                            <input className="input-field col-span-2" placeholder="Debt name/Lender (e.g. Amex, Car Loan)" value={form.name ?? ''} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-                            <input className="input-field" type="number" placeholder="Total credit limit/loan £" value={form.total_amount ?? ''} onChange={(e) => setForm({ ...form, total_amount: parseFloat(e.target.value) })} />
-                            <input className="input-field" type="number" placeholder="Current amount owed £" value={form.remaining_balance ?? ''} onChange={(e) => setForm({ ...form, remaining_balance: parseFloat(e.target.value) })} />
-                            <input className="input-field" type="number" placeholder="Required monthly payment £" value={form.monthly_payment ?? ''} onChange={(e) => setForm({ ...form, monthly_payment: parseFloat(e.target.value) })} />
-                            <input className="input-field" type="number" placeholder="Due day of month (1-31)" value={form.due_date_of_month ?? ''} onChange={(e) => setForm({ ...form, due_date_of_month: parseInt(e.target.value) })} />
-                            <select className="input-field" value={form.type ?? 'Short-Term'} onChange={(e) => setForm({ ...form, type: e.target.value as Debt['type'] })}>
-                                <option value="Short-Term">Short-Term (Cards, overdrafts)</option>
-                                <option value="Long-Term">Long-Term (Loans, mortgages)</option>
-                            </select>
-                            <div className="flex gap-2 col-span-2">
-                                <button onClick={handleAdd} disabled={saving} className="btn-primary flex-1">{saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Add credit agreement'}</button>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-xl border border-[#7c3aed]/20 bg-[#7c3aed]/5 p-4">
+                            <div className="space-y-1">
+                                <label className="text-[10px] uppercase tracking-wider text-black/50 font-bold ml-1">Name / Lender</label>
+                                <input className="input-field w-full" placeholder="e.g. Netflix, Rent, Currys TV" value={form.name ?? ''} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] uppercase tracking-wider text-black/50 font-bold ml-1">Payment Amount (£)</label>
+                                <input className="input-field w-full" type="number" placeholder="0.00" value={form.amount || ''} onChange={(e) => setForm({ ...form, amount: parseFloat(e.target.value) })} />
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="text-[10px] uppercase tracking-wider text-black/50 font-bold ml-1">Frequency</label>
+                                <select className="input-field w-full" value={form.frequency ?? 'monthly'} onChange={(e) => setForm({ ...form, frequency: e.target.value as any })}>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="bi-weekly">Bi-Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                    <option value="yearly">Yearly</option>
+                                </select>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] uppercase tracking-wider text-black/50 font-bold ml-1">Next Payment Date</label>
+                                <input className="input-field w-full" type="date" value={form.next_due_date ?? ''} onChange={(e) => setForm({ ...form, next_due_date: e.target.value })} />
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="text-[10px] uppercase tracking-wider text-black/50 font-bold ml-1">End Date (Optional)</label>
+                                <input className="input-field w-full text-black/60" type="date" value={form.end_date ?? ''} onChange={(e) => setForm({ ...form, end_date: e.target.value })} />
+                                <p className="text-[10px] text-black/30 ml-1">Leave blank for subscriptions/rent</p>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] uppercase tracking-wider text-black/50 font-bold ml-1">Group (Optional)</label>
+                                <input className="input-field w-full" placeholder="e.g. Currys Flexipay" value={form.group_name ?? ''} onChange={(e) => setForm({ ...form, group_name: e.target.value })} />
+                            </div>
+
+                            <div className="flex gap-2 sm:col-span-2 mt-2">
+                                <button onClick={handleAdd} disabled={saving} className="btn-primary flex-1">{saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Obligation'}</button>
                                 <button onClick={() => setAdding(false)} className="btn-secondary flex-1">Cancel</button>
                             </div>
                         </div>
                     ) : (
-                        <button onClick={() => setAdding(true)} className="flex items-center gap-2 text-[12px] text-black/35 hover:text-black/60 transition-colors px-2 py-1.5">
-                            <Plus className="w-3.5 h-3.5" /> Add debt
+                        <button onClick={() => setAdding(true)} className="flex items-center gap-2 text-[12px] text-black/50 hover:text-black/80 font-medium transition-colors border border-dashed border-black/10 hover:border-black/30 w-full p-4 rounded-xl justify-center bg-black/[0.01] hover:bg-black/[0.03]">
+                            <Plus className="w-4 h-4" /> Add new subscription, rent, or debt
                         </button>
                     )}
                 </div>

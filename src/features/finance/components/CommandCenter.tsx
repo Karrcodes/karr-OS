@@ -3,10 +3,10 @@
 import { useMemo } from 'react'
 import { DollarSign, TrendingDown, Wallet, RefreshCw } from 'lucide-react'
 import { usePockets } from '../hooks/usePockets'
-import { useDebts } from '../hooks/useDebts'
+import { useRecurring } from '../hooks/useRecurring'
 import { useGoals } from '../hooks/useGoals'
 import { PocketsGrid } from './PocketsGrid'
-import { DebtVisualizer } from './DebtVisualizer'
+import { CalendarVisualizer } from './CalendarVisualizer'
 import { GoalsList } from './GoalsList'
 import { KarrAIChat } from './KarrAIChat'
 import { QuickActionFAB } from './QuickActionFAB'
@@ -15,17 +15,37 @@ import { CashflowAnalytics } from './CashflowAnalytics'
 
 export function CommandCenter() {
     const { pockets, loading: pLoading, refetch: refetchPockets } = usePockets()
-    const { debts, loading: dLoading } = useDebts()
+    const { obligations, loading: oLoading } = useRecurring()
     const { goals, loading: gLoading, refetch: refetchGoals } = useGoals()
 
     const summary = useMemo(() => {
         const totalLiquid = pockets.reduce((s, p) => s + p.balance, 0)
-        const totalDebt = debts.reduce((s, d) => s + d.remaining_balance, 0)
-        const monthlyObligations = debts.reduce((s, d) => s + d.monthly_payment, 0)
-        return { totalLiquid, totalDebt, monthlyObligations }
-    }, [pockets, debts])
 
-    const loading = pLoading || dLoading || gLoading
+        let totalDebt = 0
+        let monthlyObligations = 0
+
+        obligations.forEach(o => {
+            // Very rough approximation for fixed debts (has end_date)
+            if (o.end_date) {
+                const end = new Date(o.end_date)
+                const now = new Date()
+                if (end > now) {
+                    const monthsLeft = (end.getFullYear() - now.getFullYear()) * 12 + (end.getMonth() - now.getMonth())
+                    if (monthsLeft > 0) totalDebt += (o.amount * (o.frequency === 'monthly' ? monthsLeft : o.frequency === 'weekly' ? monthsLeft * 4 : o.frequency === 'bi-weekly' ? monthsLeft * 2 : monthsLeft / 12))
+                }
+            }
+
+            // Normalize everything to a rough monthly amount for the summary card
+            if (o.frequency === 'monthly') monthlyObligations += o.amount
+            if (o.frequency === 'weekly') monthlyObligations += (o.amount * 52) / 12
+            if (o.frequency === 'bi-weekly') monthlyObligations += (o.amount * 26) / 12
+            if (o.frequency === 'yearly') monthlyObligations += o.amount / 12
+        })
+
+        return { totalLiquid, totalDebt, monthlyObligations }
+    }, [pockets, obligations])
+
+    const loading = pLoading || oLoading || gLoading
 
     return (
         <div className="flex flex-col h-full bg-white">
@@ -60,11 +80,11 @@ export function CommandCenter() {
                             sub={`${pockets.length} pockets`}
                         />
                         <SummaryCard
-                            label="Total Debt"
+                            label="Total Debt Projection"
                             value={`£${summary.totalDebt.toFixed(2)}`}
                             icon={<TrendingDown className="w-5 h-5" />}
                             color="#dc2626"
-                            sub={`${debts.length} active agreements`}
+                            sub="Estimated remaining on fixed terms"
                         />
                         <SummaryCard
                             label="Monthly Obligations"
@@ -86,8 +106,8 @@ export function CommandCenter() {
                             <Section label="Savings Goals" desc="Long-term targets">
                                 <GoalsList goals={goals} />
                             </Section>
-                            <Section label="Debt Tracker" desc="Active credit agreements">
-                                <DebtVisualizer debts={debts} />
+                            <Section label="Recurring Obligations" desc="30-Day projections for subs, rent, & debt">
+                                <CalendarVisualizer obligations={obligations} />
                             </Section>
                         </div>
                         <div className="xl:col-span-1 space-y-6">

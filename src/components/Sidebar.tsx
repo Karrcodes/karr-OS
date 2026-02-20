@@ -6,7 +6,8 @@ import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import {
     BarChart3, CheckSquare, FolderKanban, Video,
-    SlidersHorizontal, Menu, X,
+    SlidersHorizontal, Menu, X, RefreshCw,
+    Lock, BookOpen, Utensils, Dumbbell, Shield
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -20,6 +21,10 @@ const navItems = [
     { label: 'Tasks', href: '/tasks', icon: CheckSquare, disabled: true },
     { label: 'Projects', href: '/projects', icon: FolderKanban, disabled: true },
     { label: 'Content Studio', href: '/content', icon: Video, disabled: true },
+    { label: 'Security Vault', href: '/vault', icon: Shield, disabled: true },
+    { label: 'Journal', href: '/journal', icon: BookOpen, disabled: true },
+    { label: 'Nutrition & Fuel', href: '/nutrition', icon: Utensils, disabled: true },
+    { label: 'Training', href: '/fitness', icon: Dumbbell, disabled: true },
 ]
 
 export function Sidebar() {
@@ -90,7 +95,7 @@ export function Sidebar() {
     )
 
     const footer = (
-        <div className="px-5 py-4 border-t border-black/[0.06]">
+        <div className="px-5 py-4 border-t border-black/[0.06] flex items-center justify-between">
             <div className="flex items-center gap-2.5">
                 <div className="w-7 h-7 rounded-full bg-[#7c3aed]/10 border border-[#7c3aed]/20 flex items-center justify-center">
                     <span className="text-[11px] text-[#7c3aed] font-bold">K</span>
@@ -100,6 +105,13 @@ export function Sidebar() {
                     <p className="text-[10px] text-black/35">Personal OS</p>
                 </div>
             </div>
+            <button
+                onClick={() => window.location.reload()}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-black/35 hover:text-black/80 hover:bg-black/[0.05] transition-colors"
+                title="Refresh App"
+            >
+                <RefreshCw className="w-4 h-4" />
+            </button>
         </div>
     )
 
@@ -125,8 +137,13 @@ export function Sidebar() {
                 <div className="flex-1 flex justify-center">
                     <Image src="/karros-logo.png.jpeg" alt="KarrOS" width={100} height={28} priority className="h-6 w-auto" />
                 </div>
-                {/* spacer to balance the hamburger */}
-                <div className="w-9" />
+                <button
+                    onClick={() => window.location.reload()}
+                    className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-black/[0.05] transition-colors"
+                    title="Refresh App"
+                >
+                    <RefreshCw className="w-5 h-5 text-black/60" />
+                </button>
             </div>
 
             {/* ── Mobile drawer overlay ──────────────────────────────────── */}

@@ -48,6 +48,17 @@ export interface Goal {
     created_at: string
 }
 
+export interface RecurringObligation {
+    id: string
+    name: string
+    amount: number
+    frequency: 'weekly' | 'bi-weekly' | 'monthly' | 'yearly'
+    next_due_date: string // YYYY-MM-DD
+    end_date: string | null // YYYY-MM-DD
+    group_name: string | null
+    created_at: string
+}
+
 export interface FinanceSetting {
     key: string
     value: string
