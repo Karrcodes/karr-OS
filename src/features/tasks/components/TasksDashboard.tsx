@@ -127,106 +127,47 @@ function TaskList({ category, title, icon: Icon }: { category: 'todo' | 'grocery
 }
 
 function TaskRow({ task, toggleTask, deleteTask, category }: { task: Task, toggleTask: any, deleteTask: any, category: string }) {
-    const [slideOffset, setSlideOffset] = useState(0)
-    const [isDragging, setIsDragging] = useState(false)
-    const startX = useRef<number | null>(null)
-
-    const handleTouchStart = (e: React.TouchEvent) => {
-        startX.current = e.touches[0].clientX
-        setIsDragging(true)
-    }
-
-    const handleTouchMove = (e: React.TouchEvent) => {
-        if (startX.current === null) return
-        const delta = e.touches[0].clientX - startX.current
-        // Only allow sliding left (negative delta), cap at -60px
-        if (delta < 0) {
-            setSlideOffset(Math.max(-80, delta))
-        } else {
-            setSlideOffset(0)
-        }
-    }
-
-    const handleTouchEnd = () => {
-        setIsDragging(false)
-        if (slideOffset < -50) {
-            // Commit to delete if dragged far enough
-            // Instead of auto-delete, we just lock the menu open
-            setSlideOffset(-60)
-        } else {
-            // Snap back
-            setSlideOffset(0)
-        }
-        startX.current = null
-    }
-
     return (
         <div className={cn(
-            "relative rounded-lg transition-all overflow-hidden bg-red-500",
-            task.is_completed ? "opacity-60" : ""
+            "group flex items-center gap-3 p-3 rounded-xl border transition-all relative overflow-hidden",
+            task.is_completed
+                ? "bg-black/[0.02] border-transparent opacity-60"
+                : "bg-white border-black/[0.06] hover:border-black/[0.15] shadow-sm"
         )}>
-            {/* Background Delete Action - Revealed behind the sliding row */}
-            <div className="absolute inset-y-0 right-0 w-[60px] flex items-center justify-center">
-                <button
-                    onClick={() => deleteTask(task.id)}
-                    className="w-full h-full flex flex-col items-center justify-center text-white"
-                >
-                    <Trash2 className="w-4 h-4 mb-0.5" />
-                </button>
-            </div>
-
-            {/* Draggable Foreground Row */}
-            <div
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-                style={{ transform: `translateX(${slideOffset}px)` }}
-                className={cn(
-                    "flex items-center gap-3 p-3 rounded-lg border transition-all z-10 relative shadow-sm h-full group",
-                    !isDragging && "transition-transform duration-200",
-                    task.is_completed
-                        ? "bg-black/[0.02] border-transparent shadow-none"
-                        : "bg-white border-black/[0.06] hover:border-black/[0.15]"
-                )}
-            >
-                <label className="flex items-center gap-3 cursor-pointer flex-1">
-                    <input
-                        type="checkbox"
-                        checked={task.is_completed}
-                        onChange={(e) => {
-                            setSlideOffset(0); // reset slide menu if opened
-                            toggleTask(task.id, e.target.checked);
-                        }}
-                        className="w-5 h-5 accent-black cursor-pointer shrink-0"
-                    />
-                    <div className="flex flex-col flex-1">
+            <label className="flex items-center gap-3 cursor-pointer flex-1 min-w-0">
+                <input
+                    type="checkbox"
+                    checked={task.is_completed}
+                    onChange={(e) => toggleTask(task.id, e.target.checked)}
+                    className="w-5 h-5 accent-black cursor-pointer shrink-0"
+                />
+                <div className="flex flex-col flex-1 min-w-0">
+                    <span className={cn(
+                        "text-[14px] transition-all truncate",
+                        task.is_completed
+                            ? "text-black/30 line-through"
+                            : "text-black/90 font-medium"
+                    )}>
+                        {task.title}
+                    </span>
+                    {category === 'todo' && !task.is_completed && task.priority && task.priority !== 'low' && PRIORITY_CONFIG[task.priority] && (
                         <span className={cn(
-                            "text-[14px] transition-all",
-                            task.is_completed
-                                ? "text-black/30 line-through"
-                                : "text-black/90 font-medium"
+                            "text-[10px] w-fit px-1.5 py-0.5 rounded uppercase font-bold tracking-wider mt-1 border",
+                            PRIORITY_CONFIG[task.priority].color
                         )}>
-                            {task.title}
+                            {PRIORITY_CONFIG[task.priority].label} Priority
                         </span>
-                        {category === 'todo' && !task.is_completed && task.priority && task.priority !== 'low' && PRIORITY_CONFIG[task.priority] && (
-                            <span className={cn(
-                                "text-[10px] w-fit px-1.5 py-0.5 rounded uppercase font-bold tracking-wider mt-1 border",
-                                PRIORITY_CONFIG[task.priority].color
-                            )}>
-                                {PRIORITY_CONFIG[task.priority].label} Priority
-                            </span>
-                        )}
-                    </div>
-                </label>
+                    )}
+                </div>
+            </label>
 
-                {/* Desktop Hover Delete (Hidden on Mobile Touch) */}
-                <button
-                    onClick={() => deleteTask(task.id)}
-                    className="w-8 h-8 hidden md:flex items-center justify-center rounded-lg text-black/20 opacity-0 group-hover:opacity-100 hover:text-red-500 hover:bg-red-50 transition-all shrink-0"
-                >
-                    <Trash2 className="w-4 h-4" />
-                </button>
-            </div>
+            <button
+                onClick={() => deleteTask(task.id)}
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-black/10 hover:text-red-500 hover:bg-red-50 transition-all shrink-0 md:opacity-0 group-hover:opacity-100 focus:opacity-100"
+                aria-label="Delete task"
+            >
+                <Trash2 className="w-4 h-4" />
+            </button>
         </div>
     )
 }
