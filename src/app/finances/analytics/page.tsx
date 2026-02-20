@@ -1,0 +1,268 @@
+'use client'
+
+import { useState, useMemo } from 'react'
+import { ArrowLeft, Wallet, TrendingUp, Receipt, Calendar, CreditCard, PieChart, ArrowUpRight, ArrowDownRight, FileText, Trash2 } from 'lucide-react'
+import { usePayslips } from '@/features/finance/hooks/usePayslips'
+import { useTransactions } from '@/features/finance/hooks/useTransactions'
+import { useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
+import { SpendingAnalytics } from '@/features/finance/components/SpendingAnalytics'
+import { cn } from '@/lib/utils'
+
+export default function FinanceAnalyticsPage() {
+    const [activeTab, setActiveTab] = useState<'salary' | 'spending'>('salary')
+    const { payslips, loading: payslipsLoading, deletePayslip } = usePayslips()
+    const { transactions, loading: txLoading } = useTransactions()
+    const { activeProfile } = useFinanceProfile()
+
+    const loading = activeTab === 'salary' ? payslipsLoading : txLoading
+
+    const salaryStats = useMemo(() => {
+        if (payslips.length === 0) return null
+
+        const totalGross = payslips.reduce((s, p) => s + (p.gross_pay || 0), 0)
+        const totalNet = payslips.reduce((s, p) => s + p.net_pay, 0)
+        const totalTax = payslips.reduce((s, p) => s + (p.tax_paid || 0), 0)
+        const totalPension = payslips.reduce((s, p) => s + (p.pension_contributions || 0), 0)
+
+        const avgNet = totalNet / payslips.length
+        const highestNet = Math.max(...payslips.map(p => p.net_pay))
+
+        const monthlyTrend = payslips.slice(0, 6).reverse().map(p => ({
+            month: new Date(p.date).toLocaleDateString('en-GB', { month: 'short' }),
+            net: p.net_pay,
+            gross: p.gross_pay || 0
+        }))
+
+        return { totalGross, totalNet, totalTax, totalPension, avgNet, highestNet, monthlyTrend }
+    }, [payslips])
+
+    return (
+        <div className="min-h-screen bg-[#fafafa] flex flex-col">
+            {/* Header */}
+            <div className="bg-white border-b border-black/[0.06] px-6 py-5 sticky top-0 z-10 transition-all">
+                <div className="max-w-5xl mx-auto space-y-4">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <a href="/finances" className="w-10 h-10 rounded-xl bg-black/[0.03] flex items-center justify-center hover:bg-black/[0.06] transition-colors">
+                                <ArrowLeft className="w-5 h-5 text-black/40" />
+                            </a>
+                            <div>
+                                <h1 className="text-[20px] font-bold text-black tracking-tight">Finance Analytics</h1>
+                                <p className="text-[12px] text-black/35 mt-0.5">Insights & breakdowns for {activeProfile} profile</p>
+                            </div>
+                        </div>
+
+                        {/* Tab Switcher */}
+                        <div className="flex bg-black/[0.03] p-1 rounded-xl">
+                            <button
+                                onClick={() => setActiveTab('salary')}
+                                className={cn(
+                                    "px-4 py-1.5 rounded-lg text-[12px] font-bold transition-all",
+                                    activeTab === 'salary' ? "bg-white text-black shadow-sm" : "text-black/30 hover:text-black/50"
+                                )}
+                            >
+                                Salary Hub
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('spending')}
+                                className={cn(
+                                    "px-4 py-1.5 rounded-lg text-[12px] font-bold transition-all",
+                                    activeTab === 'spending' ? "bg-white text-black shadow-sm" : "text-black/30 hover:text-black/50"
+                                )}
+                            >
+                                Spending
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Main Content */}
+            <div className="flex-1 p-6">
+                <div className="max-w-5xl mx-auto">
+                    {loading ? (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {[1, 2, 3].map(i => (
+                                <div key={i} className="h-32 bg-white rounded-2xl border border-black/[0.05] animate-pulse" />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                            {activeTab === 'salary' ? (
+                                !salaryStats ? (
+                                    <div className="py-20 text-center bg-white rounded-3xl border border-black/[0.05] shadow-sm">
+                                        <div className="w-16 h-16 bg-black/[0.03] rounded-3xl flex items-center justify-center mx-auto mb-4">
+                                            <TrendingUp className="w-8 h-8 text-black/20" />
+                                        </div>
+                                        <h3 className="text-[16px] font-bold text-black">No Salary Data Yet</h3>
+                                        <p className="text-[13px] text-black/40 mt-1 max-w-xs mx-auto">Upload your payslips on the main dashboard to see your professional income analytics here.</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        {/* Top Stats Cards */}
+                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                            <div className="bg-white p-5 rounded-2xl border border-black/[0.06] shadow-sm">
+                                                <div className="flex items-center gap-2 text-[11px] font-bold text-black/30 uppercase tracking-widest mb-3">
+                                                    <Wallet className="w-3.5 h-3.5" /> Avg. Take Home
+                                                </div>
+                                                <div className="text-[24px] font-bold text-black group flex items-baseline gap-1">
+                                                    <span className="text-[18px] opacity-30">£</span>
+                                                    {salaryStats.avgNet.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-white p-5 rounded-2xl border border-black/[0.06] shadow-sm">
+                                                <div className="flex items-center gap-2 text-[11px] font-bold text-black/30 uppercase tracking-widest mb-3">
+                                                    <TrendingUp className="w-3.5 h-3.5" /> Peak Month
+                                                </div>
+                                                <div className="text-[24px] font-bold text-[#059669] flex items-baseline gap-1">
+                                                    <span className="text-[18px] opacity-30">£</span>
+                                                    {salaryStats.highestNet.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-white p-5 rounded-2xl border border-black/[0.06] shadow-sm">
+                                                <div className="flex items-center gap-2 text-[11px] font-bold text-black/30 uppercase tracking-widest mb-3">
+                                                    <Receipt className="w-3.5 h-3.5" /> Total Tax Paid
+                                                </div>
+                                                <div className="text-[24px] font-bold text-[#dc2626] flex items-baseline gap-1">
+                                                    <span className="text-[18px] opacity-30">£</span>
+                                                    {salaryStats.totalTax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-white p-5 rounded-2xl border border-black/[0.06] shadow-sm">
+                                                <div className="flex items-center gap-2 text-[11px] font-bold text-black/30 uppercase tracking-widest mb-3">
+                                                    <PieChart className="w-3.5 h-3.5" /> Pension Savings
+                                                </div>
+                                                <div className="text-[24px] font-bold text-[#7c3aed] flex items-baseline gap-1">
+                                                    <span className="text-[18px] opacity-30">£</span>
+                                                    {salaryStats.totalPension.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Charts Row */}
+                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                            <div className="lg:col-span-2 bg-white p-6 rounded-3xl border border-black/[0.06] shadow-sm">
+                                                <h3 className="text-[15px] font-bold text-black mb-6">Take-Home Trend (Recent 6)</h3>
+                                                <div className="h-48 flex items-end gap-3 px-2">
+                                                    {salaryStats.monthlyTrend.map((m, i) => {
+                                                        const max = Math.max(...salaryStats.monthlyTrend.map(x => x.gross), 1)
+                                                        return (
+                                                            <div key={i} className="flex-1 flex flex-col items-center gap-3 h-full justify-end group">
+                                                                <div className="w-full relative flex items-end justify-center h-full">
+                                                                    <div
+                                                                        className="w-full max-w-[40px] bg-black/[0.03] rounded-t-lg absolute bottom-0"
+                                                                        style={{ height: `${(m.gross / max) * 100}%` }}
+                                                                    />
+                                                                    <div
+                                                                        className="w-full max-w-[24px] bg-[#059669]/80 rounded-t-md relative z-10 group-hover:bg-[#059669] transition-all"
+                                                                        style={{ height: `${(m.net / max) * 100}%` }}
+                                                                    >
+                                                                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20 font-bold">
+                                                                            £{m.net.toFixed(0)}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <span className="text-[10px] uppercase font-bold text-black/30 tracking-widest">{m.month}</span>
+                                                            </div>
+                                                        )
+                                                    })}
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-white p-6 rounded-3xl border border-black/[0.06] shadow-sm flex flex-col">
+                                                <h3 className="text-[15px] font-bold text-black mb-6">Lifetime Efficiency</h3>
+                                                <div className="flex-1 flex flex-col justify-center gap-6">
+                                                    <div className="space-y-2">
+                                                        <div className="flex justify-between text-[12px] font-bold">
+                                                            <span className="text-black/40 uppercase tracking-wider text-[10px]">Retention Rate</span>
+                                                            <span className="text-[#059669]">{((salaryStats.totalNet / salaryStats.totalGross) * 100).toFixed(1)}%</span>
+                                                        </div>
+                                                        <div className="h-3 bg-black/[0.03] rounded-full overflow-hidden">
+                                                            <div className="h-full bg-[#059669]" style={{ width: `${(salaryStats.totalNet / salaryStats.totalGross) * 100}%` }} />
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-2">
+                                                        <div className="flex justify-between text-[12px] font-bold">
+                                                            <span className="text-black/40 uppercase tracking-wider text-[10px]">Effective Tax Rate</span>
+                                                            <span className="text-[#dc2626]">{((salaryStats.totalTax / salaryStats.totalGross) * 100).toFixed(1)}%</span>
+                                                        </div>
+                                                        <div className="h-3 bg-black/[0.03] rounded-full overflow-hidden">
+                                                            <div className="h-full bg-[#dc2626]" style={{ width: `${(salaryStats.totalTax / salaryStats.totalGross) * 100}%` }} />
+                                                        </div>
+                                                    </div>
+
+                                                    <p className="text-[11px] text-black/30 mt-4 italic">Analysis based on {payslips.length} verified records.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Detailed List */}
+                                        <div className="bg-white rounded-3xl border border-black/[0.06] shadow-sm overflow-hidden">
+                                            <div className="px-6 py-5 border-b border-black/[0.04] bg-black/[0.01] flex items-center justify-between">
+                                                <h3 className="text-[14px] font-bold text-black">Verified Payslip Vault</h3>
+                                                <div className="text-[10px] font-bold text-black/30 uppercase tracking-wider bg-white px-2 py-1 rounded-lg border border-black/[0.04]">
+                                                    {payslips.length} Records
+                                                </div>
+                                            </div>
+                                            <div className="divide-y divide-black/[0.04]">
+                                                {payslips.map((p) => (
+                                                    <div key={p.id} className="p-5 flex items-center gap-6 hover:bg-black/[0.01] transition-colors group">
+                                                        <div className="w-12 h-12 rounded-2xl bg-black/[0.03] border border-black/[0.05] flex items-center justify-center flex-shrink-0">
+                                                            <FileText className="w-6 h-6 text-black/30" />
+                                                        </div>
+
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2">
+                                                                <p className="font-bold text-black text-[15px]">{p.employer || 'Unknown Company'}</p>
+                                                                <span className="w-1 h-1 rounded-full bg-black/10" />
+                                                                <p className="text-[12px] font-medium text-black/30">
+                                                                    {new Date(p.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                                </p>
+                                                            </div>
+                                                            <div className="flex items-center gap-4 mt-1.5 overflow-x-auto no-scrollbar py-0.5">
+                                                                <div className="flex items-center gap-1.5 whitespace-nowrap">
+                                                                    <span className="text-[9px] font-bold text-black/25 uppercase tracking-wider">Gross</span>
+                                                                    <span className="text-[12px] font-bold text-black/40">£{p.gross_pay?.toFixed(2) || '---'}</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-1.5 whitespace-nowrap">
+                                                                    <span className="text-[9px] font-bold text-[#dc2626]/40 uppercase tracking-wider">Tax</span>
+                                                                    <span className="text-[12px] font-bold text-[#dc2626]/60">£{p.tax_paid?.toFixed(2) || '---'}</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-1.5 whitespace-nowrap">
+                                                                    <span className="text-[9px] font-bold text-[#7c3aed]/40 uppercase tracking-wider">Pension</span>
+                                                                    <span className="text-[12px] font-bold text-[#7c3aed]/60">£{p.pension_contributions?.toFixed(2) || '---'}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="text-right flex flex-col items-end gap-2">
+                                                            <div className="text-[16px] font-bold text-[#059669]">
+                                                                +£{p.net_pay.toFixed(2)}
+                                                            </div>
+                                                            <button
+                                                                onClick={() => { if (confirm('Delete record?')) deletePayslip(p.id) }}
+                                                                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-50 text-red-400 transition-all"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </>
+                                )
+                            ) : (
+                                <SpendingAnalytics transactions={transactions} />
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    )
+}

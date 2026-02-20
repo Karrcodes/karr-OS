@@ -12,6 +12,7 @@ interface RevolutImportModalProps {
 
 export function RevolutImportModal({ isOpen, onClose, onSuccess }: RevolutImportModalProps) {
     const [csvText, setCsvText] = useState('')
+    const [wipeExisting, setWipeExisting] = useState(false)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const { activeProfile } = useFinanceProfile()
@@ -29,7 +30,11 @@ export function RevolutImportModal({ isOpen, onClose, onSuccess }: RevolutImport
             const res = await fetch('/api/finance/revolut/import', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ csvText, profile: activeProfile })
+                body: JSON.stringify({
+                    csvText,
+                    profile: activeProfile,
+                    wipeExisting: wipeExisting
+                })
             })
 
             const data = await res.json()
@@ -37,6 +42,7 @@ export function RevolutImportModal({ isOpen, onClose, onSuccess }: RevolutImport
             if (data.success) {
                 onSuccess(data.count)
                 setCsvText('')
+                setWipeExisting(false)
                 onClose()
             } else {
                 throw new Error(data.error || 'Import failed')
@@ -82,14 +88,29 @@ export function RevolutImportModal({ isOpen, onClose, onSuccess }: RevolutImport
                         </ol>
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold ml-1">Paste CSV Content Here</label>
-                        <textarea
-                            value={csvText}
-                            onChange={(e) => setCsvText(e.target.value)}
-                            placeholder="Type,Product,Started Date,Completed Date,Description,Amount,Fee,Currency,State,Balance..."
-                            className="w-full h-64 bg-black/[0.02] border border-black/[0.06] rounded-2xl p-4 text-[13px] text-black font-mono placeholder:text-black/10 outline-none focus:border-[#7c3aed]/30 transition-colors resize-none"
-                        />
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold ml-1">Paste CSV Content Here</label>
+                            <textarea
+                                value={csvText}
+                                onChange={(e) => setCsvText(e.target.value)}
+                                placeholder="Type,Product,Started Date,Completed Date,Description,Amount,Fee,Currency,State,Balance..."
+                                className="w-full h-48 bg-black/[0.02] border border-black/[0.06] rounded-2xl p-4 text-[13px] text-black font-mono placeholder:text-black/10 outline-none focus:border-[#7c3aed]/30 transition-colors resize-none"
+                            />
+                        </div>
+
+                        <label className="flex items-center gap-3 p-4 rounded-2xl border border-black/[0.06] bg-black/[0.01] cursor-pointer hover:bg-black/[0.03] transition-colors group">
+                            <input
+                                type="checkbox"
+                                checked={wipeExisting}
+                                onChange={(e) => setWipeExisting(e.target.checked)}
+                                className="w-5 h-5 rounded-lg border-black/20 text-[#7c3aed] focus:ring-[#7c3aed] transition-all cursor-pointer"
+                            />
+                            <div className="flex-1">
+                                <p className="text-[13px] font-bold text-black/70 group-hover:text-black transition-colors">Wipe previous synced data</p>
+                                <p className="text-[11px] text-black/30">Delete all existing 'Sync' transactions before importing these.</p>
+                            </div>
+                        </label>
                     </div>
 
                     {error && (

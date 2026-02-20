@@ -5,6 +5,7 @@ import { Plus, Check, Loader2, UploadCloud, FileText } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import type { Pocket, Goal } from '../types/finance.types'
 import { useIncome } from '../hooks/useIncome'
+import { usePayslips } from '../hooks/usePayslips'
 
 interface PaydayAllocationProps {
     pockets: Pocket[]
@@ -14,9 +15,17 @@ interface PaydayAllocationProps {
 
 export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocationProps) {
     const { logIncome } = useIncome()
-    const [amount, setAmount] = useState('')
+    const { logPayslip } = usePayslips()
+    const [amount, setAmount] = useState('') // This is Net Pay
     const [source, setSource] = useState('Salary')
     const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+
+    // Detailed fields for analytics
+    const [grossPay, setGrossPay] = useState('')
+    const [taxPaid, setTaxPaid] = useState('')
+    const [pension, setPension] = useState('')
+    const [studentLoan, setStudentLoan] = useState('')
+
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [uploading, setUploading] = useState(false)
 
@@ -28,6 +37,16 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
 
     // A map of pocket_id -> amount to allocate
     const [allocations, setAllocations] = useState<{ [key: string]: number }>({})
+
+    const resetFields = () => {
+        setAmount('')
+        setGrossPay('')
+        setTaxPaid('')
+        setPension('')
+        setStudentLoan('')
+        setSource('Salary')
+        setDate(new Date().toISOString().split('T')[0])
+    }
 
     // Populate default allocations based on target_budget of each pocket
     const startAllocation = () => {
@@ -72,6 +91,12 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
                 if (data.employer) setSource(data.employer)
                 if (data.date) setDate(data.date)
 
+                // Detailed fields
+                if (data.grossPay) setGrossPay(data.grossPay.toString())
+                if (data.tax) setTaxPaid(data.tax.toString())
+                if (data.pension) setPension(data.pension.toString())
+                if (data.studentLoan) setStudentLoan(data.studentLoan.toString())
+
             } catch (err: any) {
                 setError(err.message || 'AI processing failed')
             } finally {
@@ -94,11 +119,23 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
                     if (data.error) continue
 
                     if (data.netPay && data.date) {
-                        await logIncome({
-                            amount: parseFloat(data.netPay),
-                            source: data.employer || 'Salary',
-                            date: data.date
-                        })
+                        // Log to BOTH fin_income (for cashflow) and fin_payslips (for analytics)
+                        await Promise.all([
+                            logIncome({
+                                amount: parseFloat(data.netPay),
+                                source: data.employer || 'Salary',
+                                date: data.date
+                            }),
+                            logPayslip({
+                                date: data.date,
+                                employer: data.employer || 'Salary',
+                                net_pay: parseFloat(data.netPay),
+                                gross_pay: data.grossPay ? parseFloat(data.grossPay) : null,
+                                tax_paid: data.tax ? parseFloat(data.tax) : null,
+                                pension_contributions: data.pension ? parseFloat(data.pension) : null,
+                                student_loan: data.studentLoan ? parseFloat(data.studentLoan) : null
+                            })
+                        ])
                         successCount++
                     }
                 } catch (err: any) {
@@ -129,13 +166,24 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
         setError(null)
 
         try {
-            // 1. Log Income
+            // 1. Log Income & Payslip
             const amt = parseFloat(amount)
-            await logIncome({
-                amount: amt,
-                source: source,
-                date: date
-            })
+            await Promise.all([
+                logIncome({
+                    amount: amt,
+                    source: source,
+                    date: date
+                }),
+                logPayslip({
+                    date: date,
+                    employer: source,
+                    net_pay: amt,
+                    gross_pay: grossPay ? parseFloat(grossPay) : null,
+                    tax_paid: taxPaid ? parseFloat(taxPaid) : null,
+                    pension_contributions: pension ? parseFloat(pension) : null,
+                    student_loan: studentLoan ? parseFloat(studentLoan) : null
+                })
+            ])
 
             // 2. Process Allocations
             const transactionPromises: any[] = []
@@ -151,7 +199,8 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
                                 amount: allocAmt,
                                 pocket_id: itemId,
                                 description: `Payday allocation (${source})`,
-                                date: date
+                                date: date,
+                                profile: (pockets.find(p => p.id === itemId))?.profile // Safety check
                             }).then(res => res)
                         )
                         pocketUpdatePromises.push(
@@ -175,7 +224,7 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
             await Promise.all([...transactionPromises, ...pocketUpdatePromises])
 
             // Reset state
-            setAmount('')
+            resetFields()
             setAllocations({})
             setAllocating(false)
             onSuccess()
@@ -198,15 +247,24 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
         setError(null)
 
         try {
-            await logIncome({
-                amount: amt,
-                source: source,
-                date: date
-            })
+            await Promise.all([
+                logIncome({
+                    amount: amt,
+                    source: source,
+                    date: date
+                }),
+                logPayslip({
+                    date: date,
+                    employer: source,
+                    net_pay: amt,
+                    gross_pay: grossPay ? parseFloat(grossPay) : null,
+                    tax_paid: taxPaid ? parseFloat(taxPaid) : null,
+                    pension_contributions: pension ? parseFloat(pension) : null,
+                    student_loan: studentLoan ? parseFloat(studentLoan) : null
+                })
+            ])
 
-            setAmount('')
-            setSource('Salary')
-            setDate(new Date().toISOString().split('T')[0])
+            resetFields()
             onSuccess()
         } catch (e: unknown) {
             setError(e instanceof Error ? e.message : 'Failed to save income.')

@@ -3,10 +3,18 @@ import { supabase } from '@/lib/supabase'
 
 export async function POST(req: NextRequest) {
     try {
-        const { csvText, profile = 'personal' } = await req.json()
+        const { csvText, profile = 'personal', wipeExisting = false } = await req.json()
 
         if (!csvText) {
             return NextResponse.json({ error: 'No CSV data provided' }, { status: 400 })
+        }
+
+        if (wipeExisting) {
+            await supabase
+                .from('fin_transactions')
+                .delete()
+                .eq('profile', profile)
+                .eq('provider', 'revolut_csv')
         }
 
         const lines = csvText.split('\n')
@@ -50,17 +58,25 @@ export async function POST(req: NextRequest) {
             const date = row[colMap.date] || new Date().toISOString()
             const type = row[colMap.type] || ''
 
-            // Generate a unique ID to prevent duplicates if none provided
-            // Revolut CSVs sometimes have a "Reference" or "Product" but not always a unique ID per line.
-            // We use a hash of Date + Amount + Description as a fallback
+            // Generate a unique ID to prevent duplicates
             const providerTxId = `rev_${Buffer.from(`${date}${amount}${description}`).toString('base64').substring(0, 32)}`
+
+            // Basic Categorization Logic
+            let category = 'other'
+            const desc = description.toLowerCase()
+            if (desc.includes('tesco') || desc.includes('sainsbury') || desc.includes('uber eats') || desc.includes('deliveroo') || desc.includes('restaurant') || desc.includes('coffee')) category = 'food'
+            else if (desc.includes('uber') || desc.includes('train') || desc.includes('bus') || desc.includes('petrol') || desc.includes('shell') || desc.includes('bp')) category = 'transport'
+            else if (desc.includes('rent') || desc.includes('mortgage') || desc.includes('council tax')) category = 'housing'
+            else if (desc.includes('amazon') || desc.includes('ebay') || desc.includes('zara') || desc.includes('h&m')) category = 'shopping'
+            else if (desc.includes('netflix') || desc.includes('spotify') || desc.includes('disney') || desc.includes('cinema')) category = 'entertainment'
+            else if (desc.includes('boiler') || desc.includes('electric') || desc.includes('water') || desc.includes('gas')) category = 'utilities'
 
             transactions.push({
                 amount: Math.abs(amount),
                 type: amount < 0 ? 'spend' : 'income',
                 description,
                 date: date.split(' ')[0], // Get YYYY-MM-DD
-                category: 'other', // Default category
+                category: category,
                 emoji: amount < 0 ? '💸' : '💰',
                 profile,
                 provider: 'revolut_csv',

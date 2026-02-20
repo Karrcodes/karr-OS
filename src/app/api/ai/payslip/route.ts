@@ -16,15 +16,23 @@ export async function POST(req: NextRequest) {
 
         const prompt = `You are a financial data extractor. Analyze this payslip image and extract the following information strictly as a JSON object:
 - employer: The name of the employer or company issuing the payslip.
-- netPay: The final net pay or take-home pay amount as a number (do not include currency symbols, just the float value).
 - date: The date of the payslip or payment date, formatted strictly as YYYY-MM-DD.
+- netPay: The final net pay or take-home pay amount as a number.
+- grossPay: The total gross pay before any deductions.
+- tax: The total income tax deducted.
+- pension: The total pension contribution deducted.
+- studentLoan: The total student loan repayment deducted (if any).
 
-Return ONLY the JSON object, with no markdown formatting or other text.
+Return ONLY the JSON object, with no markdown formatting or other text. All amounts should be numbers (no currency symbols).
 Example format:
 {
   "employer": "Tech Corp",
+  "date": "2023-10-25",
   "netPay": 2450.50,
-  "date": "2023-10-25"
+  "grossPay": 3500.00,
+  "tax": 600.00,
+  "pension": 150.00,
+  "studentLoan": 50.00
 }`
 
         const imagePart = {

@@ -7,7 +7,8 @@ import { useState, useEffect } from 'react'
 import {
     BarChart3, CheckSquare, FolderKanban, Video,
     SlidersHorizontal, Menu, X, RefreshCw,
-    Lock, BookOpen, Utensils, Dumbbell, Shield, ChevronDown
+    Lock, BookOpen, Utensils, Dumbbell, Shield, ChevronDown,
+    TrendingUp
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -16,7 +17,10 @@ const navItems = [
         label: 'Finances',
         href: '/finances',
         icon: BarChart3,
-        sub: [{ label: 'Settings', href: '/finances/settings', icon: SlidersHorizontal }],
+        sub: [
+            { label: 'Analytics', href: '/finances/analytics', icon: TrendingUp },
+            { label: 'Settings', href: '/finances/settings', icon: SlidersHorizontal }
+        ],
     },
     { label: 'Tasks', href: '/tasks', icon: CheckSquare, disabled: true },
     { label: 'Projects', href: '/projects', icon: FolderKanban, disabled: true },

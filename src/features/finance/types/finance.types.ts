@@ -45,7 +45,6 @@ export interface Transaction {
     created_at: string
 }
 
-
 export interface Goal {
     id: string
     name: string
@@ -76,6 +75,19 @@ export interface FinanceSetting {
     key: string
     value: string
     updated_at: string
+}
+
+export interface Payslip {
+    id: string
+    date: string
+    employer: string | null
+    gross_pay: number | null
+    net_pay: number
+    tax_paid: number | null
+    pension_contributions: number | null
+    student_loan: number | null
+    profile: 'personal' | 'business'
+    created_at: string
 }
 
 export interface FinanceSummary {

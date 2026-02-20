@@ -7,8 +7,8 @@ import { useBank } from '../hooks/useBank'
 import { RevolutImportModal } from './RevolutImportModal'
 
 export function TransactionLedger() {
-    const { transactions, loading, refetch } = useTransactions()
-    const { loading: syncLoading } = useBank()
+    const { transactions, loading, refetch, clearTransactions } = useTransactions()
+    const { loading: bankSyncLoading } = useBank()
     const [isModalOpen, setIsModalOpen] = useState(false)
 
     const handleSyncSuccess = (count: number) => {
@@ -59,14 +59,20 @@ export function TransactionLedger() {
                 <div className="flex items-baseline gap-2">
                     <h3 className="text-[11px] uppercase tracking-wider font-bold text-black/30">Recent Ledger</h3>
                     <a href="/finances/transactions" className="text-[10px] font-bold text-[#7c3aed] hover:underline">See All</a>
+                    <button
+                        onClick={() => { if (confirm('Clear all transactions in this profile?')) clearTransactions() }}
+                        className="text-[10px] font-bold text-red-400/60 hover:text-red-500 transition-colors ml-2"
+                    >
+                        Clear Ledger
+                    </button>
                 </div>
                 <button
                     onClick={() => setIsModalOpen(true)}
-                    disabled={syncLoading}
+                    disabled={bankSyncLoading}
                     className="flex items-center gap-1.5 text-[11px] font-bold text-[#7c3aed] bg-[#7c3aed]/10 px-2 py-1 rounded-lg hover:bg-[#7c3aed]/20 transition-colors disabled:opacity-50"
                 >
-                    <RefreshCw className={`w-3 h-3 ${syncLoading ? 'animate-spin' : ''}`} />
-                    {syncLoading ? 'Syncing...' : 'Sync Bank'}
+                    <RefreshCw className={`w-3 h-3 ${bankSyncLoading ? 'animate-spin' : ''}`} />
+                    {bankSyncLoading ? 'Syncing...' : 'Sync Bank'}
                 </button>
                 <RevolutImportModal
                     isOpen={isModalOpen}
