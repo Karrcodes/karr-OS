@@ -8,7 +8,11 @@ interface Message {
     content: string
 }
 
-export function KarrAIChat() {
+interface KarrAIChatProps {
+    context?: string;
+}
+
+export function KarrAIChat({ context }: KarrAIChatProps) {
     const [messages, setMessages] = useState<Message[]>([
         {
             role: 'assistant',
@@ -37,7 +41,7 @@ export function KarrAIChat() {
             const res = await fetch('/api/ai/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: [...messages, userMsg] }),
+                body: JSON.stringify({ messages: [...messages, userMsg], clientContext: context }),
             })
 
             const data = await res.json()

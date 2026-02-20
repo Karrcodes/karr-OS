@@ -55,7 +55,7 @@ ${goals.map((g: { name: string; current_amount: number; target_amount: number; d
 
 export async function POST(req: NextRequest) {
     try {
-        const { messages } = await req.json()
+        const { messages, clientContext } = await req.json()
 
         if (!messages || !Array.isArray(messages)) {
             return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
@@ -73,6 +73,8 @@ Key rules:
 - Always cite actual numbers from his data when giving advice.
 - Keep responses concise — 2-4 sentences max unless a detailed breakdown is asked for.
 - Use GBP (£) for all amounts.
+
+${clientContext ? `\n### LIVE OVERRIDES (PRIORITIZE THIS DATA OVER DB SNAPSHOT)\n${clientContext}\n` : ''}
 
 ${context}`
 

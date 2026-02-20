@@ -146,6 +146,34 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
         }
     }
 
+    const handleSaveWithoutAssigning = async () => {
+        const amt = parseFloat(amount)
+        if (!amt || amt <= 0) {
+            setError('Please enter a valid income amount.')
+            return
+        }
+
+        setLoading(true)
+        setError(null)
+
+        try {
+            await logIncome({
+                amount: amt,
+                source: source,
+                date: date
+            })
+
+            setAmount('')
+            setSource('Salary')
+            setDate(new Date().toISOString().split('T')[0])
+            onSuccess()
+        } catch (e: unknown) {
+            setError(e instanceof Error ? e.message : 'Failed to save income.')
+        } finally {
+            setLoading(false)
+        }
+    }
+
     if (allocating) {
         return (
             <div className="rounded-2xl border border-[#059669]/30 bg-[#059669]/5 p-5 shadow-sm mb-6">
@@ -255,7 +283,7 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
 
             <div className="flex flex-col md:flex-row gap-3 items-end">
                 <div className="flex-1 w-full flex flex-col sm:flex-row gap-2">
-                    <div className="relative flex-1">
+                    <div className="relative flex-1 min-w-[120px]">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-black/40 font-bold text-lg">£</span>
                         <input
                             type="number"
@@ -270,23 +298,33 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
                         value={source}
                         onChange={(e) => setSource(e.target.value)}
                         placeholder="Source (e.g. Salary)"
-                        className="w-full sm:w-1/3 bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-3 text-[14px] text-black placeholder-black/20 outline-none focus:border-[#7c3aed]/40 transition-colors"
+                        className="flex-1 min-w-[120px] bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-3 text-[14px] text-black placeholder-black/20 outline-none focus:border-[#7c3aed]/40 transition-colors"
                     />
                     <input
                         type="date"
                         value={date}
                         onChange={(e) => setDate(e.target.value)}
-                        className="w-full sm:w-[140px] bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-3 text-[13px] font-medium text-black outline-none focus:border-[#7c3aed]/40 transition-colors"
+                        className="flex-1 min-w-[120px] bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-3 text-[13px] font-medium text-black outline-none focus:border-[#7c3aed]/40 transition-colors"
                     />
                 </div>
-                {error && <p className="text-[12px] text-red-600 mt-2">{error}</p>}
+                {error && <p className="text-[12px] text-red-600 mt-2 w-full">{error}</p>}
 
-                <button
-                    onClick={startAllocation}
-                    className="py-3 px-6 rounded-xl bg-black text-white font-semibold text-[14px] hover:bg-black/80 transition-colors whitespace-nowrap w-full md:w-auto"
-                >
-                    Assign Money
-                </button>
+                <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                    <button
+                        onClick={handleSaveWithoutAssigning}
+                        disabled={loading || uploading || !amount}
+                        className="py-3 px-4 rounded-xl border border-black/[0.1] bg-white text-black/60 font-semibold text-[13px] hover:bg-black/[0.03] hover:text-black/80 transition-colors whitespace-nowrap w-full sm:w-auto disabled:opacity-50"
+                    >
+                        Save Only
+                    </button>
+                    <button
+                        onClick={startAllocation}
+                        disabled={loading || uploading || !amount}
+                        className="py-3 px-6 rounded-xl bg-black text-white font-semibold text-[14px] hover:bg-black/80 transition-colors whitespace-nowrap w-full sm:w-auto disabled:opacity-50"
+                    >
+                        Assign Money
+                    </button>
+                </div>
             </div>
         </div>
     )

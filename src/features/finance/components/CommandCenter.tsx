@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { DollarSign, TrendingDown, Wallet, RefreshCw } from 'lucide-react'
 import { usePockets } from '../hooks/usePockets'
 import { useRecurring } from '../hooks/useRecurring'
@@ -12,6 +12,22 @@ import { KarrAIChat } from './KarrAIChat'
 import { QuickActionFAB } from './QuickActionFAB'
 import { PaydayAllocation } from './PaydayAllocation'
 import { CashflowAnalytics } from './CashflowAnalytics'
+import { DraggableSection } from './DraggableSection'
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent
+} from '@dnd-kit/core'
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
 
 export function CommandCenter() {
     const { pockets, loading: pLoading, refetch: refetchPockets } = usePockets()
@@ -47,6 +63,91 @@ export function CommandCenter() {
 
     const loading = pLoading || oLoading || gLoading
 
+    // --- Drag and Drop State ---
+    const defaultOrder = [
+        'payday',
+        'pockets',
+        'goals',
+        'obligations',
+        'analytics',
+        'ai'
+    ]
+
+    const [sectionOrder, setSectionOrder] = useState<string[]>(defaultOrder)
+
+    // Load saved order from localStorage on mount
+    const [mounted, setMounted] = useState(false)
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('karrOS_dashOrder')
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved)
+                    if (Array.isArray(parsed) && parsed.length === defaultOrder.length) {
+                        setSectionOrder(parsed)
+                    }
+                } catch (e) { }
+            }
+            setMounted(true)
+        }
+    }, [])
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    )
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event
+        if (over && active.id !== over.id) {
+            setSectionOrder((items: string[]) => {
+                const oldIndex = items.indexOf(active.id as string)
+                const newIndex = items.indexOf(over.id as string)
+                const newOrder = arrayMove(items, oldIndex, newIndex)
+                localStorage.setItem('karrOS_dashOrder', JSON.stringify(newOrder))
+                return newOrder
+            })
+        }
+    }
+
+    if (!mounted) return null // Prevent hydration mismatch on initial render
+
+    // Component Maps for rendering based on sort order
+    const sectionComponents: Record<string, React.ReactNode> = {
+        'payday': (
+            <div key="payday" id="payday">
+                <PaydayAllocation pockets={pockets} goals={goals} onSuccess={() => { refetchPockets(); refetchGoals(); }} />
+            </div>
+        ),
+        'pockets': (
+            <DraggableSection key="pockets" id="pockets" title="Pockets" desc="Your current allocations">
+                <PocketsGrid pockets={pockets} />
+            </DraggableSection>
+        ),
+        'goals': (
+            <DraggableSection key="goals" id="goals" title="Savings Goals" desc="Long-term targets">
+                <GoalsList goals={goals} />
+            </DraggableSection>
+        ),
+        'obligations': (
+            <DraggableSection key="obligations" id="obligations" title="Recurring Obligations" desc="30-Day projections for subs, rent, & debt">
+                <CalendarVisualizer obligations={obligations} />
+            </DraggableSection>
+        ),
+        'analytics': (
+            <DraggableSection key="analytics" id="analytics">
+                <CashflowAnalytics />
+            </DraggableSection>
+        ),
+        'ai': (
+            <DraggableSection key="ai" id="ai" className="!p-0 border-none bg-transparent shadow-none">
+                <div className="rounded-2xl border border-black/[0.08] bg-white p-5 shadow-sm h-full">
+                    <KarrAIChat context={`Live Balances:\n${pockets.map(p => `- ${p.name}: £${p.balance.toFixed(2)}`).join('\n')}`} />
+                </div>
+            </DraggableSection>
+        )
+    }
+
     return (
         <div className="flex flex-col h-full bg-white">
             {/* Page Header */}
@@ -68,8 +169,11 @@ export function CommandCenter() {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto bg-[#fafafa]">
-                <div className="p-6 space-y-8">
+            <details className="flex-1 overflow-y-auto bg-[#fafafa] group" open>
+                <summary className="p-6 pb-2 cursor-pointer list-none select-none flex items-center gap-2 text-[13px] font-bold text-black/40 hover:text-black/60 transition-colors uppercase tracking-wider">
+                    <span className="group-open:-rotate-90 transition-transform duration-200">▼</span> Finance Dashboard
+                </summary>
+                <div className="px-6 pb-6 space-y-8">
                     {/* Summary Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <SummaryCard
@@ -96,31 +200,29 @@ export function CommandCenter() {
                     </div>
 
                     {/* Main grid */}
-                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                        <div className="xl:col-span-2 space-y-6">
-                            <PaydayAllocation pockets={pockets} goals={goals} onSuccess={() => { refetchPockets(); refetchGoals(); }} />
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                        <SortableContext items={sectionOrder} strategy={verticalListSortingStrategy}>
+                            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                                {/* Left Column: 2/3 width */}
+                                <div className="xl:col-span-2 space-y-6 flex flex-col">
+                                    {sectionOrder
+                                        .filter((id: string) => ['payday', 'pockets', 'goals', 'obligations'].includes(id))
+                                        .map((id: string) => sectionComponents[id])}
+                                </div>
 
-                            <Section label="Pockets" desc="Your current allocations">
-                                <PocketsGrid pockets={pockets} />
-                            </Section>
-                            <Section label="Savings Goals" desc="Long-term targets">
-                                <GoalsList goals={goals} />
-                            </Section>
-                            <Section label="Recurring Obligations" desc="30-Day projections for subs, rent, & debt">
-                                <CalendarVisualizer obligations={obligations} />
-                            </Section>
-                        </div>
-                        <div className="xl:col-span-1 space-y-6">
-                            <div className="sticky top-6 space-y-6">
-                                <CashflowAnalytics />
-                                <div className="rounded-xl border border-black/[0.07] bg-white p-4 shadow-sm">
-                                    <KarrAIChat />
+                                {/* Right Column: 1/3 width, sticky */}
+                                <div className="xl:col-span-1 space-y-6">
+                                    <div className="sticky top-6 space-y-6 flex flex-col">
+                                        {sectionOrder
+                                            .filter((id: string) => ['analytics', 'ai'].includes(id))
+                                            .map((id: string) => sectionComponents[id])}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
+                        </SortableContext>
+                    </DndContext>
                 </div>
-            </div>
+            </details>
 
             <QuickActionFAB pockets={pockets} onSuccess={refetchPockets} />
         </div>
@@ -140,18 +242,6 @@ function SummaryCard({ label, value, icon, color, sub }: {
             </div>
             <p className="text-2xl font-bold text-black tracking-tight">{value}</p>
             {sub && <p className="text-[11px] text-black/35 mt-1">{sub}</p>}
-        </div>
-    )
-}
-
-function Section({ label, desc, children }: { label: string; desc: string; children: React.ReactNode }) {
-    return (
-        <div>
-            <div className="flex items-baseline gap-2 mb-3">
-                <h2 className="text-[14px] font-bold text-black">{label}</h2>
-                <span className="text-[11px] text-black/35">{desc}</span>
-            </div>
-            {children}
         </div>
     )
 }
