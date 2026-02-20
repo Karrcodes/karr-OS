@@ -145,44 +145,50 @@ export function CommandCenter() {
                     </div>
 
                     {/* Main Layout Stack */}
-                    <div className="space-y-6 pb-12">
-                        {/* Top Row: Pockets & Liabilities */}
-                        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
-                            <div className="xl:col-span-2">
+                    <div className="flex flex-col gap-6 pb-12">
+                        {/* Unified Responsive Grid (Mobile -> Tablet -> Desktop) */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
+
+                            {/* Cashflow Analytics */}
+                            <div className="order-3 md:order-1 xl:order-1 col-span-1">
+                                <CashflowAnalytics />
+                            </div>
+
+                            {/* Log Income (Payday Allocator) */}
+                            <div className="order-4 md:order-3 xl:order-2 col-span-1 md:col-span-2 xl:col-span-1 h-full">
+                                <PaydayAllocation pockets={pockets} goals={goals} onSuccess={() => { refetchPockets(); refetchGoals(); refetchTransactions(); }} />
+                            </div>
+
+                            {/* Savings Goals */}
+                            <div className="order-1 md:order-2 xl:order-3 col-span-1 h-full">
+                                <SectionBlock title="Savings Goals" desc="Long-term targets">
+                                    <GoalsList goals={goals} onRefresh={refetchGoals} />
+                                </SectionBlock>
+                            </div>
+
+                            {/* Pockets */}
+                            <div className="order-2 md:order-4 xl:order-4 col-span-1 md:col-span-2 xl:col-span-3">
                                 <SectionBlock title="Pockets" desc="Your current allocations">
                                     <PocketsGrid pockets={pockets} />
                                 </SectionBlock>
                             </div>
-                            <div className="xl:col-span-1">
+
+                            {/* Liabilities */}
+                            <div className="order-5 md:order-5 xl:order-5 col-span-1 md:col-span-2 xl:col-span-3">
                                 <SectionBlock title="Liabilities" desc="30-Day projections for subs & debt">
                                     <CalendarVisualizer obligations={obligations} />
                                 </SectionBlock>
                             </div>
                         </div>
 
-                        {/* Middle Row: Cashflow, Payday (Log Income), Savings */}
-                        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
-                            <div className="xl:col-span-1">
-                                <CashflowAnalytics />
-                            </div>
-                            <div className="xl:col-span-1">
-                                <PaydayAllocation pockets={pockets} goals={goals} onSuccess={() => { refetchPockets(); refetchGoals(); refetchTransactions(); }} />
-                            </div>
-                            <div className="xl:col-span-1">
-                                <SectionBlock title="Savings Goals" desc="Long-term targets">
-                                    <GoalsList goals={goals} onRefresh={refetchGoals} />
-                                </SectionBlock>
-                            </div>
-                        </div>
-
                         {/* Bottom Row: Recent Ledger & AI Chat */}
                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-                            <div className="xl:col-span-1 h-full min-h-[500px]">
+                            <div className="col-span-1 h-full min-h-[500px]">
                                 <SectionBlock title="Recent Ledger" desc="Latest transactions">
                                     <TransactionLedger />
                                 </SectionBlock>
                             </div>
-                            <div className="xl:col-span-1 h-full min-h-[500px]">
+                            <div className="col-span-1 h-full min-h-[500px]">
                                 <div className="rounded-2xl border border-black/[0.08] bg-white p-5 shadow-sm h-full flex flex-col">
                                     <h2 className="text-[17px] font-bold text-black mb-1">Financial Co-pilot</h2>
                                     <p className="text-[12px] text-black/40 mb-4">Ask Gemini about patterns, advice, or status</p>

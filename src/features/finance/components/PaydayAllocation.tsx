@@ -275,7 +275,7 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
 
     if (allocating) {
         return (
-            <div className="rounded-2xl border border-[#059669]/30 bg-[#059669]/5 p-5 shadow-sm mb-6">
+            <div className="rounded-2xl border border-[#059669]/30 bg-[#059669]/5 p-5 shadow-sm h-full flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                     <div>
                         <h2 className="text-[16px] font-bold text-[#059669]">Distribute Income</h2>
@@ -358,7 +358,7 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
     }
 
     return (
-        <div className="rounded-2xl border border-black/[0.08] bg-white p-5 shadow-sm mb-6">
+        <div className="rounded-2xl border border-black/[0.08] bg-white p-5 shadow-sm h-full flex flex-col justify-between">
             <div className="flex items-center justify-between mb-4">
                 <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold block">Log Income Manually or with AI</label>
 
@@ -381,51 +381,56 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
                 </button>
             </div>
 
-            <div className="flex flex-col md:flex-row gap-3 items-end">
-                <div className="flex-1 w-full flex flex-col sm:flex-row gap-2">
-                    <div className="relative flex-1 min-w-[120px]">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-black/40 font-bold text-lg">£</span>
+            <div className="flex flex-col gap-3">
+                {/* Row 1: Amount & Source */}
+                <div className="flex flex-row gap-3">
+                    <div className="relative flex-[1.5]">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-black/40 font-bold text-[16px]">£</span>
                         <input
                             type="number"
                             value={amount}
                             onChange={(e) => setAmount(e.target.value)}
                             placeholder="0.00"
-                            className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl pl-8 pr-4 py-3 text-lg font-bold text-black placeholder-black/20 outline-none focus:border-[#7c3aed]/40 transition-colors"
+                            className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl pl-8 pr-3 py-2.5 text-[16px] font-bold text-black placeholder-black/20 outline-none focus:border-[#7c3aed]/40 transition-colors"
                         />
                     </div>
                     <input
                         type="text"
                         value={source}
                         onChange={(e) => setSource(e.target.value)}
-                        placeholder="Source (e.g. Salary)"
-                        className="flex-1 min-w-[120px] bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-3 text-[14px] text-black placeholder-black/20 outline-none focus:border-[#7c3aed]/40 transition-colors"
+                        placeholder="Source"
+                        className="flex-1 min-w-[100px] bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-2.5 text-[14px] text-black placeholder-black/20 outline-none focus:border-[#7c3aed]/40 transition-colors"
                     />
+                </div>
+
+                {/* Row 2: Date & Action Buttons */}
+                <div className="flex flex-row gap-2">
                     <input
                         type="date"
                         value={date}
                         onChange={(e) => setDate(e.target.value)}
-                        className="flex-1 min-w-[120px] bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-3 text-[13px] font-medium text-black outline-none focus:border-[#7c3aed]/40 transition-colors"
+                        className="w-[120px] shrink-0 bg-black/[0.03] border border-black/[0.08] rounded-xl px-2.5 py-2.5 text-[12px] font-medium text-black outline-none focus:border-[#7c3aed]/40 transition-colors"
                     />
+                    <div className="flex flex-1 gap-2">
+                        <button
+                            onClick={handleSaveWithoutAssigning}
+                            disabled={loading || uploading || !amount}
+                            className="flex-1 py-2.5 rounded-xl border border-black/[0.1] bg-white text-black/60 font-semibold text-[12px] hover:bg-black/[0.03] hover:text-black/80 transition-colors disabled:opacity-50"
+                        >
+                            Save
+                        </button>
+                        <button
+                            onClick={startAllocation}
+                            disabled={loading || uploading || !amount}
+                            className="flex-[1.5] py-2.5 rounded-xl bg-black text-white font-semibold text-[13px] hover:bg-black/80 transition-colors disabled:opacity-50"
+                        >
+                            Assign
+                        </button>
+                    </div>
                 </div>
-                {error && <p className="text-[12px] text-red-600 mt-2 w-full">{error}</p>}
-                {successMessage && <p className="text-[12px] text-[#059669] mt-2 w-full bg-[#059669]/10 py-1.5 px-3 rounded-lg font-medium">{successMessage}</p>}
 
-                <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-                    <button
-                        onClick={handleSaveWithoutAssigning}
-                        disabled={loading || uploading || !amount}
-                        className="py-3 px-4 rounded-xl border border-black/[0.1] bg-white text-black/60 font-semibold text-[13px] hover:bg-black/[0.03] hover:text-black/80 transition-colors whitespace-nowrap w-full sm:w-auto disabled:opacity-50"
-                    >
-                        Save Only
-                    </button>
-                    <button
-                        onClick={startAllocation}
-                        disabled={loading || uploading || !amount}
-                        className="py-3 px-6 rounded-xl bg-black text-white font-semibold text-[14px] hover:bg-black/80 transition-colors whitespace-nowrap w-full sm:w-auto disabled:opacity-50"
-                    >
-                        Assign Money
-                    </button>
-                </div>
+                {error && <p className="text-[12px] text-red-600 mt-1 w-full">{error}</p>}
+                {successMessage && <p className="text-[12px] text-[#059669] mt-1 w-full bg-[#059669]/10 py-1.5 px-3 rounded-lg font-medium">{successMessage}</p>}
             </div>
         </div>
     )
