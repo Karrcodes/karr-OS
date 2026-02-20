@@ -10,6 +10,8 @@ import { DebtVisualizer } from './DebtVisualizer'
 import { GoalsList } from './GoalsList'
 import { KarrAIChat } from './KarrAIChat'
 import { QuickActionFAB } from './QuickActionFAB'
+import { PaydayAllocation } from './PaydayAllocation'
+import { CashflowAnalytics } from './CashflowAnalytics'
 
 export function CommandCenter() {
     const { pockets, loading: pLoading, refetch: refetchPockets } = usePockets()
@@ -17,7 +19,7 @@ export function CommandCenter() {
     const { goals, loading: gLoading } = useGoals()
 
     const summary = useMemo(() => {
-        const totalLiquid = pockets.reduce((s, p) => s + p.current_balance, 0)
+        const totalLiquid = pockets.reduce((s, p) => s + p.balance, 0)
         const totalDebt = debts.reduce((s, d) => s + d.remaining_balance, 0)
         const monthlyObligations = debts.reduce((s, d) => s + d.monthly_payment, 0)
         return { totalLiquid, totalDebt, monthlyObligations }
@@ -76,6 +78,8 @@ export function CommandCenter() {
                     {/* Main grid */}
                     <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                         <div className="xl:col-span-2 space-y-6">
+                            <PaydayAllocation pockets={pockets} goals={goals} onSuccess={refetchPockets} />
+
                             <Section label="Pockets" desc="Your current allocations">
                                 <PocketsGrid pockets={pockets} />
                             </Section>
@@ -86,9 +90,12 @@ export function CommandCenter() {
                                 <DebtVisualizer debts={debts} />
                             </Section>
                         </div>
-                        <div className="xl:col-span-1">
-                            <div className="sticky top-6 rounded-xl border border-black/[0.07] bg-white p-4 shadow-sm">
-                                <KarrAIChat />
+                        <div className="xl:col-span-1 space-y-6">
+                            <div className="sticky top-6 space-y-6">
+                                <CashflowAnalytics />
+                                <div className="rounded-xl border border-black/[0.07] bg-white p-4 shadow-sm">
+                                    <KarrAIChat />
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -34,33 +34,50 @@ export function QuickActionFAB({ pockets, onSuccess }: QuickActionFABProps) {
 
         try {
             if (activeTab === 'income') {
-                if (!selectedPocket) { setError('Select a pocket.'); setLoading(false); return }
-                await supabase.from('fin_transactions').insert({ type: 'income', amount: amt, from_pocket: null, to_pocket: selectedPocket, description: description || 'Weekly income', date: new Date().toISOString().split('T')[0] })
-                const pocket = pockets.find((p) => p.id === selectedPocket)
-                if (pocket) await supabase.from('fin_pockets').update({ current_balance: pocket.current_balance + amt }).eq('id', selectedPocket)
+                if (!description) { setError('Enter an income source.'); setLoading(false); return }
+                // Log to fin_income (enters the "To Assign" pool logically)
+                await supabase.from('fin_income').insert({
+                    amount: amt,
+                    source: description,
+                    date: new Date().toISOString().split('T')[0]
+                })
             }
             if (activeTab === 'spend') {
                 if (!selectedPocket) { setError('Select a pocket.'); setLoading(false); return }
                 const pocket = pockets.find((p) => p.id === selectedPocket)
-                if (pocket && amt > pocket.current_balance) { setError(`Insufficient balance in ${pocket.name}. Available: £${pocket.current_balance.toFixed(2)}`); setLoading(false); return }
-                await supabase.from('fin_transactions').insert({ type: 'expense', amount: amt, from_pocket: selectedPocket, to_pocket: null, description: description || 'Expense', date: new Date().toISOString().split('T')[0] })
-                if (pocket) await supabase.from('fin_pockets').update({ current_balance: pocket.current_balance - amt }).eq('id', selectedPocket)
+                // We use standard balance now
+                if (pocket && amt > pocket.balance) { setError(`Insufficient balance in ${pocket.name}. Available: £${pocket.balance.toFixed(2)}`); setLoading(false); return }
+
+                await supabase.from('fin_transactions').insert({
+                    type: 'spend',
+                    amount: amt,
+                    pocket_id: selectedPocket,
+                    description: description || 'Expense',
+                    date: new Date().toISOString().split('T')[0]
+                })
+                if (pocket) await supabase.from('fin_pockets').update({ balance: pocket.balance - amt }).eq('id', selectedPocket)
             }
             if (activeTab === 'transfer') {
                 if (!selectedPocket || !toPocket) { setError('Select both pockets.'); setLoading(false); return }
-                if (selectedPocket === toPocket) { setError('Cannot transfer to the same pocket.'); setLoading(false); return }
+                if (selectedPocket === toPocket) { setError('Cannot transfer to same pocket.'); setLoading(false); return }
                 const from = pockets.find((p) => p.id === selectedPocket)
                 const to = pockets.find((p) => p.id === toPocket)
-                if (from && amt > from.current_balance) { setError(`Insufficient balance in ${from.name}.`); setLoading(false); return }
-                await supabase.from('fin_transactions').insert({ type: 'transfer', amount: amt, from_pocket: selectedPocket, to_pocket: toPocket, description: description || 'Transfer', date: new Date().toISOString().split('T')[0] })
-                if (from) await supabase.from('fin_pockets').update({ current_balance: from.current_balance - amt }).eq('id', from.id)
-                if (to) await supabase.from('fin_pockets').update({ current_balance: to.current_balance + amt }).eq('id', to.id)
+                if (from && amt > from.balance) { setError(`Insufficient balance in ${from.name}.`); setLoading(false); return }
+
+                // Record two transaction rows for double entry transfer visibility
+                await supabase.from('fin_transactions').insert([
+                    { type: 'transfer', amount: amt, pocket_id: selectedPocket, description: `Transfer to ${to?.name || 'pocket'}`, date: new Date().toISOString().split('T')[0] },
+                    { type: 'allocate', amount: amt, pocket_id: toPocket, description: `Transfer from ${from?.name || 'pocket'}`, date: new Date().toISOString().split('T')[0] }
+                ])
+                if (from) await supabase.from('fin_pockets').update({ balance: from.balance - amt }).eq('id', from.id)
+                if (to) await supabase.from('fin_pockets').update({ balance: to.balance + amt }).eq('id', to.id)
             }
             onSuccess(); handleClose()
         } catch (e: unknown) {
             setError(e instanceof Error ? e.message : 'Unknown error')
         } finally { setLoading(false) }
     }
+
 
     const tabs: { id: Tab; label: string; icon: typeof Plus; color: string }[] = [
         { id: 'income', label: 'Add Income', icon: ArrowDownToLine, color: '#059669' },
@@ -121,7 +138,7 @@ export function QuickActionFAB({ pockets, onSuccess }: QuickActionFABProps) {
                                 <select value={selectedPocket} onChange={(e) => setSelectedPocket(e.target.value)}
                                     className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[13px] text-black outline-none focus:border-[#7c3aed]/40 appearance-none">
                                     <option value="">Select pocket…</option>
-                                    {pockets.map((p) => <option key={p.id} value={p.id}>{p.name} — £{p.current_balance.toFixed(2)}</option>)}
+                                    {pockets.map((p) => <option key={p.id} value={p.id}>{p.name} — £{p.balance?.toFixed(2) ?? '0.00'}</option>)}
                                 </select>
                             </div>
 
@@ -131,7 +148,7 @@ export function QuickActionFAB({ pockets, onSuccess }: QuickActionFABProps) {
                                     <select value={toPocket} onChange={(e) => setToPocket(e.target.value)}
                                         className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[13px] text-black outline-none focus:border-[#7c3aed]/40 appearance-none">
                                         <option value="">Select pocket…</option>
-                                        {pockets.filter((p) => p.id !== selectedPocket).map((p) => <option key={p.id} value={p.id}>{p.name} — £{p.current_balance.toFixed(2)}</option>)}
+                                        {pockets.filter((p) => p.id !== selectedPocket).map((p) => <option key={p.id} value={p.id}>{p.name} — £{p.balance?.toFixed(2) ?? '0.00'}</option>)}
                                     </select>
                                 </div>
                             )}

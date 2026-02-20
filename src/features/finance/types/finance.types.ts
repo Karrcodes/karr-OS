@@ -3,6 +3,7 @@ export interface Pocket {
     name: string
     target_budget: number
     current_balance: number
+    balance: number // New dynamic cashflow balance
     type: 'general' | 'savings' | 'buffer'
     created_at: string
 }
@@ -18,16 +19,24 @@ export interface Debt {
     created_at: string
 }
 
-export interface Transaction {
+export interface Income {
     id: string
-    type: 'income' | 'expense' | 'transfer'
     amount: number
-    from_pocket: string | null
-    to_pocket: string | null
-    description: string | null
+    source: string
     date: string
     created_at: string
 }
+
+export interface Transaction {
+    id: string
+    amount: number
+    type: 'spend' | 'allocate' | 'transfer'
+    description: string
+    date: string
+    pocket_id: string | null
+    created_at: string
+}
+
 
 export interface Goal {
     id: string

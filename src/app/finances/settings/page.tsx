@@ -85,7 +85,7 @@ function PocketsSettings() {
     const handleAdd = async () => {
         if (!form.name) return
         setSaving(true)
-        await createPocket({ name: form.name!, target_budget: form.target_budget ?? 0, current_balance: form.current_balance ?? 0, type: (form.type as Pocket['type']) ?? 'general' })
+        await createPocket({ name: form.name!, target_budget: form.target_budget ?? 0, current_balance: form.current_balance ?? 0, balance: 0, type: (form.type as Pocket['type']) ?? 'general' })
         setForm({ type: 'general', target_budget: 0, current_balance: 0 })
         setAdding(false)
         setSaving(false)
@@ -112,7 +112,7 @@ function PocketsSettings() {
                             {editId === p.id ? (
                                 <>
                                     <input className="input-field flex-1" value={form.name ?? ''} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-                                    <input className="input-field w-28" type="number" value={form.target_budget ?? 0} onChange={(e) => setForm({ ...form, target_budget: parseFloat(e.target.value) })} placeholder="Target £" />
+                                    <input className="input-field w-32" type="number" value={form.target_budget ?? 0} onChange={(e) => setForm({ ...form, target_budget: parseFloat(e.target.value) })} placeholder="Weekly alloc £" />
                                     <select className="input-field w-28" value={form.type ?? 'general'} onChange={(e) => setForm({ ...form, type: e.target.value as Pocket['type'] })}>
                                         <option value="general">General</option>
                                         <option value="buffer">Buffer</option>
@@ -125,7 +125,7 @@ function PocketsSettings() {
                                 <>
                                     <span className="flex-1 text-[13px] text-black/80 font-medium">{p.name}</span>
                                     <span className="text-[11px] text-black/35 capitalize">{p.type}</span>
-                                    <span className="text-[12px] text-black/45 w-24 text-right">Target £{p.target_budget.toFixed(2)}</span>
+                                    <span className="text-[12px] text-black/45 w-32 text-right">Weekly alloc: £{p.target_budget.toFixed(2)}</span>
                                     <button onClick={() => startEdit(p)} className="icon-btn text-black/25 hover:text-black/60"><Pencil className="w-3.5 h-3.5" /></button>
                                     <button onClick={() => deletePocket(p.id)} className="icon-btn text-black/20 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
                                 </>
@@ -136,7 +136,7 @@ function PocketsSettings() {
                     {adding ? (
                         <div className="flex items-center gap-3 rounded-xl border border-[#7c3aed]/20 bg-[#7c3aed]/5 p-3">
                             <input className="input-field flex-1" placeholder="Pocket name" value={form.name ?? ''} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-                            <input className="input-field w-28" type="number" placeholder="Target £" value={form.target_budget ?? ''} onChange={(e) => setForm({ ...form, target_budget: parseFloat(e.target.value) })} />
+                            <input className="input-field w-32" type="number" placeholder="Weekly alloc £" value={form.target_budget ?? ''} onChange={(e) => setForm({ ...form, target_budget: parseFloat(e.target.value) })} />
                             <select className="input-field w-28" value={form.type ?? 'general'} onChange={(e) => setForm({ ...form, type: e.target.value as Pocket['type'] })}>
                                 <option value="general">General</option>
                                 <option value="buffer">Buffer</option>
@@ -195,17 +195,17 @@ function DebtsSettings() {
 
                     {adding ? (
                         <div className="grid grid-cols-2 gap-2 rounded-xl border border-[#7c3aed]/20 bg-[#7c3aed]/5 p-3">
-                            <input className="input-field col-span-2" placeholder="Debt name (e.g. Currys Flexipay)" value={form.name ?? ''} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-                            <input className="input-field" type="number" placeholder="Total amount £" value={form.total_amount ?? ''} onChange={(e) => setForm({ ...form, total_amount: parseFloat(e.target.value) })} />
-                            <input className="input-field" type="number" placeholder="Remaining balance £" value={form.remaining_balance ?? ''} onChange={(e) => setForm({ ...form, remaining_balance: parseFloat(e.target.value) })} />
-                            <input className="input-field" type="number" placeholder="Monthly payment £" value={form.monthly_payment ?? ''} onChange={(e) => setForm({ ...form, monthly_payment: parseFloat(e.target.value) })} />
+                            <input className="input-field col-span-2" placeholder="Debt name/Lender (e.g. Amex, Car Loan)" value={form.name ?? ''} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                            <input className="input-field" type="number" placeholder="Total credit limit/loan £" value={form.total_amount ?? ''} onChange={(e) => setForm({ ...form, total_amount: parseFloat(e.target.value) })} />
+                            <input className="input-field" type="number" placeholder="Current amount owed £" value={form.remaining_balance ?? ''} onChange={(e) => setForm({ ...form, remaining_balance: parseFloat(e.target.value) })} />
+                            <input className="input-field" type="number" placeholder="Required monthly payment £" value={form.monthly_payment ?? ''} onChange={(e) => setForm({ ...form, monthly_payment: parseFloat(e.target.value) })} />
                             <input className="input-field" type="number" placeholder="Due day of month (1-31)" value={form.due_date_of_month ?? ''} onChange={(e) => setForm({ ...form, due_date_of_month: parseInt(e.target.value) })} />
                             <select className="input-field" value={form.type ?? 'Short-Term'} onChange={(e) => setForm({ ...form, type: e.target.value as Debt['type'] })}>
-                                <option value="Short-Term">Short-Term</option>
-                                <option value="Long-Term">Long-Term</option>
+                                <option value="Short-Term">Short-Term (Cards, overdrafts)</option>
+                                <option value="Long-Term">Long-Term (Loans, mortgages)</option>
                             </select>
-                            <div className="flex gap-2">
-                                <button onClick={handleAdd} disabled={saving} className="btn-primary flex-1">{saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Add'}</button>
+                            <div className="flex gap-2 col-span-2">
+                                <button onClick={handleAdd} disabled={saving} className="btn-primary flex-1">{saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Add credit agreement'}</button>
                                 <button onClick={() => setAdding(false)} className="btn-secondary flex-1">Cancel</button>
                             </div>
                         </div>
@@ -263,12 +263,13 @@ function GoalsSettings() {
                             {editId === g.id ? (
                                 <>
                                     <input className="input-field flex-1 min-w-[120px]" value={form.name ?? ''} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-                                    <input className="input-field w-24" type="number" placeholder="Target £" value={form.target_amount ?? 0} onChange={(e) => setForm({ ...form, target_amount: parseFloat(e.target.value) })} />
-                                    <input className="input-field w-24" type="number" placeholder="Saved £" value={form.current_amount ?? 0} onChange={(e) => setForm({ ...form, current_amount: parseFloat(e.target.value) })} />
+                                    <input className="input-field w-28" type="number" placeholder="Total target £" value={form.target_amount ?? 0} onChange={(e) => setForm({ ...form, target_amount: parseFloat(e.target.value) })} />
+                                    <input className="input-field w-28" type="number" placeholder="Already saved £" value={form.current_amount ?? 0} onChange={(e) => setForm({ ...form, current_amount: parseFloat(e.target.value) })} />
                                     <input className="input-field w-32" type="date" value={form.deadline ?? ''} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
                                     <button onClick={() => handleUpdate(g.id)} disabled={saving} className="icon-btn text-emerald-600"><Check className="w-4 h-4" /></button>
                                     <button onClick={() => setEditId(null)} className="icon-btn text-black/30"><X className="w-4 h-4" /></button>
                                 </>
+
                             ) : (
                                 <>
                                     <span className="flex-1 text-[13px] text-black/80 font-medium">{g.name}</span>
@@ -284,8 +285,8 @@ function GoalsSettings() {
                     {adding ? (
                         <div className="grid grid-cols-2 gap-2 rounded-xl border border-[#7c3aed]/20 bg-[#7c3aed]/5 p-3">
                             <input className="input-field col-span-2" placeholder="Goal name (e.g. UK GTV Visa)" value={form.name ?? ''} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-                            <input className="input-field" type="number" placeholder="Target amount £" value={form.target_amount ?? ''} onChange={(e) => setForm({ ...form, target_amount: parseFloat(e.target.value) })} />
-                            <input className="input-field" type="number" placeholder="Already saved £" value={form.current_amount ?? ''} onChange={(e) => setForm({ ...form, current_amount: parseFloat(e.target.value) })} />
+                            <input className="input-field" type="number" placeholder="Total target amount £" value={form.target_amount ?? ''} onChange={(e) => setForm({ ...form, target_amount: parseFloat(e.target.value) })} />
+                            <input className="input-field" type="number" placeholder="Amount already saved £" value={form.current_amount ?? ''} onChange={(e) => setForm({ ...form, current_amount: parseFloat(e.target.value) })} />
                             <input className="input-field col-span-2" type="date" value={form.deadline ?? ''} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
                             <div className="col-span-2 flex gap-2">
                                 <button onClick={handleAdd} disabled={saving} className="btn-primary flex-1">{saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Add Goal'}</button>

@@ -42,9 +42,9 @@ export function PocketsGrid({ pockets }: PocketsGridProps) {
                 const config = typeConfig[pocket.type] ?? typeConfig.general
                 const Icon = config.icon
                 const pct = pocket.target_budget > 0
-                    ? Math.min((pocket.current_balance / pocket.target_budget) * 100, 100)
+                    ? Math.min((pocket.balance / pocket.target_budget) * 100, 100)
                     : 0
-                const isOver = pocket.current_balance > pocket.target_budget && pocket.target_budget > 0
+                const isOver = pocket.balance > pocket.target_budget && pocket.target_budget > 0
 
                 return (
                     <div
@@ -73,22 +73,22 @@ export function PocketsGrid({ pockets }: PocketsGridProps) {
 
                         <div className="mb-3">
                             <p className="text-2xl font-bold text-black tracking-tight">
-                                £{pocket.current_balance.toFixed(2)}
+                                £{(pocket.balance ?? 0).toFixed(2)}
                             </p>
                             {pocket.target_budget > 0 && (
                                 <p className="text-[11px] text-black/35 mt-0.5">
-                                    of £{pocket.target_budget.toFixed(2)} target
+                                    remaining of £{pocket.target_budget.toFixed(2)} alloc
                                 </p>
                             )}
                         </div>
 
                         {pocket.target_budget > 0 && (
                             <>
-                                <ProgressBar value={pocket.current_balance} max={pocket.target_budget} color={config.color} />
+                                <ProgressBar value={(pocket.balance ?? 0)} max={pocket.target_budget} color={config.color} />
                                 <div className="flex justify-between mt-1.5">
-                                    <span className="text-[10px] text-black/25">{pct.toFixed(0)}% filled</span>
-                                    <span className="text-[10px] text-black/25">
-                                        £{Math.max(0, pocket.target_budget - pocket.current_balance).toFixed(2)} remaining
+                                    <span className="text-[10px] text-black/40">{pct.toFixed(0)}% available</span>
+                                    <span className="text-[10px] text-black/40">
+                                        £{Math.max(0, pocket.target_budget - (pocket.balance ?? 0)).toFixed(2)} spent
                                     </span>
                                 </div>
                             </>
