@@ -13,15 +13,16 @@ interface ProjectedPayment {
     category: string | null
 }
 
-const LENDER_LOGOS: Record<string, string> = {
-    'klarna': '/klarna.png',
-    'clearpay': '/clearpay.png',
-    'currys flexipay': '/currys.png',
-    'currys': '/currys.png',
+function getLenderLogo(name: string): string | null {
+    const lower = name.toLowerCase()
+    if (lower.includes('klarna')) return '/klarna.png'
+    if (lower.includes('clearpay')) return '/clearpay.png'
+    if (lower.includes('currys')) return '/currys.png'
+    return null
 }
 
 function LenderBadge({ name }: { name: string }) {
-    const logoSrc = LENDER_LOGOS[name.toLowerCase()]
+    const logoSrc = getLenderLogo(name)
     if (logoSrc) {
         return (
             <div className="w-8 h-8 rounded-xl bg-white border border-black/[0.06] flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">

@@ -65,18 +65,37 @@ export async function POST(req: NextRequest) {
 
             const description = row[colMap.description] || 'Revolut Transaction'
             const date = row[colMap.date] || new Date().toISOString()
+            const revolutType = (colMap.type >= 0 ? row[colMap.type] : '').toUpperCase()
             const providerTxId = `rev_${Buffer.from(`${date}${amount}${description}`).toString('base64').substring(0, 32)}`
+
+            // ── Classify using Revolut's own Type column ──────────────────────
+            // EXCHANGE = currency conversion (not real spend/income), skip entirely
+            if (revolutType === 'EXCHANGE') continue
+
+            const isSalary = description.toLowerCase().includes('payment from u u k')
+
+            let txType: 'spend' | 'income' | 'transfer'
+            if (revolutType === 'CARD_PAYMENT' || revolutType === 'ATM' || revolutType === 'FEE') {
+                txType = 'spend'
+            } else if (isSalary) {
+                // Only your employer transfer counts as true income
+                txType = 'income'
+            } else {
+                // All other transfers, top-ups, cashback, refunds → not spend, not income
+                txType = 'transfer'
+            }
 
             parsed.push({
                 amount: Math.abs(amount),
-                type: amount < 0 ? 'spend' : 'income',
+                type: txType,
                 description,
                 date: date.split(' ')[0],
-                emoji: amount < 0 ? '💸' : '💰',
+                emoji: txType === 'spend' ? '💸' : txType === 'income' ? '💰' : '🔄',
                 profile,
                 provider: 'revolut_csv',
                 provider_tx_id: providerTxId
             })
+
         }
 
         // ── Step 2: AI-categorise in batches of 25 ─────────────────────────────
