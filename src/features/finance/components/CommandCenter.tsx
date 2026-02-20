@@ -145,10 +145,10 @@ export function CommandCenter() {
                         </div>
 
                         <SectionBlock title="Savings Goals" desc="Long-term targets">
-                            <GoalsList goals={goals} />
+                            <GoalsList goals={goals} onRefresh={refetchGoals} />
                         </SectionBlock>
 
-                        <SectionBlock title="Recurring Obligations" desc="30-Day projections for subs, rent, & debt">
+                        <SectionBlock title="Recurring Obligations" desc="30-Day projections for subs & debt">
                             <CalendarVisualizer obligations={obligations} />
                         </SectionBlock>
 

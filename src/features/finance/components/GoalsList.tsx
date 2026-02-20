@@ -1,10 +1,13 @@
 'use client'
 
-import { Target, CalendarDays } from 'lucide-react'
+import { useState } from 'react'
+import { Target, CalendarDays, RefreshCw, Loader2 } from 'lucide-react'
 import type { Goal } from '../types/finance.types'
+import { useGoals } from '../hooks/useGoals'
 
 interface GoalsListProps {
     goals: Goal[]
+    onRefresh?: () => void
 }
 
 function ProgressBar({ value, max }: { value: number; max: number }) {
@@ -25,7 +28,18 @@ function daysUntil(dateStr: string | null): number | null {
     return Math.ceil(diff / (1000 * 60 * 60 * 24))
 }
 
-export function GoalsList({ goals }: GoalsListProps) {
+export function GoalsList({ goals, onRefresh }: GoalsListProps) {
+    const { updateGoal } = useGoals()
+    const [resettingId, setResettingId] = useState<string | null>(null)
+
+    const handleReset = async (id: string, e: React.MouseEvent) => {
+        e.stopPropagation()
+        setResettingId(id)
+        await updateGoal(id, { current_amount: 0 })
+        onRefresh?.()
+        setResettingId(null)
+    }
+
     if (goals.length === 0) {
         return (
             <div className="rounded-xl border border-black/[0.07] bg-black/[0.02] p-6 text-center">
@@ -53,7 +67,10 @@ export function GoalsList({ goals }: GoalsListProps) {
                                     <Target className="w-3.5 h-3.5 text-blue-600" />
                                 </div>
                                 <div>
-                                    <p className="text-[13px] font-semibold text-black/90">{goal.name}</p>
+                                    <p className="text-[13px] font-semibold text-black/90 flex items-center gap-2">
+                                        {goal.name}
+                                        {goal.is_recurring && <span className="text-[9px] bg-[#7c3aed]/10 text-[#7c3aed] px-1 rounded font-bold uppercase tracking-widest">Recurring</span>}
+                                    </p>
                                     {days !== null && (
                                         <p className={`text-[10px] flex items-center gap-1 ${days < 30 ? 'text-amber-500' : 'text-black/35'}`}>
                                             <CalendarDays className="w-3 h-3" />
@@ -70,11 +87,23 @@ export function GoalsList({ goals }: GoalsListProps) {
                             </div>
                         </div>
                         <ProgressBar value={goal.current_amount} max={goal.target_amount} />
-                        <div className="flex justify-between mt-1.5">
-                            <span className="text-[10px] text-black/25">{pct.toFixed(0)}% saved</span>
-                            <span className="text-[10px] text-black/25">
-                                £{Math.max(0, goal.target_amount - goal.current_amount).toFixed(2)} to go
-                            </span>
+                        <div className="flex justify-between items-center mt-2.5">
+                            <span className="text-[10px] text-black/35 font-medium">{pct.toFixed(0)}% saved</span>
+
+                            {goal.is_recurring && pct >= 100 ? (
+                                <button
+                                    onClick={(e) => handleReset(goal.id, e)}
+                                    disabled={resettingId === goal.id}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#7c3aed] text-white text-[11px] font-bold rounded-lg hover:bg-[#6d28d9] transition-colors disabled:opacity-50"
+                                >
+                                    {resettingId === goal.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                                    Restart Cycle
+                                </button>
+                            ) : (
+                                <span className="text-[10px] text-black/35 font-medium">
+                                    £{Math.max(0, goal.target_amount - goal.current_amount).toFixed(2)} to go
+                                </span>
+                            )}
                         </div>
                     </div>
                 )

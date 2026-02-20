@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Calendar as CalendarIcon, CreditCard, ChevronLeft, ChevronRight, List, LayoutGrid, Tag } from 'lucide-react'
+import { Calendar as CalendarIcon, CreditCard, ChevronLeft, ChevronRight, List, LayoutGrid, Tag, X } from 'lucide-react'
 import type { RecurringObligation } from '../types/finance.types'
 import { getLenderLogo, countRemainingPayments } from '../utils/lenderLogos'
 
@@ -12,6 +12,7 @@ interface ProjectedPayment {
     date: Date
     group_name: string | null
     category: string | null
+    obligation: RecurringObligation
 }
 
 
@@ -55,6 +56,7 @@ function isDebt(obs: RecurringObligation) {
 export function CalendarVisualizer({ obligations }: { obligations: RecurringObligation[] }) {
     const [view, setView] = useState<'calendar' | 'list'>('calendar')
     const [filter, setFilter] = useState<FilterMode>('all')
+    const [selectedPayment, setSelectedPayment] = useState<ProjectedPayment | null>(null)
     const [calMonth, setCalMonth] = useState(() => {
         const d = new Date()
         d.setDate(1)
@@ -104,7 +106,8 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                         amount: obs.amount,
                         date: new Date(current.getTime()),
                         group_name: obs.group_name,
-                        category: obs.category
+                        category: obs.category,
+                        obligation: obs
                     })
                 }
 
@@ -195,7 +198,7 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                     <CalendarIcon className="w-5 h-5 text-black/30" />
                 </div>
                 <h3 className="text-[14px] font-bold text-black/80">No Upcoming Payments</h3>
-                <p className="text-[12px] text-black/40 mt-1">Add subscriptions, rent, or debts in settings.</p>
+                <p className="text-[12px] text-black/40 mt-1">Add subscriptions or debts in settings.</p>
             </div>
         )
     }
@@ -303,9 +306,9 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                                         {hasPay && (
                                             <>
                                                 {payments.slice(0, 2).map((p, pi) => (
-                                                    <div key={pi} title={`${p.name}: £${p.amount.toFixed(2)}`} className="bg-red-50 border border-red-100 rounded px-1 py-0.5 truncate">
-                                                        <span className="text-[8px] font-bold text-red-600 truncate block">{p.name}</span>
-                                                    </div>
+                                                    <button key={pi} onClick={(e) => { e.stopPropagation(); setSelectedPayment(p) }} title={`${p.name}: £${p.amount.toFixed(2)}`} className="bg-red-50 border border-red-100 rounded px-1 py-0.5 w-full text-left truncate hover:bg-red-100 transition-colors cursor-pointer block text-[8px] font-bold text-red-600">
+                                                        {p.name}
+                                                    </button>
                                                 ))}
                                                 {payments.length > 2 && (
                                                     <span className="text-[8px] text-black/30 font-bold">+{payments.length - 2} more</span>
@@ -364,6 +367,67 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                     </div>
                 )}
             </div>
+
+            {/* Payment Details Modal */}
+            {selectedPayment && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm"
+                    onClick={() => setSelectedPayment(null)}>
+                    <div className="bg-white rounded-3xl shadow-xl w-full max-w-[320px] overflow-hidden border border-black/[0.08]" onClick={e => e.stopPropagation()}>
+                        <div className="p-5 border-b border-black/[0.04] bg-black/[0.01]">
+                            <div className="flex items-start justify-between">
+                                <div className="flex items-center gap-3">
+                                    <LenderBadge name={selectedPayment.obligation.name} />
+                                    <div>
+                                        <h3 className="text-[16px] font-bold text-black">{selectedPayment.obligation.name}</h3>
+                                        <p className="text-[12px] text-black/40">{selectedPayment.obligation.group_name || 'Obligation'}</p>
+                                    </div>
+                                </div>
+                                <button onClick={() => setSelectedPayment(null)} className="p-1.5 rounded-full hover:bg-black/5 text-black/40"><X className="w-4 h-4" /></button>
+                            </div>
+                            <div className="mt-4 pt-4 border-t border-black/[0.04] flex items-end justify-between">
+                                <div>
+                                    <p className="text-[10px] uppercase tracking-wider font-bold text-black/30 mb-0.5">Amount</p>
+                                    <div className="text-[24px] font-black text-red-500 leading-none">£{selectedPayment.obligation.amount.toFixed(2)}</div>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-[10px] uppercase tracking-wider font-bold text-black/30 mb-0.5">Occurrence</p>
+                                    <div className="text-[13px] font-bold text-black/70 flex items-center gap-1 justify-end"><CalendarIcon className="w-3 h-3" /> {selectedPayment.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-5 bg-white space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p className="text-[10px] uppercase tracking-wider font-bold text-black/30 mb-1">Frequency</p>
+                                    <div className="text-[13px] font-bold text-black/70 capitalize">{selectedPayment.obligation.frequency.replace('-', ' ')}</div>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] uppercase tracking-wider font-bold text-black/30 mb-1">Category</p>
+                                    <div className="text-[13px] font-bold text-black/70 capitalize">{selectedPayment.obligation.category}</div>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] uppercase tracking-wider font-bold text-black/30 mb-1">Remaining</p>
+                                    <div className="text-[13px] font-bold text-black/70">
+                                        {countRemainingPayments(selectedPayment.obligation.next_due_date, selectedPayment.obligation.end_date, selectedPayment.obligation.frequency, new Date(), selectedPayment.obligation.payments_left) > 0
+                                            ? `${countRemainingPayments(selectedPayment.obligation.next_due_date, selectedPayment.obligation.end_date, selectedPayment.obligation.frequency, new Date(), selectedPayment.obligation.payments_left)} payments`
+                                            : 'Ongoing'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] uppercase tracking-wider font-bold text-black/30 mb-1">End Date</p>
+                                    <div className="text-[13px] font-bold text-black/70">{selectedPayment.obligation.end_date ? new Date(selectedPayment.obligation.end_date).toLocaleDateString('en-GB') : '—'}</div>
+                                </div>
+                            </div>
+                            {selectedPayment.obligation.description && (
+                                <div className="pt-4 border-t border-black/[0.04]">
+                                    <p className="text-[10px] uppercase tracking-wider font-bold text-black/30 mb-1">Notes</p>
+                                    <p className="text-[12px] text-black/60">{selectedPayment.obligation.description}</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

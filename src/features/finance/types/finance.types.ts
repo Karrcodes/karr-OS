@@ -51,6 +51,7 @@ export interface Goal {
     target_amount: number
     current_amount: number
     deadline: string | null
+    is_recurring?: boolean
     profile: 'personal' | 'business'
     created_at: string
 }

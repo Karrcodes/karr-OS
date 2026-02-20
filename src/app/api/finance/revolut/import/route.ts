@@ -87,8 +87,8 @@ export async function POST(req: NextRequest) {
 
             const description = row[colMap.description] || 'Revolut Transaction'
             const date = row[colMap.date] || new Date().toISOString()
-            const revolutType = (colMap.type >= 0 ? row[colMap.type] : '').toUpperCase()
-            const providerTxId = `rev_${Buffer.from(`${date}${amount}${description}`).toString('base64').substring(0, 32)}`
+            const revolutType = (colMap.type >= 0 ? row[colMap.type] : '').toUpperCase().replace(/ /g, '_')
+            const providerTxId = `rev_${Buffer.from(`${profile}${date}${amount}${description}`).toString('base64').substring(0, 32)}`
 
             // ── Classify using Revolut's own Type column ──────────────────────
             // EXCHANGE = currency conversion (not real spend/income), skip entirely

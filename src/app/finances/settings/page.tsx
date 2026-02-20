@@ -229,6 +229,9 @@ function RecurringObligationsSettings() {
         emoji: '💸',
         payments_left: null
     })
+
+    // Explicitly track the picked lender ID so custom typing doesn't destroy the input
+    const [selectedLenderId, setSelectedLenderId] = useState<string | null>(null)
     const [saving, setSaving] = useState(false)
 
     const calculateEndDate = (startDate: string, frequency: string, paymentsLeft: number) => {
@@ -301,7 +304,7 @@ function RecurringObligationsSettings() {
     }
 
     return (
-        <Section title="Recurring Obligations" desc="Track active subscriptions, rent, and debt schedules">
+        <Section title="Recurring Obligations" desc="Track active subscriptions and debt schedules">
             {loading ? <Spinner /> : (
                 <div className="space-y-4">
                     {obligations.length > 0 && (
@@ -354,9 +357,10 @@ function RecurringObligationsSettings() {
                                         {LENDERS.map(l => (
                                             <button key={l.id}
                                                 onClick={() => {
-                                                    setForm({ ...form, name: l.name, emoji: l.emoji, category: l.id === 'other' ? 'other' : 'bills' });
+                                                    setSelectedLenderId(l.id)
+                                                    setForm({ ...form, name: l.id === 'other' ? '' : l.name, emoji: l.emoji, category: l.id === 'other' ? 'other' : 'bills' });
                                                 }}
-                                                className={`flex items-center gap-2 p-3 rounded-xl border transition-all ${form.name === l.name ? 'bg-white border-[#7c3aed] shadow-sm' : 'bg-black/[0.02] border-black/[0.05] hover:bg-black/[0.04]'}`}>
+                                                className={`flex items-center gap-2 p-3 rounded-xl border transition-all ${selectedLenderId === l.id ? 'bg-white border-[#7c3aed] shadow-sm' : 'bg-black/[0.02] border-black/[0.05] hover:bg-black/[0.04]'}`}>
                                                 {getLenderLogo(l.name) ? (
                                                     <div className="w-7 h-7 rounded-lg bg-white border border-black/[0.07] flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
                                                         <img src={getLenderLogo(l.name)!} alt={l.name} className="w-full h-full object-contain p-0.5" />
@@ -368,8 +372,8 @@ function RecurringObligationsSettings() {
                                             </button>
                                         ))}
                                     </div>
-                                    {form.name === 'Other / Subscription' && (
-                                        <input className="input-field w-full mt-2" placeholder="Custom lender or service name..." value={form.name === 'Other / Subscription' ? '' : (form.name ?? '')} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                                    {selectedLenderId === 'other' && (
+                                        <input className="input-field w-full mt-2" placeholder="Custom lender or service name..." value={form.name ?? ''} onChange={(e) => setForm({ ...form, name: e.target.value })} />
                                     )}
                                 </div>
                                 <div>
@@ -394,13 +398,13 @@ function RecurringObligationsSettings() {
                                     <input className="input-field w-full" type="date" value={form.next_due_date ?? ''} onChange={(e) => setForm({ ...form, next_due_date: e.target.value })} />
                                 </div>
 
-                                {(form.name === 'Klarna' || form.name === 'Clearpay') ? (
+                                {(selectedLenderId === 'klarna' || selectedLenderId === 'clearpay') ? (
                                     <div>
                                         <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">Payments Left</label>
                                         <input className="input-field w-full" type="number" placeholder="e.g. 3" value={form.payments_left ?? ''} onChange={(e) => setForm({ ...form, payments_left: parseInt(e.target.value) })} />
                                     </div>
                                 ) : (
-                                    <div className={form.name === 'Currys Flexipay' ? '' : 'opacity-40 grayscale pointer-events-none'}>
+                                    <div className={selectedLenderId === 'currys' ? '' : 'opacity-40 grayscale pointer-events-none'}>
                                         <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">End Date (optional)</label>
                                         <input className="input-field w-full" type="date" value={form.end_date ?? ''} onChange={(e) => setForm({ ...form, end_date: e.target.value })} />
                                     </div>
@@ -416,12 +420,12 @@ function RecurringObligationsSettings() {
                                 <button onClick={() => handleSave(!!editId)} disabled={saving} className="btn-primary flex-1 h-11">
                                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : editId ? 'Update Obligation' : 'Add Obligation'}
                                 </button>
-                                <button onClick={() => { setAdding(false); setEditId(null); setForm({ frequency: 'monthly', amount: 0, category: 'other', emoji: '💸', payments_left: null }); }} className="btn-secondary px-6 h-11">Cancel</button>
+                                <button onClick={() => { setAdding(false); setEditId(null); setSelectedLenderId(null); setForm({ frequency: 'monthly', amount: 0, category: 'other', emoji: '💸', payments_left: null }); }} className="btn-secondary px-6 h-11">Cancel</button>
                             </div>
                         </div>
                     ) : (
-                        <button onClick={() => setAdding(true)} className="flex items-center gap-2 text-[12px] text-black/50 hover:text-black/80 font-medium transition-colors border border-dashed border-black/10 hover:border-black/30 w-full p-4 rounded-xl justify-center bg-black/[0.01] hover:bg-black/[0.03]">
-                            <Plus className="w-4 h-4" /> Add new subscription, rent, or debt
+                        <button onClick={() => { setAdding(true); setSelectedLenderId('other'); }} className="flex items-center gap-2 text-[12px] text-black/50 hover:text-black/80 font-medium transition-colors border border-dashed border-black/10 hover:border-black/30 w-full p-4 rounded-xl justify-center bg-black/[0.01] hover:bg-black/[0.03]">
+                            <Plus className="w-4 h-4" /> Add new subscription or debt
                         </button>
                     )}
                 </div>
@@ -435,7 +439,7 @@ function GoalsSettings() {
     const { goals, loading, createGoal, updateGoal, deleteGoal } = useGoals()
     const [adding, setAdding] = useState(false)
     const [editId, setEditId] = useState<string | null>(null)
-    const [form, setForm] = useState<Partial<Goal>>({ current_amount: 0 })
+    const [form, setForm] = useState<Partial<Goal>>({ current_amount: 0, is_recurring: false })
     const [saving, setSaving] = useState(false)
 
     const handleAdd = async () => {
@@ -446,22 +450,23 @@ function GoalsSettings() {
             target_amount: form.target_amount!,
             current_amount: form.current_amount ?? 0,
             deadline: form.deadline ?? null,
+            is_recurring: form.is_recurring ?? false,
         })
-        setForm({ current_amount: 0 })
+        setForm({ current_amount: 0, is_recurring: false })
         setAdding(false)
         setSaving(false)
     }
 
     const handleUpdate = async (id: string) => {
         setSaving(true)
-        await updateGoal(id, { name: form.name, target_amount: form.target_amount, current_amount: form.current_amount, deadline: form.deadline })
+        await updateGoal(id, { name: form.name, target_amount: form.target_amount, current_amount: form.current_amount, deadline: form.deadline, is_recurring: form.is_recurring })
         setEditId(null)
         setSaving(false)
     }
 
     const startEdit = (g: Goal) => {
         setEditId(g.id)
-        setForm({ name: g.name, target_amount: g.target_amount, current_amount: g.current_amount, deadline: g.deadline })
+        setForm({ name: g.name, target_amount: g.target_amount, current_amount: g.current_amount, deadline: g.deadline, is_recurring: g.is_recurring })
     }
 
     return (
@@ -476,6 +481,10 @@ function GoalsSettings() {
                                     <input className="input-field w-28" type="number" placeholder="Total target £" value={form.target_amount ?? 0} onChange={(e) => setForm({ ...form, target_amount: parseFloat(e.target.value) })} />
                                     <input className="input-field w-28" type="number" placeholder="Already saved £" value={form.current_amount ?? 0} onChange={(e) => setForm({ ...form, current_amount: parseFloat(e.target.value) })} />
                                     <input className="input-field w-32" type="date" value={form.deadline ?? ''} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
+                                    <label className="flex items-center gap-2 cursor-pointer flex-shrink-0 bg-black/[0.03] p-1.5 rounded-lg border border-black/[0.05]">
+                                        <input type="checkbox" checked={form.is_recurring || false} onChange={e => setForm({ ...form, is_recurring: e.target.checked })} className="accent-[#7c3aed] w-3 h-3 cursor-pointer" />
+                                        <span className="text-[10px] font-bold text-black/60 uppercase tracking-widest">Recurring</span>
+                                    </label>
                                     <button onClick={() => handleUpdate(g.id)} disabled={saving} className="icon-btn text-emerald-600"><Check className="w-4 h-4" /></button>
                                     <button onClick={() => setEditId(null)} className="icon-btn text-black/30"><X className="w-4 h-4" /></button>
                                 </>
@@ -484,6 +493,7 @@ function GoalsSettings() {
                                 <>
                                     <span className="flex-1 text-[13px] text-black/80 font-medium">{g.name}</span>
                                     <span className="text-[12px] text-black/50">£{g.current_amount.toFixed(2)} / £{g.target_amount.toFixed(2)}</span>
+                                    {g.is_recurring && <span className="text-[9px] font-bold bg-[#7c3aed]/10 text-[#7c3aed] px-1.5 py-0.5 rounded tracking-widest uppercase">Recurring</span>}
                                     {g.deadline && <span className="text-[11px] text-black/35">{g.deadline}</span>}
                                     <button onClick={() => startEdit(g)} className="icon-btn text-black/25 hover:text-black/60"><Pencil className="w-3.5 h-3.5" /></button>
                                     <button onClick={() => deleteGoal(g.id)} className="icon-btn text-black/20 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
@@ -498,9 +508,17 @@ function GoalsSettings() {
                             <input className="input-field" type="number" placeholder="Total target amount £" value={form.target_amount ?? ''} onChange={(e) => setForm({ ...form, target_amount: parseFloat(e.target.value) })} />
                             <input className="input-field" type="number" placeholder="Amount already saved £" value={form.current_amount ?? ''} onChange={(e) => setForm({ ...form, current_amount: parseFloat(e.target.value) })} />
                             <input className="input-field col-span-2" type="date" value={form.deadline ?? ''} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
-                            <div className="col-span-2 flex gap-2">
+
+                            <div className="col-span-2 flex items-center mt-1">
+                                <label className="flex items-center gap-2 cursor-pointer bg-white border border-black/[0.08] p-2.5 rounded-lg hover:border-black/[0.15] transition-colors w-full">
+                                    <input type="checkbox" checked={form.is_recurring || false} onChange={e => setForm({ ...form, is_recurring: e.target.checked })} className="w-4 h-4 accent-[#7c3aed] cursor-pointer" />
+                                    <span className="text-[12px] font-semibold text-black/70">This is a recurring target (e.g. Rent, Bills)</span>
+                                </label>
+                            </div>
+
+                            <div className="col-span-2 flex gap-2 pt-2">
                                 <button onClick={handleAdd} disabled={saving} className="btn-primary flex-1">{saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Add Goal'}</button>
-                                <button onClick={() => setAdding(false)} className="btn-secondary flex-1">Cancel</button>
+                                <button onClick={() => { setAdding(false); setForm({ current_amount: 0, is_recurring: false }) }} className="btn-secondary flex-1">Cancel</button>
                             </div>
                         </div>
                     ) : (
