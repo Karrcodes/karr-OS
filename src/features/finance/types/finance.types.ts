@@ -33,14 +33,14 @@ export interface Income {
 export interface Transaction {
     id: string
     amount: number
-    type: 'spend' | 'allocate' | 'transfer'
+    type: 'spend' | 'income' | 'allocate' | 'transfer'
     description: string
     date: string
     pocket_id: string | null
     category: string | null
     emoji: string | null
     profile: 'personal' | 'business'
-    provider?: 'manual' | 'gocardless' | 'enable_banking'
+    provider?: 'manual' | 'gocardless' | 'enable_banking' | 'revolut_csv'
     provider_tx_id?: string | null
     created_at: string
 }

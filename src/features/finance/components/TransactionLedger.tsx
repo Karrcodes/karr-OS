@@ -26,7 +26,7 @@ export function TransactionLedger() {
         )
     }
 
-    const recentTransactions = transactions.slice(0, 10)
+    const recentTransactions = transactions.slice(0, 5)
 
     if (recentTransactions.length === 0) {
         return (
@@ -56,7 +56,10 @@ export function TransactionLedger() {
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
-                <h3 className="text-[11px] uppercase tracking-wider font-bold text-black/30">Recent Ledger</h3>
+                <div className="flex items-baseline gap-2">
+                    <h3 className="text-[11px] uppercase tracking-wider font-bold text-black/30">Recent Ledger</h3>
+                    <a href="/finances/transactions" className="text-[10px] font-bold text-[#7c3aed] hover:underline">See All</a>
+                </div>
                 <button
                     onClick={() => setIsModalOpen(true)}
                     disabled={syncLoading}

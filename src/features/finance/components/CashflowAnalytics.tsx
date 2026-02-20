@@ -6,36 +6,33 @@ import { useIncome } from '../hooks/useIncome'
 import { useTransactions } from '../hooks/useTransactions'
 
 export function CashflowAnalytics() {
-    const { income, loading: iLoading } = useIncome()
     const { transactions, loading: tLoading } = useTransactions()
     const [view, setView] = useState<'30d' | 'all-time'>('30d')
 
     const { totalIncome, totalSpent, spentPercentage } = useMemo(() => {
-        // Simple metric: last 30 days
         const thirtyDaysAgo = new Date()
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-        const recentIncome = income.filter(i => new Date(i.date) >= thirtyDaysAgo)
+        const recentInflow = transactions.filter(t => t.type === 'income' && new Date(t.date) >= thirtyDaysAgo)
         const recentSpend = transactions.filter(t => t.type === 'spend' && new Date(t.date) >= thirtyDaysAgo)
 
-        const totalIncome = recentIncome.reduce((s, i) => s + i.amount, 0)
+        const totalIncome = recentInflow.reduce((s, i) => s + i.amount, 0)
         const totalSpent = recentSpend.reduce((s, t) => s + t.amount, 0)
 
         const spentPercentage = totalIncome > 0 ? Math.min((totalSpent / totalIncome) * 100, 100) : 0
 
         return { totalIncome, totalSpent, spentPercentage }
-    }, [income, transactions])
+    }, [transactions])
 
     const { allTimeEarned, monthlyData, maxMonthly } = useMemo(() => {
         let total = 0
         const groups: { [monthStr: string]: { amount: number, sortKey: string } } = {}
 
-        income.forEach(i => {
+        transactions.filter(t => t.type === 'income').forEach(i => {
             total += i.amount
             const date = new Date(i.date)
-            // e.g. "Feb 2026"
             const monthStr = date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
-            const sortKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}` // YYYY-MM
+            const sortKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
 
             if (!groups[monthStr]) groups[monthStr] = { amount: 0, sortKey }
             groups[monthStr].amount += i.amount
@@ -48,9 +45,9 @@ export function CashflowAnalytics() {
         const max = Math.max(...sorted.map(d => d.amount), 1)
 
         return { allTimeEarned: total, monthlyData: sorted, maxMonthly: max }
-    }, [income])
+    }, [transactions])
 
-    const loading = iLoading || tLoading
+    const loading = tLoading
 
     if (loading) {
         return (
@@ -66,10 +63,10 @@ export function CashflowAnalytics() {
                 <div>
                     <h2 className="text-[15px] font-bold text-black flex items-center gap-2">
                         {view === '30d' ? <Activity className="w-4 h-4 text-[#7c3aed]" /> : <BarChart2 className="w-4 h-4 text-[#059669]" />}
-                        {view === '30d' ? '30-Day Cashflow' : 'All-Time Earned'}
+                        {view === '30d' ? 'Cashflow' : 'Historical Income'}
                     </h2>
                     <p className="text-[12px] text-black/35 mt-0.5">
-                        {view === '30d' ? 'Income vs. Expenses' : 'Historical Income Analysis'}
+                        {view === '30d' ? 'Sync-based Inflow vs. Expenses' : 'Historical Income Analysis'}
                     </p>
                 </div>
                 <div className="text-right flex flex-col items-end gap-2">
