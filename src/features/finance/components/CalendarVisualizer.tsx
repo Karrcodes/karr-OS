@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { Calendar as CalendarIcon, CreditCard, ChevronLeft, ChevronRight, List, LayoutGrid, Tag } from 'lucide-react'
 import type { RecurringObligation } from '../types/finance.types'
+import { getLenderLogo } from '../utils/lenderLogos'
 
 interface ProjectedPayment {
     id: string
@@ -13,13 +14,6 @@ interface ProjectedPayment {
     category: string | null
 }
 
-function getLenderLogo(name: string): string | null {
-    const lower = name.toLowerCase()
-    if (lower.includes('klarna')) return '/klarna.png'
-    if (lower.includes('clearpay')) return '/clearpay.png'
-    if (lower.includes('currys')) return '/currys.png'
-    return null
-}
 
 function LenderBadge({ name }: { name: string }) {
     const logoSrc = getLenderLogo(name)

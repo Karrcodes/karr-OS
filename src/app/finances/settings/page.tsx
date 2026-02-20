@@ -9,6 +9,7 @@ import { useSettings } from '@/features/finance/hooks/useSettings'
 import type { Pocket, Goal, RecurringObligation } from '@/features/finance/types/finance.types'
 import { useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
 import { FINANCE_CATEGORIES } from '@/features/finance/constants/categories'
+import { getLenderLogo } from '@/features/finance/utils/lenderLogos'
 
 export default function SettingsPage() {
     const { activeProfile, setProfile } = useFinanceProfile()
@@ -307,10 +308,19 @@ function RecurringObligationsSettings() {
                         <div className="space-y-2">
                             {obligations.map((o) => (
                                 <div key={o.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-3 rounded-xl border border-black/[0.07] bg-white p-3">
-                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
-                                        style={{ backgroundColor: LENDERS.find(l => l.name === o.name)?.color + '20' || '#00000008' }}>
-                                        {o.emoji || '💸'}
-                                    </div>
+                                    {(() => {
+                                        const logo = getLenderLogo(o.name)
+                                        return logo ? (
+                                            <div className="w-10 h-10 rounded-xl bg-white border border-black/[0.07] flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
+                                                <img src={logo} alt={o.name} className="w-full h-full object-contain p-1" />
+                                            </div>
+                                        ) : (
+                                            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+                                                style={{ backgroundColor: LENDERS.find(l => l.name === o.name)?.color + '20' || '#00000008' }}>
+                                                {o.emoji || '💸'}
+                                            </div>
+                                        )
+                                    })()}
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2">
                                             <span className="text-[13px] text-black/80 font-bold truncate">{o.name}</span>
