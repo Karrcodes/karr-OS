@@ -22,7 +22,7 @@ export function useRecurring() {
         if (error) setError(error.message)
         else setObligations(data ?? [])
         setLoading(false)
-    }, [])
+    }, [activeProfile])
 
     const createObligation = async (obligation: Omit<RecurringObligation, 'id' | 'created_at' | 'profile'>) => {
         const { error } = await supabase.from('fin_recurring').insert({ ...obligation, profile: activeProfile })

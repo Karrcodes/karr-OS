@@ -77,13 +77,24 @@ export function CommandCenter() {
     return (
         <div className="flex flex-col h-full bg-white">
             {/* Page Header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-black/[0.06] bg-white flex-shrink-0 shadow-sm z-10">
+            <div className="flex flex-col md:flex-row md:items-center justify-between px-6 py-5 border-b border-black/[0.06] bg-white flex-shrink-0 shadow-sm z-10 gap-4 md:gap-0">
                 <div>
                     <h1 className="text-[22px] font-bold text-black tracking-tight">Command Center</h1>
                     <p className="text-[12px] text-black/35 mt-0.5">Finance Module · {activeProfile === 'personal' ? 'Personal' : 'Studio Karrtesian'}</p>
                 </div>
-                <div className="flex items-center gap-4">
-                    <div className="flex bg-black/[0.04] p-1 rounded-xl border border-black/[0.06]">
+                <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
+                    <div className="flex items-center gap-2 order-1 md:order-2">
+                        {loading && (
+                            <div className="flex items-center gap-1.5 text-black/30">
+                                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                <span className="text-[11px]">Syncing</span>
+                            </div>
+                        )}
+                        <div className="text-[11px] text-black/25 uppercase tracking-wider font-medium">
+                            {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+                        </div>
+                    </div>
+                    <div className="flex bg-black/[0.04] p-1 rounded-xl border border-black/[0.06] w-fit order-2 md:order-1">
                         <button
                             onClick={() => setProfile('personal')}
                             className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeProfile === 'personal' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
@@ -96,17 +107,6 @@ export function CommandCenter() {
                         >
                             Business
                         </button>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        {loading && (
-                            <div className="flex items-center gap-1.5 text-black/30">
-                                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                                <span className="text-[11px]">Syncing</span>
-                            </div>
-                        )}
-                        <div className="text-[11px] text-black/25 uppercase tracking-wider font-medium">
-                            {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
-                        </div>
                     </div>
                 </div>
             </div>
