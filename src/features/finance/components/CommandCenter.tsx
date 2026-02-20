@@ -5,6 +5,7 @@ import { DollarSign, TrendingDown, Wallet, RefreshCw } from 'lucide-react'
 import { usePockets } from '../hooks/usePockets'
 import { useRecurring } from '../hooks/useRecurring'
 import { useGoals } from '../hooks/useGoals'
+import { useSettings } from '../hooks/useSettings'
 import { PocketsGrid } from './PocketsGrid'
 import { CalendarVisualizer } from './CalendarVisualizer'
 import { GoalsList } from './GoalsList'
@@ -61,7 +62,8 @@ export function CommandCenter() {
         return { totalLiquid, totalDebt, monthlyObligations }
     }, [pockets, obligations])
 
-    const loading = pLoading || oLoading || gLoading
+    const { settings, loading: sLoading, setSetting } = useSettings()
+    const loading = pLoading || oLoading || gLoading || sLoading
 
     // --- Drag and Drop State ---
     const defaultOrder = [
@@ -75,11 +77,11 @@ export function CommandCenter() {
 
     const [sectionOrder, setSectionOrder] = useState<string[]>(defaultOrder)
 
-    // Load saved order from localStorage on mount
+    // Load saved order from Supabase settings on mount
     const [mounted, setMounted] = useState(false)
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const saved = localStorage.getItem('karrOS_dashOrder')
+        if (!sLoading) {
+            const saved = settings['dashboard_layout_order']
             if (saved) {
                 try {
                     const parsed = JSON.parse(saved)
@@ -90,7 +92,7 @@ export function CommandCenter() {
             }
             setMounted(true)
         }
-    }, [])
+    }, [sLoading, settings, defaultOrder.length])
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -104,7 +106,10 @@ export function CommandCenter() {
                 const oldIndex = items.indexOf(active.id as string)
                 const newIndex = items.indexOf(over.id as string)
                 const newOrder = arrayMove(items, oldIndex, newIndex)
-                localStorage.setItem('karrOS_dashOrder', JSON.stringify(newOrder))
+
+                // Save globally to database instead of localStorage
+                setSetting('dashboard_layout_order', JSON.stringify(newOrder))
+
                 return newOrder
             })
         }
