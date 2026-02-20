@@ -12,17 +12,17 @@ function CallbackContent() {
 
     useEffect(() => {
         const finalize = async () => {
-            const session_id = searchParams.get('session_id')
+            const code = searchParams.get('code')
             const profile = searchParams.get('profile')
 
-            if (!session_id) {
+            if (!code) {
                 setStatus('error')
-                setMessage('Missing session identifier from bank.')
+                setMessage('Missing authorization code from bank.')
                 return
             }
 
             try {
-                const res = await fetch(`/api/finance/bank/callback?session_id=${session_id}&profile=${profile || 'personal'}`)
+                const res = await fetch(`/api/finance/bank/callback?code=${code}&profile=${profile || 'personal'}`)
                 const data = await res.json()
 
                 if (data.success) {

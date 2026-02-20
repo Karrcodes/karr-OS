@@ -5,15 +5,20 @@ import { ebRequest } from '@/lib/enable-banking'
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url)
-        const session_id = searchParams.get('session_id') // Enable Banking uses session_id
+        const code = searchParams.get('code')
         const profile = searchParams.get('profile') || 'personal'
 
-        if (!session_id) {
-            return NextResponse.json({ error: 'Missing session_id' }, { status: 400 })
+        if (!code) {
+            return NextResponse.json({ error: 'Missing authorization code' }, { status: 400 })
         }
 
-        // 1. Verify session status with Enable Banking
-        const session = await ebRequest(`/sessions/${session_id}`)
+        // 1. Exchange code for session_id
+        const session = await ebRequest('/sessions', {
+            method: 'POST',
+            body: JSON.stringify({ code })
+        })
+
+        const session_id = session.session_id
 
         // 2. Save connection to Supabase
         const { error } = await supabase.from('fin_bank_connections').insert({

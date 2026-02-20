@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
         // The URL Enable Banking will redirect back to
         const redirectUrl = `${new URL(req.url).origin}/finances/callback?profile=${profile}`
 
-        const session = await ebRequest('/sessions', {
+        const session = await ebRequest('/auth', {
             method: 'POST',
             body: JSON.stringify({
                 aspsp: institution_id,
