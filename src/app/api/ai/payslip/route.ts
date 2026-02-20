@@ -48,8 +48,8 @@ Example format:
             return NextResponse.json({ error: 'Failed to parse payslip data' }, { status: 500 })
         }
 
-    } catch (err) {
+    } catch (err: any) {
         console.error('[Payslip Parse Error]', err)
-        return NextResponse.json({ error: 'AI processing failed' }, { status: 500 })
+        return NextResponse.json({ error: err.message || 'AI processing failed' }, { status: 500 })
     }
 }

@@ -96,8 +96,8 @@ ${context}`
         const reply = result.response.text()
 
         return NextResponse.json({ reply })
-    } catch (err) {
+    } catch (err: any) {
         console.error('[Aikin API Error]', err)
-        return NextResponse.json({ error: 'AI service error' }, { status: 500 })
+        return NextResponse.json({ error: err.message || 'AI service error' }, { status: 500 })
     }
 }

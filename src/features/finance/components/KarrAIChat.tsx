@@ -41,17 +41,22 @@ export function KarrAIChat() {
             })
 
             const data = await res.json()
+
+            if (!res.ok) {
+                throw new Error(data.error || 'Something went wrong.')
+            }
+
             setMessages((prev) => [
                 ...prev,
                 {
                     role: 'assistant',
-                    content: data.reply ?? 'Something went wrong. Check your Gemini API key.',
+                    content: data.reply ?? 'Empty response from AI',
                 },
             ])
-        } catch {
+        } catch (err: any) {
             setMessages((prev) => [
                 ...prev,
-                { role: 'assistant', content: 'Network error. Please try again.' },
+                { role: 'assistant', content: `Error: ${err.message}` },
             ])
         } finally {
             setLoading(false)
