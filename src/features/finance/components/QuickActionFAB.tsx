@@ -3,12 +3,14 @@
 import { useState } from 'react'
 import { Plus, X, ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import type { Pocket } from '../types/finance.types'
+import type { Pocket, Goal, RecurringObligation } from '../types/finance.types'
 import { FINANCE_CATEGORIES, getCategoryById } from '../constants/categories'
 import { useFinanceProfile } from '../contexts/FinanceProfileContext'
 
 interface QuickActionFABProps {
     pockets: Pocket[]
+    goals?: Goal[]
+    obligations?: RecurringObligation[]
     onSuccess: () => void
 }
 

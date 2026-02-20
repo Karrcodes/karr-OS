@@ -10,7 +10,7 @@ interface Message {
 }
 
 interface KarrAIChatProps {
-    context?: string;
+    context?: any;
     onAction?: () => void;
 }
 

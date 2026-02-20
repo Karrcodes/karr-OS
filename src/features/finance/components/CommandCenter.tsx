@@ -146,15 +146,7 @@ export function CommandCenter() {
 
                     {/* Main Layout Stack */}
                     <div className="space-y-6 pb-12">
-                        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
-                            <div className="xl:col-span-1">
-                                <CashflowAnalytics />
-                            </div>
-                            <div className="xl:col-span-2">
-                                <PaydayAllocation pockets={pockets} goals={goals} onSuccess={() => { refetchPockets(); refetchGoals(); refetchTransactions(); }} />
-                            </div>
-                        </div>
-
+                        {/* Top Row: Pockets & Liabilities */}
                         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
                             <div className="xl:col-span-2">
                                 <SectionBlock title="Pockets" desc="Your current allocations">
@@ -162,31 +154,61 @@ export function CommandCenter() {
                                 </SectionBlock>
                             </div>
                             <div className="xl:col-span-1">
-                                <SectionBlock title="Recent Ledger" desc="Latest transactions">
-                                    <TransactionLedger />
+                                <SectionBlock title="Liabilities" desc="30-Day projections for subs & debt">
+                                    <CalendarVisualizer obligations={obligations} />
                                 </SectionBlock>
                             </div>
                         </div>
 
-                        <SectionBlock title="Savings Goals" desc="Long-term targets">
-                            <GoalsList goals={goals} onRefresh={refetchGoals} />
-                        </SectionBlock>
-
-                        <SectionBlock title="Recurring Obligations" desc="30-Day projections for subs & debt">
-                            <CalendarVisualizer obligations={obligations} />
-                        </SectionBlock>
-
-                        <div className="rounded-2xl border border-black/[0.08] bg-white p-5 shadow-sm">
-                            <KarrAIChat
-                                context={`Live Balances:\n${pockets.map(p => `- ${p.name}: £${p.balance.toFixed(2)}`).join('\n')}`}
-                                onAction={() => { refetchPockets(); refetchGoals(); refetchTransactions(); }}
-                            />
+                        {/* Middle Row: Cashflow, Payday (Log Income), Savings */}
+                        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
+                            <div className="xl:col-span-1">
+                                <CashflowAnalytics />
+                            </div>
+                            <div className="xl:col-span-1">
+                                <PaydayAllocation pockets={pockets} goals={goals} onSuccess={() => { refetchPockets(); refetchGoals(); refetchTransactions(); }} />
+                            </div>
+                            <div className="xl:col-span-1">
+                                <SectionBlock title="Savings Goals" desc="Long-term targets">
+                                    <GoalsList goals={goals} onRefresh={refetchGoals} />
+                                </SectionBlock>
+                            </div>
                         </div>
+
+                        {/* Bottom Row: Recent Ledger & AI Chat */}
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+                            <div className="xl:col-span-1 h-full min-h-[500px]">
+                                <SectionBlock title="Recent Ledger" desc="Latest transactions">
+                                    <TransactionLedger />
+                                </SectionBlock>
+                            </div>
+                            <div className="xl:col-span-1 h-full min-h-[500px]">
+                                <div className="rounded-2xl border border-black/[0.08] bg-white p-5 shadow-sm h-full flex flex-col">
+                                    <h2 className="text-[17px] font-bold text-black mb-1">Financial Co-pilot</h2>
+                                    <p className="text-[12px] text-black/40 mb-4">Ask Gemini about patterns, advice, or status</p>
+                                    <div className="flex-1 overflow-hidden min-h-[400px]">
+                                        <KarrAIChat
+                                            context={{
+                                                pockets: pockets.map(p => ({ n: p.name, b: p.balance, t: p.target_budget })),
+                                                goals: goals.map(g => ({ n: g.name, c: g.current_amount, t: g.target_amount })),
+                                                obligations: obligations.map(o => ({ n: o.name, a: o.amount, f: o.frequency, d: o.next_due_date }))
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Floating Action Button */}
+                        <QuickActionFAB
+                            pockets={pockets}
+                            obligations={obligations}
+                            goals={goals}
+                            onSuccess={() => { refetchPockets(); refetchGoals(); refetchTransactions(); }}
+                        />
                     </div>
                 </div>
             </div>
-
-            <QuickActionFAB pockets={pockets} onSuccess={() => { refetchPockets(); refetchTransactions(); }} />
         </div>
     )
 }
