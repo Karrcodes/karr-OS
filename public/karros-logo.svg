@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 140" width="520" height="140">
+  <!-- "Karr" in heavy weight -->
+  <text
+    x="16"
+    y="108"
+    font-family="'Arial Black', 'Helvetica Neue', Arial, sans-serif"
+    font-weight="900"
+    font-size="100"
+    letter-spacing="-4"
+    fill="#0a0a0a"
+  >Karr</text>
+  <!-- "OS" in thin geometric weight — O as circle stroke, S thin -->
+  <text
+    x="290"
+    y="108"
+    font-family="'Helvetica Neue', Arial, sans-serif"
+    font-weight="200"
+    font-size="108"
+    letter-spacing="-2"
+    fill="none"
+    stroke="#0a0a0a"
+    stroke-width="4"
+    paint-order="stroke"
+  >OS</text>
+</svg>
