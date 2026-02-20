@@ -23,7 +23,7 @@ export async function getEBToken() {
 
         const jwt = await new jose.SignJWT({
             iss: appId,
-            aud: ENABLE_BANKING_BASE_URL,
+            aud: 'api.enablebanking.com',
         })
             .setProtectedHeader({ alg: 'RS256', typ: 'JWT', kid: appId })
             .setIssuedAt()
