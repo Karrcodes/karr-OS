@@ -29,9 +29,59 @@ export function ProjectionsAnalytics() {
     const year = currentDate.getFullYear()
     const monthIndex = currentDate.getMonth()
 
-    const { days, paydaysThisMonth, shiftsThisMonth, otThisMonth, absencesThisMonth, holidaysThisMonth, projectedNet } = useMemo(() => {
+    const { days, paydaysThisMonth, shiftsThisMonth, otThisMonth, absencesThisMonth, holidaysThisMonth, projectedNet, weeklyPayMap } = useMemo(() => {
         const daysInMonth = getDaysInMonth(year, monthIndex)
         const firstDayIdx = getFirstDayOfMonth(year, monthIndex)
+
+        // For arrears logic, we need to calculate earnings for some days BEFORE the current month 
+        // to determine the pay for the first Friday(s) of this month.
+        // Let's calculate for a range of -14 to +31 days from start of month.
+        const monthStart = new Date(year, monthIndex, 1)
+        const calculationStart = new Date(monthStart)
+        calculationStart.setDate(calculationStart.getDate() - 14) // 2 weeks padding
+
+        const calculationEnd = new Date(year, monthIndex, daysInMonth + 7) // 1 week padding
+
+        const weeklyPayMap: Record<string, number> = {}
+        const dailyEarnings: Record<string, number> = {}
+
+        // 1. Calculate daily earnings for the relevant range
+        let curr = new Date(calculationStart)
+        while (curr <= calculationEnd) {
+            const dateUTC = Date.UTC(curr.getFullYear(), curr.getMonth(), curr.getDate())
+            const diffDays = Math.round((dateUTC - ROTA_ANCHOR_UTC) / 86400000)
+            const cycleDay = ((diffDays % 6) + 6) % 6
+            const isShift = cycleDay < 3
+
+            const dateStr = curr.toISOString().split('T')[0]
+            const override = dayOverrides[dateStr]
+
+            let isWorked = isShift && override !== 'absence'
+            let isOT = override === 'overtime'
+            let isHol = isShift && override === 'holiday'
+
+            let gross = 0
+            if (isWorked || isHol) gross += HOURS_PER_SHIFT * BASE_RATE
+            if (isOT) gross += HOURS_PER_SHIFT * OT_RATE
+
+            dailyEarnings[dateStr] = gross * (1 - DEDUCTION_RATE)
+
+            // 2. Determine which Payday (Friday) this day belongs to
+            // Accounting week: Sun -> Sat. Payday: Following Fri.
+            const dayOfWeek = curr.getDay() // 0=Sun, 6=Sat
+            const daysUntilSaturday = 6 - dayOfWeek
+
+            const accountingSat = new Date(curr)
+            accountingSat.setDate(curr.getDate() + daysUntilSaturday)
+
+            const paydayFri = new Date(accountingSat)
+            paydayFri.setDate(accountingSat.getDate() + 6) // Sat + 6 days = Next Fri
+
+            const paydayStr = paydayFri.toISOString().split('T')[0]
+            weeklyPayMap[paydayStr] = (weeklyPayMap[paydayStr] || 0) + dailyEarnings[dateStr]
+
+            curr.setDate(curr.getDate() + 1)
+        }
 
         const daysArr = []
         let paydaysCount = 0
@@ -39,6 +89,7 @@ export function ProjectionsAnalytics() {
         let otCount = 0
         let absencesCount = 0
         let holidaysCount = 0
+        let totalMonthNet = 0
 
         // Padding previous month
         for (let i = 0; i < firstDayIdx; i++) {
@@ -49,26 +100,24 @@ export function ProjectionsAnalytics() {
         for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(year, monthIndex, day)
             date.setHours(0, 0, 0, 0)
+            const dateStr = date.toISOString().split('T')[0]
 
-            // Shift Logic: 3-on-3-off relative to Rota Anchor (Strict UTC to prevent timezone drifting)
             const dateUTC = Date.UTC(year, monthIndex, day)
             const diffDays = Math.round((dateUTC - ROTA_ANCHOR_UTC) / 86400000)
-            const cycleDay = ((diffDays % 6) + 6) % 6 // Handles negative diffs correctly
+            const cycleDay = ((diffDays % 6) + 6) % 6
             const isShift = cycleDay < 3
 
-            // Payday Logic: Every Friday
-            const isPayday = date.getDay() === 5 // 0=Sunday, 5=Friday
-
-            // Overtime & Overrides Logic
-            const dateStr = date.toISOString().split('T')[0]
+            const isPayday = date.getDay() === 5
             const override = dayOverrides[dateStr]
 
             if (override === 'overtime') { otCount++; }
             if (override === 'absence' && isShift) { absencesCount++; }
             if (override === 'holiday' && isShift) { holidaysCount++; }
-
             if (isShift) shiftsCount++
-            if (isPayday) paydaysCount++
+            if (isPayday) {
+                paydaysCount++
+                totalMonthNet += weeklyPayMap[dateStr] || 0
+            }
 
             daysArr.push({
                 day,
@@ -81,12 +130,6 @@ export function ProjectionsAnalytics() {
             })
         }
 
-        const effectiveShifts = shiftsCount - absencesCount
-        const baseGross = effectiveShifts * HOURS_PER_SHIFT * BASE_RATE
-        const otGross = otCount * HOURS_PER_SHIFT * OT_RATE
-        const totalGross = baseGross + otGross
-        const projectedNet = totalGross * (1 - DEDUCTION_RATE)
-
         return {
             days: daysArr,
             paydaysThisMonth: paydaysCount,
@@ -94,7 +137,8 @@ export function ProjectionsAnalytics() {
             otThisMonth: otCount,
             absencesThisMonth: absencesCount,
             holidaysThisMonth: holidaysCount,
-            projectedNet
+            projectedNet: totalMonthNet,
+            weeklyPayMap
         }
     }, [year, monthIndex, dayOverrides])
 
@@ -270,7 +314,7 @@ export function ProjectionsAnalytics() {
                                         {isPayday && (
                                             <div className={`flex items-center gap-0.5 font-bold text-[10px] sm:text-[11px] opacity-90 ${isShift && !override ? 'text-emerald-600' : 'text-emerald-700'}`}>
                                                 <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
-                                                <span>£{projectedNet.toFixed(0)}</span>
+                                                <span>£{(weeklyPayMap[dateStr] || 0).toFixed(0)}</span>
                                             </div>
                                         )}
                                     </div>
