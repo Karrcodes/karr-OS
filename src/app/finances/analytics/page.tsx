@@ -38,9 +38,9 @@ export default function FinanceAnalyticsPage() {
     }, [payslips])
 
     return (
-        <div className="min-h-screen bg-[#fafafa] flex flex-col">
+        <div className="h-screen bg-[#fafafa] flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="bg-white border-b border-black/[0.06] px-6 py-5 sticky top-0 z-20 backdrop-blur-sm shadow-sm">
+            <div className="bg-white border-b border-black/[0.06] px-6 py-5 z-20 shadow-sm flex-shrink-0">
                 <div className="max-w-5xl mx-auto space-y-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
@@ -78,8 +78,8 @@ export default function FinanceAnalyticsPage() {
                 </div>
             </div>
 
-            {/* Main Content */}
-            <div className="flex-1 p-6">
+            {/* Main Content — scrolls independently, header never moves */}
+            <div className="flex-1 overflow-y-auto p-6">
                 <div className="max-w-5xl mx-auto">
                     {loading ? (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
