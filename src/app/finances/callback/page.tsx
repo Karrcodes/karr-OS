@@ -46,7 +46,7 @@ function CallbackContent() {
             {status === 'loading' && (
                 <>
                     <Loader2 className="w-12 h-12 text-black dark:text-white animate-spin mx-auto" />
-                    <h1 className="text-xl font-bold text-black">Linking Account</h1>
+                    <h1 className="text-xl font-bold text-black dark:text-white">Linking Account</h1>
                     <p className="text-black/40">{message}</p>
                 </>
             )}
@@ -54,7 +54,7 @@ function CallbackContent() {
             {status === 'success' && (
                 <>
                     <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto" />
-                    <h1 className="text-xl font-bold text-black">Success!</h1>
+                    <h1 className="text-xl font-bold text-black dark:text-white">Success!</h1>
                     <p className="text-black/40">{message}</p>
                 </>
             )}
@@ -62,7 +62,7 @@ function CallbackContent() {
             {status === 'error' && (
                 <>
                     <XCircle className="w-12 h-12 text-red-500 mx-auto" />
-                    <h1 className="text-xl font-bold text-black">Connection Failed</h1>
+                    <h1 className="text-xl font-bold text-black dark:text-white">Connection Failed</h1>
                     <p className="text-black/40">{message}</p>
                     <button
                         onClick={() => router.push('/finances')}
@@ -78,7 +78,7 @@ function CallbackContent() {
 
 export default function BankCallback() {
     return (
-        <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center">
+        <div className="min-h-screen bg-white dark:bg-[#0a0a0a] flex flex-col items-center justify-center p-6 text-center">
             <Suspense fallback={<Loader2 className="w-12 h-12 text-black dark:text-white animate-spin mx-auto" />}>
                 <CallbackContent />
             </Suspense>

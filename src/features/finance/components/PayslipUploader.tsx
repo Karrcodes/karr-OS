@@ -94,9 +94,9 @@ export function PayslipUploader({ onSuccess }: PayslipUploaderProps) {
     }
 
     return (
-        <div className="bg-white rounded-3xl border border-black/[0.06] shadow-sm p-6 space-y-4">
+        <div className="bg-white dark:bg-[#0a0a0a] rounded-3xl border border-black/[0.06] dark:border-white/[0.06] shadow-sm p-6 space-y-4">
             <div className="flex items-center justify-between">
-                <h3 className="text-[14px] font-bold text-black">Upload Payslips</h3>
+                <h3 className="text-[14px] font-bold text-black dark:text-white">Upload Payslips</h3>
                 <span className="text-[10px] font-bold text-black/30 uppercase tracking-wider">AI Extraction</span>
             </div>
 
@@ -117,7 +117,7 @@ export function PayslipUploader({ onSuccess }: PayslipUploaderProps) {
                 className={`
                     relative flex flex-col items-center justify-center gap-3 p-8 rounded-2xl border-2 border-dashed 
                     cursor-pointer transition-all duration-200
-                    ${dragging ? 'border-black/60 dark:border-white/60 bg-black/5 dark:bg-white/5 scale-[1.01]' : 'border-black/10 hover:border-black/40 dark:border-white/40 hover:bg-black dark:bg-white/[0.02]'}
+                    ${dragging ? 'border-black/60 dark:border-white/60 bg-black/5 dark:bg-white dark:bg-[#0a0a0a]/5 scale-[1.01]' : 'border-black/10 hover:border-black/40 dark:border-white/40 hover:bg-black dark:bg-white dark:bg-[#0a0a0a]/[0.02]'}
                     ${uploading ? 'pointer-events-none opacity-70' : ''}
                 `}
             >
@@ -129,11 +129,11 @@ export function PayslipUploader({ onSuccess }: PayslipUploaderProps) {
                     </>
                 ) : (
                     <>
-                        <div className="w-12 h-12 rounded-2xl bg-black/10 dark:bg-white/10 flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-2xl bg-black/10 dark:bg-white dark:bg-[#0a0a0a]/10 flex items-center justify-center">
                             <UploadCloud className="w-6 h-6 text-black dark:text-white" />
                         </div>
                         <div className="text-center">
-                            <p className="text-[14px] font-bold text-black">Drop payslips here or click to upload</p>
+                            <p className="text-[14px] font-bold text-black dark:text-white">Drop payslips here or click to upload</p>
                             <p className="text-[12px] text-black/30 mt-1">Supports JPG, PNG, PDF · Multiple files for batch import</p>
                         </div>
                     </>
@@ -155,7 +155,7 @@ export function PayslipUploader({ onSuccess }: PayslipUploaderProps) {
                                 : <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
                             }
                             <div className="flex-1 min-w-0">
-                                <p className="text-[12px] font-bold text-black truncate">{r.file}</p>
+                                <p className="text-[12px] font-bold text-black dark:text-white truncate">{r.file}</p>
                                 <p className={`text-[11px] mt-0.5 ${r.status === 'ok' ? 'text-[#059669]/70' : 'text-red-500'}`}>{r.message}</p>
                             </div>
                         </div>

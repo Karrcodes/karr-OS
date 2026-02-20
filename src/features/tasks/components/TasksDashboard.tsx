@@ -19,7 +19,7 @@ function TaskList({ category, title, icon: Icon }: { category: 'todo' | 'grocery
     return (
         <div className="bg-white dark:bg-[#0a0a0a] rounded-xl border border-black/[0.08] dark:border-white/[0.08] p-5 shadow-sm flex flex-col h-full min-h-[400px]">
             <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-black/5 dark:bg-white dark:bg-[#0a0a0a]/5 border border-black/10 dark:border-white/10 flex items-center justify-center">
                     <Icon className="w-5 h-5 text-black dark:text-white" />
                 </div>
                 <div>
@@ -34,12 +34,12 @@ function TaskList({ category, title, icon: Icon }: { category: 'todo' | 'grocery
                     value={newTask}
                     onChange={(e) => setNewTask(e.target.value)}
                     placeholder={`Add new ${category === 'todo' ? 'task' : 'item'}...`}
-                    className="flex-1 bg-black/[0.03] dark:bg-white/[0.03] border border-black/[0.08] dark:border-white/[0.08] rounded-xl px-4 py-2.5 text-[13px] text-black dark:text-white placeholder-black/30 dark:placeholder-white/30 outline-none focus:border-black/40 dark:focus:border-white/40 transition-colors"
+                    className="flex-1 bg-black/[0.03] dark:bg-white dark:bg-[#0a0a0a]/[0.03] border border-black/[0.08] dark:border-white/[0.08] rounded-xl px-4 py-2.5 text-[13px] text-black dark:text-white placeholder-black/30 dark:placeholder-white/30 outline-none focus:border-black/40 dark:focus:border-white/40 transition-colors"
                 />
                 <button
                     type="submit"
                     disabled={!newTask.trim() || loading}
-                    className="w-11 h-11 rounded-xl bg-black dark:bg-white flex items-center justify-center text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors shrink-0 disabled:opacity-50"
+                    className="w-11 h-11 rounded-xl bg-black dark:bg-white dark:bg-[#0a0a0a] flex items-center justify-center text-white dark:text-black dark:text-white hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors shrink-0 disabled:opacity-50"
                 >
                     <Plus className="w-5 h-5" />
                 </button>
@@ -62,7 +62,7 @@ function TaskList({ category, title, icon: Icon }: { category: 'todo' | 'grocery
                             className={cn(
                                 "flex items-center gap-3 p-3 rounded-lg border transition-all group",
                                 task.is_completed
-                                    ? "bg-black/[0.02] dark:bg-white/[0.02] border-transparent"
+                                    ? "bg-black/[0.02] dark:bg-white dark:bg-[#0a0a0a]/[0.02] border-transparent"
                                     : "bg-white dark:bg-[#111] border-black/[0.06] dark:border-white/[0.06] hover:border-black/[0.15] dark:hover:border-white/[0.15]"
                             )}
                         >

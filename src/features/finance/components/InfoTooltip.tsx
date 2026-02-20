@@ -42,7 +42,7 @@ export function InfoTooltip({ content, side = 'top' }: InfoTooltipProps) {
             <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setVisible(v => !v) }}
-                className="w-4 h-4 rounded-full flex items-center justify-center text-black/25 hover:text-black dark:text-white hover:bg-black/10 dark:bg-white/10 transition-all"
+                className="w-4 h-4 rounded-full flex items-center justify-center text-black/25 hover:text-black dark:text-white hover:bg-black/10 dark:bg-white dark:bg-[#0a0a0a]/10 transition-all"
                 aria-label="More information"
             >
                 <Info className="w-3 h-3" />

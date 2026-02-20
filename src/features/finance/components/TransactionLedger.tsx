@@ -20,7 +20,7 @@ export function TransactionLedger() {
         return (
             <div className="space-y-3 animate-pulse">
                 {[1, 2, 3].map(i => (
-                    <div key={i} className="h-12 bg-black/[0.03] rounded-xl border border-black/[0.05]" />
+                    <div key={i} className="h-12 bg-black/[0.03] rounded-xl border border-black/[0.05] dark:border-white/[0.05]" />
                 ))}
             </div>
         )
@@ -69,7 +69,7 @@ export function TransactionLedger() {
                 <button
                     onClick={() => setIsModalOpen(true)}
                     disabled={bankSyncLoading}
-                    className="flex items-center gap-1.5 text-[11px] font-bold text-black dark:text-white bg-black/10 dark:bg-white/10 px-2 py-1 rounded-lg hover:bg-black/20 dark:bg-white/20 transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1.5 text-[11px] font-bold text-black dark:text-white bg-black/10 dark:bg-white dark:bg-[#0a0a0a]/10 px-2 py-1 rounded-lg hover:bg-black/20 dark:bg-white dark:bg-[#0a0a0a]/20 transition-colors disabled:opacity-50"
                 >
                     <RefreshCw className={`w-3 h-3 ${bankSyncLoading ? 'animate-spin' : ''}`} />
                     {bankSyncLoading ? 'Syncing...' : 'Sync Bank'}
@@ -83,20 +83,20 @@ export function TransactionLedger() {
 
             <div className="space-y-2">
                 {recentTransactions.map((t) => (
-                    <div key={t.id} className="flex items-center gap-3 p-3 rounded-xl border border-black/[0.04] bg-white hover:bg-black/[0.01] transition-colors group">
-                        <div className="w-10 h-10 rounded-xl bg-black/[0.03] border border-black/[0.05] flex items-center justify-center text-lg flex-shrink-0 group-hover:scale-105 transition-transform">
+                    <div key={t.id} className="flex items-center gap-3 p-3 rounded-xl border border-black/[0.04] bg-white dark:bg-[#0a0a0a] hover:bg-black/[0.01] dark:bg-white/[0.01] transition-colors group">
+                        <div className="w-10 h-10 rounded-xl bg-black/[0.03] border border-black/[0.05] dark:border-white/[0.05] flex items-center justify-center text-lg flex-shrink-0 group-hover:scale-105 transition-transform">
                             {t.emoji || '💸'}
                         </div>
 
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                    <p className="text-[13px] font-bold text-black truncate">{t.description || 'Transaction'}</p>
+                                    <p className="text-[13px] font-bold text-black dark:text-white truncate">{t.description || 'Transaction'}</p>
                                     {t.provider === 'enable_banking' && (
-                                        <span className="text-[9px] font-bold text-black dark:text-white bg-black/5 dark:bg-white/5 px-1 py-0.5 rounded border border-black/10 dark:border-white/10">BANK</span>
+                                        <span className="text-[9px] font-bold text-black dark:text-white bg-black/5 dark:bg-white dark:bg-[#0a0a0a]/5 px-1 py-0.5 rounded border border-black/10 dark:border-white/10">BANK</span>
                                     )}
                                 </div>
-                                <p className={`text-[13px] font-bold ${t.type === 'spend' ? 'text-black' : 'text-[#059669]'}`}>
+                                <p className={`text-[13px] font-bold ${t.type === 'spend' ? 'text-black dark:text-white' : 'text-[#059669]'}`}>
                                     {t.type === 'spend' ? '-' : '+'}£{t.amount.toFixed(2)}
                                 </p>
                             </div>

@@ -4,10 +4,10 @@ export function Section({ title, desc, children }: { title: string; desc: string
     return (
         <div>
             <div className="mb-4">
-                <h2 className="text-[15px] font-bold text-black">{title}</h2>
+                <h2 className="text-[15px] font-bold text-black dark:text-white">{title}</h2>
                 <p className="text-[12px] text-black/35 mt-0.5">{desc}</p>
             </div>
-            <div className="rounded-xl border border-black/[0.07] bg-white p-4 shadow-sm">
+            <div className="rounded-xl border border-black/[0.07] dark:border-white/[0.07] bg-white dark:bg-[#0a0a0a] p-4 shadow-sm">
                 {children}
             </div>
         </div>

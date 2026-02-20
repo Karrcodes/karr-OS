@@ -61,11 +61,11 @@ export function SpendingAnalytics({ transactions }: SpendingAnalyticsProps) {
 
     if (transactions.length === 0) {
         return (
-            <div className="py-20 text-center bg-white rounded-3xl border border-black/[0.05] shadow-sm">
+            <div className="py-20 text-center bg-white dark:bg-[#0a0a0a] rounded-3xl border border-black/[0.05] dark:border-white/[0.05] shadow-sm">
                 <div className="w-16 h-16 bg-black/[0.03] rounded-3xl flex items-center justify-center mx-auto mb-4">
                     <PieChart className="w-8 h-8 text-black/20" />
                 </div>
-                <h3 className="text-[16px] font-bold text-black">No Transactions Yet</h3>
+                <h3 className="text-[16px] font-bold text-black dark:text-white">No Transactions Yet</h3>
                 <p className="text-[13px] text-black/40 mt-1 max-w-xs mx-auto">Sync your bank or log transactions to see your spending breakdown here.</p>
             </div>
         )
@@ -81,14 +81,14 @@ export function SpendingAnalytics({ transactions }: SpendingAnalyticsProps) {
             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-1 duration-300">
                 <button
                     onClick={() => setSelectedCategory(null)}
-                    className="flex items-center gap-2 text-[13px] font-bold text-black/50 hover:text-black transition-colors group"
+                    className="flex items-center gap-2 text-[13px] font-bold text-black/50 hover:text-black dark:text-white transition-colors group"
                 >
                     <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
                     Back to Overview
                 </button>
 
                 {/* Category Header */}
-                <div className="bg-white p-6 rounded-3xl border border-black/[0.06] shadow-sm">
+                <div className="bg-white dark:bg-[#0a0a0a] p-6 rounded-3xl border border-black/[0.06] dark:border-white/[0.06] shadow-sm">
                     <div className="flex items-center gap-4">
                         <div
                             className="w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-sm"
@@ -97,11 +97,11 @@ export function SpendingAnalytics({ transactions }: SpendingAnalyticsProps) {
                             <Icon className="w-7 h-7" />
                         </div>
                         <div>
-                            <h2 className="text-[20px] font-bold text-black capitalize">{category.name}</h2>
+                            <h2 className="text-[20px] font-bold text-black dark:text-white capitalize">{category.name}</h2>
                             <p className="text-[12px] text-black/40 font-medium">{category.transactions.length} transactions · {category.percentage.toFixed(1)}% of total spending</p>
                         </div>
                         <div className="ml-auto text-right">
-                            <div className="text-[28px] font-bold text-black flex items-baseline gap-1">
+                            <div className="text-[28px] font-bold text-black dark:text-white flex items-baseline gap-1">
                                 <span className="text-[20px] opacity-30">£</span>
                                 {category.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                             </div>
@@ -111,23 +111,23 @@ export function SpendingAnalytics({ transactions }: SpendingAnalyticsProps) {
                 </div>
 
                 {/* Transaction List */}
-                <div className="bg-white rounded-3xl border border-black/[0.06] shadow-sm overflow-hidden">
-                    <div className="px-6 py-4 border-b border-black/[0.04] bg-black/[0.01]">
-                        <h3 className="text-[13px] font-bold text-black">All Transactions</h3>
+                <div className="bg-white dark:bg-[#0a0a0a] rounded-3xl border border-black/[0.06] dark:border-white/[0.06] shadow-sm overflow-hidden">
+                    <div className="px-6 py-4 border-b border-black/[0.04] bg-black/[0.01] dark:bg-white/[0.01]">
+                        <h3 className="text-[13px] font-bold text-black dark:text-white">All Transactions</h3>
                     </div>
                     <div className="divide-y divide-black/[0.04]">
                         {category.transactions.map((t) => (
-                            <div key={t.id} className="flex items-center gap-3 p-4 hover:bg-black/[0.01] transition-colors">
-                                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0 bg-black/[0.02] border border-black/[0.04]">
+                            <div key={t.id} className="flex items-center gap-3 p-4 hover:bg-black/[0.01] dark:bg-white/[0.01] transition-colors">
+                                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0 bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04]">
                                     {t.emoji || '💸'}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-[13px] font-bold text-black truncate">{t.description || 'Transaction'}</p>
+                                    <p className="text-[13px] font-bold text-black dark:text-white truncate">{t.description || 'Transaction'}</p>
                                     <p className="text-[11px] text-black/30 font-medium">
                                         {new Date(t.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                                     </p>
                                 </div>
-                                <p className="text-[14px] font-bold text-black">
+                                <p className="text-[14px] font-bold text-black dark:text-white">
                                     -£{t.amount.toFixed(2)}
                                 </p>
                             </div>
@@ -143,12 +143,12 @@ export function SpendingAnalytics({ transactions }: SpendingAnalyticsProps) {
         <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Total Spend Card */}
-                <div className="bg-white p-6 rounded-3xl border border-black/[0.06] shadow-sm flex flex-col justify-between">
+                <div className="bg-white dark:bg-[#0a0a0a] p-6 rounded-3xl border border-black/[0.06] dark:border-white/[0.06] shadow-sm flex flex-col justify-between">
                     <div>
                         <div className="flex items-center gap-2 text-[11px] font-bold text-black/30 uppercase tracking-widest mb-4">
                             <PieChart className="w-3.5 h-3.5" /> Total Spending Analytics
                         </div>
-                        <div className="text-[32px] font-bold text-black flex items-baseline gap-1.5">
+                        <div className="text-[32px] font-bold text-black dark:text-white flex items-baseline gap-1.5">
                             <span className="text-[20px] opacity-30">£</span>
                             {stats.totalSpend.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </div>
@@ -174,15 +174,15 @@ export function SpendingAnalytics({ transactions }: SpendingAnalyticsProps) {
                 </div>
 
                 {/* Categories Grid - Clickable */}
-                <div className="bg-white p-6 rounded-3xl border border-black/[0.06] shadow-sm">
-                    <h3 className="text-[14px] font-bold text-black mb-1">Top Categories</h3>
+                <div className="bg-white dark:bg-[#0a0a0a] p-6 rounded-3xl border border-black/[0.06] dark:border-white/[0.06] shadow-sm">
+                    <h3 className="text-[14px] font-bold text-black dark:text-white mb-1">Top Categories</h3>
                     <p className="text-[11px] text-black/30 mb-4">Tap a category to see its transactions</p>
                     <div className="space-y-2">
                         {stats.sortedCategories.map((cat, i) => (
                             <button
                                 key={i}
                                 onClick={() => setSelectedCategory(cat.name)}
-                                className="w-full flex items-center gap-3 p-3 rounded-2xl border border-black/[0.04] hover:bg-black/[0.02] hover:border-black/[0.08] transition-all group text-left"
+                                className="w-full flex items-center gap-3 p-3 rounded-2xl border border-black/[0.04] hover:bg-black/[0.02] dark:bg-white/[0.02] hover:border-black/[0.08] transition-all group text-left"
                             >
                                 <div
                                     className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm flex-shrink-0 group-hover:scale-105 transition-transform"
@@ -191,11 +191,11 @@ export function SpendingAnalytics({ transactions }: SpendingAnalyticsProps) {
                                     <cat.icon className="w-5 h-5" />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-[13px] font-bold text-black capitalize">{cat.name}</p>
+                                    <p className="text-[13px] font-bold text-black dark:text-white capitalize">{cat.name}</p>
                                     <p className="text-[10px] text-black/30 font-bold uppercase tracking-wider">{cat.percentage.toFixed(1)}% · {cat.transactions.length} tx</p>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-[14px] font-bold text-black">£{cat.amount.toFixed(2)}</p>
+                                    <p className="text-[14px] font-bold text-black dark:text-white">£{cat.amount.toFixed(2)}</p>
                                     <ArrowUpRight className="w-3.5 h-3.5 text-black/20 ml-auto mt-0.5 group-hover:text-black dark:text-white transition-colors" />
                                 </div>
                             </button>

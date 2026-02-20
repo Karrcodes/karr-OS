@@ -38,9 +38,9 @@ export default function FinanceAnalyticsPage() {
     }, [payslips])
 
     return (
-        <div className="h-screen bg-[#fafafa] flex flex-col overflow-hidden">
+        <div className="h-screen bg-[#fafafa] dark:bg-[#050505] flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="bg-white border-b border-black/[0.06] px-6 py-5 z-20 shadow-sm flex-shrink-0">
+            <div className="bg-white dark:bg-[#0a0a0a] border-b border-black/[0.06] dark:border-white/[0.06] px-6 py-5 z-20 shadow-sm flex-shrink-0">
                 <div className="max-w-5xl mx-auto space-y-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
@@ -48,7 +48,7 @@ export default function FinanceAnalyticsPage() {
                                 <ArrowLeft className="w-5 h-5 text-black/40" />
                             </a>
                             <div>
-                                <h1 className="text-[20px] font-bold text-black tracking-tight">Finance Analytics</h1>
+                                <h1 className="text-[20px] font-bold text-black dark:text-white tracking-tight">Finance Analytics</h1>
                                 <p className="text-[12px] text-black/35 mt-0.5">Insights & breakdowns for {activeProfile} profile</p>
                             </div>
                         </div>
@@ -59,7 +59,7 @@ export default function FinanceAnalyticsPage() {
                                 onClick={() => setActiveTab('salary')}
                                 className={cn(
                                     "px-4 py-1.5 rounded-lg text-[12px] font-bold transition-all",
-                                    activeTab === 'salary' ? "bg-white text-black shadow-sm" : "text-black/30 hover:text-black/50"
+                                    activeTab === 'salary' ? "bg-white text-black dark:text-white shadow-sm" : "text-black/30 hover:text-black/50"
                                 )}
                             >
                                 Salary Hub
@@ -68,7 +68,7 @@ export default function FinanceAnalyticsPage() {
                                 onClick={() => setActiveTab('spending')}
                                 className={cn(
                                     "px-4 py-1.5 rounded-lg text-[12px] font-bold transition-all",
-                                    activeTab === 'spending' ? "bg-white text-black shadow-sm" : "text-black/30 hover:text-black/50"
+                                    activeTab === 'spending' ? "bg-white text-black dark:text-white shadow-sm" : "text-black/30 hover:text-black/50"
                                 )}
                             >
                                 Spending
@@ -84,7 +84,7 @@ export default function FinanceAnalyticsPage() {
                     {loading ? (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             {[1, 2, 3].map(i => (
-                                <div key={i} className="h-32 bg-white rounded-2xl border border-black/[0.05] animate-pulse" />
+                                <div key={i} className="h-32 bg-white dark:bg-[#0a0a0a] rounded-2xl border border-black/[0.05] dark:border-white/[0.05] animate-pulse" />
                             ))}
                         </div>
                     ) : (
@@ -92,11 +92,11 @@ export default function FinanceAnalyticsPage() {
                             {activeTab === 'salary' ? (
                                 !salaryStats ? (
                                     <div className="space-y-6">
-                                        <div className="py-10 text-center bg-white rounded-3xl border border-black/[0.05] shadow-sm">
+                                        <div className="py-10 text-center bg-white dark:bg-[#0a0a0a] rounded-3xl border border-black/[0.05] dark:border-white/[0.05] shadow-sm">
                                             <div className="w-16 h-16 bg-black/[0.03] rounded-3xl flex items-center justify-center mx-auto mb-4">
                                                 <TrendingUp className="w-8 h-8 text-black/20" />
                                             </div>
-                                            <h3 className="text-[16px] font-bold text-black">No Salary Data Yet</h3>
+                                            <h3 className="text-[16px] font-bold text-black dark:text-white">No Salary Data Yet</h3>
                                             <p className="text-[13px] text-black/40 mt-1 max-w-xs mx-auto">Upload your first payslip to see professional income analytics.</p>
                                         </div>
                                         <PayslipUploader onSuccess={refetchPayslips} />
@@ -106,17 +106,17 @@ export default function FinanceAnalyticsPage() {
                                         <PayslipUploader onSuccess={refetchPayslips} />
                                         {/* Top Stats Cards */}
                                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                            <div className="bg-white p-5 rounded-2xl border border-black/[0.06] shadow-sm">
+                                            <div className="bg-white dark:bg-[#0a0a0a] p-5 rounded-2xl border border-black/[0.06] dark:border-white/[0.06] shadow-sm">
                                                 <div className="flex items-center gap-2 text-[11px] font-bold text-black/30 uppercase tracking-widest mb-3">
                                                     <Wallet className="w-3.5 h-3.5" /> Avg. Take Home
                                                 </div>
-                                                <div className="text-[24px] font-bold text-black group flex items-baseline gap-1">
+                                                <div className="text-[24px] font-bold text-black dark:text-white group flex items-baseline gap-1">
                                                     <span className="text-[18px] opacity-30">£</span>
                                                     {salaryStats.avgNet.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                 </div>
                                             </div>
 
-                                            <div className="bg-white p-5 rounded-2xl border border-black/[0.06] shadow-sm">
+                                            <div className="bg-white dark:bg-[#0a0a0a] p-5 rounded-2xl border border-black/[0.06] dark:border-white/[0.06] shadow-sm">
                                                 <div className="flex items-center gap-2 text-[11px] font-bold text-black/30 uppercase tracking-widest mb-3">
                                                     <TrendingUp className="w-3.5 h-3.5" /> Peak Month
                                                 </div>
@@ -126,7 +126,7 @@ export default function FinanceAnalyticsPage() {
                                                 </div>
                                             </div>
 
-                                            <div className="bg-white p-5 rounded-2xl border border-black/[0.06] shadow-sm">
+                                            <div className="bg-white dark:bg-[#0a0a0a] p-5 rounded-2xl border border-black/[0.06] dark:border-white/[0.06] shadow-sm">
                                                 <div className="flex items-center gap-2 text-[11px] font-bold text-black/30 uppercase tracking-widest mb-3">
                                                     <Receipt className="w-3.5 h-3.5" /> Total Tax Paid
                                                 </div>
@@ -136,7 +136,7 @@ export default function FinanceAnalyticsPage() {
                                                 </div>
                                             </div>
 
-                                            <div className="bg-white p-5 rounded-2xl border border-black/[0.06] shadow-sm">
+                                            <div className="bg-white dark:bg-[#0a0a0a] p-5 rounded-2xl border border-black/[0.06] dark:border-white/[0.06] shadow-sm">
                                                 <div className="flex items-center gap-2 text-[11px] font-bold text-black/30 uppercase tracking-widest mb-3">
                                                     <PieChart className="w-3.5 h-3.5" /> Pension Savings
                                                 </div>
@@ -149,8 +149,8 @@ export default function FinanceAnalyticsPage() {
 
                                         {/* Charts Row */}
                                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                            <div className="lg:col-span-2 bg-white p-6 rounded-3xl border border-black/[0.06] shadow-sm">
-                                                <h3 className="text-[15px] font-bold text-black mb-6">Take-Home Trend (Recent 6)</h3>
+                                            <div className="lg:col-span-2 bg-white dark:bg-[#0a0a0a] p-6 rounded-3xl border border-black/[0.06] dark:border-white/[0.06] shadow-sm">
+                                                <h3 className="text-[15px] font-bold text-black dark:text-white mb-6">Take-Home Trend (Recent 6)</h3>
                                                 <div className="h-48 flex items-end gap-3 px-2">
                                                     {salaryStats.monthlyTrend.map((m, i) => {
                                                         const max = Math.max(...salaryStats.monthlyTrend.map(x => x.gross), 1)
@@ -177,8 +177,8 @@ export default function FinanceAnalyticsPage() {
                                                 </div>
                                             </div>
 
-                                            <div className="bg-white p-6 rounded-3xl border border-black/[0.06] shadow-sm flex flex-col">
-                                                <h3 className="text-[15px] font-bold text-black mb-6">Lifetime Efficiency</h3>
+                                            <div className="bg-white dark:bg-[#0a0a0a] p-6 rounded-3xl border border-black/[0.06] dark:border-white/[0.06] shadow-sm flex flex-col">
+                                                <h3 className="text-[15px] font-bold text-black dark:text-white mb-6">Lifetime Efficiency</h3>
                                                 <div className="flex-1 flex flex-col justify-center gap-6">
                                                     <div className="space-y-2">
                                                         <div className="flex justify-between text-[12px] font-bold">
@@ -206,23 +206,23 @@ export default function FinanceAnalyticsPage() {
                                         </div>
 
                                         {/* Detailed List */}
-                                        <div className="bg-white rounded-3xl border border-black/[0.06] shadow-sm overflow-hidden">
-                                            <div className="px-6 py-5 border-b border-black/[0.04] bg-black/[0.01] flex items-center justify-between">
-                                                <h3 className="text-[14px] font-bold text-black">Verified Payslip Vault</h3>
-                                                <div className="text-[10px] font-bold text-black/30 uppercase tracking-wider bg-white px-2 py-1 rounded-lg border border-black/[0.04]">
+                                        <div className="bg-white dark:bg-[#0a0a0a] rounded-3xl border border-black/[0.06] dark:border-white/[0.06] shadow-sm overflow-hidden">
+                                            <div className="px-6 py-5 border-b border-black/[0.04] bg-black/[0.01] dark:bg-white/[0.01] flex items-center justify-between">
+                                                <h3 className="text-[14px] font-bold text-black dark:text-white">Verified Payslip Vault</h3>
+                                                <div className="text-[10px] font-bold text-black/30 uppercase tracking-wider bg-white dark:bg-[#0a0a0a] px-2 py-1 rounded-lg border border-black/[0.04]">
                                                     {payslips.length} Records
                                                 </div>
                                             </div>
                                             <div className="divide-y divide-black/[0.04]">
                                                 {payslips.map((p) => (
-                                                    <div key={p.id} className="p-5 flex items-center gap-6 hover:bg-black/[0.01] transition-colors group">
-                                                        <div className="w-12 h-12 rounded-2xl bg-black/[0.03] border border-black/[0.05] flex items-center justify-center flex-shrink-0">
+                                                    <div key={p.id} className="p-5 flex items-center gap-6 hover:bg-black/[0.01] dark:bg-white/[0.01] transition-colors group">
+                                                        <div className="w-12 h-12 rounded-2xl bg-black/[0.03] border border-black/[0.05] dark:border-white/[0.05] flex items-center justify-center flex-shrink-0">
                                                             <FileText className="w-6 h-6 text-black/30" />
                                                         </div>
 
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-center gap-2">
-                                                                <p className="font-bold text-black text-[15px]">{p.employer || 'Unknown Company'}</p>
+                                                                <p className="font-bold text-black dark:text-white text-[15px]">{p.employer || 'Unknown Company'}</p>
                                                                 <span className="w-1 h-1 rounded-full bg-black/10" />
                                                                 <p className="text-[12px] font-medium text-black/30">
                                                                     {new Date(p.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}

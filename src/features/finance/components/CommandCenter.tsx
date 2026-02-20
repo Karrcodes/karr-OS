@@ -75,11 +75,11 @@ export function CommandCenter() {
     const loading = pLoading || oLoading || gLoading
 
     return (
-        <div className="flex flex-col h-full bg-white">
+        <div className="flex flex-col h-full bg-white dark:bg-[#0a0a0a]">
             {/* Page Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between px-6 py-5 border-b border-black/[0.06] bg-white flex-shrink-0 shadow-sm z-10 gap-4 md:gap-0">
+            <div className="flex flex-col md:flex-row md:items-center justify-between px-6 py-5 border-b border-black/[0.06] dark:border-white/[0.06] bg-white dark:bg-[#0a0a0a] flex-shrink-0 shadow-sm z-10 gap-4 md:gap-0">
                 <div>
-                    <h1 className="text-[22px] font-bold text-black tracking-tight">Command Center</h1>
+                    <h1 className="text-[22px] font-bold text-black dark:text-white tracking-tight">Command Center</h1>
                     <p className="text-[12px] text-black/35 mt-0.5">Finance Module · {activeProfile === 'personal' ? 'Personal' : 'Studio Karrtesian'}</p>
                 </div>
                 <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
@@ -94,16 +94,16 @@ export function CommandCenter() {
                             {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
                         </div>
                     </div>
-                    <div className="flex bg-black/[0.04] p-1 rounded-xl border border-black/[0.06] w-fit order-2 md:order-1">
+                    <div className="flex bg-black/[0.04] dark:bg-white dark:bg-[#0a0a0a]/[0.04] p-1 rounded-xl border border-black/[0.06] dark:border-white/[0.06] w-fit order-2 md:order-1">
                         <button
                             onClick={() => setProfile('personal')}
-                            className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeProfile === 'personal' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
+                            className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeProfile === 'personal' ? 'bg-white dark:bg-[#1f1f1f] text-black dark:text-white shadow-sm' : 'text-black/40 dark:text-white/40 hover:text-black/60 dark:hover:text-white/60'}`}
                         >
                             Personal
                         </button>
                         <button
                             onClick={() => setProfile('business')}
-                            className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeProfile === 'business' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
+                            className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeProfile === 'business' ? 'bg-white dark:bg-[#1f1f1f] text-black dark:text-white shadow-sm' : 'text-black/40 dark:text-white/40 hover:text-black/60 dark:hover:text-white/60'}`}
                         >
                             Business
                         </button>
@@ -111,7 +111,7 @@ export function CommandCenter() {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto bg-[#fafafa]">
+            <div className="flex-1 overflow-y-auto bg-[#fafafa] dark:bg-[#050505]">
                 <div className="p-6 pb-2 select-none flex items-center gap-2 text-[13px] font-bold text-black/40 uppercase tracking-wider">
                     Finance Dashboard
                 </div>
@@ -189,8 +189,8 @@ export function CommandCenter() {
                                 </SectionBlock>
                             </div>
                             <div className="col-span-1 h-full min-h-[500px]">
-                                <div className="rounded-2xl border border-black/[0.08] bg-white p-5 shadow-sm h-full flex flex-col">
-                                    <h2 className="text-[17px] font-bold text-black mb-1">Financial Co-pilot</h2>
+                                <div className="rounded-2xl border border-black/[0.08] bg-white dark:bg-[#0a0a0a] p-5 shadow-sm h-full flex flex-col">
+                                    <h2 className="text-[17px] font-bold text-black dark:text-white mb-1">Financial Co-pilot</h2>
                                     <p className="text-[12px] text-black/40 mb-4">Ask Gemini about patterns, advice, or status</p>
                                     <div className="flex-1 overflow-hidden min-h-[400px]">
                                         <KarrAIChat
@@ -221,7 +221,7 @@ export function CommandCenter() {
 
 function SummaryCard({ label, value, icon, color, sub, tooltip }: { label: string; value: string; icon: React.ReactNode; color: string; sub?: string; tooltip?: string | React.ReactNode }) {
     return (
-        <div className="rounded-xl border border-black/[0.07] bg-white p-4 hover:bg-black/[0.01] transition-colors shadow-sm">
+        <div className="rounded-xl border border-black/[0.07] dark:border-white/[0.07] bg-white dark:bg-[#0a0a0a] p-4 hover:bg-black/[0.01] dark:bg-white/[0.01] transition-colors shadow-sm">
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-1.5">
                     <p className="text-[11px] uppercase tracking-wider text-black/40 font-semibold">{label}</p>
@@ -231,7 +231,7 @@ function SummaryCard({ label, value, icon, color, sub, tooltip }: { label: strin
                     <span style={{ color }}>{icon}</span>
                 </div>
             </div>
-            <p className="text-2xl font-bold text-black tracking-tight">{value}</p>
+            <p className="text-2xl font-bold text-black dark:text-white tracking-tight">{value}</p>
             {sub && <p className="text-[11px] text-black/35 mt-1">{sub}</p>}
         </div>
     )
@@ -239,10 +239,10 @@ function SummaryCard({ label, value, icon, color, sub, tooltip }: { label: strin
 
 function SectionBlock({ title, desc, children }: { title?: string; desc?: string; children: React.ReactNode }) {
     return (
-        <div className="rounded-2xl border border-black/[0.08] bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-black/[0.08] bg-white dark:bg-[#0a0a0a] p-5 shadow-sm">
             {(title || desc) && (
                 <div className="flex items-baseline gap-2 mb-4">
-                    {title && <h2 className="text-[14px] font-bold text-black">{title}</h2>}
+                    {title && <h2 className="text-[14px] font-bold text-black dark:text-white">{title}</h2>}
                     {desc && <span className="text-[11px] text-black/35">{desc}</span>}
                 </div>
             )}

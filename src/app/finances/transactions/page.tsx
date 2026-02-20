@@ -16,16 +16,16 @@ export default function TransactionsPage() {
     )
 
     return (
-        <div className="h-screen bg-[#fafafa] flex flex-col overflow-hidden">
+        <div className="h-screen bg-[#fafafa] dark:bg-[#050505] flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="bg-white border-b border-black/[0.06] px-6 py-5 z-20 shadow-sm flex-shrink-0">
+            <div className="bg-white dark:bg-[#0a0a0a] border-b border-black/[0.06] dark:border-white/[0.06] px-6 py-5 z-20 shadow-sm flex-shrink-0">
                 <div className="max-w-4xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <a href="/finances" className="w-10 h-10 rounded-xl bg-black/[0.03] flex items-center justify-center hover:bg-black/[0.06] transition-colors">
                             <ArrowLeft className="w-5 h-5 text-black/40" />
                         </a>
                         <div>
-                            <h1 className="text-[20px] font-bold text-black tracking-tight">Full Ledger</h1>
+                            <h1 className="text-[20px] font-bold text-black dark:text-white tracking-tight">Full Ledger</h1>
                             <p className="text-[12px] text-black/35 mt-0.5">{activeProfile === 'personal' ? 'Personal' : 'Business'} · {transactions.length} total transactions</p>
                         </div>
                     </div>
@@ -38,7 +38,7 @@ export default function TransactionsPage() {
                                 placeholder="Search transactions..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className="bg-black/[0.03] border border-black/[0.06] rounded-xl pl-9 pr-4 py-2 text-[13px] outline-none focus:border-black/30 dark:border-white/30 transition-colors w-64"
+                                className="bg-black/[0.03] border border-black/[0.06] dark:border-white/[0.06] rounded-xl pl-9 pr-4 py-2 text-[13px] outline-none focus:border-black/30 dark:border-white/30 transition-colors w-64"
                             />
                         </div>
                     </div>
@@ -51,7 +51,7 @@ export default function TransactionsPage() {
                     {loading ? (
                         <div className="space-y-3 animate-pulse">
                             {[1, 2, 3, 4, 5].map(i => (
-                                <div key={i} className="h-16 bg-white rounded-2xl border border-black/[0.05]" />
+                                <div key={i} className="h-16 bg-white dark:bg-[#0a0a0a] rounded-2xl border border-black/[0.05] dark:border-white/[0.05]" />
                             ))}
                         </div>
                     ) : filtered.length === 0 ? (
@@ -64,20 +64,20 @@ export default function TransactionsPage() {
                     ) : (
                         <div className="space-y-3">
                             {filtered.map((t) => (
-                                <div key={t.id} className="flex items-center gap-4 p-4 rounded-2xl border border-black/[0.04] bg-white hover:bg-black/[0.01] transition-colors group">
-                                    <div className="w-12 h-12 rounded-2xl bg-black/[0.03] border border-black/[0.05] flex items-center justify-center text-xl flex-shrink-0 group-hover:scale-105 transition-transform shadow-sm">
+                                <div key={t.id} className="flex items-center gap-4 p-4 rounded-2xl border border-black/[0.04] bg-white dark:bg-[#0a0a0a] hover:bg-black/[0.01] dark:bg-white/[0.01] transition-colors group">
+                                    <div className="w-12 h-12 rounded-2xl bg-black/[0.03] border border-black/[0.05] dark:border-white/[0.05] flex items-center justify-center text-xl flex-shrink-0 group-hover:scale-105 transition-transform shadow-sm">
                                         {t.emoji || '💸'}
                                     </div>
 
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
-                                                <p className="text-[14px] font-bold text-black truncate">{t.description || 'Transaction'}</p>
+                                                <p className="text-[14px] font-bold text-black dark:text-white truncate">{t.description || 'Transaction'}</p>
                                                 {t.provider === 'revolut_csv' && (
-                                                    <span className="text-[9px] font-bold text-black dark:text-white bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded border border-black/10 dark:border-white/10 tracking-widest uppercase">Sync</span>
+                                                    <span className="text-[9px] font-bold text-black dark:text-white bg-black/5 dark:bg-white dark:bg-[#0a0a0a]/5 px-1.5 py-0.5 rounded border border-black/10 dark:border-white/10 tracking-widest uppercase">Sync</span>
                                                 )}
                                             </div>
-                                            <p className={`text-[15px] font-bold ${t.type === 'spend' ? 'text-black' : 'text-[#059669]'}`}>
+                                            <p className={`text-[15px] font-bold ${t.type === 'spend' ? 'text-black dark:text-white' : 'text-[#059669]'}`}>
                                                 {t.type === 'spend' ? '-' : '+'}£{t.amount.toFixed(2)}
                                             </p>
                                         </div>

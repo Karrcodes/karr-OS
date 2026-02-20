@@ -11,33 +11,33 @@ import { Section, Spinner } from '@/features/finance/components/SharedSettingsUI
 export default function SettingsPage() {
     const { activeProfile, setProfile } = useFinanceProfile()
     return (
-        <div className="flex flex-col h-full bg-white">
+        <div className="flex flex-col h-full bg-white dark:bg-[#0a0a0a]">
             {/* Header */}
-            <div className="flex items-center gap-3 px-6 py-5 border-b border-black/[0.06] bg-white">
-                <div className="w-8 h-8 rounded-lg bg-black/[0.04] flex items-center justify-center">
+            <div className="flex items-center gap-3 px-6 py-5 border-b border-black/[0.06] dark:border-white/[0.06] bg-white dark:bg-[#0a0a0a]">
+                <div className="w-8 h-8 rounded-lg bg-black/[0.04] dark:bg-white/[0.04] flex items-center justify-center">
                     <Settings className="w-4 h-4 text-black/40" />
                 </div>
                 <div>
-                    <h1 className="text-[20px] font-bold text-black">Settings</h1>
+                    <h1 className="text-[20px] font-bold text-black dark:text-white">Settings</h1>
                     <p className="text-[12px] text-black/35">Configure your {activeProfile === 'personal' ? 'Personal' : 'Studio Karrtesian'} module</p>
                 </div>
-                <div className="ml-auto flex bg-black/[0.04] p-1 rounded-xl border border-black/[0.06]">
+                <div className="ml-auto flex bg-black/[0.04] dark:bg-white/[0.04] p-1 rounded-xl border border-black/[0.06] dark:border-white/[0.06]">
                     <button
                         onClick={() => setProfile('personal')}
-                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeProfile === 'personal' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
+                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeProfile === 'personal' ? 'bg-white text-black dark:text-white shadow-sm' : 'text-black/40 hover:text-black/60'}`}
                     >
                         Personal
                     </button>
                     <button
                         onClick={() => setProfile('business')}
-                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeProfile === 'business' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
+                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeProfile === 'business' ? 'bg-white text-black dark:text-white shadow-sm' : 'text-black/40 hover:text-black/60'}`}
                     >
                         Business
                     </button>
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto bg-[#fafafa] p-6 space-y-8">
+            <div className="flex-1 overflow-y-auto bg-[#fafafa] dark:bg-[#050505] p-6 space-y-8">
                 <GlobalSettings />
                 <PocketsSettings />
             </div>
@@ -153,7 +153,7 @@ function PocketsSettings() {
             {loading ? <Spinner /> : (
                 <div className="space-y-2">
                     {pockets.map((p, i) => (
-                        <div key={p.id} className="flex items-center gap-3 rounded-xl border border-black/[0.07] bg-white p-3">
+                        <div key={p.id} className="flex items-center gap-3 rounded-xl border border-black/[0.07] dark:border-white/[0.07] bg-white dark:bg-[#0a0a0a] p-3">
                             {editId === p.id ? (
                                 <>
                                     <input className="input-field flex-1" value={form.name ?? ''} onChange={(e) => setForm({ ...form, name: e.target.value })} />
@@ -183,7 +183,7 @@ function PocketsSettings() {
                     ))}
 
                     {adding ? (
-                        <div className="flex items-center gap-3 rounded-xl border border-black/20 dark:border-white/20 bg-black/5 dark:bg-white/5 p-3">
+                        <div className="flex items-center gap-3 rounded-xl border border-black/20 dark:border-white/20 bg-black/5 dark:bg-white dark:bg-[#0a0a0a]/5 p-3">
                             <input className="input-field flex-1" placeholder="Pocket name" value={form.name ?? ''} onChange={(e) => setForm({ ...form, name: e.target.value })} />
                             <input className="input-field w-32" type="number" placeholder="Weekly alloc £" value={form.target_budget ?? ''} onChange={(e) => setForm({ ...form, target_budget: parseFloat(e.target.value) })} />
                             <select className="input-field w-28" value={form.type ?? 'general'} onChange={(e) => setForm({ ...form, type: e.target.value as Pocket['type'] })}>

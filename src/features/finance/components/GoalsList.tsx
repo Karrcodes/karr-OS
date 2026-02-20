@@ -42,7 +42,7 @@ export function GoalsList({ goals, onRefresh }: GoalsListProps) {
 
     if (goals.length === 0) {
         return (
-            <div className="rounded-xl border border-black/[0.07] bg-black/[0.02] p-6 text-center">
+            <div className="rounded-xl border border-black/[0.07] dark:border-white/[0.07] bg-black/[0.02] dark:bg-white/[0.02] p-6 text-center">
                 <p className="text-black/30 text-sm">No savings goals yet — add one in Settings.</p>
             </div>
         )
@@ -59,7 +59,7 @@ export function GoalsList({ goals, onRefresh }: GoalsListProps) {
                 return (
                     <div
                         key={goal.id}
-                        className="rounded-xl border border-black/[0.07] bg-white p-4 hover:bg-black/[0.01] transition-colors shadow-sm"
+                        className="rounded-xl border border-black/[0.07] dark:border-white/[0.07] bg-white dark:bg-[#0a0a0a] p-4 hover:bg-black/[0.01] dark:bg-white/[0.01] transition-colors shadow-sm"
                     >
                         <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center gap-2">
@@ -69,7 +69,7 @@ export function GoalsList({ goals, onRefresh }: GoalsListProps) {
                                 <div>
                                     <p className="text-[13px] font-semibold text-black/90 flex items-center gap-2">
                                         {goal.name}
-                                        {goal.is_recurring && <span className="text-[9px] bg-black/10 dark:bg-white/10 text-black dark:text-white px-1 rounded font-bold uppercase tracking-widest">Recurring</span>}
+                                        {goal.is_recurring && <span className="text-[9px] bg-black/10 dark:bg-white dark:bg-[#0a0a0a]/10 text-black dark:text-white px-1 rounded font-bold uppercase tracking-widest">Recurring</span>}
                                     </p>
                                     {days !== null && (
                                         <p className={`text-[10px] flex items-center gap-1 ${days < 30 ? 'text-amber-500' : 'text-black/35'}`}>
@@ -80,7 +80,7 @@ export function GoalsList({ goals, onRefresh }: GoalsListProps) {
                                 </div>
                             </div>
                             <div className="text-right">
-                                <p className="text-[14px] font-bold text-black">
+                                <p className="text-[14px] font-bold text-black dark:text-white">
                                     £{goal.current_amount.toFixed(2)}
                                 </p>
                                 <p className="text-[10px] text-black/35">of £{goal.target_amount.toFixed(2)}</p>
@@ -94,7 +94,7 @@ export function GoalsList({ goals, onRefresh }: GoalsListProps) {
                                 <button
                                     onClick={(e) => handleReset(goal.id, e)}
                                     disabled={resettingId === goal.id}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-black dark:bg-white text-white text-[11px] font-bold rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors disabled:opacity-50"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-black dark:bg-white dark:bg-[#0a0a0a] text-white text-[11px] font-bold rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors disabled:opacity-50"
                                 >
                                     {resettingId === goal.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
                                     Restart Cycle

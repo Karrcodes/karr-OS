@@ -281,7 +281,7 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
                         <h2 className="text-[16px] font-bold text-[#059669]">Distribute Income</h2>
                         <p className="text-[12px] text-black/60 mt-0.5">Allocate your £{parseFloat(amount).toFixed(2)} {source}</p>
                     </div>
-                    <div className={`text-right ${unallocated < 0 ? 'text-red-600' : unallocated === 0 ? 'text-[#059669]' : 'text-black'}`}>
+                    <div className={`text-right ${unallocated < 0 ? 'text-red-600' : unallocated === 0 ? 'text-[#059669]' : 'text-black dark:text-white'}`}>
                         <div className="text-[20px] font-bold">£{unallocated.toFixed(2)}</div>
                         <div className="text-[11px] font-semibold uppercase tracking-wider opacity-60">To Assign</div>
                     </div>
@@ -292,7 +292,7 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
                         <div className="space-y-2">
                             <h3 className="text-[11px] font-bold text-black/40 uppercase tracking-wider mb-2">Pockets</h3>
                             {pockets.map(p => (
-                                <div key={p.id} className="flex items-center gap-3 bg-white border border-black/[0.06] rounded-xl p-3">
+                                <div key={p.id} className="flex items-center gap-3 bg-white dark:bg-[#0a0a0a] border border-black/[0.06] dark:border-white/[0.06] rounded-xl p-3">
                                     <div className="flex-1">
                                         <div className="text-[13px] font-semibold text-black/80">{p.name}</div>
                                         <div className="text-[11px] text-black/40">Current: £{(p.balance ?? 0).toFixed(2)} • Target: £{p.target_budget.toFixed(2)}</div>
@@ -303,7 +303,7 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
                                             type="number"
                                             value={allocations[p.id] ?? ''}
                                             onChange={(e) => setAllocations(prev => ({ ...prev, [p.id]: parseFloat(e.target.value) || 0 }))}
-                                            className="w-24 bg-black/[0.04] border border-black/[0.08] rounded-lg px-3 py-1.5 text-[14px] font-bold text-black text-right outline-none focus:border-[#059669]/40"
+                                            className="w-24 bg-black/[0.04] dark:bg-white/[0.04] border border-black/[0.08] rounded-lg px-3 py-1.5 text-[14px] font-bold text-black dark:text-white text-right outline-none focus:border-[#059669]/40"
                                         />
                                     </div>
                                 </div>
@@ -315,7 +315,7 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
                         <div className="space-y-2">
                             <h3 className="text-[11px] font-bold text-black/40 uppercase tracking-wider mb-2 mt-4">Savings Goals</h3>
                             {goals.map(g => (
-                                <div key={g.id} className="flex items-center gap-3 bg-white border border-black/[0.06] rounded-xl p-3">
+                                <div key={g.id} className="flex items-center gap-3 bg-white dark:bg-[#0a0a0a] border border-black/[0.06] dark:border-white/[0.06] rounded-xl p-3">
                                     <div className="flex-1">
                                         <div className="text-[13px] font-semibold text-black/80">{g.name}</div>
                                         <div className="text-[11px] text-black/40">Saved: £{g.current_amount.toFixed(2)} • Target: £{g.target_amount.toFixed(2)}</div>
@@ -326,7 +326,7 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
                                             type="number"
                                             value={allocations[g.id] ?? ''}
                                             onChange={(e) => setAllocations(prev => ({ ...prev, [g.id]: parseFloat(e.target.value) || 0 }))}
-                                            className="w-24 bg-black/[0.04] border border-black/[0.08] rounded-lg px-3 py-1.5 text-[14px] font-bold text-black text-right outline-none focus:border-[#059669]/40"
+                                            className="w-24 bg-black/[0.04] dark:bg-white/[0.04] border border-black/[0.08] rounded-lg px-3 py-1.5 text-[14px] font-bold text-black dark:text-white text-right outline-none focus:border-[#059669]/40"
                                         />
                                     </div>
                                 </div>
@@ -358,7 +358,7 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
     }
 
     return (
-        <div className="rounded-2xl border border-black/[0.08] bg-white p-5 shadow-sm h-full flex flex-col justify-between">
+        <div className="rounded-2xl border border-black/[0.08] bg-white dark:bg-[#0a0a0a] p-5 shadow-sm h-full flex flex-col justify-between">
             <div className="flex items-center justify-between mb-4">
                 <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold block">Log Income Manually or with AI</label>
 
@@ -374,7 +374,7 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
                 <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading || allocating}
-                    className="flex items-center gap-1.5 text-[11px] font-bold text-black dark:text-white bg-black/10 dark:bg-white/10 px-3 py-1.5 rounded-lg hover:bg-black/20 dark:bg-white/20 transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1.5 text-[11px] font-bold text-black dark:text-white bg-black/10 dark:bg-white dark:bg-[#0a0a0a]/10 px-3 py-1.5 rounded-lg hover:bg-black/20 dark:bg-white dark:bg-[#0a0a0a]/20 transition-colors disabled:opacity-50"
                 >
                     {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UploadCloud className="w-3.5 h-3.5" />}
                     {uploading ? 'Parsing...' : 'Upload Payslip'}
@@ -391,7 +391,7 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
                             value={amount}
                             onChange={(e) => setAmount(e.target.value)}
                             placeholder="0.00"
-                            className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl pl-8 pr-3 py-2.5 text-[16px] font-bold text-black placeholder-black/20 outline-none focus:border-black/40 dark:border-white/40 transition-colors"
+                            className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl pl-8 pr-3 py-2.5 text-[16px] font-bold text-black dark:text-white placeholder-black/20 outline-none focus:border-black/40 dark:border-white/40 transition-colors"
                         />
                     </div>
                     <input
@@ -399,7 +399,7 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
                         value={source}
                         onChange={(e) => setSource(e.target.value)}
                         placeholder="Source"
-                        className="flex-1 min-w-[100px] bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-2.5 text-[14px] text-black placeholder-black/20 outline-none focus:border-black/40 dark:border-white/40 transition-colors"
+                        className="flex-1 min-w-[100px] bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-2.5 text-[14px] text-black dark:text-white placeholder-black/20 outline-none focus:border-black/40 dark:border-white/40 transition-colors"
                     />
                 </div>
 
@@ -409,7 +409,7 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
                         type="date"
                         value={date}
                         onChange={(e) => setDate(e.target.value)}
-                        className="w-[120px] shrink-0 bg-black/[0.03] border border-black/[0.08] rounded-xl px-2.5 py-2.5 text-[12px] font-medium text-black outline-none focus:border-black/40 dark:border-white/40 transition-colors"
+                        className="w-[120px] shrink-0 bg-black/[0.03] border border-black/[0.08] rounded-xl px-2.5 py-2.5 text-[12px] font-medium text-black dark:text-white outline-none focus:border-black/40 dark:border-white/40 transition-colors"
                     />
                     <div className="flex flex-1 gap-2">
                         <button

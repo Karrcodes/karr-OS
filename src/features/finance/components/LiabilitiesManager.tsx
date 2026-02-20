@@ -105,11 +105,11 @@ export function LiabilitiesManager() {
                     {obligations.length > 0 && (
                         <div className="space-y-2">
                             {obligations.map((o) => (
-                                <div key={o.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-3 rounded-xl border border-black/[0.07] bg-white p-3 shadow-sm hover:shadow-md transition-shadow">
+                                <div key={o.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-3 rounded-xl border border-black/[0.07] dark:border-white/[0.07] bg-white dark:bg-[#0a0a0a] p-3 shadow-sm hover:shadow-md transition-shadow">
                                     {(() => {
                                         const logo = getLenderLogo(o.name)
                                         return logo ? (
-                                            <div className="w-10 h-10 rounded-xl bg-white border border-black/[0.07] flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
+                                            <div className="w-10 h-10 rounded-xl bg-white dark:bg-[#0a0a0a] border border-black/[0.07] dark:border-white/[0.07] flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
                                                 <img src={logo} alt={o.name} className="w-full h-full object-contain p-1" />
                                             </div>
                                         ) : (
@@ -123,21 +123,21 @@ export function LiabilitiesManager() {
                                         <div className="flex items-center gap-2">
                                             <span className="text-[14px] text-black/90 font-bold truncate">{o.name}</span>
                                             {o.description && <span className="text-[12px] text-black/40 truncate">— {o.description}</span>}
-                                            {o.group_name && <span className="text-[10px] uppercase font-bold tracking-wider text-black/40 bg-black/[0.04] px-1.5 py-0.5 rounded">{o.group_name}</span>}
+                                            {o.group_name && <span className="text-[10px] uppercase font-bold tracking-wider text-black/40 bg-black/[0.04] dark:bg-white/[0.04] px-1.5 py-0.5 rounded">{o.group_name}</span>}
                                         </div>
                                         <div className="text-[12px] text-black/40 mt-1 flex items-center gap-2">
-                                            <span className="inline-block w-2 h-2 rounded-full bg-black/40 dark:bg-white/40" />
+                                            <span className="inline-block w-2 h-2 rounded-full bg-black/40 dark:bg-white dark:bg-[#0a0a0a]/40" />
                                             Next: {new Date(o.next_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                                             {o.payments_left ? <span className="text-black/30 text-[11px]">({o.payments_left} left)</span> : ''}
                                             {o.end_date && <span className="text-black/30 text-[11px]">• Ends: {new Date(o.end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}</span>}
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-4 sm:ml-auto bg-black/[0.02] p-2 rounded-xl border border-black/[0.04]">
+                                    <div className="flex items-center gap-4 sm:ml-auto bg-black/[0.02] dark:bg-white/[0.02] p-2 rounded-xl border border-black/[0.04]">
                                         <div className="flex flex-col items-end mr-2">
                                             <span className="text-[15px] text-red-600 font-bold tracking-tight">£{o.amount.toFixed(2)}</span>
                                             <span className="text-[10px] text-black/40 font-bold uppercase tracking-widest">{o.frequency}</span>
                                         </div>
-                                        <div className="flex items-center gap-1 border-l border-black/[0.06] pl-3">
+                                        <div className="flex items-center gap-1 border-l border-black/[0.06] dark:border-white/[0.06] pl-3">
                                             <button onClick={() => markObligationAsPaid(o)} title="Mark as Paid" className="w-8 h-8 rounded-lg flex items-center justify-center text-black/20 hover:text-emerald-500 hover:bg-emerald-50 transition-colors"><Check className="w-4 h-4" /></button>
                                             <button onClick={() => startEdit(o)} className="w-8 h-8 rounded-lg flex items-center justify-center text-black/20 hover:text-black/60 hover:bg-black/5 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
                                             <button onClick={() => deleteObligation(o.id)} className="w-8 h-8 rounded-lg flex items-center justify-center text-black/20 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
@@ -149,8 +149,8 @@ export function LiabilitiesManager() {
                     )}
 
                     {(adding || editId) ? (
-                        <div className="rounded-2xl border border-black/20 dark:border-white/20 bg-black dark:bg-white/[0.02] p-6 space-y-5 shadow-sm">
-                            <h3 className="text-[14px] font-bold text-black border-b border-black/[0.06] pb-3 mb-4">
+                        <div className="rounded-2xl border border-black/20 dark:border-white/20 bg-black dark:bg-white dark:bg-[#0a0a0a]/[0.02] p-6 space-y-5 shadow-sm">
+                            <h3 className="text-[14px] font-bold text-black dark:text-white border-b border-black/[0.06] dark:border-white/[0.06] pb-3 mb-4">
                                 {editId ? 'Edit Liability' : 'Add New Liability'}
                             </h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -163,9 +163,9 @@ export function LiabilitiesManager() {
                                                     setSelectedLenderId(l.id)
                                                     setForm({ ...form, name: l.id === 'other' ? '' : l.name, emoji: l.emoji, category: l.id === 'other' ? 'other' : 'bills' });
                                                 }}
-                                                className={`flex items-center gap-2 p-3 rounded-xl border transition-all ${selectedLenderId === l.id ? 'bg-white border-black dark:border-white shadow-[0_2px_10px_rgba(124,58,237,0.1)] ring-1 ring-black/20 dark:ring-white/20' : 'bg-white border-black/[0.07] hover:border-black/[0.15] hover:bg-black/[0.01]'}`}>
+                                                className={`flex items-center gap-2 p-3 rounded-xl border transition-all ${selectedLenderId === l.id ? 'bg-white dark:bg-[#0a0a0a] border-black dark:border-white shadow-[0_2px_10px_rgba(124,58,237,0.1)] ring-1 ring-black/20 dark:ring-white/20' : 'bg-white dark:bg-[#0a0a0a] border-black/[0.07] dark:border-white/[0.07] hover:border-black/[0.15] hover:bg-black/[0.01] dark:bg-white/[0.01]'}`}>
                                                 {getLenderLogo(l.name) ? (
-                                                    <div className="w-8 h-8 rounded-lg bg-white border border-black/[0.07] flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
+                                                    <div className="w-8 h-8 rounded-lg bg-white dark:bg-[#0a0a0a] border border-black/[0.07] dark:border-white/[0.07] flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
                                                         <img src={getLenderLogo(l.name)!} alt={l.name} className="w-full h-full object-contain p-1" />
                                                     </div>
                                                 ) : (
@@ -176,17 +176,17 @@ export function LiabilitiesManager() {
                                         ))}
                                     </div>
                                     {selectedLenderId === 'other' && (
-                                        <input className="input-field w-full mt-3 bg-white" placeholder="Custom lender or service name..." value={form.name ?? ''} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                                        <input className="input-field w-full mt-3 bg-white dark:bg-[#0a0a0a]" placeholder="Custom lender or service name..." value={form.name ?? ''} onChange={(e) => setForm({ ...form, name: e.target.value })} />
                                     )}
                                 </div>
                                 <div className="space-y-4">
                                     <div>
                                         <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-2 block">Amount (£)</label>
-                                        <input className="input-field w-full bg-white text-[16px] font-bold" type="number" placeholder="0.00" value={form.amount || ''} onChange={(e) => setForm({ ...form, amount: parseFloat(e.target.value) })} />
+                                        <input className="input-field w-full bg-white dark:bg-[#0a0a0a] text-[16px] font-bold" type="number" placeholder="0.00" value={form.amount || ''} onChange={(e) => setForm({ ...form, amount: parseFloat(e.target.value) })} />
                                     </div>
                                     <div>
                                         <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-2 block">Frequency</label>
-                                        <select className="input-field w-full bg-white" value={form.frequency ?? 'monthly'} onChange={(e) => setForm({ ...form, frequency: e.target.value as any })}>
+                                        <select className="input-field w-full bg-white dark:bg-[#0a0a0a]" value={form.frequency ?? 'monthly'} onChange={(e) => setForm({ ...form, frequency: e.target.value as any })}>
                                             <option value="weekly">Weekly</option>
                                             <option value="bi-weekly">Bi-weekly</option>
                                             <option value="monthly">Monthly</option>
@@ -195,33 +195,33 @@ export function LiabilitiesManager() {
                                     </div>
                                     <div>
                                         <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-2 block">Next Payment Date</label>
-                                        <input className="input-field w-full bg-white" type="date" value={form.next_due_date ?? ''} onChange={(e) => setForm({ ...form, next_due_date: e.target.value })} />
+                                        <input className="input-field w-full bg-white dark:bg-[#0a0a0a]" type="date" value={form.next_due_date ?? ''} onChange={(e) => setForm({ ...form, next_due_date: e.target.value })} />
                                     </div>
                                 </div>
-                                <div className="space-y-4 bg-white p-4 rounded-xl border border-black/[0.06]">
+                                <div className="space-y-4 bg-white dark:bg-[#0a0a0a] p-4 rounded-xl border border-black/[0.06] dark:border-white/[0.06]">
                                     <div>
                                         <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-2 block">Description / Note</label>
-                                        <input className="input-field w-full bg-white" placeholder="e.g. Amazon purchase, Dominoes" value={form.description ?? ''} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+                                        <input className="input-field w-full bg-white dark:bg-[#0a0a0a]" placeholder="e.g. Amazon purchase, Dominoes" value={form.description ?? ''} onChange={(e) => setForm({ ...form, description: e.target.value })} />
                                     </div>
                                     {(selectedLenderId === 'klarna' || selectedLenderId === 'clearpay') ? (
                                         <div>
                                             <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-2 block">Payments Left</label>
-                                            <input className="input-field w-full bg-white" type="number" placeholder="e.g. 3" value={form.payments_left ?? ''} onChange={(e) => setForm({ ...form, payments_left: parseInt(e.target.value) })} />
+                                            <input className="input-field w-full bg-white dark:bg-[#0a0a0a]" type="number" placeholder="e.g. 3" value={form.payments_left ?? ''} onChange={(e) => setForm({ ...form, payments_left: parseInt(e.target.value) })} />
                                         </div>
                                     ) : (
                                         <div className={selectedLenderId === 'currys' ? '' : 'opacity-40 grayscale pointer-events-none'}>
                                             <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-2 block">End Date (optional)</label>
-                                            <input className="input-field w-full bg-white" type="date" value={form.end_date ?? ''} onChange={(e) => setForm({ ...form, end_date: e.target.value })} />
+                                            <input className="input-field w-full bg-white dark:bg-[#0a0a0a]" type="date" value={form.end_date ?? ''} onChange={(e) => setForm({ ...form, end_date: e.target.value })} />
                                         </div>
                                     )}
                                     <div>
                                         <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-2 block">Grouping Name (optional)</label>
-                                        <input className="input-field w-full bg-white" placeholder="e.g. Tech Purchases" value={form.group_name ?? ''} onChange={(e) => setForm({ ...form, group_name: e.target.value })} />
+                                        <input className="input-field w-full bg-white dark:bg-[#0a0a0a]" placeholder="e.g. Tech Purchases" value={form.group_name ?? ''} onChange={(e) => setForm({ ...form, group_name: e.target.value })} />
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="flex gap-3 pt-4 border-t border-black/[0.06] mt-6">
+                            <div className="flex gap-3 pt-4 border-t border-black/[0.06] dark:border-white/[0.06] mt-6">
                                 <button onClick={() => handleSave(!!editId)} disabled={saving} className="btn-primary flex-1 h-12 text-[14px]">
                                     {saving ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : editId ? 'Save Changes' : 'Create Liability'}
                                 </button>
@@ -231,7 +231,7 @@ export function LiabilitiesManager() {
                             </div>
                         </div>
                     ) : (
-                        <button onClick={() => { setAdding(true); setSelectedLenderId('other'); }} className="flex items-center gap-2 text-[13px] text-black/60 hover:text-black dark:text-white hover:bg-black/5 dark:bg-white/5 font-bold transition-all border-2 border-dashed border-black/[0.08] hover:border-black/30 dark:border-white/30 w-full p-6 rounded-2xl justify-center bg-white shadow-sm">
+                        <button onClick={() => { setAdding(true); setSelectedLenderId('other'); }} className="flex items-center gap-2 text-[13px] text-black/60 hover:text-black dark:text-white hover:bg-black/5 dark:bg-white dark:bg-[#0a0a0a]/5 font-bold transition-all border-2 border-dashed border-black/[0.08] hover:border-black/30 dark:border-white/30 w-full p-6 rounded-2xl justify-center bg-white dark:bg-[#0a0a0a] shadow-sm">
                             <Plus className="w-5 h-5" /> Add new subscription or debt schedule
                         </button>
                     )}
