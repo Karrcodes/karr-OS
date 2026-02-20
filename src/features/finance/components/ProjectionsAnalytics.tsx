@@ -267,7 +267,12 @@ export function ProjectionsAnalytics() {
                                             {isAbsence && <span className="text-[8px] sm:text-[9px] bg-red-500 text-white px-1 py-0.5 rounded font-bold tracking-widest uppercase shadow-sm">ABS</span>}
                                             {isHoliday && <span className="text-[8px] sm:text-[9px] bg-purple-500 text-white px-1 py-0.5 rounded font-bold tracking-widest uppercase shadow-sm">HOL</span>}
                                         </div>
-                                        {isPayday && <DollarSign className={`w-3.5 h-3.5 sm:w-4 sm:h-4 opacity-80 ${isShift && !override ? 'text-emerald-500' : 'text-emerald-700'}`} />}
+                                        {isPayday && (
+                                            <div className={`flex items-center gap-0.5 font-bold text-[10px] sm:text-[11px] opacity-90 ${isShift && !override ? 'text-emerald-600' : 'text-emerald-700'}`}>
+                                                <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
+                                                <span>£{projectedNet.toFixed(0)}</span>
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="mt-auto flex items-end justify-between">
                                         {(isShift || isOvertime) && !isAbsence && !isHoliday && (
@@ -305,6 +310,6 @@ export function ProjectionsAnalytics() {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     )
 }

@@ -4,5 +4,6 @@ export interface Task {
     title: string
     is_completed: boolean
     category: 'todo' | 'grocery'
+    priority: 'super' | 'high' | 'mid' | 'low'
     created_at: string
 }

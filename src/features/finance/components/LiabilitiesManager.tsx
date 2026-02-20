@@ -149,7 +149,7 @@ export function LiabilitiesManager() {
                     )}
 
                     {(adding || editId) ? (
-                        <div className="rounded-2xl border border-black/20 bg-black p-6 space-y-5 shadow-sm">
+                        <div className="rounded-2xl border border-black/[0.08] bg-white p-6 space-y-5 shadow-sm">
                             <h3 className="text-[14px] font-bold text-black border-b border-black/[0.06] pb-3 mb-4">
                                 {editId ? 'Edit Liability' : 'Add New Liability'}
                             </h3>

@@ -97,7 +97,7 @@ export function SavingsManager() {
                     })}
 
                     {adding ? (
-                        <div className="grid grid-cols-2 gap-4 rounded-2xl border border-black/20 bg-black p-6 shadow-sm">
+                        <div className="grid grid-cols-2 gap-4 rounded-2xl border border-black/[0.08] bg-white p-6 shadow-sm">
                             <h3 className="text-[14px] font-bold text-black border-b border-black/[0.06] pb-3 col-span-2">
                                 Add New Goal
                             </h3>

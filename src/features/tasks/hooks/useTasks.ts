@@ -25,10 +25,11 @@ export function useTasks(category: 'todo' | 'grocery') {
         setLoading(false)
     }, [activeProfile, category])
 
-    const createTask = async (title: string) => {
+    const createTask = async (title: string, priority: 'super' | 'high' | 'mid' | 'low' = 'low') => {
         const { error } = await supabase.from('fin_tasks').insert({
             title,
             category,
+            priority,
             profile: activeProfile
         })
         if (error) throw error
@@ -47,6 +48,15 @@ export function useTasks(category: 'todo' | 'grocery') {
         await fetchTasks()
     }
 
+    const clearAllTasks = async () => {
+        const { error } = await supabase.from('fin_tasks')
+            .delete()
+            .eq('profile', activeProfile)
+            .eq('category', category)
+        if (error) throw error
+        await fetchTasks()
+    }
+
     useEffect(() => {
         fetchTasks()
     }, [fetchTasks])
@@ -58,6 +68,7 @@ export function useTasks(category: 'todo' | 'grocery') {
         createTask,
         toggleTask,
         deleteTask,
+        clearAllTasks,
         refetch: fetchTasks
     }
 }
