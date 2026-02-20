@@ -25,7 +25,7 @@ export async function getEBToken() {
             iss: appId,
             aud: ENABLE_BANKING_BASE_URL,
         })
-            .setProtectedHeader({ alg: 'RS256', typ: 'JWT' })
+            .setProtectedHeader({ alg: 'RS256', typ: 'JWT', kid: appId })
             .setIssuedAt()
             .setExpirationTime('10m') // Short lived
             .sign(privateKey)
