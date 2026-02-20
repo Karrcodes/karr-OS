@@ -2,16 +2,14 @@
 
 import { useState, useMemo } from 'react'
 import { ArrowLeft, Wallet, TrendingUp, Receipt, PieChart, FileText, Trash2 } from 'lucide-react'
-import { usePayslips } from '@/features/finance/hooks/usePayslips'
 import { useTransactions } from '@/features/finance/hooks/useTransactions'
 import { useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
 import { SpendingAnalytics } from '@/features/finance/components/SpendingAnalytics'
-import { ProjectionsAnalytics } from '@/features/finance/components/ProjectionsAnalytics'
 import { PayslipUploader } from '@/features/finance/components/PayslipUploader'
 import { cn } from '@/lib/utils'
 
 export default function FinanceAnalyticsPage() {
-    const [activeTab, setActiveTab] = useState<'salary' | 'projections' | 'spending'>('salary')
+    const [activeTab, setActiveTab] = useState<'salary' | 'spending'>('salary')
     const { payslips, loading: payslipsLoading, deletePayslip, refetch: refetchPayslips } = usePayslips()
     const { transactions, loading: txLoading } = useTransactions()
     const { activeProfile } = useFinanceProfile()
@@ -66,15 +64,6 @@ export default function FinanceAnalyticsPage() {
                                 Salary Hub
                             </button>
                             <button
-                                onClick={() => setActiveTab('projections')}
-                                className={cn(
-                                    "px-4 py-1.5 rounded-lg text-[12px] font-bold transition-all",
-                                    activeTab === 'projections' ? "bg-white text-black shadow-sm" : "text-black/30 hover:text-black/50"
-                                )}
-                            >
-                                Projections
-                            </button>
-                            <button
                                 onClick={() => setActiveTab('spending')}
                                 className={cn(
                                     "px-4 py-1.5 rounded-lg text-[12px] font-bold transition-all",
@@ -99,9 +88,7 @@ export default function FinanceAnalyticsPage() {
                         </div>
                     ) : (
                         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                            {activeTab === 'projections' ? (
-                                <ProjectionsAnalytics />
-                            ) : activeTab === 'salary' ? (
+                            {activeTab === 'salary' ? (
                                 !salaryStats ? (
                                     <div className="space-y-6">
                                         <div className="py-10 text-center bg-white rounded-3xl border border-black/[0.05] shadow-sm">
@@ -280,6 +267,6 @@ export default function FinanceAnalyticsPage() {
                     )}
                 </div>
             </div>
-        </div>
+        </div >
     )
 }

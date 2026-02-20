@@ -5,7 +5,7 @@ import { Calendar as CalendarIcon, ExternalLink, Briefcase, DollarSign, ChevronL
 
 // Hardcoded anchor: User states next shift starts on "Monday". 
 // Given current date (Feb 20, 2026 - Friday), next Monday is Feb 23, 2026.
-const ROTA_ANCHOR = new Date(2026, 1, 23) // Month is 0-indexed (1 = Feb)
+const ROTA_ANCHOR_UTC = Date.UTC(2026, 1, 23) // Month is 0-indexed (1 = Feb)
 
 function getDaysInMonth(year: number, month: number) {
     return new Date(year, month + 1, 0).getDate()
@@ -16,20 +16,27 @@ function getFirstDayOfMonth(year: number, month: number) {
     return day === 0 ? 6 : day - 1 // Convert Sunday=0 to Monday=0
 }
 
+const HOURS_PER_SHIFT = 11.5
+const BASE_RATE = 15.26
+const OT_RATE = 20.35
+const DEDUCTION_RATE = 0.1877 // ~18.77% deduced from payslip
+
 export function ProjectionsAnalytics() {
     const [currentDate, setCurrentDate] = useState(new Date())
+    const [overtimeDays, setOvertimeDays] = useState<Record<string, boolean>>({})
 
     const monthName = currentDate.toLocaleString('default', { month: 'long' })
     const year = currentDate.getFullYear()
     const monthIndex = currentDate.getMonth()
 
-    const { days, paydaysThisMonth, shiftsThisMonth } = useMemo(() => {
+    const { days, paydaysThisMonth, shiftsThisMonth, otThisMonth, projectedNet } = useMemo(() => {
         const daysInMonth = getDaysInMonth(year, monthIndex)
         const firstDayIdx = getFirstDayOfMonth(year, monthIndex)
 
         const daysArr = []
         let paydaysCount = 0
         let shiftsCount = 0
+        let otCount = 0
 
         // Padding previous month
         for (let i = 0; i < firstDayIdx; i++) {
@@ -41,29 +48,41 @@ export function ProjectionsAnalytics() {
             const date = new Date(year, monthIndex, day)
             date.setHours(0, 0, 0, 0)
 
-            // Shift Logic: 3-on-3-off relative to Rota Anchor
-            const diffTime = date.getTime() - ROTA_ANCHOR.getTime()
-            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+            // Shift Logic: 3-on-3-off relative to Rota Anchor (Strict UTC to prevent timezone drifting)
+            const dateUTC = Date.UTC(year, monthIndex, day)
+            const diffDays = Math.round((dateUTC - ROTA_ANCHOR_UTC) / 86400000)
             const cycleDay = ((diffDays % 6) + 6) % 6 // Handles negative diffs correctly
             const isShift = cycleDay < 3
 
             // Payday Logic: Every Friday
             const isPayday = date.getDay() === 5 // 0=Sunday, 5=Friday
 
+            // Overtime Logic
+            const dateStr = date.toISOString().split('T')[0]
+            const isOvertime = !!overtimeDays[dateStr]
+            if (isOvertime) otCount++
+
             if (isShift) shiftsCount++
             if (isPayday) paydaysCount++
 
             daysArr.push({
                 day,
+                dateStr,
                 date,
                 isShift,
                 isPayday,
+                isOvertime,
                 isToday: new Date().toDateString() === date.toDateString()
             })
         }
 
-        return { days: daysArr, paydaysThisMonth: paydaysCount, shiftsThisMonth: shiftsCount }
-    }, [year, monthIndex])
+        const baseGross = shiftsCount * HOURS_PER_SHIFT * BASE_RATE
+        const otGross = otCount * HOURS_PER_SHIFT * OT_RATE
+        const totalGross = baseGross + otGross
+        const projectedNet = totalGross * (1 - DEDUCTION_RATE)
+
+        return { days: daysArr, paydaysThisMonth: paydaysCount, shiftsThisMonth: shiftsCount, otThisMonth: otCount, projectedNet }
+    }, [year, monthIndex, overtimeDays])
 
     const nextMonth = () => {
         setCurrentDate(new Date(year, monthIndex + 1, 1))
@@ -76,7 +95,7 @@ export function ProjectionsAnalytics() {
     return (
         <div className="space-y-6 max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500">
             {/* Quick Actions & Status Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <a
                     href="https://universe.staffline.co.uk/"
                     target="_blank"
@@ -96,7 +115,7 @@ export function ProjectionsAnalytics() {
                     </div>
                 </a>
 
-                <div className="md:col-span-2 grid grid-cols-2 gap-4">
+                <div className="md:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="bg-white p-5 rounded-2xl border border-black/[0.06] shadow-sm flex flex-col justify-center">
                         <div className="flex items-center gap-2 text-[11px] font-bold text-black/40 uppercase tracking-widest mb-1">
                             <DollarSign className="w-4 h-4 text-emerald-500" /> Pay Cycle
@@ -113,7 +132,18 @@ export function ProjectionsAnalytics() {
                         <div className="text-[28px] font-black text-black">
                             {shiftsThisMonth} <span className="text-[14px] text-black/40 font-semibold ml-1">Shifts</span>
                         </div>
-                        <p className="text-[11px] text-black/40 mt-1">Based on 3-on / 3-off schedule.</p>
+                        <p className="text-[11px] text-black/40 mt-1">Calculated 3-on / 3-off schedule.</p>
+                    </div>
+                    <div className="bg-gradient-to-br from-emerald-500 to-emerald-700 p-5 rounded-2xl shadow-sm flex flex-col justify-center text-white relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+                        <div className="flex items-center gap-2 text-[11px] font-bold text-emerald-100 uppercase tracking-widest mb-1 relative z-10">
+                            Net Income
+                        </div>
+                        <div className="text-[28px] font-black relative z-10 flex items-baseline gap-1">
+                            <span className="text-[18px] opacity-70">£</span>
+                            {projectedNet.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                        <p className="text-[11px] text-emerald-100 mt-1 relative z-10">Based on {shiftsThisMonth} shifts + {otThisMonth} OT. (~18.8% Ded.)</p>
                     </div>
                 </div>
             </div>
@@ -153,13 +183,24 @@ export function ProjectionsAnalytics() {
                         {days.map((d, i) => {
                             if (!d) return <div key={i} className="aspect-square bg-transparent rounded-xl" />
 
-                            const { day, isShift, isPayday, isToday } = d
+                            const { day, isShift, isPayday, isToday, isOvertime, dateStr } = d
+
+                            const toggleOvertime = () => {
+                                setOvertimeDays(prev => ({
+                                    ...prev,
+                                    [dateStr]: !prev[dateStr]
+                                }))
+                            }
 
                             let bgClass = "bg-black/[0.02] border-transparent"
                             let borderClass = ""
                             let textClass = "text-black/60"
 
-                            if (isShift && isPayday) {
+                            // Overtime styling takes precedence
+                            if (isOvertime) {
+                                bgClass = "bg-orange-50 border-orange-200"
+                                textClass = "text-orange-900"
+                            } else if (isShift && isPayday) {
                                 bgClass = "bg-[#dbeafe]" // Blueish
                                 borderClass = "border-emerald-300" // Green border
                                 textClass = "text-blue-900"
@@ -176,16 +217,23 @@ export function ProjectionsAnalytics() {
                             }
 
                             return (
-                                <div key={i} className={`aspect-square relative rounded-xl border p-1.5 sm:p-2 sm:pt-1.5 transition-all flex flex-col justify-between ${bgClass} ${borderClass}`}>
+                                <div
+                                    key={i}
+                                    onClick={toggleOvertime}
+                                    className={`aspect-square cursor-pointer hover:border-black/20 relative rounded-xl border p-1.5 sm:p-2 sm:pt-1.5 transition-all flex flex-col justify-between ${bgClass} ${borderClass}`}
+                                >
                                     <div className="flex justify-between items-start">
-                                        <span className={`text-[12px] sm:text-[14px] font-bold ${textClass}`}>{day}</span>
-                                        {isPayday && <DollarSign className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isShift ? 'text-emerald-500' : 'text-emerald-600'}`} />}
+                                        <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                                            <span className={`text-[12px] sm:text-[14px] font-bold ${textClass}`}>{day}</span>
+                                            {isOvertime && <span className="text-[8px] bg-orange-500 text-white px-1 py-0.5 rounded font-bold tracking-widest uppercase">OT</span>}
+                                        </div>
+                                        {isPayday && <DollarSign className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isShift && !isOvertime ? 'text-emerald-500' : 'text-emerald-600'}`} />}
                                     </div>
                                     <div className="mt-auto flex items-end justify-between">
-                                        {isShift && (
-                                            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-blue-500" />
+                                        {(isShift || isOvertime) && (
+                                            <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isOvertime ? 'bg-orange-500' : 'bg-blue-500'}`} />
                                         )}
-                                        {isPayday && !isShift && (
+                                        {isPayday && !isShift && !isOvertime && (
                                             <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-500" />
                                         )}
                                     </div>
@@ -198,6 +246,9 @@ export function ProjectionsAnalytics() {
                     <div className="mt-6 flex flex-wrap items-center gap-4 text-[11px] text-black/40 font-medium border-t border-black/[0.04] pt-4">
                         <div className="flex items-center gap-2">
                             <div className="w-3 h-3 rounded bg-[#dbeafe]" /> Shift Day
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded bg-orange-50 border border-orange-200" /> Overtime Shift
                         </div>
                         <div className="flex items-center gap-2">
                             <div className="w-3 h-3 rounded bg-[#d1fae5]" /> Payday OFF

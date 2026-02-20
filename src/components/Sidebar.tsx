@@ -8,7 +8,7 @@ import {
     BarChart3, CheckSquare, FolderKanban, Video,
     SlidersHorizontal, Menu, X, RefreshCw,
     Lock, BookOpen, Utensils, Dumbbell, Shield, ChevronDown,
-    TrendingUp
+    TrendingUp, Calendar, CreditCard, PiggyBank
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -18,7 +18,10 @@ const navItems = [
         href: '/finances',
         icon: BarChart3,
         sub: [
+            { label: 'Projections', href: '/finances/projections', icon: Calendar },
             { label: 'Analytics', href: '/finances/analytics', icon: TrendingUp },
+            { label: 'Liabilities', href: '/finances/liabilities', icon: CreditCard },
+            { label: 'Savings', href: '/finances/savings', icon: PiggyBank },
             { label: 'Settings', href: '/finances/settings', icon: SlidersHorizontal }
         ],
     },
