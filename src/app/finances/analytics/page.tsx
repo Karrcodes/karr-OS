@@ -40,7 +40,7 @@ export default function FinanceAnalyticsPage() {
     return (
         <div className="min-h-screen bg-[#fafafa] flex flex-col">
             {/* Header */}
-            <div className="bg-white border-b border-black/[0.06] px-6 py-5 sticky top-0 z-10 transition-all">
+            <div className="bg-white border-b border-black/[0.06] px-6 py-5 sticky top-0 z-20 backdrop-blur-sm shadow-sm">
                 <div className="max-w-5xl mx-auto space-y-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">

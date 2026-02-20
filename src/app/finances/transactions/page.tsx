@@ -18,7 +18,7 @@ export default function TransactionsPage() {
     return (
         <div className="min-h-screen bg-[#fafafa] flex flex-col">
             {/* Header */}
-            <div className="bg-white border-b border-black/[0.06] px-6 py-5 sticky top-0 z-10">
+            <div className="bg-white border-b border-black/[0.06] px-6 py-5 sticky top-0 z-20 backdrop-blur-sm shadow-sm">
                 <div className="max-w-4xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <a href="/finances" className="w-10 h-10 rounded-xl bg-black/[0.03] flex items-center justify-center hover:bg-black/[0.06] transition-colors">

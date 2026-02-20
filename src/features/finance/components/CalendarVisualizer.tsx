@@ -14,23 +14,24 @@ interface ProjectedPayment {
 }
 
 const LENDER_LOGOS: Record<string, string> = {
-    'Klarna': '/klarna.png',
-    'Clearpay': '/clearpay.png',
-    'Currys Flexipay': '/currys.png',
+    'klarna': '/klarna.png',
+    'clearpay': '/clearpay.png',
+    'currys flexipay': '/currys.png',
+    'currys': '/currys.png',
 }
 
-function LenderBadge({ name, size = 8 }: { name: string; size?: number }) {
-    const logoSrc = LENDER_LOGOS[name]
+function LenderBadge({ name }: { name: string }) {
+    const logoSrc = LENDER_LOGOS[name.toLowerCase()]
     if (logoSrc) {
         return (
-            <div className={`w-${size} h-${size} rounded-xl bg-white border border-black/[0.06] flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0`}>
+            <div className="w-8 h-8 rounded-xl bg-white border border-black/[0.06] flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
                 <img src={logoSrc} alt={name} className="w-full h-full object-contain p-0.5" />
             </div>
         )
     }
     return (
-        <div className={`w-${size} h-${size} rounded-xl bg-black/[0.06] flex items-center justify-center text-sm font-black text-black/40 flex-shrink-0`}>
-            {name.charAt(0)}
+        <div className="w-8 h-8 rounded-xl bg-black/[0.06] flex items-center justify-center text-sm font-black text-black/40 flex-shrink-0">
+            {name.charAt(0).toUpperCase()}
         </div>
     )
 }
@@ -305,7 +306,7 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                             <div key={lender} className="space-y-3">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <LenderBadge name={lender} size={8} />
+                                        <LenderBadge name={lender} />
                                         <div>
                                             <h3 className="text-[13px] font-bold text-black/80">{lender}</h3>
                                             <p className="text-[10px] text-black/40 uppercase tracking-tight">{data.o.length} Active Plan{data.o.length > 1 ? 's' : ''}</p>
