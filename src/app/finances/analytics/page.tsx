@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { ArrowLeft, Wallet, TrendingUp, Receipt, PieChart, FileText, Trash2 } from 'lucide-react'
 import { useTransactions } from '@/features/finance/hooks/useTransactions'
+import { usePayslips } from '@/features/finance/hooks/usePayslips'
 import { useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
 import { SpendingAnalytics } from '@/features/finance/components/SpendingAnalytics'
 import { PayslipUploader } from '@/features/finance/components/PayslipUploader'

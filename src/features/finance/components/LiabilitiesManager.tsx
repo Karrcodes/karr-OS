@@ -5,7 +5,7 @@ import { Plus, Trash2, Pencil, Check, X, Loader2 } from 'lucide-react'
 import { useRecurring } from '@/features/finance/hooks/useRecurring'
 import type { RecurringObligation } from '@/features/finance/types/finance.types'
 import { getLenderLogo } from '@/features/finance/utils/lenderLogos'
-import { Section, Spinner } from './SharedSettingsUI'
+import { Section, Spinner } from '@/features/finance/components/SharedSettingsUI'
 
 const LENDERS = [
     { id: 'klarna', name: 'Klarna', emoji: '💗', color: '#ffb3c7' },

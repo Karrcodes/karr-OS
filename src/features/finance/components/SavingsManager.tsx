@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Plus, Trash2, Pencil, Check, X, Loader2 } from 'lucide-react'
 import { useGoals } from '@/features/finance/hooks/useGoals'
 import type { Goal } from '@/features/finance/types/finance.types'
-import { Section, Spinner } from './SharedSettingsUI'
+import { Section, Spinner } from '@/features/finance/components/SharedSettingsUI'
 
 export function SavingsManager() {
     const { goals, loading, createGoal, updateGoal, deleteGoal } = useGoals()
