@@ -196,7 +196,7 @@ export function SpendingAnalytics({ transactions }: SpendingAnalyticsProps) {
                                 </div>
                                 <div className="text-right">
                                     <p className="text-[14px] font-bold text-black">£{cat.amount.toFixed(2)}</p>
-                                    <ArrowUpRight className="w-3.5 h-3.5 text-black/20 ml-auto mt-0.5 group-hover:text-[#7c3aed] transition-colors" />
+                                    <ArrowUpRight className="w-3.5 h-3.5 text-black/20 ml-auto mt-0.5 group-hover:text-black dark:text-white transition-colors" />
                                 </div>
                             </button>
                         ))}

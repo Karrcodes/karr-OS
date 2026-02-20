@@ -39,7 +39,7 @@ export function TransactionLedger() {
                     <p className="text-[11px] text-black/25">Use the quick action button below to log a spend.</p>
                     <button
                         onClick={() => setIsModalOpen(true)}
-                        className="text-[11px] font-bold text-[#7c3aed] flex items-center gap-1.5 hover:underline"
+                        className="text-[11px] font-bold text-black dark:text-white flex items-center gap-1.5 hover:underline"
                     >
                         Connect Bank Sync
                     </button>
@@ -58,7 +58,7 @@ export function TransactionLedger() {
             <div className="flex items-center justify-between">
                 <div className="flex items-baseline gap-2">
                     <h3 className="text-[11px] uppercase tracking-wider font-bold text-black/30">Recent Ledger</h3>
-                    <a href="/finances/transactions" className="text-[10px] font-bold text-[#7c3aed] hover:underline">See All</a>
+                    <a href="/finances/transactions" className="text-[10px] font-bold text-black dark:text-white hover:underline">See All</a>
                     <button
                         onClick={() => { if (confirm('Clear all transactions in this profile?')) clearTransactions() }}
                         className="text-[10px] font-bold text-red-400/60 hover:text-red-500 transition-colors ml-2"
@@ -69,7 +69,7 @@ export function TransactionLedger() {
                 <button
                     onClick={() => setIsModalOpen(true)}
                     disabled={bankSyncLoading}
-                    className="flex items-center gap-1.5 text-[11px] font-bold text-[#7c3aed] bg-[#7c3aed]/10 px-2 py-1 rounded-lg hover:bg-[#7c3aed]/20 transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1.5 text-[11px] font-bold text-black dark:text-white bg-black/10 dark:bg-white/10 px-2 py-1 rounded-lg hover:bg-black/20 dark:bg-white/20 transition-colors disabled:opacity-50"
                 >
                     <RefreshCw className={`w-3 h-3 ${bankSyncLoading ? 'animate-spin' : ''}`} />
                     {bankSyncLoading ? 'Syncing...' : 'Sync Bank'}
@@ -93,7 +93,7 @@ export function TransactionLedger() {
                                 <div className="flex items-center gap-2">
                                     <p className="text-[13px] font-bold text-black truncate">{t.description || 'Transaction'}</p>
                                     {t.provider === 'enable_banking' && (
-                                        <span className="text-[9px] font-bold text-[#7c3aed] bg-[#7c3aed]/5 px-1 py-0.5 rounded border border-[#7c3aed]/10">BANK</span>
+                                        <span className="text-[9px] font-bold text-black dark:text-white bg-black/5 dark:bg-white/5 px-1 py-0.5 rounded border border-black/10 dark:border-white/10">BANK</span>
                                     )}
                                 </div>
                                 <p className={`text-[13px] font-bold ${t.type === 'spend' ? 'text-black' : 'text-[#059669]'}`}>

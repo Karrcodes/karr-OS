@@ -38,7 +38,7 @@ export default function TransactionsPage() {
                                 placeholder="Search transactions..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className="bg-black/[0.03] border border-black/[0.06] rounded-xl pl-9 pr-4 py-2 text-[13px] outline-none focus:border-[#7c3aed]/30 transition-colors w-64"
+                                className="bg-black/[0.03] border border-black/[0.06] rounded-xl pl-9 pr-4 py-2 text-[13px] outline-none focus:border-black/30 dark:border-white/30 transition-colors w-64"
                             />
                         </div>
                     </div>
@@ -74,7 +74,7 @@ export default function TransactionsPage() {
                                             <div className="flex items-center gap-2">
                                                 <p className="text-[14px] font-bold text-black truncate">{t.description || 'Transaction'}</p>
                                                 {t.provider === 'revolut_csv' && (
-                                                    <span className="text-[9px] font-bold text-[#7c3aed] bg-[#7c3aed]/5 px-1.5 py-0.5 rounded border border-[#7c3aed]/10 tracking-widest uppercase">Sync</span>
+                                                    <span className="text-[9px] font-bold text-black dark:text-white bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded border border-black/10 dark:border-white/10 tracking-widest uppercase">Sync</span>
                                                 )}
                                             </div>
                                             <p className={`text-[15px] font-bold ${t.type === 'spend' ? 'text-black' : 'text-[#059669]'}`}>

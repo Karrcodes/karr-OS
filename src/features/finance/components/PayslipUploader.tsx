@@ -117,20 +117,20 @@ export function PayslipUploader({ onSuccess }: PayslipUploaderProps) {
                 className={`
                     relative flex flex-col items-center justify-center gap-3 p-8 rounded-2xl border-2 border-dashed 
                     cursor-pointer transition-all duration-200
-                    ${dragging ? 'border-[#7c3aed]/60 bg-[#7c3aed]/5 scale-[1.01]' : 'border-black/10 hover:border-[#7c3aed]/40 hover:bg-[#7c3aed]/[0.02]'}
+                    ${dragging ? 'border-black/60 dark:border-white/60 bg-black/5 dark:bg-white/5 scale-[1.01]' : 'border-black/10 hover:border-black/40 dark:border-white/40 hover:bg-black dark:bg-white/[0.02]'}
                     ${uploading ? 'pointer-events-none opacity-70' : ''}
                 `}
             >
                 {uploading ? (
                     <>
-                        <Loader2 className="w-8 h-8 text-[#7c3aed] animate-spin" />
-                        <p className="text-[13px] font-bold text-[#7c3aed]">Parsing with AI...</p>
+                        <Loader2 className="w-8 h-8 text-black dark:text-white animate-spin" />
+                        <p className="text-[13px] font-bold text-black dark:text-white">Parsing with AI...</p>
                         <p className="text-[11px] text-black/30">This may take a moment</p>
                     </>
                 ) : (
                     <>
-                        <div className="w-12 h-12 rounded-2xl bg-[#7c3aed]/10 flex items-center justify-center">
-                            <UploadCloud className="w-6 h-6 text-[#7c3aed]" />
+                        <div className="w-12 h-12 rounded-2xl bg-black/10 dark:bg-white/10 flex items-center justify-center">
+                            <UploadCloud className="w-6 h-6 text-black dark:text-white" />
                         </div>
                         <div className="text-center">
                             <p className="text-[14px] font-bold text-black">Drop payslips here or click to upload</p>

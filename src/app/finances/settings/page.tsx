@@ -183,7 +183,7 @@ function PocketsSettings() {
                     ))}
 
                     {adding ? (
-                        <div className="flex items-center gap-3 rounded-xl border border-[#7c3aed]/20 bg-[#7c3aed]/5 p-3">
+                        <div className="flex items-center gap-3 rounded-xl border border-black/20 dark:border-white/20 bg-black/5 dark:bg-white/5 p-3">
                             <input className="input-field flex-1" placeholder="Pocket name" value={form.name ?? ''} onChange={(e) => setForm({ ...form, name: e.target.value })} />
                             <input className="input-field w-32" type="number" placeholder="Weekly alloc £" value={form.target_budget ?? ''} onChange={(e) => setForm({ ...form, target_budget: parseFloat(e.target.value) })} />
                             <select className="input-field w-28" value={form.type ?? 'general'} onChange={(e) => setForm({ ...form, type: e.target.value as Pocket['type'] })}>

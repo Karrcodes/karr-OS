@@ -6,7 +6,7 @@ import Link from 'next/link'
 export default function PrivacyPage() {
     return (
         <div className="min-h-screen bg-white text-black p-8 md:p-24 max-w-4xl mx-auto">
-            <Link href="/finances" className="inline-flex items-center gap-2 text-sm font-bold text-[#7c3aed] mb-12 hover:underline">
+            <Link href="/finances" className="inline-flex items-center gap-2 text-sm font-bold text-black dark:text-white mb-12 hover:underline">
                 <ArrowLeft className="w-4 h-4" /> Back to Dashboard
             </Link>
 

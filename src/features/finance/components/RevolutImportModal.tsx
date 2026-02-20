@@ -63,7 +63,7 @@ export function RevolutImportModal({ isOpen, onClose, onSuccess }: RevolutImport
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-5 border-b border-black/[0.06] bg-white">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-[#7c3aed]/10 flex items-center justify-center text-[#7c3aed]">
+                        <div className="w-10 h-10 rounded-2xl bg-black/10 dark:bg-white/10 flex items-center justify-center text-black dark:text-white">
                             <FileText className="w-5 h-5" />
                         </div>
                         <div>
@@ -78,8 +78,8 @@ export function RevolutImportModal({ isOpen, onClose, onSuccess }: RevolutImport
 
                 {/* Content */}
                 <div className="p-6 flex-1 overflow-y-auto space-y-6">
-                    <div className="bg-[#7c3aed]/5 rounded-2xl p-5 border border-[#7c3aed]/10">
-                        <h3 className="text-[13px] font-bold text-[#7c3aed] mb-1">How to sync:</h3>
+                    <div className="bg-black/5 dark:bg-white/5 rounded-2xl p-5 border border-black/10 dark:border-white/10">
+                        <h3 className="text-[13px] font-bold text-black dark:text-white mb-1">How to sync:</h3>
                         <ol className="text-[12px] text-black/60 space-y-1 ml-4 list-decimal marker:font-bold">
                             <li>Open the Revolut App or Web interface</li>
                             <li>Go to <span className="font-bold text-black">Accounts</span> → <span className="font-bold text-black">Statements</span></li>
@@ -95,7 +95,7 @@ export function RevolutImportModal({ isOpen, onClose, onSuccess }: RevolutImport
                                 value={csvText}
                                 onChange={(e) => setCsvText(e.target.value)}
                                 placeholder="Type,Product,Started Date,Completed Date,Description,Amount,Fee,Currency,State,Balance..."
-                                className="w-full h-48 bg-black/[0.02] border border-black/[0.06] rounded-2xl p-4 text-[13px] text-black font-mono placeholder:text-black/10 outline-none focus:border-[#7c3aed]/30 transition-colors resize-none"
+                                className="w-full h-48 bg-black/[0.02] border border-black/[0.06] rounded-2xl p-4 text-[13px] text-black font-mono placeholder:text-black/10 outline-none focus:border-black/30 dark:border-white/30 transition-colors resize-none"
                             />
                         </div>
 
@@ -104,7 +104,7 @@ export function RevolutImportModal({ isOpen, onClose, onSuccess }: RevolutImport
                                 type="checkbox"
                                 checked={wipeExisting}
                                 onChange={(e) => setWipeExisting(e.target.checked)}
-                                className="w-5 h-5 rounded-lg border-black/20 text-[#7c3aed] focus:ring-[#7c3aed] transition-all cursor-pointer"
+                                className="w-5 h-5 rounded-lg border-black/20 text-black dark:text-white focus:ring-black dark:ring-white transition-all cursor-pointer"
                             />
                             <div className="flex-1">
                                 <p className="text-[13px] font-bold text-black/70 group-hover:text-black transition-colors">Wipe previous synced data</p>
@@ -132,7 +132,7 @@ export function RevolutImportModal({ isOpen, onClose, onSuccess }: RevolutImport
                     <button
                         onClick={handleImport}
                         disabled={loading || !csvText.trim()}
-                        className="flex-[2] py-4 rounded-2xl bg-[#7c3aed] text-white text-[14px] font-bold shadow-lg shadow-[#7c3aed]/20 hover:bg-[#6d28d9] disabled:opacity-50 disabled:shadow-none transition-all flex items-center justify-center gap-2"
+                        className="flex-[2] py-4 rounded-2xl bg-black dark:bg-white text-white text-[14px] font-bold shadow-lg shadow-black/20 dark:shadow-white/20 hover:bg-neutral-800 dark:hover:bg-neutral-200 disabled:opacity-50 disabled:shadow-none transition-all flex items-center justify-center gap-2"
                     >
                         {loading ? (
                             <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>

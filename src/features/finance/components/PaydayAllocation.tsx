@@ -374,7 +374,7 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
                 <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading || allocating}
-                    className="flex items-center gap-1.5 text-[11px] font-bold text-[#7c3aed] bg-[#7c3aed]/10 px-3 py-1.5 rounded-lg hover:bg-[#7c3aed]/20 transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1.5 text-[11px] font-bold text-black dark:text-white bg-black/10 dark:bg-white/10 px-3 py-1.5 rounded-lg hover:bg-black/20 dark:bg-white/20 transition-colors disabled:opacity-50"
                 >
                     {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UploadCloud className="w-3.5 h-3.5" />}
                     {uploading ? 'Parsing...' : 'Upload Payslip'}
@@ -391,7 +391,7 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
                             value={amount}
                             onChange={(e) => setAmount(e.target.value)}
                             placeholder="0.00"
-                            className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl pl-8 pr-3 py-2.5 text-[16px] font-bold text-black placeholder-black/20 outline-none focus:border-[#7c3aed]/40 transition-colors"
+                            className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl pl-8 pr-3 py-2.5 text-[16px] font-bold text-black placeholder-black/20 outline-none focus:border-black/40 dark:border-white/40 transition-colors"
                         />
                     </div>
                     <input
@@ -399,7 +399,7 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
                         value={source}
                         onChange={(e) => setSource(e.target.value)}
                         placeholder="Source"
-                        className="flex-1 min-w-[100px] bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-2.5 text-[14px] text-black placeholder-black/20 outline-none focus:border-[#7c3aed]/40 transition-colors"
+                        className="flex-1 min-w-[100px] bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-2.5 text-[14px] text-black placeholder-black/20 outline-none focus:border-black/40 dark:border-white/40 transition-colors"
                     />
                 </div>
 
@@ -409,7 +409,7 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
                         type="date"
                         value={date}
                         onChange={(e) => setDate(e.target.value)}
-                        className="w-[120px] shrink-0 bg-black/[0.03] border border-black/[0.08] rounded-xl px-2.5 py-2.5 text-[12px] font-medium text-black outline-none focus:border-[#7c3aed]/40 transition-colors"
+                        className="w-[120px] shrink-0 bg-black/[0.03] border border-black/[0.08] rounded-xl px-2.5 py-2.5 text-[12px] font-medium text-black outline-none focus:border-black/40 dark:border-white/40 transition-colors"
                     />
                     <div className="flex flex-1 gap-2">
                         <button

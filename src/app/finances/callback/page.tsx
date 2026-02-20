@@ -45,7 +45,7 @@ function CallbackContent() {
         <div className="w-full max-w-sm space-y-6">
             {status === 'loading' && (
                 <>
-                    <Loader2 className="w-12 h-12 text-[#7c3aed] animate-spin mx-auto" />
+                    <Loader2 className="w-12 h-12 text-black dark:text-white animate-spin mx-auto" />
                     <h1 className="text-xl font-bold text-black">Linking Account</h1>
                     <p className="text-black/40">{message}</p>
                 </>
@@ -79,7 +79,7 @@ function CallbackContent() {
 export default function BankCallback() {
     return (
         <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center">
-            <Suspense fallback={<Loader2 className="w-12 h-12 text-[#7c3aed] animate-spin mx-auto" />}>
+            <Suspense fallback={<Loader2 className="w-12 h-12 text-black dark:text-white animate-spin mx-auto" />}>
                 <CallbackContent />
             </Suspense>
         </div>

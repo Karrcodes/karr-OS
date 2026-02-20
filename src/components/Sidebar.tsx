@@ -3,16 +3,21 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
-    BarChart3, CheckSquare, FolderKanban, Video,
+    BarChart3, CheckSquare,
     SlidersHorizontal, Menu, X, RefreshCw,
-    Lock, BookOpen, Utensils, Dumbbell, Shield, ChevronDown,
-    TrendingUp, Calendar, CreditCard, PiggyBank
+    Shield, ChevronDown, Check,
+    TrendingUp, Calendar, CreditCard, PiggyBank,
+    Moon, Sun, Laptop, Target, Briefcase, Heart, Gift
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useTheme } from 'next-themes'
 
 const navItems = [
+    { label: 'Tasks', href: '/tasks', icon: CheckSquare },
+    { label: 'Goals', href: '/goals', icon: Target, disabled: true },
+    { label: 'Career', href: '/career', icon: Briefcase, disabled: true },
     {
         label: 'Finances',
         href: '/finances',
@@ -25,13 +30,9 @@ const navItems = [
             { label: 'Settings', href: '/finances/settings', icon: SlidersHorizontal }
         ],
     },
-    { label: 'Tasks', href: '/tasks', icon: CheckSquare, disabled: true },
-    { label: 'Projects', href: '/projects', icon: FolderKanban, disabled: true },
-    { label: 'Content Studio', href: '/content', icon: Video, disabled: true },
+    { label: 'Health & Wellbeing', href: '/health', icon: Heart, disabled: true },
     { label: 'Security Vault', href: '/vault', icon: Shield, disabled: true },
-    { label: 'Journal', href: '/journal', icon: BookOpen, disabled: true },
-    { label: 'Nutrition & Fuel', href: '/nutrition', icon: Utensils, disabled: true },
-    { label: 'Training', href: '/fitness', icon: Dumbbell, disabled: true },
+    { label: 'Wishlist', href: '/wishlist', icon: Gift, disabled: true },
 ]
 
 export function Sidebar() {
@@ -74,10 +75,10 @@ export function Sidebar() {
                             href={item.href}
                             className={cn(
                                 'flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-all duration-150 relative group',
-                                isActive ? 'bg-[#7c3aed]/10 text-[#7c3aed]' : 'text-black/50 hover:text-black/80 hover:bg-black/[0.04]'
+                                isActive ? 'bg-black/10 dark:bg-white/10 text-black dark:text-white' : 'text-black/50 hover:text-black/80 hover:bg-black/[0.04]'
                             )}
                         >
-                            <Icon className={cn('w-4 h-4', isActive ? 'text-[#7c3aed]' : 'text-black/35')} />
+                            <Icon className={cn('w-4 h-4', isActive ? 'text-black dark:text-white' : 'text-black/35')} />
                             <span className="text-[13px] font-medium">{item.label}</span>
 
                             {'sub' in item && item.sub && (
@@ -102,7 +103,7 @@ export function Sidebar() {
                                             href={subItem.href}
                                             className={cn(
                                                 'flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] transition-colors',
-                                                subActive ? 'text-[#7c3aed] bg-[#7c3aed]/8' : 'text-black/35 hover:text-black/60'
+                                                subActive ? 'text-black dark:text-white bg-black/8 dark:bg-white/8' : 'text-black/35 hover:text-black/60'
                                             )}
                                         >
                                             <SubIcon className="w-3 h-3" />
@@ -118,26 +119,81 @@ export function Sidebar() {
         </nav>
     )
 
-    const footer = (
-        <div className="px-5 py-4 border-t border-black/[0.06] flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-full bg-[#7c3aed]/10 border border-[#7c3aed]/20 flex items-center justify-center">
-                    <span className="text-[11px] text-[#7c3aed] font-bold">K</span>
-                </div>
-                <div>
-                    <p className="text-[12px] text-black/80 font-semibold">Karr</p>
-                    <p className="text-[10px] text-black/35">Personal OS</p>
+    function ProfileMenu() {
+        const [isOpen, setIsOpen] = useState(false)
+        const menuRef = useRef<HTMLDivElement>(null)
+        const { theme, setTheme } = useTheme()
+
+        // Close on click outside
+        useEffect(() => {
+            function handleClickOutside(event: MouseEvent) {
+                if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                    setIsOpen(false)
+                }
+            }
+            if (isOpen) document.addEventListener('mousedown', handleClickOutside)
+            return () => document.removeEventListener('mousedown', handleClickOutside)
+        }, [isOpen])
+
+        return (
+            <div className="relative px-5 py-4 border-t border-black/[0.06] dark:border-white/[0.06]" ref={menuRef}>
+                {isOpen && (
+                    <div className="absolute bottom-full left-4 mb-2 w-52 bg-white dark:bg-[#0a0a0a] border border-black/[0.08] dark:border-white/[0.08] rounded-xl shadow-xl overflow-hidden animate-in slide-in-from-bottom-2 duration-200 z-[60]">
+                        <div className="p-3 border-b border-black/[0.06] dark:border-white/[0.06]">
+                            <p className="text-[12px] font-bold text-black dark:text-white">Karr OS Admin</p>
+                            <p className="text-[10px] text-black/40 dark:text-white/40">karr@studiokarrtesian.com</p>
+                        </div>
+                        <div className="p-2">
+                            <p className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider text-black/30 dark:text-white/30">Theme</p>
+                            <button
+                                onClick={() => setTheme('light')}
+                                className={cn("w-full flex items-center justify-between gap-2.5 px-3 py-2 text-[12px] rounded-lg transition-colors", theme === 'light' ? "bg-black/5 dark:bg-white/10 text-black dark:text-white font-semibold" : "text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5")}
+                            >
+                                <div className="flex items-center gap-2.5"><Sun className="w-3.5 h-3.5" /> Light</div>
+                                {theme === 'light' && <Check className="w-3.5 h-3.5" />}
+                            </button>
+                            <button
+                                onClick={() => setTheme('dark')}
+                                className={cn("w-full flex items-center justify-between gap-2.5 px-3 py-2 text-[12px] rounded-lg transition-colors", theme === 'dark' ? "bg-black/5 dark:bg-white/10 text-black dark:text-white font-semibold" : "text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5")}
+                            >
+                                <div className="flex items-center gap-2.5"><Moon className="w-3.5 h-3.5" /> Dark</div>
+                                {theme === 'dark' && <Check className="w-3.5 h-3.5" />}
+                            </button>
+                            <button
+                                onClick={() => setTheme('system')}
+                                className={cn("w-full flex items-center justify-between gap-2.5 px-3 py-2 text-[12px] rounded-lg transition-colors", theme === 'system' ? "bg-black/5 dark:bg-white/10 text-black dark:text-white font-semibold" : "text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5")}
+                            >
+                                <div className="flex items-center gap-2.5"><Laptop className="w-3.5 h-3.5" /> System</div>
+                                {theme === 'system' && <Check className="w-3.5 h-3.5" />}
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                <div className="flex items-center justify-between">
+                    <button
+                        onClick={() => setIsOpen(!isOpen)}
+                        className="flex items-center gap-2.5 p-1 -ml-1 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-left"
+                    >
+                        <div className="w-8 h-8 rounded-full bg-black/10 dark:bg-white/10 border border-black/20 dark:border-white/20 flex items-center justify-center shrink-0">
+                            <span className="text-[12px] text-black dark:text-white font-bold">K</span>
+                        </div>
+                        <div>
+                            <p className="text-[13px] text-black dark:text-white font-bold tracking-tight">Karr</p>
+                            <p className="text-[11px] text-black/40 dark:text-white/40 font-medium">Personal OS</p>
+                        </div>
+                    </button>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-black/35 dark:text-white/35 hover:text-black/80 dark:hover:text-white hover:bg-black/[0.05] dark:hover:bg-white/10 transition-colors shrink-0"
+                        title="Refresh App"
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                    </button>
                 </div>
             </div>
-            <button
-                onClick={() => window.location.reload()}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-black/35 hover:text-black/80 hover:bg-black/[0.05] transition-colors"
-                title="Refresh App"
-            >
-                <RefreshCw className="w-4 h-4" />
-            </button>
-        </div>
-    )
+        )
+    }
 
     return (
         <>
@@ -147,7 +203,7 @@ export function Sidebar() {
                     <Image src="/karros-logo.png.jpeg" alt="KarrOS" width={160} height={40} priority className="h-10 w-auto object-contain" />
                 </div>
                 {nav}
-                {footer}
+                <ProfileMenu />
             </aside>
 
             {/* ── Mobile top bar ─────────────────────────────────────────── */}
@@ -190,7 +246,7 @@ export function Sidebar() {
                             </button>
                         </div>
                         {nav}
-                        {footer}
+                        <ProfileMenu />
                     </aside>
                 </div>
             )}

@@ -140,7 +140,7 @@ export default function FinanceAnalyticsPage() {
                                                 <div className="flex items-center gap-2 text-[11px] font-bold text-black/30 uppercase tracking-widest mb-3">
                                                     <PieChart className="w-3.5 h-3.5" /> Pension Savings
                                                 </div>
-                                                <div className="text-[24px] font-bold text-[#7c3aed] flex items-baseline gap-1">
+                                                <div className="text-[24px] font-bold text-black dark:text-white flex items-baseline gap-1">
                                                     <span className="text-[18px] opacity-30">£</span>
                                                     {salaryStats.totalPension.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                 </div>
@@ -238,8 +238,8 @@ export default function FinanceAnalyticsPage() {
                                                                     <span className="text-[12px] font-bold text-[#dc2626]/60">£{p.tax_paid?.toFixed(2) || '---'}</span>
                                                                 </div>
                                                                 <div className="flex items-center gap-1.5 whitespace-nowrap">
-                                                                    <span className="text-[9px] font-bold text-[#7c3aed]/40 uppercase tracking-wider">Pension</span>
-                                                                    <span className="text-[12px] font-bold text-[#7c3aed]/60">£{p.pension_contributions?.toFixed(2) || '---'}</span>
+                                                                    <span className="text-[9px] font-bold text-black/40 dark:text-white/40 uppercase tracking-wider">Pension</span>
+                                                                    <span className="text-[12px] font-bold text-black/60 dark:text-white/60">£{p.pension_contributions?.toFixed(2) || '---'}</span>
                                                                 </div>
                                                             </div>
                                                         </div>

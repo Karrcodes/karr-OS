@@ -69,7 +69,7 @@ export function GoalsList({ goals, onRefresh }: GoalsListProps) {
                                 <div>
                                     <p className="text-[13px] font-semibold text-black/90 flex items-center gap-2">
                                         {goal.name}
-                                        {goal.is_recurring && <span className="text-[9px] bg-[#7c3aed]/10 text-[#7c3aed] px-1 rounded font-bold uppercase tracking-widest">Recurring</span>}
+                                        {goal.is_recurring && <span className="text-[9px] bg-black/10 dark:bg-white/10 text-black dark:text-white px-1 rounded font-bold uppercase tracking-widest">Recurring</span>}
                                     </p>
                                     {days !== null && (
                                         <p className={`text-[10px] flex items-center gap-1 ${days < 30 ? 'text-amber-500' : 'text-black/35'}`}>
@@ -94,7 +94,7 @@ export function GoalsList({ goals, onRefresh }: GoalsListProps) {
                                 <button
                                     onClick={(e) => handleReset(goal.id, e)}
                                     disabled={resettingId === goal.id}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#7c3aed] text-white text-[11px] font-bold rounded-lg hover:bg-[#6d28d9] transition-colors disabled:opacity-50"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-black dark:bg-white text-white text-[11px] font-bold rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors disabled:opacity-50"
                                 >
                                     {resettingId === goal.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
                                     Restart Cycle

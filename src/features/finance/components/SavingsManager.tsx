@@ -56,7 +56,7 @@ export function SavingsManager() {
                                         <input className="input-field w-28" type="number" placeholder="Already saved £" value={form.current_amount ?? 0} onChange={(e) => setForm({ ...form, current_amount: parseFloat(e.target.value) })} />
                                         <input className="input-field w-32" type="date" value={form.deadline ?? ''} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
                                         <label className="flex items-center gap-2 cursor-pointer flex-shrink-0 bg-black/[0.03] p-1.5 rounded-lg border border-black/[0.05]">
-                                            <input type="checkbox" checked={form.is_recurring || false} onChange={e => setForm({ ...form, is_recurring: e.target.checked })} className="accent-[#7c3aed] w-3 h-3 cursor-pointer" />
+                                            <input type="checkbox" checked={form.is_recurring || false} onChange={e => setForm({ ...form, is_recurring: e.target.checked })} className="accent-black dark:accent-white w-3 h-3 cursor-pointer" />
                                             <span className="text-[10px] font-bold text-black/60 uppercase tracking-widest">Recurring</span>
                                         </label>
                                         <button onClick={() => handleUpdate(g.id)} disabled={saving} className="icon-btn text-emerald-600"><Check className="w-4 h-4" /></button>
@@ -68,7 +68,7 @@ export function SavingsManager() {
                                             <div className="flex flex-col">
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-[15px] text-black/90 font-bold">{g.name}</span>
-                                                    {g.is_recurring && <span className="text-[9px] font-bold bg-[#7c3aed]/10 text-[#7c3aed] px-1.5 py-0.5 rounded tracking-widest uppercase">Recurring Target</span>}
+                                                    {g.is_recurring && <span className="text-[9px] font-bold bg-black/10 dark:bg-white/10 text-black dark:text-white px-1.5 py-0.5 rounded tracking-widest uppercase">Recurring Target</span>}
                                                 </div>
                                                 {g.deadline && <span className="text-[12px] text-black/40 mt-0.5">Deadline: {new Date(g.deadline).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>}
                                             </div>
@@ -97,7 +97,7 @@ export function SavingsManager() {
                     })}
 
                     {adding ? (
-                        <div className="grid grid-cols-2 gap-4 rounded-2xl border border-[#7c3aed]/20 bg-[#7c3aed]/[0.02] p-6 shadow-sm">
+                        <div className="grid grid-cols-2 gap-4 rounded-2xl border border-black/20 dark:border-white/20 bg-black dark:bg-white/[0.02] p-6 shadow-sm">
                             <h3 className="text-[14px] font-bold text-black border-b border-black/[0.06] pb-3 col-span-2">
                                 Add New Goal
                             </h3>
@@ -119,8 +119,8 @@ export function SavingsManager() {
                             </div>
 
                             <div className="col-span-2 flex items-center mt-2">
-                                <label className="flex items-center gap-3 cursor-pointer bg-white border border-black/[0.08] p-4 rounded-xl hover:border-[#7c3aed]/30 hover:bg-[#7c3aed]/5 transition-all w-full">
-                                    <input type="checkbox" checked={form.is_recurring || false} onChange={e => setForm({ ...form, is_recurring: e.target.checked })} className="w-5 h-5 accent-[#7c3aed] cursor-pointer" />
+                                <label className="flex items-center gap-3 cursor-pointer bg-white border border-black/[0.08] p-4 rounded-xl hover:border-black/30 dark:border-white/30 hover:bg-black/5 dark:bg-white/5 transition-all w-full">
+                                    <input type="checkbox" checked={form.is_recurring || false} onChange={e => setForm({ ...form, is_recurring: e.target.checked })} className="w-5 h-5 accent-black dark:accent-white cursor-pointer" />
                                     <div>
                                         <span className="text-[13px] font-bold text-black block">Recurring Target</span>
                                         <span className="text-[11px] text-black/50 block">Check this if it is a cyclical target rather than a fixed one-time goal (e.g. Rent, Bills, SINK fund)</span>

@@ -24,7 +24,7 @@ function ProgressBar({ value, max, color = '#7c3aed' }: { value: number; max: nu
 const typeConfig = {
     buffer: { label: 'Buffer', color: '#059669', icon: Wallet },
     savings: { label: 'Savings', color: '#2563eb', icon: Coins },
-    general: { label: 'Pocket', color: '#7c3aed', icon: TrendingDown },
+    general: { label: 'Pocket', color: '#000000', icon: TrendingDown },
 }
 
 export function PocketsGrid({ pockets }: PocketsGridProps) {

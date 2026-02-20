@@ -69,7 +69,7 @@ export function CashflowAnalytics() {
             <div className="flex items-start justify-between mb-6">
                 <div>
                     <h2 className="text-[15px] font-bold text-black flex items-center gap-2">
-                        {view === '30d' ? <Activity className="w-4 h-4 text-[#7c3aed]" /> : <BarChart2 className="w-4 h-4 text-[#059669]" />}
+                        {view === '30d' ? <Activity className="w-4 h-4 text-black dark:text-white" /> : <BarChart2 className="w-4 h-4 text-[#059669]" />}
                         {view === '30d' ? 'Cashflow' : 'Historical Income'}
                     </h2>
                     <p className="text-[12px] text-black/35 mt-0.5">

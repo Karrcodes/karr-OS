@@ -214,7 +214,7 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
             <div className="p-4 border-b border-black/[0.06] flex items-center justify-between bg-black/[0.01] gap-3 flex-wrap">
                 <div className="flex items-center gap-2">
                     <h2 className="text-[14px] font-bold text-black flex items-center gap-2">
-                        <CalendarIcon className="w-4 h-4 text-[#7c3aed]" />
+                        <CalendarIcon className="w-4 h-4 text-black dark:text-white" />
                         {view === 'calendar' ? 'Payment Calendar' : 'Obligation Breakdown'}
                     </h2>
                     {/* Filter pills */}
@@ -223,7 +223,7 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                             <button
                                 key={f}
                                 onClick={() => setFilter(f)}
-                                className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${filter === f ? 'bg-white shadow-sm text-[#7c3aed]' : 'text-black/40 hover:text-black/60'}`}
+                                className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${filter === f ? 'bg-white shadow-sm text-black dark:text-white' : 'text-black/40 hover:text-black/60'}`}
                             >
                                 {f}
                             </button>
@@ -234,11 +234,11 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                 <div className="flex items-center gap-2 ml-auto">
                     {/* View toggle */}
                     <div className="flex p-0.5 bg-black/[0.04] rounded-lg">
-                        <button onClick={() => setView('calendar')} className={`p-1.5 rounded-md transition-all ${view === 'calendar' ? 'bg-white shadow-sm text-[#7c3aed]' : 'text-black/40 hover:text-black/60'}`}><LayoutGrid className="w-3.5 h-3.5" /></button>
-                        <button onClick={() => setView('list')} className={`p-1.5 rounded-md transition-all ${view === 'list' ? 'bg-white shadow-sm text-[#7c3aed]' : 'text-black/40 hover:text-black/60'}`}><List className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => setView('calendar')} className={`p-1.5 rounded-md transition-all ${view === 'calendar' ? 'bg-white shadow-sm text-black dark:text-white' : 'text-black/40 hover:text-black/60'}`}><LayoutGrid className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => setView('list')} className={`p-1.5 rounded-md transition-all ${view === 'list' ? 'bg-white shadow-sm text-black dark:text-white' : 'text-black/40 hover:text-black/60'}`}><List className="w-3.5 h-3.5" /></button>
                     </div>
                     <div className="text-right">
-                        <div className="text-[16px] font-extrabold text-[#7c3aed]">
+                        <div className="text-[16px] font-extrabold text-black dark:text-white">
                             £{view === 'calendar' ? calendarData.totalMonth.toFixed(2) : total30Days.toFixed(2)}
                         </div>
                         <p className="text-[9px] uppercase tracking-wider font-bold text-black/30">{view === 'calendar' ? 'This Month' : 'Next 30d'}</p>
@@ -296,12 +296,12 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                                     <div
                                         key={day}
                                         className={`bg-white min-h-[52px] p-1.5 flex flex-col gap-1 transition-colors
-                                            ${isToday ? 'bg-[#7c3aed]/[0.04]' : ''}
+                                            ${isToday ? 'bg-black dark:bg-white/[0.04]' : ''}
                                             ${isPast && !isToday ? 'opacity-40' : ''}
                                         `}
                                     >
                                         <span className={`text-[11px] font-bold w-5 h-5 flex items-center justify-center rounded-full
-                                            ${isToday ? 'bg-[#7c3aed] text-white' : 'text-black/40'}
+                                            ${isToday ? 'bg-black dark:bg-white text-white' : 'text-black/40'}
                                         `}>
                                             {day}
                                         </span>

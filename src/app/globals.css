@@ -132,15 +132,15 @@
   }
 
   .input-field:focus {
-    border-color: rgba(124, 58, 237, 0.4);
+    @apply border-black/40 dark:border-white/40;
   }
 
   .btn-primary {
-    @apply flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-[13px] font-semibold text-white bg-[#7c3aed] transition-colors;
+    @apply flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-[13px] font-semibold text-white bg-black dark:text-black dark:bg-white transition-colors;
   }
 
   .btn-primary:hover {
-    background-color: #6d28d9;
+    @apply bg-neutral-800 dark:bg-neutral-200;
   }
 
   .btn-primary:disabled {
