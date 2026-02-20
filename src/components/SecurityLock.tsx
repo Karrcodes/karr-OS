@@ -33,7 +33,7 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
         // Initial Authorization Check
         checkAuthorization(sid)
 
-        const unlocked = sessionStorage.getItem('karrOS_unlocked')
+        const unlocked = localStorage.getItem('karrOS_unlocked')
         if (unlocked === 'true') {
             setIsUnlocked(true)
         }
@@ -58,7 +58,7 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
                 // Update last used timestamp
                 await supabase
                     .from('fin_authorized_devices')
-                    .update({ last_used_at: new Error().stack }) // Dummy update to trigger timestamp if needed or use actual update
+                    .update({ last_used_at: new Date().toISOString() }) // Dummy update to trigger timestamp if needed or use actual update
                     .eq('device_id', sid)
             } else {
                 setIsAuthorized(false)
@@ -97,6 +97,7 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
             if (error) throw error
 
             setIsAuthorized(true)
+            handleUnlock() // Now it's safe to unlock!
             alert('Device Authorized Successfully!')
         } catch (err: any) {
             console.error('Authorization failed:', err)
@@ -117,6 +118,10 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
                 if (isSetupMode) {
                     await enrollBiometrics()
                     setPin('')
+                } else if (isAuthorized === false) {
+                    // STOP: Don't auto-unlock if the device is unauthorized.
+                    // The user must explicitly click "Authorize This Device"
+                    console.log('PIN correct, awaiting explicit authorization click.')
                 } else {
                     handleUnlock()
                 }
@@ -132,7 +137,7 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
 
     const handleUnlock = () => {
         setIsUnlocked(true)
-        sessionStorage.setItem('karrOS_unlocked', 'true')
+        localStorage.setItem('karrOS_unlocked', 'true')
     }
 
     const enrollBiometrics = async () => {
