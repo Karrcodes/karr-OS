@@ -23,7 +23,7 @@ export function useBank() {
             }
         } catch (error) {
             console.error('Bank Connection Error:', error)
-            alert('Failed to initiate bank connection')
+            alert(`Failed to initiate bank connection: ${error instanceof Error ? error.message : String(error)}`)
         } finally {
             setLoading(false)
         }

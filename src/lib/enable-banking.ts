@@ -11,7 +11,12 @@ export async function getEBToken() {
     }
 
     // Handle keys with actual newlines or escaped \n
-    const formattedKey = privateKeyRaw.replace(/\\n/g, '\n')
+    let formattedKey = privateKeyRaw.replace(/\\n/g, '\n')
+
+    // Remove surrounding quotes if they were included by accident
+    if (formattedKey.startsWith('"') && formattedKey.endsWith('"')) {
+        formattedKey = formattedKey.slice(1, -1)
+    }
 
     try {
         const privateKey = await jose.importPKCS8(formattedKey, 'RS256')
@@ -47,7 +52,7 @@ export async function ebRequest(path: string, options: RequestInit = {}) {
     if (!res.ok) {
         const errorBody = await res.text()
         console.error(`EB API Error (${res.status}):`, errorBody)
-        throw new Error(`Enable Banking API error: ${res.statusText}`)
+        throw new Error(`Enable Banking API error: ${res.statusText} - ${errorBody}`)
     }
 
     return res.json()
