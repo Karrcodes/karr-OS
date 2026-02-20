@@ -7,8 +7,10 @@ import { useRecurring } from '@/features/finance/hooks/useRecurring'
 import { useGoals } from '@/features/finance/hooks/useGoals'
 import { useSettings } from '@/features/finance/hooks/useSettings'
 import type { Pocket, Goal, RecurringObligation } from '@/features/finance/types/finance.types'
+import { useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
 
 export default function SettingsPage() {
+    const { activeProfile, setProfile } = useFinanceProfile()
     return (
         <div className="flex flex-col h-full bg-white">
             {/* Header */}
@@ -18,7 +20,21 @@ export default function SettingsPage() {
                 </div>
                 <div>
                     <h1 className="text-[20px] font-bold text-black">Settings</h1>
-                    <p className="text-[12px] text-black/35">Configure your finance module</p>
+                    <p className="text-[12px] text-black/35">Configure your {activeProfile === 'personal' ? 'Personal' : 'Studio Karrtesian'} module</p>
+                </div>
+                <div className="ml-auto flex bg-black/[0.04] p-1 rounded-xl border border-black/[0.06]">
+                    <button
+                        onClick={() => setProfile('personal')}
+                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeProfile === 'personal' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
+                    >
+                        Personal
+                    </button>
+                    <button
+                        onClick={() => setProfile('business')}
+                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeProfile === 'business' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
+                    >
+                        Business
+                    </button>
                 </div>
             </div>
 

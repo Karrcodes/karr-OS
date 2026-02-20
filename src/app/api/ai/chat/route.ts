@@ -9,94 +9,189 @@ const supabase = supabaseUrl && supabaseAnonKey
     ? createClient(supabaseUrl, supabaseAnonKey)
     : null
 
-async function buildContext(): Promise<string> {
+async function buildContext(profile: string): Promise<string> {
     if (!supabase) {
         return '## KarrOS Financial Snapshot\nNo database connection — Supabase credentials not configured.'
     }
 
-    const [pocketsRes, debtsRes, goalsRes, settingsRes] = await Promise.all([
-        supabase.from('fin_pockets').select('*'),
-        supabase.from('fin_debts').select('*'),
-        supabase.from('fin_goals').select('*'),
-        supabase.from('fin_settings').select('*'),
+    const [pocketsRes, recurringRes, goalsRes, settingsRes] = await Promise.all([
+        supabase.from('fin_pockets').select('*').eq('profile', profile),
+        supabase.from('fin_recurring').select('*').eq('profile', profile),
+        supabase.from('fin_goals').select('*').eq('profile', profile),
+        supabase.from('fin_settings').select('*').eq('profile', profile),
     ])
 
     const pockets = pocketsRes.data ?? []
-    const debts = debtsRes.data ?? []
+    const recurring = recurringRes.data ?? []
     const goals = goalsRes.data ?? []
     const settingsArr = settingsRes.data ?? []
     const settings: Record<string, string> = {}
     settingsArr.forEach((s: { key: string; value: string }) => { settings[s.key] = s.value })
 
-    const totalLiquid = pockets.reduce((s: number, p: { current_balance: number }) => s + p.current_balance, 0)
-    const totalDebt = debts.reduce((s: number, d: { remaining_balance: number }) => s + d.remaining_balance, 0)
-    const monthlyObligations = debts.reduce((s: number, d: { monthly_payment: number }) => s + d.monthly_payment, 0)
+    const totalLiquid = pockets.reduce((s: number, p: { balance: number }) => s + p.balance, 0)
+    let totalDebt = 0
+    let monthlyObligations = 0
+
+    recurring.forEach((o: any) => {
+        if (o.frequency === 'monthly') monthlyObligations += o.amount
+        else if (o.frequency === 'weekly') monthlyObligations += (o.amount * 52) / 12
+        else if (o.frequency === 'bi-weekly') monthlyObligations += (o.amount * 26) / 12
+
+        if (o.end_date) {
+            const end = new Date(o.end_date)
+            const now = new Date()
+            if (end > now) {
+                const monthsLeft = (end.getFullYear() - now.getFullYear()) * 12 + (end.getMonth() - now.getMonth())
+                if (monthsLeft > 0) totalDebt += (o.amount * (o.frequency === 'monthly' ? monthsLeft : o.frequency === 'weekly' ? monthsLeft * 4 : 1))
+            }
+        }
+    })
 
     return `
-## KarrOS Financial Snapshot (Live Data)
+## KarrOS Financial Snapshot: ${profile === 'personal' ? 'Personal' : 'Studio Karrtesian'}
+(Live Data as of ${new Date().toLocaleDateString()})
 
 ### Summary
 - Total Liquid Cash: £${totalLiquid.toFixed(2)}
-- Total Outstanding Debt: £${totalDebt.toFixed(2)}
-- Monthly Fixed Debt Obligations: £${monthlyObligations.toFixed(2)}
+- Projected Outstanding Debt: £${totalDebt.toFixed(2)}
+- Monthly Fixed Obligations: £${monthlyObligations.toFixed(2)}
 - Weekly Income Baseline: £${settings['weekly_income_baseline'] ?? 'Not set'}
 
 ### Pockets (${pockets.length})
-${pockets.map((p: { name: string; current_balance: number; target_budget: number; type: string }) => `- ${p.name} [${p.type}]: £${p.current_balance.toFixed(2)} (target: £${p.target_budget.toFixed(2)})`).join('\n') || '- No pockets created yet'}
+${pockets.map((p: any) => `- ${p.name} [${p.type}]: £${p.balance.toFixed(2)} (target: £${(p.target_budget || 0).toFixed(2)})`).join('\n') || '- No pockets created yet'}
 
-### Active Debts (${debts.length})
-${debts.map((d: { name: string; remaining_balance: number; total_amount: number; monthly_payment: number; type: string }) => `- ${d.name} [${d.type}]: £${d.remaining_balance.toFixed(2)} remaining / £${d.total_amount.toFixed(2)} total — £${d.monthly_payment.toFixed(2)}/mo`).join('\n') || '- No active debts'}
+### Recurring Obligations (${recurring.length})
+${recurring.map((o: any) => `- ${o.name} (${o.frequency}): £${o.amount.toFixed(2)} | Next: ${o.next_due_date}${o.end_date ? ` (Ends: ${o.end_date})` : ''}`).join('\n') || '- No active recurring obligations'}
 
 ### Savings Goals (${goals.length})
-${goals.map((g: { name: string; current_amount: number; target_amount: number; deadline: string | null }) => `- ${g.name}: £${g.current_amount.toFixed(2)} / £${g.target_amount.toFixed(2)}${g.deadline ? ` (deadline: ${g.deadline})` : ''}`).join('\n') || '- No savings goals set'}
+${goals.map((g: any) => `- ${g.name}: £${g.current_amount.toFixed(2)} / £${g.target_amount.toFixed(2)}${g.deadline ? ` (deadline: ${g.deadline})` : ''}`).join('\n') || '- No savings goals set'}
 `.trim()
 }
 
+const tools = [
+    {
+        functionDeclarations: [
+            {
+                name: "create_recurring_obligation",
+                description: "Creates a new recurring debt, subscription, or obligation like Klarna, rent, or Netflix.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        name: { type: "STRING", description: "The name of the obligation (e.g. Klarna, Spotify)" },
+                        amount: { type: "NUMBER", description: "The amount per payment" },
+                        frequency: { type: "STRING", enum: ["weekly", "bi-weekly", "monthly", "yearly"] },
+                        category: { type: "STRING", description: "The category (e.g. debt, subscription, housing)" },
+                        next_due_date: { type: "STRING", description: "ISO date of the next payment (YYYY-MM-DD)" },
+                        end_date: { type: "STRING", description: "Optional ISO date when the debt is fully paid off (YYYY-MM-DD)" }
+                    },
+                    required: ["name", "amount", "frequency", "next_due_date"]
+                }
+            },
+            {
+                name: "create_pocket",
+                description: "Creates a new financial bucket or pocket for saving or spending.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        name: { type: "STRING", description: "Name of the pocket" },
+                        type: { type: "STRING", enum: ["main", "flexible", "debt"], description: "The type of pocket" },
+                        target_budget: { type: "NUMBER", description: "The monthly target budget for this pocket" },
+                        balance: { type: "NUMBER", description: "Initial balance (default 0)" }
+                    },
+                    required: ["name", "type"]
+                }
+            },
+            {
+                name: "create_goal",
+                description: "Creates a new long-term savings goal.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        name: { type: "STRING", description: "Name of the target (e.g. New Macbook)" },
+                        target_amount: { type: "NUMBER", description: "The total amount needed" },
+                        current_amount: { type: "NUMBER", description: "Amount already saved" },
+                        deadline: { type: "STRING", description: "Optional deadline (YYYY-MM-DD)" }
+                    },
+                    required: ["name", "target_amount"]
+                }
+            }
+        ]
+    }
+]
 
 export async function POST(req: NextRequest) {
     try {
-        const { messages, clientContext } = await req.json()
+        const { messages, clientContext, activeProfile = 'personal' } = await req.json()
 
         if (!messages || !Array.isArray(messages)) {
             return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
         }
 
-        const context = await buildContext()
+        const context = await buildContext(activeProfile)
 
-        const systemPrompt = `You are KarrAI — a direct, highly analytical financial advisor built into KarrOS, a personal operating system for a young creative professional (Karr). You have real-time access to his financial data.
-
-Your personality: direct, no-fluff, smart, slightly futuristic. You don't coddle but you're supportive.
+        const systemPrompt = `You are KarrAI — a direct, highly analytical financial advisor built into KarrOS. You have real-time access to his financial data.
+Current Profile: ${activeProfile === 'personal' ? 'Personal' : 'Studio Karrtesian (Business)'}
 
 Key rules:
-- When asked "Can I buy X for £Y?", check the Main Buffer pocket balance. If insufficient, say no clearly and suggest which pocket to sacrifice from.
-- For new monthly debt decisions: calculate the impact on monthly cash flow using the current obligations figure.
+- When asked "Can I buy X for £Y?", check the Main Buffer pocket balance.
+- Use tools to create obligations, pockets, or goals when the user describes them.
+- If a user says "I have a Klarna debt worth £20 due on the 20th", use create_recurring_obligation.
 - Always cite actual numbers from his data when giving advice.
-- Keep responses concise — 2-4 sentences max unless a detailed breakdown is asked for.
+- Keep responses concise — 2-4 sentences max.
 - Use GBP (£) for all amounts.
 
-${clientContext ? `\n### LIVE OVERRIDES (PRIORITIZE THIS DATA OVER DB SNAPSHOT)\n${clientContext}\n` : ''}
+${clientContext ? `\n### LIVE UI STATE\n${clientContext}\n` : ''}
 
 ${context}`
 
-        // Build Gemini chat history (exclude the latest user message)
         const history = messages.slice(0, -1).map((m: { role: string; content: string }) => ({
             role: m.role === 'assistant' ? 'model' : 'user',
-            parts: [{ text: m.role === 'assistant' ? m.content : `${m.content}` }],
+            parts: [{ text: m.content }],
         }))
 
-        // Add system context as the first turn if no history
         const chat = geminiModel.startChat({
             history: [
                 { role: 'user', parts: [{ text: systemPrompt }] },
-                { role: 'model', parts: [{ text: "Understood. I have your financial data loaded and I'm ready to advise." }] },
+                { role: 'model', parts: [{ text: "Understood. I have your financial data loaded and I'm ready to advise or take actions." }] },
                 ...history,
             ],
+            tools: tools as any
         })
 
         const lastMessage = messages[messages.length - 1]
-        const result = await chat.sendMessage(lastMessage.content)
-        const reply = result.response.text()
+        let result = await chat.sendMessage(lastMessage.content)
+        let response = result.response
 
+        // Handle tool calls loop
+        let callCount = 0
+        while (response.functionCalls()?.length && callCount < 5) {
+            callCount++
+            const toolResults = await Promise.all(response.functionCalls()!.map(async (call) => {
+                const { name, args } = call
+                console.log(`[AI Action] Calling ${name}`, args)
+
+                try {
+                    let data, error
+                    if (name === 'create_recurring_obligation') {
+                        ({ data, error } = await supabase!.from('fin_recurring').insert({ ...args as any, profile: activeProfile }).select())
+                    } else if (name === 'create_pocket') {
+                        ({ data, error } = await supabase!.from('fin_pockets').insert({ ...args as any, profile: activeProfile }).select())
+                    } else if (name === 'create_goal') {
+                        ({ data, error } = await supabase!.from('fin_goals').insert({ ...args as any, profile: activeProfile }).select())
+                    }
+
+                    if (error) return { name, response: { error: error.message } }
+                    return { name, response: { success: true, data } }
+                } catch (e: any) {
+                    return { name, response: { error: e.message } }
+                }
+            }))
+
+            result = await chat.sendMessage(toolResults as any)
+            response = result.response
+        }
+
+        const reply = response.text()
         return NextResponse.json({ reply })
     } catch (err: any) {
         console.error('[Aikin API Error]', err)

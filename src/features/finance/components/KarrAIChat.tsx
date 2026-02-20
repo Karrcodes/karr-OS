@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Send, Bot, User, Loader2, BrainCircuit } from 'lucide-react'
+import { useFinanceProfile } from '../contexts/FinanceProfileContext'
 
 interface Message {
     role: 'user' | 'assistant'
@@ -10,9 +11,10 @@ interface Message {
 
 interface KarrAIChatProps {
     context?: string;
+    onAction?: () => void;
 }
 
-export function KarrAIChat({ context }: KarrAIChatProps) {
+export function KarrAIChat({ context, onAction }: KarrAIChatProps) {
     const [messages, setMessages] = useState<Message[]>([
         {
             role: 'assistant',
@@ -21,6 +23,7 @@ export function KarrAIChat({ context }: KarrAIChatProps) {
     ])
     const [input, setInput] = useState('')
     const [loading, setLoading] = useState(false)
+    const { activeProfile } = useFinanceProfile()
     const chatContainerRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
@@ -41,7 +44,11 @@ export function KarrAIChat({ context }: KarrAIChatProps) {
             const res = await fetch('/api/ai/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: [...messages, userMsg], clientContext: context }),
+                body: JSON.stringify({
+                    messages: [...messages, userMsg],
+                    clientContext: context,
+                    activeProfile
+                }),
             })
 
             const data = await res.json()
@@ -57,6 +64,10 @@ export function KarrAIChat({ context }: KarrAIChatProps) {
                     content: data.reply ?? 'Empty response from AI',
                 },
             ])
+
+            // If the AI took an action (we could check a flag, but for now we just refresh 
+            // the data if a reply came back and we have an onAction prop)
+            if (onAction) onAction()
         } catch (err: any) {
             setMessages((prev) => [
                 ...prev,

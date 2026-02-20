@@ -6,6 +6,7 @@ export interface Pocket {
     balance: number // New dynamic cashflow balance
     sort_order: number
     type: 'general' | 'savings' | 'buffer'
+    profile: 'personal' | 'business'
     created_at: string
 }
 
@@ -25,6 +26,7 @@ export interface Income {
     amount: number
     source: string
     date: string
+    profile: 'personal' | 'business'
     created_at: string
 }
 
@@ -35,6 +37,7 @@ export interface Transaction {
     description: string
     date: string
     pocket_id: string | null
+    profile: 'personal' | 'business'
     created_at: string
 }
 
@@ -45,6 +48,7 @@ export interface Goal {
     target_amount: number
     current_amount: number
     deadline: string | null
+    profile: 'personal' | 'business'
     created_at: string
 }
 
@@ -56,6 +60,7 @@ export interface RecurringObligation {
     next_due_date: string // YYYY-MM-DD
     end_date: string | null // YYYY-MM-DD
     group_name: string | null
+    profile: 'personal' | 'business'
     created_at: string
 }
 

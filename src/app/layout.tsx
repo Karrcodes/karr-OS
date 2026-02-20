@@ -28,6 +28,8 @@ export const viewport: Viewport = {
   userScalable: false,
 }
 
+import { FinanceProfileProvider } from '@/features/finance/contexts/FinanceProfileContext'
+
 export default function RootLayout({
   children,
 }: {
@@ -41,11 +43,13 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="KarrOS" />
       </head>
       <body className={`${inter.className} bg-white text-[#0a0a0a] antialiased`}>
-        <Sidebar />
-        {/* md:ml-[220px] — full width on mobile (sidebar is a drawer), shifted on desktop */}
-        <main className="md:ml-[220px] min-h-screen bg-white">
-          {children}
-        </main>
+        <FinanceProfileProvider>
+          <Sidebar />
+          {/* md:ml-[220px] — full width on mobile (sidebar is a drawer), shifted on desktop */}
+          <main className="md:ml-[220px] min-h-screen bg-white">
+            {children}
+          </main>
+        </FinanceProfileProvider>
       </body>
     </html>
   )

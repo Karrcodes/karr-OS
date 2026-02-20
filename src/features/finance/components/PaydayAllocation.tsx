@@ -24,6 +24,7 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
     const [allocating, setAllocating] = useState(false)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
     // A map of pocket_id -> amount to allocate
     const [allocations, setAllocations] = useState<{ [key: string]: number }>({})
@@ -49,31 +50,71 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
     }
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0]
-        if (!file) return
+        const files = Array.from(e.target.files || [])
+        if (files.length === 0) return
 
         setUploading(true)
         setError(null)
+        setSuccessMessage(null)
 
-        const formData = new FormData()
-        formData.append('file', file)
+        if (files.length === 1) {
+            const formData = new FormData()
+            formData.append('file', files[0])
 
-        try {
-            const res = await fetch('/api/ai/payslip', { method: 'POST', body: formData })
-            if (!res.ok) throw new Error('Failed to parse payslip')
+            try {
+                const res = await fetch('/api/ai/payslip', { method: 'POST', body: formData })
+                if (!res.ok) throw new Error('Failed to parse payslip')
 
-            const data = await res.json()
-            if (data.error) throw new Error(data.error)
+                const data = await res.json()
+                if (data.error) throw new Error(data.error)
 
-            if (data.netPay) setAmount(data.netPay.toString())
-            if (data.employer) setSource(data.employer)
-            if (data.date) setDate(data.date)
+                if (data.netPay) setAmount(data.netPay.toString())
+                if (data.employer) setSource(data.employer)
+                if (data.date) setDate(data.date)
 
-        } catch (err: any) {
-            setError(err.message || 'AI processing failed')
-        } finally {
+            } catch (err: any) {
+                setError(err.message || 'AI processing failed')
+            } finally {
+                setUploading(false)
+                if (fileInputRef.current) fileInputRef.current.value = ''
+            }
+        } else {
+            // Batch processing multiple historical payslips
+            let successCount = 0
+
+            for (const file of files) {
+                const formData = new FormData()
+                formData.append('file', file)
+
+                try {
+                    const res = await fetch('/api/ai/payslip', { method: 'POST', body: formData })
+                    if (!res.ok) continue
+
+                    const data = await res.json()
+                    if (data.error) continue
+
+                    if (data.netPay && data.date) {
+                        await logIncome({
+                            amount: parseFloat(data.netPay),
+                            source: data.employer || 'Salary',
+                            date: data.date
+                        })
+                        successCount++
+                    }
+                } catch (err: any) {
+                    // Silently fail individual records in a batch
+                }
+            }
+
             setUploading(false)
             if (fileInputRef.current) fileInputRef.current.value = ''
+
+            if (successCount > 0) {
+                setSuccessMessage(`Successfully processed & saved ${successCount} historical payslips.`)
+                onSuccess()
+            } else {
+                setError('Failed to process any of the uploaded payslips.')
+            }
         }
     }
 
@@ -265,6 +306,7 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
 
                 <input
                     type="file"
+                    multiple
                     accept="image/*,application/pdf"
                     className="hidden"
                     ref={fileInputRef}
@@ -308,6 +350,7 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
                     />
                 </div>
                 {error && <p className="text-[12px] text-red-600 mt-2 w-full">{error}</p>}
+                {successMessage && <p className="text-[12px] text-[#059669] mt-2 w-full bg-[#059669]/10 py-1.5 px-3 rounded-lg font-medium">{successMessage}</p>}
 
                 <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
                     <button

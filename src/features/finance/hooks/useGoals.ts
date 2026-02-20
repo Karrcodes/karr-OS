@@ -3,17 +3,20 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Goal } from '../types/finance.types'
+import { useFinanceProfile } from '../contexts/FinanceProfileContext'
 
 export function useGoals() {
     const [goals, setGoals] = useState<Goal[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const { activeProfile } = useFinanceProfile()
 
     const fetchGoals = async () => {
         setLoading(true)
         const { data, error } = await supabase
             .from('fin_goals')
             .select('*')
+            .eq('profile', activeProfile)
             .order('created_at', { ascending: true })
 
         if (error) setError(error.message)
@@ -21,8 +24,8 @@ export function useGoals() {
         setLoading(false)
     }
 
-    const createGoal = async (goal: Omit<Goal, 'id' | 'created_at'>) => {
-        const { error } = await supabase.from('fin_goals').insert(goal)
+    const createGoal = async (goal: Omit<Goal, 'id' | 'created_at' | 'profile'>) => {
+        const { error } = await supabase.from('fin_goals').insert({ ...goal, profile: activeProfile })
         if (error) throw error
         await fetchGoals()
     }
@@ -39,7 +42,7 @@ export function useGoals() {
         await fetchGoals()
     }
 
-    useEffect(() => { fetchGoals() }, [])
+    useEffect(() => { fetchGoals() }, [activeProfile])
 
     return { goals, loading, error, createGoal, updateGoal, deleteGoal, refetch: fetchGoals }
 }

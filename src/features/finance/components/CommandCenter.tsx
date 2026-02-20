@@ -12,20 +12,20 @@ import { KarrAIChat } from './KarrAIChat'
 import { QuickActionFAB } from './QuickActionFAB'
 import { PaydayAllocation } from './PaydayAllocation'
 import { CashflowAnalytics } from './CashflowAnalytics'
+import { useFinanceProfile } from '../contexts/FinanceProfileContext'
 
 export function CommandCenter() {
     const { pockets, loading: pLoading, refetch: refetchPockets } = usePockets()
     const { obligations, loading: oLoading } = useRecurring()
     const { goals, loading: gLoading, refetch: refetchGoals } = useGoals()
+    const { activeProfile, setProfile } = useFinanceProfile()
 
     const summary = useMemo(() => {
         const totalLiquid = pockets.reduce((s, p) => s + p.balance, 0)
-
         let totalDebt = 0
         let monthlyObligations = 0
 
         obligations.forEach(o => {
-            // Very rough approximation for fixed debts (has end_date)
             if (o.end_date) {
                 const end = new Date(o.end_date)
                 const now = new Date()
@@ -35,7 +35,6 @@ export function CommandCenter() {
                 }
             }
 
-            // Normalize everything to a rough monthly amount for the summary card
             if (o.frequency === 'monthly') monthlyObligations += o.amount
             if (o.frequency === 'weekly') monthlyObligations += (o.amount * 52) / 12
             if (o.frequency === 'bi-weekly') monthlyObligations += (o.amount * 26) / 12
@@ -53,25 +52,41 @@ export function CommandCenter() {
             <div className="flex items-center justify-between px-6 py-5 border-b border-black/[0.06] bg-white">
                 <div>
                     <h1 className="text-[22px] font-bold text-black tracking-tight">Command Center</h1>
-                    <p className="text-[12px] text-black/35 mt-0.5">Finance Module · Studio Karrtesian</p>
+                    <p className="text-[12px] text-black/35 mt-0.5">Finance Module · {activeProfile === 'personal' ? 'Personal' : 'Studio Karrtesian'}</p>
                 </div>
-                <div className="flex items-center gap-2">
-                    {loading && (
-                        <div className="flex items-center gap-1.5 text-black/30">
-                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                            <span className="text-[11px]">Syncing</span>
+                <div className="flex items-center gap-4">
+                    <div className="flex bg-black/[0.04] p-1 rounded-xl border border-black/[0.06]">
+                        <button
+                            onClick={() => setProfile('personal')}
+                            className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeProfile === 'personal' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
+                        >
+                            Personal
+                        </button>
+                        <button
+                            onClick={() => setProfile('business')}
+                            className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeProfile === 'business' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
+                        >
+                            Business
+                        </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {loading && (
+                            <div className="flex items-center gap-1.5 text-black/30">
+                                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                <span className="text-[11px]">Syncing</span>
+                            </div>
+                        )}
+                        <div className="text-[11px] text-black/25 uppercase tracking-wider font-medium">
+                            {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
                         </div>
-                    )}
-                    <div className="text-[11px] text-black/25 uppercase tracking-wider font-medium">
-                        {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
                     </div>
                 </div>
             </div>
 
-            <details className="flex-1 overflow-y-auto bg-[#fafafa] group" open>
-                <summary className="p-6 pb-2 cursor-pointer list-none select-none flex items-center gap-2 text-[13px] font-bold text-black/40 hover:text-black/60 transition-colors uppercase tracking-wider">
-                    <span className="group-open:-rotate-90 transition-transform duration-200">▼</span> Finance Dashboard
-                </summary>
+            <div className="flex-1 overflow-y-auto bg-[#fafafa]">
+                <div className="p-6 pb-2 select-none flex items-center gap-2 text-[13px] font-bold text-black/40 uppercase tracking-wider">
+                    Finance Dashboard
+                </div>
                 <div className="px-6 pb-6 space-y-8">
                     {/* Summary Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -100,7 +115,6 @@ export function CommandCenter() {
 
                     {/* Main Layout Stack */}
                     <div className="space-y-6 pb-12">
-                        {/* Row 2: Cashflow and Payday side-by-side */}
                         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
                             <div className="xl:col-span-1">
                                 <CashflowAnalytics />
@@ -110,37 +124,34 @@ export function CommandCenter() {
                             </div>
                         </div>
 
-                        {/* Row 3: Savings Goals */}
                         <SectionBlock title="Savings Goals" desc="Long-term targets">
                             <GoalsList goals={goals} />
                         </SectionBlock>
 
-                        {/* Row 4: Pockets */}
                         <SectionBlock title="Pockets" desc="Your current allocations">
                             <PocketsGrid pockets={pockets} />
                         </SectionBlock>
 
-                        {/* Row 5: Obligations */}
                         <SectionBlock title="Recurring Obligations" desc="30-Day projections for subs, rent, & debt">
                             <CalendarVisualizer obligations={obligations} />
                         </SectionBlock>
 
-                        {/* Row 6: AI Chat */}
                         <div className="rounded-2xl border border-black/[0.08] bg-white p-5 shadow-sm">
-                            <KarrAIChat context={`Live Balances:\n${pockets.map(p => `- ${p.name}: £${p.balance.toFixed(2)}`).join('\n')}`} />
+                            <KarrAIChat
+                                context={`Live Balances:\n${pockets.map(p => `- ${p.name}: £${p.balance.toFixed(2)}`).join('\n')}`}
+                                onAction={() => { refetchPockets(); refetchGoals(); }}
+                            />
                         </div>
                     </div>
                 </div>
-            </details>
+            </div>
 
             <QuickActionFAB pockets={pockets} onSuccess={refetchPockets} />
         </div>
     )
 }
 
-function SummaryCard({ label, value, icon, color, sub }: {
-    label: string; value: string; icon: React.ReactNode; color: string; sub?: string
-}) {
+function SummaryCard({ label, value, icon, color, sub }: { label: string; value: string; icon: React.ReactNode; color: string; sub?: string }) {
     return (
         <div className="rounded-xl border border-black/[0.07] bg-white p-4 hover:bg-black/[0.01] transition-colors shadow-sm">
             <div className="flex items-center justify-between mb-3">

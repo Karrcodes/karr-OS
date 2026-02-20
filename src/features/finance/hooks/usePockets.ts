@@ -3,17 +3,20 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Pocket } from '../types/finance.types'
+import { useFinanceProfile } from '../contexts/FinanceProfileContext'
 
 export function usePockets() {
     const [pockets, setPockets] = useState<Pocket[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const { activeProfile } = useFinanceProfile()
 
     const fetchPockets = async () => {
         setLoading(true)
         const { data, error } = await supabase
             .from('fin_pockets')
             .select('*')
+            .eq('profile', activeProfile)
             .order('sort_order', { ascending: true })
             .order('created_at', { ascending: true })
 
@@ -22,8 +25,8 @@ export function usePockets() {
         setLoading(false)
     }
 
-    const createPocket = async (pocket: Omit<Pocket, 'id' | 'created_at'>) => {
-        const { error } = await supabase.from('fin_pockets').insert(pocket)
+    const createPocket = async (pocket: Omit<Pocket, 'id' | 'created_at' | 'profile'>) => {
+        const { error } = await supabase.from('fin_pockets').insert({ ...pocket, profile: activeProfile })
         if (error) throw error
         await fetchPockets()
     }
@@ -48,7 +51,7 @@ export function usePockets() {
         await fetchPockets()
     }
 
-    useEffect(() => { fetchPockets() }, [])
+    useEffect(() => { fetchPockets() }, [activeProfile])
 
     return { pockets, loading, error, createPocket, updatePocket, deletePocket, updatePocketsOrder, refetch: fetchPockets }
 }
