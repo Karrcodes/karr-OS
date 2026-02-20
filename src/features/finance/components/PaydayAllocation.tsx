@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Plus, Check, Loader2 } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { Plus, Check, Loader2, UploadCloud, FileText } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import type { Pocket, Goal } from '../types/finance.types'
 import { useIncome } from '../hooks/useIncome'
@@ -16,6 +16,9 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
     const { logIncome } = useIncome()
     const [amount, setAmount] = useState('')
     const [source, setSource] = useState('Salary')
+    const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+    const fileInputRef = useRef<HTMLInputElement>(null)
+    const [uploading, setUploading] = useState(false)
 
     // State for allocation step
     const [allocating, setAllocating] = useState(false)
@@ -45,6 +48,35 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
         setAllocating(true)
     }
 
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        setUploading(true)
+        setError(null)
+
+        const formData = new FormData()
+        formData.append('file', file)
+
+        try {
+            const res = await fetch('/api/ai/payslip', { method: 'POST', body: formData })
+            if (!res.ok) throw new Error('Failed to parse payslip')
+
+            const data = await res.json()
+            if (data.error) throw new Error(data.error)
+
+            if (data.netPay) setAmount(data.netPay.toString())
+            if (data.employer) setSource(data.employer)
+            if (data.date) setDate(data.date)
+
+        } catch (err: any) {
+            setError(err.message || 'AI processing failed')
+        } finally {
+            setUploading(false)
+            if (fileInputRef.current) fileInputRef.current.value = ''
+        }
+    }
+
     const unallocated = parseFloat(amount || '0') - Object.values(allocations).reduce((sum, curr) => sum + (curr || 0), 0)
 
     const handleConfirm = async () => {
@@ -61,7 +93,7 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
             await logIncome({
                 amount: amt,
                 source: source,
-                date: new Date().toISOString().split('T')[0]
+                date: date
             })
 
             // 2. Process Allocations
@@ -78,7 +110,7 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
                                 amount: allocAmt,
                                 pocket_id: itemId,
                                 description: `Payday allocation (${source})`,
-                                date: new Date().toISOString().split('T')[0]
+                                date: date
                             }).then(res => res)
                         )
                         pocketUpdatePromises.push(
@@ -199,10 +231,30 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
     }
 
     return (
-        <div className="rounded-2xl border border-black/[0.08] bg-white p-5 shadow-sm mb-6 flex flex-col md:flex-row gap-4 items-end">
-            <div className="flex-1 w-full">
-                <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">Log new income</label>
-                <div className="flex gap-2">
+        <div className="rounded-2xl border border-black/[0.08] bg-white p-5 shadow-sm mb-6">
+            <div className="flex items-center justify-between mb-4">
+                <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold block">Log Income Manually or with AI</label>
+
+                <input
+                    type="file"
+                    accept="image/*,application/pdf"
+                    className="hidden"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                />
+
+                <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading || allocating}
+                    className="flex items-center gap-1.5 text-[11px] font-bold text-[#7c3aed] bg-[#7c3aed]/10 px-3 py-1.5 rounded-lg hover:bg-[#7c3aed]/20 transition-colors disabled:opacity-50"
+                >
+                    {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UploadCloud className="w-3.5 h-3.5" />}
+                    {uploading ? 'Parsing...' : 'Upload Payslip'}
+                </button>
+            </div>
+
+            <div className="flex flex-col md:flex-row gap-3 items-end">
+                <div className="flex-1 w-full flex flex-col sm:flex-row gap-2">
                     <div className="relative flex-1">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-black/40 font-bold text-lg">£</span>
                         <input
@@ -218,17 +270,24 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
                         value={source}
                         onChange={(e) => setSource(e.target.value)}
                         placeholder="Source (e.g. Salary)"
-                        className="w-1/3 bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-3 text-[14px] text-black placeholder-black/20 outline-none focus:border-[#7c3aed]/40 transition-colors"
+                        className="w-full sm:w-1/3 bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-3 text-[14px] text-black placeholder-black/20 outline-none focus:border-[#7c3aed]/40 transition-colors"
+                    />
+                    <input
+                        type="date"
+                        value={date}
+                        onChange={(e) => setDate(e.target.value)}
+                        className="w-full sm:w-[140px] bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-3 text-[13px] font-medium text-black outline-none focus:border-[#7c3aed]/40 transition-colors"
                     />
                 </div>
                 {error && <p className="text-[12px] text-red-600 mt-2">{error}</p>}
+
+                <button
+                    onClick={startAllocation}
+                    className="py-3 px-6 rounded-xl bg-black text-white font-semibold text-[14px] hover:bg-black/80 transition-colors whitespace-nowrap w-full md:w-auto"
+                >
+                    Assign Money
+                </button>
             </div>
-            <button
-                onClick={startAllocation}
-                className="py-3 px-6 rounded-xl bg-black text-white font-semibold text-[14px] hover:bg-black/80 transition-colors whitespace-nowrap"
-            >
-                Assign Money
-            </button>
         </div>
     )
 }
