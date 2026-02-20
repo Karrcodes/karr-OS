@@ -97,7 +97,8 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                     })
                 }
 
-                occurrences++
+                // Only consume the payments_left limit for future/current payments
+                if (current >= today) occurrences++
 
                 // Advance to next payment date
                 if (obs.frequency === 'weekly') current.setDate(current.getDate() + 7)
@@ -142,9 +143,10 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                 if (hasLimit && occurrences >= maxOccurrences!) break
                 if (obsEnd && current > obsEnd) break
 
-                if (current >= today) total += obs.amount
-
-                occurrences++
+                if (current >= today) {
+                    total += obs.amount
+                    occurrences++
+                }
                 if (obs.frequency === 'weekly') current.setDate(current.getDate() + 7)
                 else if (obs.frequency === 'bi-weekly') current.setDate(current.getDate() + 14)
                 else if (obs.frequency === 'monthly') current.setMonth(current.getMonth() + 1)
