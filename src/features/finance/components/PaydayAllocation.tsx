@@ -38,6 +38,9 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
         pockets.forEach(p => {
             defaultAllocations[p.id] = p.target_budget // Prefill with the expected weekly allocation
         })
+        goals.forEach(g => {
+            defaultAllocations[g.id] = 0 // Savings goals default to 0
+        })
         setAllocations(defaultAllocations)
         setAllocating(true)
     }
@@ -65,15 +68,15 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
             const transactionPromises: any[] = []
             const pocketUpdatePromises: any[] = []
 
-            for (const [pocketId, allocAmt] of Object.entries(allocations)) {
+            for (const [itemId, allocAmt] of Object.entries(allocations)) {
                 if (allocAmt > 0) {
-                    const pocket = pockets.find(p => p.id === pocketId)
+                    const pocket = pockets.find(p => p.id === itemId)
                     if (pocket) {
                         transactionPromises.push(
                             supabase.from('fin_transactions').insert({
                                 type: 'allocate',
                                 amount: allocAmt,
-                                pocket_id: pocketId,
+                                pocket_id: itemId,
                                 description: `Payday allocation (${source})`,
                                 date: new Date().toISOString().split('T')[0]
                             }).then(res => res)
@@ -81,8 +84,17 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
                         pocketUpdatePromises.push(
                             supabase.from('fin_pockets').update({
                                 balance: pocket.balance + allocAmt
-                            }).eq('id', pocketId).then(res => res)
+                            }).eq('id', itemId).then(res => res)
                         )
+                    } else {
+                        const goal = goals.find(g => g.id === itemId)
+                        if (goal) {
+                            pocketUpdatePromises.push(
+                                supabase.from('fin_goals').update({
+                                    current_amount: goal.current_amount + allocAmt
+                                }).eq('id', itemId).then(res => res)
+                            )
+                        }
                     }
                 }
             }
@@ -116,24 +128,52 @@ export function PaydayAllocation({ pockets, goals, onSuccess }: PaydayAllocation
                     </div>
                 </div>
 
-                <div className="space-y-2 mb-5">
-                    {pockets.map(p => (
-                        <div key={p.id} className="flex items-center gap-3 bg-white border border-black/[0.06] rounded-xl p-3">
-                            <div className="flex-1">
-                                <div className="text-[13px] font-semibold text-black/80">{p.name}</div>
-                                <div className="text-[11px] text-black/40">Current: £{p.balance.toFixed(2)} • Target: £{p.target_budget.toFixed(2)}</div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[14px] font-bold text-black/40">+£</span>
-                                <input
-                                    type="number"
-                                    value={allocations[p.id] ?? ''}
-                                    onChange={(e) => setAllocations(prev => ({ ...prev, [p.id]: parseFloat(e.target.value) || 0 }))}
-                                    className="w-24 bg-black/[0.04] border border-black/[0.08] rounded-lg px-3 py-1.5 text-[14px] font-bold text-black text-right outline-none focus:border-[#059669]/40"
-                                />
-                            </div>
+                <div className="space-y-4 mb-5 max-h-[400px] overflow-y-auto pr-1">
+                    {pockets.length > 0 && (
+                        <div className="space-y-2">
+                            <h3 className="text-[11px] font-bold text-black/40 uppercase tracking-wider mb-2">Pockets</h3>
+                            {pockets.map(p => (
+                                <div key={p.id} className="flex items-center gap-3 bg-white border border-black/[0.06] rounded-xl p-3">
+                                    <div className="flex-1">
+                                        <div className="text-[13px] font-semibold text-black/80">{p.name}</div>
+                                        <div className="text-[11px] text-black/40">Current: £{(p.balance ?? 0).toFixed(2)} • Target: £{p.target_budget.toFixed(2)}</div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[14px] font-bold text-black/40">+£</span>
+                                        <input
+                                            type="number"
+                                            value={allocations[p.id] ?? ''}
+                                            onChange={(e) => setAllocations(prev => ({ ...prev, [p.id]: parseFloat(e.target.value) || 0 }))}
+                                            className="w-24 bg-black/[0.04] border border-black/[0.08] rounded-lg px-3 py-1.5 text-[14px] font-bold text-black text-right outline-none focus:border-[#059669]/40"
+                                        />
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    ))}
+                    )}
+
+                    {goals.length > 0 && (
+                        <div className="space-y-2">
+                            <h3 className="text-[11px] font-bold text-black/40 uppercase tracking-wider mb-2 mt-4">Savings Goals</h3>
+                            {goals.map(g => (
+                                <div key={g.id} className="flex items-center gap-3 bg-white border border-black/[0.06] rounded-xl p-3">
+                                    <div className="flex-1">
+                                        <div className="text-[13px] font-semibold text-black/80">{g.name}</div>
+                                        <div className="text-[11px] text-black/40">Saved: £{g.current_amount.toFixed(2)} • Target: £{g.target_amount.toFixed(2)}</div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[14px] font-bold text-black/40">+£</span>
+                                        <input
+                                            type="number"
+                                            value={allocations[g.id] ?? ''}
+                                            onChange={(e) => setAllocations(prev => ({ ...prev, [g.id]: parseFloat(e.target.value) || 0 }))}
+                                            className="w-24 bg-black/[0.04] border border-black/[0.08] rounded-lg px-3 py-1.5 text-[14px] font-bold text-black text-right outline-none focus:border-[#059669]/40"
+                                        />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {error && <p className="text-[12px] text-red-600 bg-red-50 p-3 rounded-lg border border-red-100 mb-4">{error}</p>}

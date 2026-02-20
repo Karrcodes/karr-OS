@@ -16,7 +16,7 @@ import { CashflowAnalytics } from './CashflowAnalytics'
 export function CommandCenter() {
     const { pockets, loading: pLoading, refetch: refetchPockets } = usePockets()
     const { debts, loading: dLoading } = useDebts()
-    const { goals, loading: gLoading } = useGoals()
+    const { goals, loading: gLoading, refetch: refetchGoals } = useGoals()
 
     const summary = useMemo(() => {
         const totalLiquid = pockets.reduce((s, p) => s + p.balance, 0)
@@ -78,7 +78,7 @@ export function CommandCenter() {
                     {/* Main grid */}
                     <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                         <div className="xl:col-span-2 space-y-6">
-                            <PaydayAllocation pockets={pockets} goals={goals} onSuccess={refetchPockets} />
+                            <PaydayAllocation pockets={pockets} goals={goals} onSuccess={() => { refetchPockets(); refetchGoals(); }} />
 
                             <Section label="Pockets" desc="Your current allocations">
                                 <PocketsGrid pockets={pockets} />
