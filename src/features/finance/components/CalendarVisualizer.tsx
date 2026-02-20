@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Calendar as CalendarIcon, CreditCard, List, LayoutGrid } from 'lucide-react'
+import { Calendar as CalendarIcon, CreditCard, ChevronLeft, ChevronRight, List, LayoutGrid, Tag } from 'lucide-react'
 import type { RecurringObligation } from '../types/finance.types'
 
 interface ProjectedPayment {
@@ -10,93 +10,161 @@ interface ProjectedPayment {
     amount: number
     date: Date
     group_name: string | null
+    category: string | null
+}
+
+const LENDER_LOGOS: Record<string, string> = {
+    'Klarna': '/klarna.png',
+    'Clearpay': '/clearpay.png',
+    'Currys Flexipay': '/currys.png',
+}
+
+function LenderBadge({ name, size = 8 }: { name: string; size?: number }) {
+    const logoSrc = LENDER_LOGOS[name]
+    if (logoSrc) {
+        return (
+            <div className={`w-${size} h-${size} rounded-xl bg-white border border-black/[0.06] flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0`}>
+                <img src={logoSrc} alt={name} className="w-full h-full object-contain p-0.5" />
+            </div>
+        )
+    }
+    return (
+        <div className={`w-${size} h-${size} rounded-xl bg-black/[0.06] flex items-center justify-center text-sm font-black text-black/40 flex-shrink-0`}>
+            {name.charAt(0)}
+        </div>
+    )
+}
+
+type FilterMode = 'all' | 'debt' | 'subscription'
+
+const DEBT_KEYWORDS = ['klarna', 'clearpay', 'currys', 'flexipay', 'loan', 'finance', 'credit']
+function isDebt(obs: RecurringObligation) {
+    return DEBT_KEYWORDS.some(kw =>
+        (obs.name?.toLowerCase() ?? '').includes(kw) ||
+        (obs.group_name?.toLowerCase() ?? '').includes(kw) ||
+        obs.category === 'debt'
+    )
 }
 
 export function CalendarVisualizer({ obligations }: { obligations: RecurringObligation[] }) {
     const [view, setView] = useState<'calendar' | 'list'>('calendar')
+    const [filter, setFilter] = useState<FilterMode>('all')
+    const [calMonth, setCalMonth] = useState(() => {
+        const d = new Date()
+        d.setDate(1)
+        d.setHours(0, 0, 0, 0)
+        return d
+    })
 
-    const lenders = useMemo(() => [
-        { name: 'Klarna', emoji: '💗', color: '#ffb3c7' },
-        { name: 'Clearpay', emoji: '💚', color: '#b2fce1' },
-        { name: 'Currys Flexipay', emoji: '💜', color: '#6c3082' },
-        { name: 'Other / Subscription', emoji: '💸', color: '#f3f4f6' },
-    ], [])
+    const filteredObligations = useMemo(() => {
+        if (filter === 'all') return obligations
+        if (filter === 'debt') return obligations.filter(isDebt)
+        return obligations.filter(o => !isDebt(o))
+    }, [obligations, filter])
 
-    const projections = useMemo(() => {
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
-        const thirtyDaysFromNow = new Date(today)
-        thirtyDaysFromNow.setDate(today.getDate() + 30)
+    // Build a full set of projected payments for the displayed month
+    const calendarData = useMemo(() => {
+        const year = calMonth.getFullYear()
+        const month = calMonth.getMonth()
+        const firstDay = new Date(year, month, 1)
+        const lastDay = new Date(year, month + 1, 0, 23, 59, 59)
 
         const payments: ProjectedPayment[] = []
-        obligations.forEach(obs => {
+        filteredObligations.forEach(obs => {
             let current = new Date(obs.next_due_date)
             current.setHours(0, 0, 0, 0)
-            const end = obs.end_date ? new Date(obs.end_date) : thirtyDaysFromNow
-            end.setHours(23, 59, 59, 999)
+            const obsEnd = obs.end_date ? new Date(obs.end_date) : lastDay
 
-            while (current <= thirtyDaysFromNow && current <= end) {
-                if (current >= today) {
+            // Wind current back to find first occurrence in/before this month
+            while (current > firstDay) {
+                if (obs.frequency === 'weekly') current.setDate(current.getDate() - 7)
+                else if (obs.frequency === 'bi-weekly') current.setDate(current.getDate() - 14)
+                else if (obs.frequency === 'monthly') current.setMonth(current.getMonth() - 1)
+                else if (obs.frequency === 'yearly') current.setFullYear(current.getFullYear() - 1)
+                else break
+            }
+            // Now wind forward collecting payments within this calendar month
+            while (current <= lastDay) {
+                if (current >= firstDay && current <= obsEnd) {
                     payments.push({
                         id: `${obs.id}-${current.getTime()}`,
                         name: obs.name,
                         amount: obs.amount,
                         date: new Date(current),
-                        group_name: obs.group_name
+                        group_name: obs.group_name,
+                        category: obs.category
                     })
                 }
                 if (obs.frequency === 'weekly') current.setDate(current.getDate() + 7)
                 else if (obs.frequency === 'bi-weekly') current.setDate(current.getDate() + 14)
                 else if (obs.frequency === 'monthly') current.setMonth(current.getMonth() + 1)
                 else if (obs.frequency === 'yearly') current.setFullYear(current.getFullYear() + 1)
+                else break
             }
         })
 
-        payments.sort((a, b) => a.date.getTime() - b.date.getTime())
-        const groupedByDate: { date: Date, total: number, items: ProjectedPayment[] }[] = []
+        // Map day number → payments
+        const byDay: Record<number, ProjectedPayment[]> = {}
         payments.forEach(p => {
-            const dateStr = p.date.toISOString().split('T')[0]
-            let existing = groupedByDate.find(g => g.date.toISOString().split('T')[0] === dateStr)
-            if (!existing) {
-                existing = { date: p.date, total: 0, items: [] }
-                groupedByDate.push(existing)
-            }
-            existing.items.push(p)
-            existing.total += p.amount
+            const d = p.date.getDate()
+            if (!byDay[d]) byDay[d] = []
+            byDay[d].push(p)
         })
-        return { payments, groupedByDate }
-    }, [obligations])
 
-    const groupedByLender = useMemo(() => {
-        const groups: Record<string, { o: RecurringObligation[], totalRemaining: number, logo: string }> = {}
-        obligations.forEach(obs => {
-            const name = obs.name || 'Other'
-            if (!groups[name]) {
-                groups[name] = {
-                    o: [],
-                    totalRemaining: 0,
-                    logo: lenders.find(l => l.name === name)?.emoji || '💸'
-                }
+        const totalMonth = payments.reduce((s, p) => s + p.amount, 0)
+        return { byDay, totalMonth, daysInMonth: lastDay.getDate(), startDow: firstDay.getDay() }
+    }, [calMonth, filteredObligations])
+
+    // 30-day projection for list view header
+    const total30Days = useMemo(() => {
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const end = new Date(today)
+        end.setDate(today.getDate() + 30)
+
+        let total = 0
+        filteredObligations.forEach(obs => {
+            let current = new Date(obs.next_due_date)
+            current.setHours(0, 0, 0, 0)
+            const obsEnd = obs.end_date ? new Date(obs.end_date) : end
+
+            while (current <= end && current <= obsEnd) {
+                if (current >= today) total += obs.amount
+                if (obs.frequency === 'weekly') current.setDate(current.getDate() + 7)
+                else if (obs.frequency === 'bi-weekly') current.setDate(current.getDate() + 14)
+                else if (obs.frequency === 'monthly') current.setMonth(current.getMonth() + 1)
+                else if (obs.frequency === 'yearly') current.setFullYear(current.getFullYear() + 1)
+                else break
             }
+        })
+        return total
+    }, [filteredObligations])
+
+    // For list view: group by lender
+    const groupedByLender = useMemo(() => {
+        const groups: Record<string, { o: RecurringObligation[]; totalRemaining: number }> = {}
+        const now = new Date()
+
+        filteredObligations.forEach(obs => {
+            const name = obs.name || 'Other'
+            if (!groups[name]) groups[name] = { o: [], totalRemaining: 0 }
             groups[name].o.push(obs)
-            if (obs.payments_left) {
-                groups[name].totalRemaining += (obs.amount * obs.payments_left)
-            } else if (obs.end_date) {
-                const now = new Date()
+
+            if (obs.end_date) {
                 const end = new Date(obs.end_date)
-                const diffTime = end.getTime() - now.getTime()
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-                let estimatePayments = 0
-                if (obs.frequency === 'weekly') estimatePayments = Math.ceil(diffDays / 7)
-                else if (obs.frequency === 'bi-weekly') estimatePayments = Math.ceil(diffDays / 14)
-                else if (obs.frequency === 'monthly') estimatePayments = Math.ceil(diffDays / 30.44)
-                groups[name].totalRemaining += (obs.amount * Math.max(0, estimatePayments))
+                if (end > now) {
+                    const monthsLeft = Math.max(0, (end.getFullYear() - now.getFullYear()) * 12 + (end.getMonth() - now.getMonth()))
+                    let paymentsLeft = 0
+                    if (obs.frequency === 'monthly') paymentsLeft = monthsLeft
+                    else if (obs.frequency === 'weekly') paymentsLeft = Math.round(monthsLeft * (52 / 12))
+                    else if (obs.frequency === 'bi-weekly') paymentsLeft = Math.round(monthsLeft * (26 / 12))
+                    else if (obs.frequency === 'yearly') paymentsLeft = Math.max(1, Math.round(monthsLeft / 12))
+                    groups[name].totalRemaining += obs.amount * paymentsLeft
+                }
             }
         })
         return Object.entries(groups).sort((a, b) => b[1].totalRemaining - a[1].totalRemaining)
-    }, [obligations, lenders])
-
-    const total30Days = projections.payments.reduce((s, p) => s + p.amount, 0)
+    }, [filteredObligations])
 
     if (obligations.length === 0) {
         return (
@@ -110,73 +178,134 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
         )
     }
 
+    const today = new Date()
+    const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
     return (
         <div className="rounded-2xl border border-black/[0.08] bg-white overflow-hidden shadow-sm">
-            <div className="p-4 border-b border-black/[0.06] flex items-center justify-between bg-black/[0.01]">
-                <div className="flex items-center gap-4">
-                    <div>
-                        <h2 className="text-[14px] font-bold text-black flex items-center gap-2">
-                            <CalendarIcon className="w-4 h-4 text-[#7c3aed]" />
-                            Obligation Visualizer
-                        </h2>
-                        <p className="text-[11px] text-black/40 mt-0.5">{view === 'calendar' ? '30-day projected timeline' : 'Active debts grouped by lender'}</p>
-                    </div>
-                    <div className="flex p-0.5 bg-black/[0.04] rounded-lg ml-2">
-                        <button onClick={() => setView('calendar')} className={`p-1.5 rounded-md transition-all ${view === 'calendar' ? 'bg-white shadow-sm text-[#7c3aed]' : 'text-black/40 hover:text-black/60'}`} title="Calendar View">
-                            <LayoutGrid className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={() => setView('list')} className={`p-1.5 rounded-md transition-all ${view === 'list' ? 'bg-white shadow-sm text-[#7c3aed]' : 'text-black/40 hover:text-black/60'}`} title="List View">
-                            <List className="w-3.5 h-3.5" />
-                        </button>
+            {/* Header */}
+            <div className="p-4 border-b border-black/[0.06] flex items-center justify-between bg-black/[0.01] gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                    <h2 className="text-[14px] font-bold text-black flex items-center gap-2">
+                        <CalendarIcon className="w-4 h-4 text-[#7c3aed]" />
+                        {view === 'calendar' ? 'Payment Calendar' : 'Obligation Breakdown'}
+                    </h2>
+                    {/* Filter pills */}
+                    <div className="flex p-0.5 bg-black/[0.04] rounded-lg ml-1">
+                        {(['all', 'debt', 'subscription'] as FilterMode[]).map(f => (
+                            <button
+                                key={f}
+                                onClick={() => setFilter(f)}
+                                className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${filter === f ? 'bg-white shadow-sm text-[#7c3aed]' : 'text-black/40 hover:text-black/60'}`}
+                            >
+                                {f}
+                            </button>
+                        ))}
                     </div>
                 </div>
-                <div className="text-right">
-                    <div className="text-[16px] font-extrabold text-[#7c3aed]">£{total30Days.toFixed(2)}</div>
-                    <p className="text-[9px] uppercase tracking-wider font-bold text-black/30">Total 30d</p>
+
+                <div className="flex items-center gap-2 ml-auto">
+                    {/* View toggle */}
+                    <div className="flex p-0.5 bg-black/[0.04] rounded-lg">
+                        <button onClick={() => setView('calendar')} className={`p-1.5 rounded-md transition-all ${view === 'calendar' ? 'bg-white shadow-sm text-[#7c3aed]' : 'text-black/40 hover:text-black/60'}`}><LayoutGrid className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => setView('list')} className={`p-1.5 rounded-md transition-all ${view === 'list' ? 'bg-white shadow-sm text-[#7c3aed]' : 'text-black/40 hover:text-black/60'}`}><List className="w-3.5 h-3.5" /></button>
+                    </div>
+                    <div className="text-right">
+                        <div className="text-[16px] font-extrabold text-[#7c3aed]">
+                            £{view === 'calendar' ? calendarData.totalMonth.toFixed(2) : total30Days.toFixed(2)}
+                        </div>
+                        <p className="text-[9px] uppercase tracking-wider font-bold text-black/30">{view === 'calendar' ? 'This Month' : 'Next 30d'}</p>
+                    </div>
                 </div>
             </div>
 
-            <div className="p-5 max-h-[400px] overflow-y-auto">
+            <div className="p-4 max-h-[520px] overflow-y-auto">
                 {view === 'calendar' ? (
-                    <div className="space-y-4">
-                        {projections.groupedByDate.map((group, idx) => {
-                            const isToday = new Date().toISOString().split('T')[0] === group.date.toISOString().split('T')[0]
-                            const daysAway = Math.ceil((group.date.getTime() - new Date().getTime()) / (1000 * 3600 * 24))
-                            return (
-                                <div key={idx} className="relative">
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <span className={`text-[11px] font-bold uppercase tracking-wider ${isToday ? 'text-[#059669]' : 'text-black/40'}`}>
-                                            {isToday ? 'Today' : group.date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
+                    <div>
+                        {/* Month navigation */}
+                        <div className="flex items-center justify-between mb-3">
+                            <button
+                                onClick={() => setCalMonth(m => { const n = new Date(m); n.setMonth(n.getMonth() - 1); return n })}
+                                className="p-1.5 rounded-lg hover:bg-black/[0.05] transition-colors"
+                            >
+                                <ChevronLeft className="w-4 h-4 text-black/40" />
+                            </button>
+                            <span className="text-[13px] font-bold text-black">
+                                {calMonth.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
+                            </span>
+                            <button
+                                onClick={() => setCalMonth(m => { const n = new Date(m); n.setMonth(n.getMonth() + 1); return n })}
+                                className="p-1.5 rounded-lg hover:bg-black/[0.05] transition-colors"
+                            >
+                                <ChevronRight className="w-4 h-4 text-black/40" />
+                            </button>
+                        </div>
+
+                        {/* Day-of-week headers */}
+                        <div className="grid grid-cols-7 mb-1">
+                            {DAY_LABELS.map(d => (
+                                <div key={d} className="text-center text-[9px] font-bold text-black/25 uppercase tracking-wider py-1">{d}</div>
+                            ))}
+                        </div>
+
+                        {/* Calendar grid */}
+                        <div className="grid grid-cols-7 gap-px bg-black/[0.04] rounded-xl overflow-hidden border border-black/[0.04]">
+                            {/* Leading empty cells */}
+                            {Array.from({ length: calendarData.startDow }).map((_, i) => (
+                                <div key={`empty-${i}`} className="bg-white/60 min-h-[52px]" />
+                            ))}
+                            {/* Day cells */}
+                            {Array.from({ length: calendarData.daysInMonth }).map((_, i) => {
+                                const day = i + 1
+                                const payments = calendarData.byDay[day] || []
+                                const isToday = today.getDate() === day &&
+                                    today.getMonth() === calMonth.getMonth() &&
+                                    today.getFullYear() === calMonth.getFullYear()
+                                const hasPay = payments.length > 0
+                                const dayTotal = payments.reduce((s, p) => s + p.amount, 0)
+                                const isPast = new Date(calMonth.getFullYear(), calMonth.getMonth(), day) < new Date(today.getFullYear(), today.getMonth(), today.getDate())
+
+                                return (
+                                    <div
+                                        key={day}
+                                        className={`bg-white min-h-[52px] p-1.5 flex flex-col gap-1 transition-colors
+                                            ${isToday ? 'bg-[#7c3aed]/[0.04]' : ''}
+                                            ${isPast && !isToday ? 'opacity-40' : ''}
+                                        `}
+                                    >
+                                        <span className={`text-[11px] font-bold w-5 h-5 flex items-center justify-center rounded-full
+                                            ${isToday ? 'bg-[#7c3aed] text-white' : 'text-black/40'}
+                                        `}>
+                                            {day}
                                         </span>
-                                        {!isToday && daysAway > 0 && <span className="text-[10px] text-black/25">In {daysAway} day{daysAway > 1 && 's'}</span>}
-                                        <div className="flex-1 h-px bg-black/[0.04]" />
-                                        <span className="text-[12px] font-bold text-black/30">£{group.total.toFixed(2)}</span>
-                                    </div>
-                                    <div className="space-y-1.5 pl-2 border-l-2 border-black/[0.04] ml-1">
-                                        {group.items.map((item) => (
-                                            <div key={item.id} className="flex items-center justify-between text-[13px] bg-black/[0.02] hover:bg-black/[0.04] p-2 rounded-lg transition-colors">
-                                                <div className="flex items-center gap-2.5">
-                                                    <CreditCard className="w-3.5 h-3.5 text-black/30" />
-                                                    <div>
-                                                        <div className="font-semibold text-black/80">{item.name}</div>
-                                                        {item.group_name && <div className="text-[10px] text-black/40">{item.group_name}</div>}
+                                        {hasPay && (
+                                            <>
+                                                {payments.slice(0, 2).map((p, pi) => (
+                                                    <div key={pi} title={`${p.name}: £${p.amount.toFixed(2)}`} className="bg-red-50 border border-red-100 rounded px-1 py-0.5 truncate">
+                                                        <span className="text-[8px] font-bold text-red-600 truncate block">{p.name}</span>
                                                     </div>
-                                                </div>
-                                                <div className="font-bold text-black/60">£{item.amount.toFixed(2)}</div>
-                                            </div>
-                                        ))}
+                                                ))}
+                                                {payments.length > 2 && (
+                                                    <span className="text-[8px] text-black/30 font-bold">+{payments.length - 2} more</span>
+                                                )}
+                                                <span className="text-[8px] font-bold text-red-500 mt-auto">-£{dayTotal.toFixed(0)}</span>
+                                            </>
+                                        )}
                                     </div>
-                                </div>
-                            )
-                        })}
+                                )
+                            })}
+                        </div>
                     </div>
                 ) : (
                     <div className="space-y-6">
+                        {groupedByLender.length === 0 && (
+                            <p className="text-[12px] text-black/30 text-center py-8">No obligations in this category.</p>
+                        )}
                         {groupedByLender.map(([lender, data]) => (
                             <div key={lender} className="space-y-3">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <div className="w-8 h-8 rounded-lg bg-black/[0.03] flex items-center justify-center text-lg">{data.logo}</div>
+                                        <LenderBadge name={lender} size={8} />
                                         <div>
                                             <h3 className="text-[13px] font-bold text-black/80">{lender}</h3>
                                             <p className="text-[10px] text-black/40 uppercase tracking-tight">{data.o.length} Active Plan{data.o.length > 1 ? 's' : ''}</p>
@@ -197,18 +326,11 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                                                 <div className="text-[12px] font-bold text-red-600">£{obs.amount.toFixed(2)} <span className="text-[10px] text-black/20 font-normal">/ {obs.frequency}</span></div>
                                             </div>
                                             <div className="flex justify-between items-center mt-2">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="flex items-center gap-1 text-[10px] text-black/40 bg-black/[0.04] px-1.5 py-0.5 rounded">
-                                                        <CalendarIcon className="w-2.5 h-2.5" />
-                                                        Next: {obs.next_due_date}
-                                                    </div>
-                                                    {obs.payments_left && (
-                                                        <div className="flex items-center gap-1 text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100/50">
-                                                            {obs.payments_left} left
-                                                        </div>
-                                                    )}
+                                                <div className="flex items-center gap-1 text-[10px] text-black/40 bg-black/[0.04] px-1.5 py-0.5 rounded">
+                                                    <CalendarIcon className="w-2.5 h-2.5" />
+                                                    Next: {obs.next_due_date}
                                                 </div>
-                                                {obs.end_date && !obs.payments_left && (
+                                                {obs.end_date && (
                                                     <div className="text-[10px] text-black/30 italic">Ends {obs.end_date}</div>
                                                 )}
                                             </div>
