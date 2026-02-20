@@ -23,13 +23,13 @@ const DEDUCTION_RATE = 0.1877 // ~18.77% deduced from payslip
 
 export function ProjectionsAnalytics() {
     const [currentDate, setCurrentDate] = useState(new Date())
-    const [overtimeDays, setOvertimeDays] = useState<Record<string, boolean>>({})
+    const [dayOverrides, setDayOverrides] = useState<Record<string, 'overtime' | 'absence' | 'holiday'>>({})
 
     const monthName = currentDate.toLocaleString('default', { month: 'long' })
     const year = currentDate.getFullYear()
     const monthIndex = currentDate.getMonth()
 
-    const { days, paydaysThisMonth, shiftsThisMonth, otThisMonth, projectedNet } = useMemo(() => {
+    const { days, paydaysThisMonth, shiftsThisMonth, otThisMonth, absencesThisMonth, holidaysThisMonth, projectedNet } = useMemo(() => {
         const daysInMonth = getDaysInMonth(year, monthIndex)
         const firstDayIdx = getFirstDayOfMonth(year, monthIndex)
 
@@ -37,6 +37,8 @@ export function ProjectionsAnalytics() {
         let paydaysCount = 0
         let shiftsCount = 0
         let otCount = 0
+        let absencesCount = 0
+        let holidaysCount = 0
 
         // Padding previous month
         for (let i = 0; i < firstDayIdx; i++) {
@@ -57,10 +59,13 @@ export function ProjectionsAnalytics() {
             // Payday Logic: Every Friday
             const isPayday = date.getDay() === 5 // 0=Sunday, 5=Friday
 
-            // Overtime Logic
+            // Overtime & Overrides Logic
             const dateStr = date.toISOString().split('T')[0]
-            const isOvertime = !!overtimeDays[dateStr]
-            if (isOvertime) otCount++
+            const override = dayOverrides[dateStr]
+
+            if (override === 'overtime') { otCount++; }
+            if (override === 'absence' && isShift) { absencesCount++; }
+            if (override === 'holiday' && isShift) { holidaysCount++; }
 
             if (isShift) shiftsCount++
             if (isPayday) paydaysCount++
@@ -71,18 +76,27 @@ export function ProjectionsAnalytics() {
                 date,
                 isShift,
                 isPayday,
-                isOvertime,
+                override,
                 isToday: new Date().toDateString() === date.toDateString()
             })
         }
 
-        const baseGross = shiftsCount * HOURS_PER_SHIFT * BASE_RATE
+        const effectiveShifts = shiftsCount - absencesCount
+        const baseGross = effectiveShifts * HOURS_PER_SHIFT * BASE_RATE
         const otGross = otCount * HOURS_PER_SHIFT * OT_RATE
         const totalGross = baseGross + otGross
         const projectedNet = totalGross * (1 - DEDUCTION_RATE)
 
-        return { days: daysArr, paydaysThisMonth: paydaysCount, shiftsThisMonth: shiftsCount, otThisMonth: otCount, projectedNet }
-    }, [year, monthIndex, overtimeDays])
+        return {
+            days: daysArr,
+            paydaysThisMonth: paydaysCount,
+            shiftsThisMonth: shiftsCount,
+            otThisMonth: otCount,
+            absencesThisMonth: absencesCount,
+            holidaysThisMonth: holidaysCount,
+            projectedNet
+        }
+    }, [year, monthIndex, dayOverrides])
 
     const nextMonth = () => {
         setCurrentDate(new Date(year, monthIndex + 1, 1))
@@ -143,7 +157,7 @@ export function ProjectionsAnalytics() {
                             <span className="text-[18px] opacity-70">£</span>
                             {projectedNet.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
-                        <p className="text-[11px] text-emerald-100 mt-1 relative z-10">Based on {shiftsThisMonth} shifts + {otThisMonth} OT. (~18.8% Ded.)</p>
+                        <p className="text-[11px] text-emerald-100 mt-1 relative z-10">Based on {shiftsThisMonth - absencesThisMonth} worked + {holidaysThisMonth} hol + {otThisMonth} OT. (~18.8% Ded.)</p>
                     </div>
                 </div>
             </div>
@@ -183,23 +197,46 @@ export function ProjectionsAnalytics() {
                         {days.map((d, i) => {
                             if (!d) return <div key={i} className="aspect-square bg-transparent rounded-xl" />
 
-                            const { day, isShift, isPayday, isToday, isOvertime, dateStr } = d
+                            const { day, isShift, isPayday, isToday, override, dateStr } = d
+                            const isOvertime = override === 'overtime'
+                            const isAbsence = override === 'absence'
+                            const isHoliday = override === 'holiday'
 
-                            const toggleOvertime = () => {
-                                setOvertimeDays(prev => ({
-                                    ...prev,
-                                    [dateStr]: !prev[dateStr]
-                                }))
+                            const toggleState = () => {
+                                setDayOverrides(prev => {
+                                    const current = prev[dateStr]
+                                    let next: 'overtime' | 'absence' | 'holiday' | undefined
+
+                                    if (isShift) {
+                                        if (!current) next = 'absence'
+                                        else if (current === 'absence') next = 'holiday'
+                                        else next = undefined
+                                    } else {
+                                        if (!current) next = 'overtime'
+                                        else next = undefined
+                                    }
+
+                                    const newOverrides = { ...prev }
+                                    if (next) newOverrides[dateStr] = next
+                                    else delete newOverrides[dateStr]
+                                    return newOverrides
+                                })
                             }
 
                             let bgClass = "bg-black/[0.02] border-transparent"
                             let borderClass = ""
                             let textClass = "text-black/60"
 
-                            // Overtime styling takes precedence
+                            // Overrides styling takes precedence
                             if (isOvertime) {
                                 bgClass = "bg-orange-50 border-orange-200"
                                 textClass = "text-orange-900"
+                            } else if (isAbsence) {
+                                bgClass = "bg-red-50 border-red-200"
+                                textClass = "text-red-900"
+                            } else if (isHoliday) {
+                                bgClass = "bg-purple-50 border-purple-200"
+                                textClass = "text-purple-900"
                             } else if (isShift && isPayday) {
                                 bgClass = "bg-[#dbeafe]" // Blueish
                                 borderClass = "border-emerald-300" // Green border
@@ -216,24 +253,27 @@ export function ProjectionsAnalytics() {
                                 borderClass = "border-black shadow-sm"
                             }
 
+                            // Keep symbols to a minimum size-wise
                             return (
                                 <div
                                     key={i}
-                                    onClick={toggleOvertime}
-                                    className={`aspect-square cursor-pointer hover:border-black/20 relative rounded-xl border p-1.5 sm:p-2 sm:pt-1.5 transition-all flex flex-col justify-between ${bgClass} ${borderClass}`}
+                                    onClick={toggleState}
+                                    className={`aspect-square cursor-pointer hover:border-black/20 relative rounded-xl border p-1.5 sm:p-2 sm:pt-1.5 transition-all flex flex-col justify-between select-none ${bgClass} ${borderClass}`}
                                 >
                                     <div className="flex justify-between items-start">
-                                        <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                                        <div className="flex flex-col gap-1 items-start">
                                             <span className={`text-[12px] sm:text-[14px] font-bold ${textClass}`}>{day}</span>
-                                            {isOvertime && <span className="text-[8px] bg-orange-500 text-white px-1 py-0.5 rounded font-bold tracking-widest uppercase">OT</span>}
+                                            {isOvertime && <span className="text-[8px] sm:text-[9px] bg-orange-500 text-white px-1 py-0.5 rounded font-bold tracking-widest uppercase shadow-sm">OT</span>}
+                                            {isAbsence && <span className="text-[8px] sm:text-[9px] bg-red-500 text-white px-1 py-0.5 rounded font-bold tracking-widest uppercase shadow-sm">ABS</span>}
+                                            {isHoliday && <span className="text-[8px] sm:text-[9px] bg-purple-500 text-white px-1 py-0.5 rounded font-bold tracking-widest uppercase shadow-sm">HOL</span>}
                                         </div>
-                                        {isPayday && <DollarSign className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isShift && !isOvertime ? 'text-emerald-500' : 'text-emerald-600'}`} />}
+                                        {isPayday && <DollarSign className={`w-3.5 h-3.5 sm:w-4 sm:h-4 opacity-80 ${isShift && !override ? 'text-emerald-500' : 'text-emerald-700'}`} />}
                                     </div>
                                     <div className="mt-auto flex items-end justify-between">
-                                        {(isShift || isOvertime) && (
+                                        {(isShift || isOvertime) && !isAbsence && !isHoliday && (
                                             <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isOvertime ? 'bg-orange-500' : 'bg-blue-500'}`} />
                                         )}
-                                        {isPayday && !isShift && !isOvertime && (
+                                        {isPayday && !isShift && !override && (
                                             <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-500" />
                                         )}
                                     </div>
@@ -243,18 +283,24 @@ export function ProjectionsAnalytics() {
                         })}
                     </div>
 
-                    <div className="mt-6 flex flex-wrap items-center gap-4 text-[11px] text-black/40 font-medium border-t border-black/[0.04] pt-4">
+                    <div className="mt-6 flex flex-wrap items-center gap-4 text-[11px] text-black/40 font-medium border-t border-black/[0.04] pt-4 select-none">
                         <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded bg-[#dbeafe]" /> Shift Day
+                            <div className="w-3 h-3 rounded bg-[#dbeafe] border border-[#bfdbfe]" /> Shift Day
                         </div>
                         <div className="flex items-center gap-2">
                             <div className="w-3 h-3 rounded bg-orange-50 border border-orange-200" /> Overtime Shift
                         </div>
                         <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded bg-[#d1fae5]" /> Payday OFF
+                            <div className="w-3 h-3 rounded bg-[#d1fae5] border border-emerald-200" /> Payday OFF
                         </div>
                         <div className="flex items-center gap-2">
                             <div className="w-3 h-3 rounded border border-emerald-300 bg-[#dbeafe]" /> Payday ON SHIFT
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded bg-red-50 border border-red-200" /> Absence / Unpaid
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded bg-purple-50 border border-purple-200" /> Paid Holiday
                         </div>
                     </div>
                 </div>
