@@ -14,6 +14,7 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
     const [isMounted, setIsMounted] = useState(false)
     const [isEnrolled, setIsEnrolled] = useState(false)
     const [isSetupMode, setIsSetupMode] = useState(false)
+    const [isProcessing, setIsProcessing] = useState(false)
 
     useEffect(() => {
         setIsMounted(true)
@@ -29,15 +30,15 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
         }
     }, [])
 
-    const handlePinInput = (digit: string) => {
-        if (pin.length >= 4) return
+    const handlePinInput = async (digit: string) => {
+        if (pin.length >= 4 || isProcessing) return
         const newPin = pin + digit
         setPin(newPin)
 
         if (newPin.length === 4) {
             if (newPin === CORRECT_PIN) {
                 if (isSetupMode) {
-                    enrollBiometrics()
+                    await enrollBiometrics()
                     setPin('')
                 } else {
                     handleUnlock()
@@ -59,55 +60,89 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
 
     const enrollBiometrics = async () => {
         if (!window.PublicKeyCredential) {
-            alert('Biometrics not supported on this browser.')
+            alert('Biometrics are not supported by this browser.')
             return
         }
 
+        // WebAuthn requires HTTPS or Localhost
+        const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        if (!isSecure) {
+            alert('Biometrics (FaceID) require a secure connection (HTTPS). Testing on a mobile device usually requires a domain with SSL or using "localhost" on a computer.')
+            return
+        }
+
+        // IP addresses are not valid RP IDs
+        const isIp = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(window.location.hostname)
+        if (isIp) {
+            alert('WebAuthn (FaceID) does not work with IP addresses. Please use a domain name or localhost.')
+            return
+        }
+
+        setIsProcessing(true)
         try {
             const challenge = crypto.getRandomValues(new Uint8Array(32))
             const userId = crypto.getRandomValues(new Uint8Array(16))
 
+            // Ensure we use the proper RP ID (omit if it's not a valid domain)
+            const rpId = window.location.hostname
+
             const credential = await navigator.credentials.create({
                 publicKey: {
                     challenge,
-                    rp: { name: "KarrOS", id: window.location.hostname },
+                    rp: { name: "KarrOS", id: rpId },
                     user: {
                         id: userId,
-                        name: "Karr User",
+                        name: "KarrUser",
                         displayName: "Karr User"
                     },
-                    pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
+                    pubKeyCredParams: [
+                        { alg: -7, type: "public-key" }, // ES256
+                        { alg: -257, type: "public-key" } // RS256
+                    ],
                     authenticatorSelection: {
                         authenticatorAttachment: "platform",
-                        userVerification: "required"
+                        userVerification: "required",
+                        residentKey: "preferred"
                     },
                     timeout: 60000
                 }
             }) as PublicKeyCredential
 
             if (credential) {
-                // Store the credential ID to prove setup
-                localStorage.setItem('karrOS_biometric_id', btoa(String.fromCharCode(...new Uint8Array(credential.rawId))))
+                const rawId = new Uint8Array(credential.rawId)
+                localStorage.setItem('karrOS_biometric_id', btoa(String.fromCharCode(...rawId)))
                 setIsEnrolled(true)
                 setIsSetupMode(false)
                 handleUnlock()
-                alert('FaceID / Biometrics enrolled successfully!')
+                alert('Success! FaceID / TouchID enrolled.')
             }
-        } catch (err) {
-            console.error('Enrollment failed:', err)
-            alert('Setup failed. Ensure you are on a secure (HTTPS or localhost) connection and try again.')
+        } catch (err: any) {
+            console.error('Enrollment error:', err)
+            if (err.name === 'NotAllowedError') {
+                alert('Biometric setup timed out or was denied.')
+            } else if (err.name === 'SecurityError') {
+                alert('Security error: WebAuthn requires a valid domain and HTTPS.')
+            } else {
+                alert(`Error: ${err.message || 'Verification failed'}`)
+            }
+        } finally {
+            setIsProcessing(false)
         }
     }
 
     const handleBiometric = async () => {
-        if (!isEnrolled) {
+        if (!isEnrolled || isProcessing) {
             alert('Please enter your PIN first to setup Biometrics.')
             return
         }
 
+        setIsProcessing(true)
         try {
             const challenge = crypto.getRandomValues(new Uint8Array(32))
-            const credentialId = Uint8Array.from(atob(localStorage.getItem('karrOS_biometric_id')!), c => c.charCodeAt(0))
+            const storedId = localStorage.getItem('karrOS_biometric_id')
+            if (!storedId) throw new Error('No enrolled biometrics found.')
+
+            const credentialId = Uint8Array.from(atob(storedId), c => c.charCodeAt(0))
 
             const assertion = await navigator.credentials.get({
                 publicKey: {
@@ -124,9 +159,13 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
             if (assertion) {
                 handleUnlock()
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error('Biometric verification failed:', err)
-            // If it's a "not found" or "canceled" error, show a less scary message
+            if (err.name !== 'NotAllowedError') {
+                alert(`Biometric failed: ${err.message}`)
+            }
+        } finally {
+            setIsProcessing(false)
         }
     }
 
