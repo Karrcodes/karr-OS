@@ -20,18 +20,28 @@ function LenderBadge({ name }: { name: string }) {
     if (logoSrc) {
         return (
             <div className="w-8 h-8 rounded-xl bg-white border border-black/[0.06] flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
-                <img src={logoSrc} alt={name} className="w-full h-full object-contain p-0.5" />
+                <img src={logoSrc} alt={name} className="w-full h-full object-contain p-1" />
             </div>
         )
     }
+    const initial = name ? name.charAt(0).toUpperCase() : '?'
     return (
-        <div className="w-8 h-8 rounded-xl bg-black/[0.06] flex items-center justify-center text-sm font-black text-black/40 flex-shrink-0">
-            {name.charAt(0).toUpperCase()}
+        <div className="w-8 h-8 rounded-xl flex items-center justify-center text-[12px] font-bold text-black border border-black/[0.06] bg-black/[0.02] flex-shrink-0">
+            {initial}
         </div>
     )
 }
 
 type FilterMode = 'all' | 'debt' | 'subscription'
+
+/** Safely advances a Date by exactly N months, preserving the day-of-month */
+function addMonths(date: Date, months: number): Date {
+    const d = new Date(date.getTime())
+    const targetMonth = d.getMonth() + months
+    d.setMonth(targetMonth)
+    if (d.getMonth() !== ((targetMonth % 12) + 12) % 12) d.setDate(0)
+    return d
+}
 
 const DEBT_KEYWORDS = ['klarna', 'clearpay', 'currys', 'flexipay', 'loan', 'finance', 'credit']
 function isDebt(obs: RecurringObligation) {
@@ -73,38 +83,37 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
         filteredObligations.forEach(obs => {
             let current = new Date(obs.next_due_date)
             current.setHours(0, 0, 0, 0)
+
+            // Give the end date a 7-day grace period
             const obsEnd = obs.end_date ? new Date(obs.end_date) : null
+            if (obsEnd) obsEnd.setDate(obsEnd.getDate() + 7)
             if (obsEnd) obsEnd.setHours(23, 59, 59, 999)
 
             let occurrences = 0
             const hasLimit = obs.payments_left != null && obs.payments_left > 0
             const maxOccurrences = hasLimit ? obs.payments_left : Infinity
 
-            // Strictly wind forward from next_due_date
             while (current <= lastDay) {
                 if (hasLimit && occurrences >= maxOccurrences!) break
                 if (obsEnd && current > obsEnd) break
 
-                // If this occurrence lands in the viewed month AND is >= today, collect it
                 if (current >= firstDay && current >= today) {
                     payments.push({
                         id: `${obs.id}-${current.getTime()}`,
                         name: obs.name,
                         amount: obs.amount,
-                        date: new Date(current),
+                        date: new Date(current.getTime()),
                         group_name: obs.group_name,
                         category: obs.category
                     })
                 }
 
-                // Only consume the payments_left limit for future/current payments
                 if (current >= today) occurrences++
 
-                // Advance to next payment date
                 if (obs.frequency === 'weekly') current.setDate(current.getDate() + 7)
                 else if (obs.frequency === 'bi-weekly') current.setDate(current.getDate() + 14)
-                else if (obs.frequency === 'monthly') current.setMonth(current.getMonth() + 1)
-                else if (obs.frequency === 'yearly') current.setFullYear(current.getFullYear() + 1)
+                else if (obs.frequency === 'monthly') current = addMonths(current, 1)
+                else if (obs.frequency === 'yearly') current = addMonths(current, 12)
                 else break
             }
         })
@@ -132,7 +141,9 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
         filteredObligations.forEach(obs => {
             let current = new Date(obs.next_due_date)
             current.setHours(0, 0, 0, 0)
+
             const obsEnd = obs.end_date ? new Date(obs.end_date) : null
+            if (obsEnd) obsEnd.setDate(obsEnd.getDate() + 7)
             if (obsEnd) obsEnd.setHours(23, 59, 59, 999)
 
             let occurrences = 0
@@ -147,10 +158,11 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                     total += obs.amount
                     occurrences++
                 }
+
                 if (obs.frequency === 'weekly') current.setDate(current.getDate() + 7)
                 else if (obs.frequency === 'bi-weekly') current.setDate(current.getDate() + 14)
-                else if (obs.frequency === 'monthly') current.setMonth(current.getMonth() + 1)
-                else if (obs.frequency === 'yearly') current.setFullYear(current.getFullYear() + 1)
+                else if (obs.frequency === 'monthly') current = addMonths(current, 1)
+                else if (obs.frequency === 'yearly') current = addMonths(current, 12)
                 else break
             }
         })
