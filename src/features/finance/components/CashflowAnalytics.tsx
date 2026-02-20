@@ -29,7 +29,13 @@ export function CashflowAnalytics() {
         let total = 0
         const groups: { [monthStr: string]: { amount: number, sortKey: string } } = {}
 
-        transactions.filter(t => t.type === 'income').forEach(i => {
+        // Only count salary transfers ("Payment from U U K") as true income
+        const salaryTransactions = transactions.filter(t =>
+            t.type === 'income' &&
+            t.description?.toLowerCase().includes('payment from u u k')
+        )
+
+        salaryTransactions.forEach(i => {
             total += i.amount
             const date = new Date(i.date)
             const monthStr = date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
@@ -102,7 +108,7 @@ export function CashflowAnalytics() {
                             </div>
                             <div className="flex items-center justify-end gap-1 text-[11px] font-semibold uppercase tracking-wider text-black/40">
                                 Total Earnings
-                                <InfoTooltip content={'The sum of all transactions in your ledger with type "income", across all time — including sync-imported and manually logged entries.'} side="left" />
+                                <InfoTooltip content={'Only counts transactions with description "Payment from U U K" — your salary transfer from your employer to Revolut.'} side="left" />
                             </div>
                         </>
                     )}

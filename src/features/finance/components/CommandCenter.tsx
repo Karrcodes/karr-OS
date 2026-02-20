@@ -34,8 +34,20 @@ export function CommandCenter() {
                 const end = new Date(o.end_date)
                 const now = new Date()
                 if (end > now) {
-                    const monthsLeft = (end.getFullYear() - now.getFullYear()) * 12 + (end.getMonth() - now.getMonth())
-                    if (monthsLeft > 0) totalDebt += (o.amount * (o.frequency === 'monthly' ? monthsLeft : o.frequency === 'weekly' ? monthsLeft * 4 : o.frequency === 'bi-weekly' ? monthsLeft * 2 : monthsLeft / 12))
+                    // Number of whole calendar months remaining until the end date
+                    const monthsLeft = Math.max(
+                        0,
+                        (end.getFullYear() - now.getFullYear()) * 12 + (end.getMonth() - now.getMonth())
+                    )
+
+                    // Convert months remaining into number of payments, based on frequency
+                    let paymentsLeft = 0
+                    if (o.frequency === 'monthly') paymentsLeft = monthsLeft
+                    else if (o.frequency === 'weekly') paymentsLeft = Math.round(monthsLeft * (52 / 12))
+                    else if (o.frequency === 'bi-weekly') paymentsLeft = Math.round(monthsLeft * (26 / 12))
+                    else if (o.frequency === 'yearly') paymentsLeft = Math.max(1, Math.round(monthsLeft / 12))
+
+                    totalDebt += o.amount * paymentsLeft
                 }
             }
 
@@ -108,7 +120,7 @@ export function CommandCenter() {
                             icon={<TrendingDown className="w-5 h-5" />}
                             color="#dc2626"
                             sub="Estimated remaining on fixed terms"
-                            tooltip={<span>For each obligation with an end date, this calculates: <strong>payment amount × remaining periods</strong> until that date. Obligations without an end date are excluded. Frequency is normalised (weekly × 4 = monthly, bi-weekly × 2, yearly ÷ 12).</span>}
+                            tooltip={<span>For each obligation with an end date: <strong>payment amount × number of remaining payments</strong>. Monthly = months left. Weekly = months × 52÷12. Bi-weekly = months × 26÷12. Yearly = rounded years left (min 1). No end date = excluded.</span>}
                         />
                         <SummaryCard
                             label="Monthly Obligations"
