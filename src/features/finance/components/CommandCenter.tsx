@@ -5,7 +5,6 @@ import { DollarSign, TrendingDown, Wallet, RefreshCw } from 'lucide-react'
 import { usePockets } from '../hooks/usePockets'
 import { useRecurring } from '../hooks/useRecurring'
 import { useGoals } from '../hooks/useGoals'
-import { useSettings } from '../hooks/useSettings'
 import { PocketsGrid } from './PocketsGrid'
 import { CalendarVisualizer } from './CalendarVisualizer'
 import { GoalsList } from './GoalsList'
@@ -13,22 +12,6 @@ import { KarrAIChat } from './KarrAIChat'
 import { QuickActionFAB } from './QuickActionFAB'
 import { PaydayAllocation } from './PaydayAllocation'
 import { CashflowAnalytics } from './CashflowAnalytics'
-import { DraggableSection } from './DraggableSection'
-import {
-    DndContext,
-    closestCenter,
-    KeyboardSensor,
-    PointerSensor,
-    useSensor,
-    useSensors,
-    DragEndEvent
-} from '@dnd-kit/core'
-import {
-    arrayMove,
-    SortableContext,
-    sortableKeyboardCoordinates,
-    rectSortingStrategy,
-} from '@dnd-kit/sortable'
 
 export function CommandCenter() {
     const { pockets, loading: pLoading, refetch: refetchPockets } = usePockets()
@@ -62,96 +45,7 @@ export function CommandCenter() {
         return { totalLiquid, totalDebt, monthlyObligations }
     }, [pockets, obligations])
 
-    const { settings, loading: sLoading, setSetting } = useSettings()
-    const loading = pLoading || oLoading || gLoading || sLoading
-
-    // --- Drag and Drop State ---
-    const defaultOrder = [
-        'payday',
-        'pockets',
-        'goals',
-        'obligations',
-        'analytics',
-        'ai'
-    ]
-
-    const [sectionOrder, setSectionOrder] = useState<string[]>(defaultOrder)
-
-    // Load saved order from Supabase settings on mount
-    const [mounted, setMounted] = useState(false)
-    useEffect(() => {
-        if (!sLoading) {
-            const saved = settings['dashboard_layout_order']
-            if (saved) {
-                try {
-                    const parsed = JSON.parse(saved)
-                    if (Array.isArray(parsed) && parsed.length === defaultOrder.length) {
-                        setSectionOrder(parsed)
-                    }
-                } catch (e) { }
-            }
-            setMounted(true)
-        }
-    }, [sLoading, settings, defaultOrder.length])
-
-    const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-    )
-
-    const handleDragEnd = (event: DragEndEvent) => {
-        const { active, over } = event
-        if (over && active.id !== over.id) {
-            setSectionOrder((items: string[]) => {
-                const oldIndex = items.indexOf(active.id as string)
-                const newIndex = items.indexOf(over.id as string)
-                const newOrder = arrayMove(items, oldIndex, newIndex)
-
-                // Save globally to database instead of localStorage
-                setSetting('dashboard_layout_order', JSON.stringify(newOrder))
-
-                return newOrder
-            })
-        }
-    }
-
-    if (!mounted) return null // Prevent hydration mismatch on initial render
-
-    // Component Maps for rendering based on sort order
-    const sectionComponents: Record<string, React.ReactNode> = {
-        'payday': (
-            <DraggableSection key="payday" id="payday" className="xl:col-span-2 h-full">
-                <PaydayAllocation pockets={pockets} goals={goals} onSuccess={() => { refetchPockets(); refetchGoals(); }} />
-            </DraggableSection>
-        ),
-        'pockets': (
-            <DraggableSection key="pockets" id="pockets" title="Pockets" desc="Your current allocations" className="xl:col-span-2 h-full">
-                <PocketsGrid pockets={pockets} />
-            </DraggableSection>
-        ),
-        'goals': (
-            <DraggableSection key="goals" id="goals" title="Savings Goals" desc="Long-term targets" className="xl:col-span-2 h-full">
-                <GoalsList goals={goals} />
-            </DraggableSection>
-        ),
-        'obligations': (
-            <DraggableSection key="obligations" id="obligations" title="Recurring Obligations" desc="30-Day projections for subs, rent, & debt" className="xl:col-span-2 h-full">
-                <CalendarVisualizer obligations={obligations} />
-            </DraggableSection>
-        ),
-        'analytics': (
-            <DraggableSection key="analytics" id="analytics" className="xl:col-span-1 h-full h-min">
-                <CashflowAnalytics />
-            </DraggableSection>
-        ),
-        'ai': (
-            <DraggableSection key="ai" id="ai" className="xl:col-span-1 bg-transparent border-none shadow-none !p-0 h-full h-min drop-shadow-sm">
-                <div className="rounded-2xl border border-black/[0.08] bg-white p-5 h-full">
-                    <KarrAIChat context={`Live Balances:\n${pockets.map(p => `- ${p.name}: £${p.balance.toFixed(2)}`).join('\n')}`} />
-                </div>
-            </DraggableSection>
-        )
-    }
+    const loading = pLoading || oLoading || gLoading
 
     return (
         <div className="flex flex-col h-full bg-white">
@@ -204,14 +98,38 @@ export function CommandCenter() {
                         />
                     </div>
 
-                    {/* Main grid */}
-                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                        <SortableContext items={sectionOrder} strategy={rectSortingStrategy}>
-                            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start grid-flow-dense pb-12">
-                                {sectionOrder.map((id: string) => sectionComponents[id])}
+                    {/* Main Layout Stack */}
+                    <div className="space-y-6 pb-12">
+                        {/* Row 2: Cashflow and Payday side-by-side */}
+                        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
+                            <div className="xl:col-span-1">
+                                <CashflowAnalytics />
                             </div>
-                        </SortableContext>
-                    </DndContext>
+                            <div className="xl:col-span-2">
+                                <PaydayAllocation pockets={pockets} goals={goals} onSuccess={() => { refetchPockets(); refetchGoals(); }} />
+                            </div>
+                        </div>
+
+                        {/* Row 3: Savings Goals */}
+                        <SectionBlock title="Savings Goals" desc="Long-term targets">
+                            <GoalsList goals={goals} />
+                        </SectionBlock>
+
+                        {/* Row 4: Pockets */}
+                        <SectionBlock title="Pockets" desc="Your current allocations">
+                            <PocketsGrid pockets={pockets} />
+                        </SectionBlock>
+
+                        {/* Row 5: Obligations */}
+                        <SectionBlock title="Recurring Obligations" desc="30-Day projections for subs, rent, & debt">
+                            <CalendarVisualizer obligations={obligations} />
+                        </SectionBlock>
+
+                        {/* Row 6: AI Chat */}
+                        <div className="rounded-2xl border border-black/[0.08] bg-white p-5 shadow-sm">
+                            <KarrAIChat context={`Live Balances:\n${pockets.map(p => `- ${p.name}: £${p.balance.toFixed(2)}`).join('\n')}`} />
+                        </div>
+                    </div>
                 </div>
             </details>
 
@@ -233,6 +151,20 @@ function SummaryCard({ label, value, icon, color, sub }: {
             </div>
             <p className="text-2xl font-bold text-black tracking-tight">{value}</p>
             {sub && <p className="text-[11px] text-black/35 mt-1">{sub}</p>}
+        </div>
+    )
+}
+
+function SectionBlock({ title, desc, children }: { title?: string; desc?: string; children: React.ReactNode }) {
+    return (
+        <div className="rounded-2xl border border-black/[0.08] bg-white p-5 shadow-sm">
+            {(title || desc) && (
+                <div className="flex items-baseline gap-2 mb-4">
+                    {title && <h2 className="text-[14px] font-bold text-black">{title}</h2>}
+                    {desc && <span className="text-[11px] text-black/35">{desc}</span>}
+                </div>
+            )}
+            {children}
         </div>
     )
 }
