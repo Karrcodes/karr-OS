@@ -43,9 +43,5 @@ function SavingsPage() {
 }
 
 export default function SavingsPageWrapper() {
-    return (
-        <FinanceProfileProvider>
-            <SavingsPage />
-        </FinanceProfileProvider>
-    )
+    return <SavingsPage />
 }

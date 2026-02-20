@@ -43,9 +43,5 @@ function LiabilitiesPage() {
 }
 
 export default function LiabilitiesPageWrapper() {
-    return (
-        <FinanceProfileProvider>
-            <LiabilitiesPage />
-        </FinanceProfileProvider>
-    )
+    return <LiabilitiesPage />
 }
