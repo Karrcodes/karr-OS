@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Lock, Fingerprint, ShieldCheck } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { supabase } from '@/lib/supabase'
 
 const CORRECT_PIN = '7276'
 
@@ -15,9 +16,23 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
     const [isEnrolled, setIsEnrolled] = useState(false)
     const [isSetupMode, setIsSetupMode] = useState(false)
     const [isProcessing, setIsProcessing] = useState(false)
+    const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null)
+    const [shieldId, setShieldId] = useState<string>('')
 
     useEffect(() => {
         setIsMounted(true)
+
+        // Handle Shield ID (Hardware Fingerprint)
+        let sid = localStorage.getItem('karrOS_shield_id')
+        if (!sid) {
+            sid = crypto.randomUUID()
+            localStorage.setItem('karrOS_shield_id', sid)
+        }
+        setShieldId(sid)
+
+        // Initial Authorization Check
+        checkAuthorization(sid)
+
         const unlocked = sessionStorage.getItem('karrOS_unlocked')
         if (unlocked === 'true') {
             setIsUnlocked(true)
@@ -29,6 +44,68 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
             setIsEnrolled(true)
         }
     }, [])
+
+    const checkAuthorization = async (sid: string) => {
+        try {
+            const { data, error } = await supabase
+                .from('fin_authorized_devices')
+                .select('*')
+                .eq('device_id', sid)
+                .single()
+
+            if (data) {
+                setIsAuthorized(true)
+                // Update last used timestamp
+                await supabase
+                    .from('fin_authorized_devices')
+                    .update({ last_used_at: new Error().stack }) // Dummy update to trigger timestamp if needed or use actual update
+                    .eq('device_id', sid)
+            } else {
+                setIsAuthorized(false)
+            }
+        } catch (err) {
+            console.error('Auth check error:', err)
+            setIsAuthorized(false)
+        }
+    }
+
+    const authorizeCurrentDevice = async () => {
+        if (pin !== CORRECT_PIN) return
+
+        setIsProcessing(true)
+        try {
+            // Check current count
+            const { count } = await supabase
+                .from('fin_authorized_devices')
+                .select('*', { count: 'exact', head: true })
+
+            if (count !== null && count >= 3) {
+                alert('Maximum device limit (3) reached. Please revoke an old device from Settings.')
+                setIsProcessing(false)
+                return
+            }
+
+            const deviceName = `${typeof window !== 'undefined' ? window.navigator.userAgent.split(')')[0].split('(')[1] : 'Unknown Device'}`
+
+            const { error } = await supabase
+                .from('fin_authorized_devices')
+                .insert({
+                    device_id: shieldId,
+                    device_name: deviceName
+                })
+
+            if (error) throw error
+
+            setIsAuthorized(true)
+            alert('Device Authorized Successfully!')
+        } catch (err: any) {
+            console.error('Authorization failed:', err)
+            alert('Authorization failed. Ensure you have run the database migration.')
+        } finally {
+            setIsProcessing(false)
+            setPin('')
+        }
+    }
 
     const handlePinInput = async (digit: string) => {
         if (pin.length >= 4 || isProcessing) return
@@ -172,28 +249,38 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
     if (!isMounted) return null
     if (isUnlocked) return <>{children}</>
 
+    const showUnauthorized = isAuthorized === false
+
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white">
             {/* Background elements for depth */}
             <div className="absolute inset-0 bg-gradient-to-br from-[#fafafa] to-white" />
-            <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-black/[0.02] rounded-full blur-3xl" />
-            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-black/[0.01] rounded-full blur-3xl" />
 
-            <div className="relative w-full max-w-[320px] px-6 flex flex-col items-center">
+            <div className="relative w-full max-w-[320px] px-6 flex flex-col items-center text-center">
                 <div className="mb-12 flex flex-col items-center">
-                    <div className="w-16 h-16 rounded-2xl bg-black flex items-center justify-center mb-6 shadow-2xl shadow-black/20">
-                        {isSetupMode ? <ShieldCheck className="w-8 h-8 text-white" /> : <Lock className="w-8 h-8 text-white" />}
+                    <div className={cn(
+                        "w-16 h-16 rounded-2xl flex items-center justify-center mb-6 shadow-2xl transition-all duration-500",
+                        showUnauthorized
+                            ? "bg-red-500 shadow-red-500/20 animate-pulse"
+                            : isSetupMode
+                                ? "bg-blue-600 shadow-blue-500/20"
+                                : "bg-black shadow-black/20"
+                    )}>
+                        {showUnauthorized ? <ShieldCheck className="w-8 h-8 text-white" /> : isSetupMode ? <ShieldCheck className="w-8 h-8 text-white" /> : <Lock className="w-8 h-8 text-white" />}
                     </div>
                     <h1 className="text-[24px] font-bold text-black tracking-tight">
-                        {isSetupMode ? 'Security Setup' : 'KarrOS Lock'}
+                        {showUnauthorized ? 'Hardware Block' : isSetupMode ? 'Security Setup' : 'KarrOS Lock'}
                     </h1>
                     <p className="text-[14px] text-black/40 font-medium mt-1">
-                        {isSetupMode ? 'Enter PIN to enroll FaceID' : 'Authorized Access Only'}
+                        {showUnauthorized
+                            ? 'This device is not authorized.'
+                            : isSetupMode
+                                ? 'Enter PIN to enroll FaceID'
+                                : 'Authorized Access Only'}
                     </p>
                 </div>
 
                 {/* PIN Display */}
-                {/* ... existing PIN dots ... */}
                 <div className="flex gap-4 mb-12">
                     {[0, 1, 2, 3].map((i) => (
                         <div
@@ -201,7 +288,7 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
                             className={`w-4 h-4 rounded-full border-2 transition-all duration-200 ${error
                                 ? 'bg-red-500 border-red-500 scale-110'
                                 : pin.length > i
-                                    ? 'bg-black border-black scale-110'
+                                    ? (showUnauthorized ? 'bg-red-500 border-red-500' : 'bg-black border-black') + ' scale-110'
                                     : 'bg-transparent border-black/10'
                                 }`}
                         />
@@ -209,12 +296,58 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
                 </div>
 
                 {/* Keypad */}
-                {/* ... existing Keypad ... */}
+                <div className="grid grid-cols-3 gap-4 w-full mb-8">
+                    {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((num) => (
+                        <button
+                            key={num}
+                            onClick={() => handlePinInput(num)}
+                            className="aspect-square rounded-full flex flex-col items-center justify-center hover:bg-black/[0.03] active:bg-black/[0.08] active:scale-95 transition-all outline-none"
+                        >
+                            <span className="text-[20px] font-bold text-black">{num}</span>
+                            <span className="text-[9px] font-bold text-black/20 tracking-widest mt-0.5">
+                                {num === '2' && 'ABC'}
+                                {num === '3' && 'DEF'}
+                                {num === '4' && 'GHI'}
+                                {num === '5' && 'JKL'}
+                                {num === '6' && 'MNO'}
+                                {num === '7' && 'PQRS'}
+                                {num === '8' && 'TUV'}
+                                {num === '9' && 'WXYZ'}
+                            </span>
+                        </button>
+                    ))}
+                    <div />
+                    <button
+                        onClick={() => handlePinInput('0')}
+                        className="aspect-square rounded-full flex items-center justify-center hover:bg-black/[0.03] active:bg-black/[0.08] active:scale-95 transition-all outline-none"
+                    >
+                        <span className="text-[20px] font-bold text-black">0</span>
+                    </button>
+                    <button
+                        onClick={() => setPin(pin.slice(0, -1))}
+                        className="aspect-square rounded-full flex items-center justify-center text-black/30 hover:text-black hover:bg-black/[0.03] active:scale-95 transition-all outline-none text-[11px] font-bold"
+                    >
+                        DEL
+                    </button>
+                </div>
 
                 <div className="w-full h-px bg-black/[0.05] mb-8" />
 
                 <div className="flex flex-col gap-3 w-full">
-                    {!isSetupMode ? (
+                    {showUnauthorized ? (
+                        <button
+                            onClick={authorizeCurrentDevice}
+                            disabled={pin !== CORRECT_PIN || isProcessing}
+                            className={cn(
+                                "flex items-center justify-center gap-2 px-6 py-3 rounded-2xl transition-all active:scale-95 w-full font-bold text-[13px]",
+                                pin === CORRECT_PIN
+                                    ? "bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/20"
+                                    : "bg-black/5 text-black/20"
+                            )}
+                        >
+                            {isProcessing ? 'Authorizing...' : 'Authorize This Device'}
+                        </button>
+                    ) : !isSetupMode ? (
                         <>
                             <button
                                 onClick={handleBiometric}
@@ -257,7 +390,7 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
 
                 <p className="mt-8 text-[11px] font-bold text-black/20 uppercase tracking-[0.2em] flex items-center gap-2">
                     <ShieldCheck className="w-3 h-3" />
-                    Encrypted Session
+                    Secure Shield ID: {shieldId.slice(0, 8)}...
                 </p>
             </div>
         </div>
