@@ -13,7 +13,7 @@ function CallbackContent() {
     useEffect(() => {
         const finalize = async () => {
             const code = searchParams.get('code')
-            const profile = searchParams.get('profile')
+            const state = searchParams.get('state')
 
             if (!code) {
                 setStatus('error')
@@ -22,7 +22,7 @@ function CallbackContent() {
             }
 
             try {
-                const res = await fetch(`/api/finance/bank/callback?code=${code}&profile=${profile || 'personal'}`)
+                const res = await fetch(`/api/finance/bank/callback?code=${code}&state=${state || ''}`)
                 const data = await res.json()
 
                 if (data.success) {

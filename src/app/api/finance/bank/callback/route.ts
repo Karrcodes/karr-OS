@@ -6,7 +6,11 @@ export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url)
         const code = searchParams.get('code')
-        const profile = searchParams.get('profile') || 'personal'
+        const state = searchParams.get('state') || ''
+
+        // Extract profile from state (e.g., "profile=personal_xyz")
+        const profileMatch = state.match(/profile=([^_+]+)/)
+        const profile = profileMatch ? profileMatch[1] : 'personal'
 
         if (!code) {
             return NextResponse.json({ error: 'Missing authorization code' }, { status: 400 })
