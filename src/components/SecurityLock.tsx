@@ -13,6 +13,7 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
     const [error, setError] = useState(false)
     const [isMounted, setIsMounted] = useState(false)
     const [isEnrolled, setIsEnrolled] = useState(false)
+    const [isSetupMode, setIsSetupMode] = useState(false)
 
     useEffect(() => {
         setIsMounted(true)
@@ -35,7 +36,12 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
 
         if (newPin.length === 4) {
             if (newPin === CORRECT_PIN) {
-                handleUnlock()
+                if (isSetupMode) {
+                    enrollBiometrics()
+                    setPin('')
+                } else {
+                    handleUnlock()
+                }
             } else {
                 setError(true)
                 setTimeout(() => {
@@ -83,6 +89,8 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
                 // Store the credential ID to prove setup
                 localStorage.setItem('karrOS_biometric_id', btoa(String.fromCharCode(...new Uint8Array(credential.rawId))))
                 setIsEnrolled(true)
+                setIsSetupMode(false)
+                handleUnlock()
                 alert('FaceID / Biometrics enrolled successfully!')
             }
         } catch (err) {
@@ -135,13 +143,18 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
             <div className="relative w-full max-w-[320px] px-6 flex flex-col items-center">
                 <div className="mb-12 flex flex-col items-center">
                     <div className="w-16 h-16 rounded-2xl bg-black flex items-center justify-center mb-6 shadow-2xl shadow-black/20">
-                        <Lock className="w-8 h-8 text-white" />
+                        {isSetupMode ? <ShieldCheck className="w-8 h-8 text-white" /> : <Lock className="w-8 h-8 text-white" />}
                     </div>
-                    <h1 className="text-[24px] font-bold text-black tracking-tight">KarrOS Lock</h1>
-                    <p className="text-[14px] text-black/40 font-medium mt-1">Authorized Access Only</p>
+                    <h1 className="text-[24px] font-bold text-black tracking-tight">
+                        {isSetupMode ? 'Security Setup' : 'KarrOS Lock'}
+                    </h1>
+                    <p className="text-[14px] text-black/40 font-medium mt-1">
+                        {isSetupMode ? 'Enter PIN to enroll FaceID' : 'Authorized Access Only'}
+                    </p>
                 </div>
 
                 {/* PIN Display */}
+                {/* ... existing PIN dots ... */}
                 <div className="flex gap-4 mb-12">
                     {[0, 1, 2, 3].map((i) => (
                         <div
@@ -157,64 +170,48 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
                 </div>
 
                 {/* Keypad */}
-                <div className="grid grid-cols-3 gap-4 w-full mb-8">
-                    {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((num) => (
-                        <button
-                            key={num}
-                            onClick={() => handlePinInput(num)}
-                            className="aspect-square rounded-full flex flex-col items-center justify-center hover:bg-black/[0.03] active:bg-black/[0.08] active:scale-95 transition-all outline-none"
-                        >
-                            <span className="text-[20px] font-bold text-black">{num}</span>
-                            <span className="text-[9px] font-bold text-black/20 tracking-widest mt-0.5">
-                                {num === '2' && 'ABC'}
-                                {num === '3' && 'DEF'}
-                                {num === '4' && 'GHI'}
-                                {num === '5' && 'JKL'}
-                                {num === '6' && 'MNO'}
-                                {num === '7' && 'PQRS'}
-                                {num === '8' && 'TUV'}
-                                {num === '9' && 'WXYZ'}
-                            </span>
-                        </button>
-                    ))}
-                    <div />
-                    <button
-                        onClick={() => handlePinInput('0')}
-                        className="aspect-square rounded-full flex items-center justify-center hover:bg-black/[0.03] active:bg-black/[0.08] active:scale-95 transition-all outline-none"
-                    >
-                        <span className="text-[20px] font-bold text-black">0</span>
-                    </button>
-                    <button
-                        onClick={() => setPin(pin.slice(0, -1))}
-                        className="aspect-square rounded-full flex items-center justify-center text-black/30 hover:text-black hover:bg-black/[0.03] active:scale-95 transition-all outline-none text-[11px] font-bold"
-                    >
-                        DEL
-                    </button>
-                </div>
+                {/* ... existing Keypad ... */}
 
                 <div className="w-full h-px bg-black/[0.05] mb-8" />
 
                 <div className="flex flex-col gap-3 w-full">
-                    <button
-                        onClick={handleBiometric}
-                        className={cn(
-                            "flex items-center justify-center gap-2 px-6 py-3 rounded-2xl transition-all group active:scale-95 w-full",
-                            isEnrolled
-                                ? "bg-black text-white hover:bg-neutral-800"
-                                : "bg-black/5 text-black/20 cursor-not-allowed"
-                        )}
-                        disabled={!isEnrolled}
-                    >
-                        <Fingerprint className="w-5 h-5" />
-                        <span className="text-[13px] font-bold tracking-tight">Use Biometrics</span>
-                    </button>
+                    {!isSetupMode ? (
+                        <>
+                            <button
+                                onClick={handleBiometric}
+                                className={cn(
+                                    "flex items-center justify-center gap-2 px-6 py-3 rounded-2xl transition-all group active:scale-95 w-full",
+                                    isEnrolled
+                                        ? "bg-black text-white hover:bg-neutral-800"
+                                        : "bg-black/5 text-black/20 cursor-not-allowed"
+                                )}
+                                disabled={!isEnrolled}
+                            >
+                                <Fingerprint className="w-5 h-5" />
+                                <span className="text-[13px] font-bold tracking-tight">Use Biometrics</span>
+                            </button>
 
-                    {!isEnrolled && pin === CORRECT_PIN && (
+                            {!isEnrolled && (
+                                <button
+                                    onClick={() => {
+                                        setIsSetupMode(true)
+                                        setPin('')
+                                    }}
+                                    className="text-[11px] font-bold text-blue-600 hover:text-blue-700 transition-colors"
+                                >
+                                    + Setup FaceID / TouchID
+                                </button>
+                            )}
+                        </>
+                    ) : (
                         <button
-                            onClick={enrollBiometrics}
-                            className="text-[11px] font-bold text-blue-600 hover:text-blue-700 transition-colors animate-pulse"
+                            onClick={() => {
+                                setIsSetupMode(false)
+                                setPin('')
+                            }}
+                            className="text-[13px] font-bold text-black/40 hover:text-black transition-colors"
                         >
-                            + Setup FaceID / TouchID
+                            Cancel Setup
                         </button>
                     )}
                 </div>
