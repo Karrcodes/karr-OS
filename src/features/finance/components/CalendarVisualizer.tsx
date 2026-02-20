@@ -21,14 +21,14 @@ function LenderBadge({ name }: { name: string }) {
     const logoSrc = getLenderLogo(name)
     if (logoSrc) {
         return (
-            <div className="w-8 h-8 rounded-xl bg-white dark:bg-[#0a0a0a] border border-black/[0.06] dark:border-white/[0.06] flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-white border border-black/[0.06] flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
                 <img src={logoSrc} alt={name} className="w-full h-full object-contain p-1" />
             </div>
         )
     }
     const initial = name ? name.charAt(0).toUpperCase() : '?'
     return (
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center text-[12px] font-bold text-black dark:text-white border border-black/[0.06] dark:border-white/[0.06] bg-black/[0.02] dark:bg-white/[0.02] flex-shrink-0">
+        <div className="w-8 h-8 rounded-xl flex items-center justify-center text-[12px] font-bold text-black border border-black/[0.06] bg-black/[0.02] flex-shrink-0">
             {initial}
         </div>
     )
@@ -195,7 +195,7 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
 
     if (obligations.length === 0) {
         return (
-            <div className="rounded-2xl border border-black/[0.08] bg-white dark:bg-[#0a0a0a] p-6 flex flex-col items-center justify-center text-center">
+            <div className="rounded-2xl border border-black/[0.08] bg-white p-6 flex flex-col items-center justify-center text-center">
                 <div className="w-12 h-12 rounded-full bg-black/[0.03] flex items-center justify-center mb-3">
                     <CalendarIcon className="w-5 h-5 text-black/30" />
                 </div>
@@ -209,21 +209,21 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
     const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
     return (
-        <div className="rounded-2xl border border-black/[0.08] bg-white dark:bg-[#0a0a0a] overflow-hidden shadow-sm">
+        <div className="rounded-2xl border border-black/[0.08] bg-white overflow-hidden shadow-sm">
             {/* Header */}
-            <div className="p-4 border-b border-black/[0.06] dark:border-white/[0.06] flex items-center justify-between bg-black/[0.01] dark:bg-white/[0.01] gap-3 flex-wrap">
+            <div className="p-4 border-b border-black/[0.06] flex items-center justify-between bg-black/[0.01] gap-3 flex-wrap">
                 <div className="flex items-center gap-2">
-                    <h2 className="text-[14px] font-bold text-black dark:text-white flex items-center gap-2">
-                        <CalendarIcon className="w-4 h-4 text-black dark:text-white" />
+                    <h2 className="text-[14px] font-bold text-black flex items-center gap-2">
+                        <CalendarIcon className="w-4 h-4 text-black" />
                         {view === 'calendar' ? 'Payment Calendar' : 'Obligation Breakdown'}
                     </h2>
                     {/* Filter pills */}
-                    <div className="flex p-0.5 bg-black/[0.04] dark:bg-white/[0.04] rounded-lg ml-1">
+                    <div className="flex p-0.5 bg-black/[0.04] rounded-lg ml-1">
                         {(['all', 'debt', 'subscription'] as FilterMode[]).map(f => (
                             <button
                                 key={f}
                                 onClick={() => setFilter(f)}
-                                className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${filter === f ? 'bg-white dark:bg-[#0a0a0a] shadow-sm text-black dark:text-white' : 'text-black/40 hover:text-black/60'}`}
+                                className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${filter === f ? 'bg-white shadow-sm text-black' : 'text-black/40 hover:text-black/60'}`}
                             >
                                 {f}
                             </button>
@@ -233,12 +233,12 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
 
                 <div className="flex items-center gap-2 ml-auto">
                     {/* View toggle */}
-                    <div className="flex p-0.5 bg-black/[0.04] dark:bg-white/[0.04] rounded-lg">
-                        <button onClick={() => setView('calendar')} className={`p-1.5 rounded-md transition-all ${view === 'calendar' ? 'bg-white dark:bg-[#0a0a0a] shadow-sm text-black dark:text-white' : 'text-black/40 hover:text-black/60'}`}><LayoutGrid className="w-3.5 h-3.5" /></button>
-                        <button onClick={() => setView('list')} className={`p-1.5 rounded-md transition-all ${view === 'list' ? 'bg-white dark:bg-[#0a0a0a] shadow-sm text-black dark:text-white' : 'text-black/40 hover:text-black/60'}`}><List className="w-3.5 h-3.5" /></button>
+                    <div className="flex p-0.5 bg-black/[0.04] rounded-lg">
+                        <button onClick={() => setView('calendar')} className={`p-1.5 rounded-md transition-all ${view === 'calendar' ? 'bg-white shadow-sm text-black' : 'text-black/40 hover:text-black/60'}`}><LayoutGrid className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => setView('list')} className={`p-1.5 rounded-md transition-all ${view === 'list' ? 'bg-white shadow-sm text-black' : 'text-black/40 hover:text-black/60'}`}><List className="w-3.5 h-3.5" /></button>
                     </div>
                     <div className="text-right">
-                        <div className="text-[16px] font-extrabold text-black dark:text-white">
+                        <div className="text-[16px] font-extrabold text-black">
                             £{view === 'calendar' ? calendarData.totalMonth.toFixed(2) : total30Days.toFixed(2)}
                         </div>
                         <p className="text-[9px] uppercase tracking-wider font-bold text-black/30">{view === 'calendar' ? 'This Month' : 'Next 30d'}</p>
@@ -257,7 +257,7 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                             >
                                 <ChevronLeft className="w-4 h-4 text-black/40" />
                             </button>
-                            <span className="text-[13px] font-bold text-black dark:text-white">
+                            <span className="text-[13px] font-bold text-black">
                                 {calMonth.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
                             </span>
                             <button
@@ -276,10 +276,10 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                         </div>
 
                         {/* Calendar grid */}
-                        <div className="grid grid-cols-7 gap-px bg-black/[0.04] dark:bg-white/[0.04] rounded-xl overflow-hidden border border-black/[0.04]">
+                        <div className="grid grid-cols-7 gap-px bg-black/[0.04] rounded-xl overflow-hidden border border-black/[0.04]">
                             {/* Leading empty cells */}
                             {Array.from({ length: calendarData.startDow }).map((_, i) => (
-                                <div key={`empty-${i}`} className="bg-white dark:bg-[#0a0a0a]/60 min-h-[52px]" />
+                                <div key={`empty-${i}`} className="bg-white min-h-[52px]" />
                             ))}
                             {/* Day cells */}
                             {Array.from({ length: calendarData.daysInMonth }).map((_, i) => {
@@ -295,13 +295,13 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                                 return (
                                     <div
                                         key={day}
-                                        className={`bg-white dark:bg-[#0a0a0a] min-h-[52px] p-1.5 flex flex-col gap-1 transition-colors
-                                            ${isToday ? 'bg-black dark:bg-white dark:bg-[#0a0a0a]/[0.04]' : ''}
+                                        className={`bg-white min-h-[52px] p-1.5 flex flex-col gap-1 transition-colors
+                                            ${isToday ? 'bg-black' : ''}
                                             ${isPast && !isToday ? 'opacity-40' : ''}
                                         `}
                                     >
                                         <span className={`text-[11px] font-bold w-5 h-5 flex items-center justify-center rounded-full
-                                            ${isToday ? 'bg-black dark:bg-white dark:bg-[#0a0a0a] text-white' : 'text-black/40'}
+                                            ${isToday ? 'bg-black text-white' : 'text-black/40'}
                                         `}>
                                             {day}
                                         </span>
@@ -347,13 +347,13 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                                 </div>
                                 <div className="grid grid-cols-1 gap-2">
                                     {data.o.map(obs => (
-                                        <div key={obs.id} className="bg-black/[0.02] dark:bg-white/[0.02] rounded-xl p-3 border border-black/[0.03] hover:border-black/[0.08] transition-all">
+                                        <div key={obs.id} className="bg-black/[0.02] rounded-xl p-3 border border-black/[0.03] hover:border-black/[0.08] transition-all">
                                             <div className="flex justify-between items-start mb-1">
                                                 <div className="font-bold text-[12px] text-black/80">{obs.description || obs.group_name || 'Loan'}</div>
                                                 <div className="text-[12px] font-bold text-red-600">£{obs.amount.toFixed(2)} <span className="text-[10px] text-black/20 font-normal">/ {obs.frequency}</span></div>
                                             </div>
                                             <div className="flex justify-between items-center mt-2">
-                                                <div className="flex items-center gap-1 text-[10px] text-black/40 bg-black/[0.04] dark:bg-white/[0.04] px-1.5 py-0.5 rounded">
+                                                <div className="flex items-center gap-1 text-[10px] text-black/40 bg-black/[0.04] px-1.5 py-0.5 rounded">
                                                     <CalendarIcon className="w-2.5 h-2.5" />
                                                     Next: {obs.next_due_date}
                                                 </div>
@@ -374,13 +374,13 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
             {selectedPayment && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm"
                     onClick={() => setSelectedPayment(null)}>
-                    <div className="bg-white dark:bg-[#0a0a0a] rounded-3xl shadow-xl w-full max-w-[320px] overflow-hidden border border-black/[0.08]" onClick={e => e.stopPropagation()}>
-                        <div className="p-5 border-b border-black/[0.04] bg-black/[0.01] dark:bg-white/[0.01]">
+                    <div className="bg-white rounded-3xl shadow-xl w-full max-w-[320px] overflow-hidden border border-black/[0.08]" onClick={e => e.stopPropagation()}>
+                        <div className="p-5 border-b border-black/[0.04] bg-black/[0.01]">
                             <div className="flex items-start justify-between">
                                 <div className="flex items-center gap-3">
                                     <LenderBadge name={selectedPayment.obligation.name} />
                                     <div>
-                                        <h3 className="text-[16px] font-bold text-black dark:text-white">{selectedPayment.obligation.name}</h3>
+                                        <h3 className="text-[16px] font-bold text-black">{selectedPayment.obligation.name}</h3>
                                         <p className="text-[12px] text-black/40">{selectedPayment.obligation.group_name || 'Obligation'}</p>
                                     </div>
                                 </div>
@@ -397,7 +397,7 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                                 </div>
                             </div>
                         </div>
-                        <div className="p-5 bg-white dark:bg-[#0a0a0a] space-y-4">
+                        <div className="p-5 bg-white space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <p className="text-[10px] uppercase tracking-wider font-bold text-black/30 mb-1">Frequency</p>

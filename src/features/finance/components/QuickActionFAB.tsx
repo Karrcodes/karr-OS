@@ -126,7 +126,7 @@ export function QuickActionFAB({ pockets, onSuccess }: QuickActionFABProps) {
             {/* FAB */}
             <button
                 onClick={() => setOpen(true)}
-                className="fixed bottom-6 right-6 w-14 h-14 rounded-2xl bg-black dark:bg-white dark:bg-[#0a0a0a] shadow-lg shadow-black/25 dark:shadow-white/25 flex items-center justify-center hover:bg-neutral-800 dark:hover:bg-neutral-200 active:scale-95 transition-all z-40"
+                className="fixed bottom-6 right-6 w-14 h-14 rounded-2xl bg-black shadow-lg shadow-black/25 flex items-center justify-center hover:bg-neutral-800 active:scale-95 transition-all z-40"
             >
                 <Plus className="w-6 h-6 text-white" strokeWidth={2.5} />
             </button>
@@ -135,22 +135,22 @@ export function QuickActionFAB({ pockets, onSuccess }: QuickActionFABProps) {
             {open && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center">
                     <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={handleClose} />
-                    <div className="relative w-full max-w-md mx-4 rounded-2xl bg-white dark:bg-[#0a0a0a] border border-black/[0.08] shadow-2xl">
+                    <div className="relative w-full max-w-md mx-4 rounded-2xl bg-white border border-black/[0.08] shadow-2xl">
                         {/* Header */}
-                        <div className="flex items-center justify-between px-5 py-4 border-b border-black/[0.06] dark:border-white/[0.06]">
-                            <p className="text-[15px] font-bold text-black dark:text-white">Quick Action</p>
-                            <button onClick={handleClose} className="w-7 h-7 rounded-lg bg-black/[0.04] dark:bg-white/[0.04] flex items-center justify-center hover:bg-black/[0.08] transition-colors">
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-black/[0.06]">
+                            <p className="text-[15px] font-bold text-black">Quick Action</p>
+                            <button onClick={handleClose} className="w-7 h-7 rounded-lg bg-black/[0.04] flex items-center justify-center hover:bg-black/[0.08] transition-colors">
                                 <X className="w-4 h-4 text-black/40" />
                             </button>
                         </div>
 
                         {/* Tabs */}
-                        <div className="flex gap-1 p-3 border-b border-black/[0.06] dark:border-white/[0.06]">
+                        <div className="flex gap-1 p-3 border-b border-black/[0.06]">
                             {tabs.map(({ id, label, icon: Icon, color }) => (
                                 <button
                                     key={id}
                                     onClick={() => handleTabChange(id)}
-                                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-[12px] font-semibold transition-all ${activeTab === id ? 'bg-black/[0.05] text-black dark:text-white' : 'text-black/40 hover:text-black/60'
+                                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-[12px] font-semibold transition-all ${activeTab === id ? 'bg-black/[0.05] text-black' : 'text-black/40 hover:text-black/60'
                                         }`}
                                 >
                                     <Icon className="w-3.5 h-3.5" style={{ color: activeTab === id ? color : undefined }} />
@@ -164,7 +164,7 @@ export function QuickActionFAB({ pockets, onSuccess }: QuickActionFABProps) {
                             <div>
                                 <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">Amount (£)</label>
                                 <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00"
-                                    className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-3 text-xl font-bold text-black dark:text-white placeholder-black/20 outline-none focus:border-black/40 dark:border-white/40 transition-colors" />
+                                    className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-3 text-xl font-bold text-black placeholder-black/20 outline-none focus:border-black/40 transition-colors" />
                             </div>
 
                             <div>
@@ -172,7 +172,7 @@ export function QuickActionFAB({ pockets, onSuccess }: QuickActionFABProps) {
                                     {activeTab === 'income' ? 'Into Pocket' : 'From Pocket'}
                                 </label>
                                 <select value={selectedPocket} onChange={(e) => setSelectedPocket(e.target.value)}
-                                    className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[13px] text-black dark:text-white outline-none focus:border-black/40 dark:border-white/40 appearance-none">
+                                    className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[13px] text-black outline-none focus:border-black/40 appearance-none">
                                     <option value="">Select pocket…</option>
                                     {pockets.map((p) => <option key={p.id} value={p.id}>{p.name} — £{p.balance?.toFixed(2) ?? '0.00'}</option>)}
                                 </select>
@@ -182,7 +182,7 @@ export function QuickActionFAB({ pockets, onSuccess }: QuickActionFABProps) {
                                 <div>
                                     <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">To Pocket</label>
                                     <select value={toPocket} onChange={(e) => setToPocket(e.target.value)}
-                                        className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[13px] text-black dark:text-white outline-none focus:border-black/40 dark:border-white/40 appearance-none">
+                                        className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[13px] text-black outline-none focus:border-black/40 appearance-none">
                                         <option value="">Select pocket…</option>
                                         {pockets.filter((p) => p.id !== selectedPocket).map((p) => <option key={p.id} value={p.id}>{p.name} — £{p.balance?.toFixed(2) ?? '0.00'}</option>)}
                                     </select>
@@ -193,7 +193,7 @@ export function QuickActionFAB({ pockets, onSuccess }: QuickActionFABProps) {
                                 <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">Note (optional)</label>
                                 <input value={description} onChange={(e) => setDescription(e.target.value)}
                                     placeholder={activeTab === 'income' ? 'Weekly paycheck' : 'What was this for?'}
-                                    className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[13px] text-black dark:text-white placeholder-black/20 outline-none focus:border-black/40 dark:border-white/40 transition-colors" />
+                                    className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[13px] text-black placeholder-black/20 outline-none focus:border-black/40 transition-colors" />
                             </div>
 
                             {activeTab === 'spend' && (
@@ -205,8 +205,8 @@ export function QuickActionFAB({ pockets, onSuccess }: QuickActionFABProps) {
                                                 key={cat.id}
                                                 onClick={() => setSelectedCategory(cat.id)}
                                                 className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all ${selectedCategory === cat.id
-                                                    ? 'bg-black/10 dark:bg-white dark:bg-[#0a0a0a]/10 border-black/30 dark:border-white/30 shadow-sm'
-                                                    : 'bg-black/[0.02] dark:bg-white/[0.02] border-black/[0.05] dark:border-white/[0.05] hover:bg-black/[0.05]'}`}
+                                                    ? 'bg-black/10 border-black/30 shadow-sm'
+                                                    : 'bg-black/[0.02] border-black/[0.05] hover:bg-black/[0.05]'}`}
                                             >
                                                 <span className="text-xl mb-1">{cat.emoji}</span>
                                                 <span className="text-[9px] font-bold text-black/60 truncate w-full text-center uppercase tracking-tight">{cat.label}</span>
@@ -221,7 +221,7 @@ export function QuickActionFAB({ pockets, onSuccess }: QuickActionFABProps) {
                             )}
 
                             <button onClick={handleSubmit} disabled={loading}
-                                className="w-full py-3 rounded-xl bg-black dark:bg-white dark:bg-[#0a0a0a] text-white font-semibold text-[14px] hover:bg-neutral-800 dark:hover:bg-neutral-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2">
+                                className="w-full py-3 rounded-xl bg-black text-white font-semibold text-[14px] hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2">
                                 {loading
                                     ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</>
                                     : activeTab === 'income' ? 'Add Income' : activeTab === 'spend' ? 'Log Spend' : 'Transfer'

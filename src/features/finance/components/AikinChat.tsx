@@ -88,7 +88,7 @@ export function AikinChat() {
                         <div
                             className={`w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center ${msg.role === 'assistant'
                                     ? 'bg-[#a78bfa]/20 border border-[#a78bfa]/20'
-                                    : 'bg-white dark:bg-[#0a0a0a]/10'
+                                    : 'bg-white'
                                 }`}
                         >
                             {msg.role === 'assistant'
@@ -98,7 +98,7 @@ export function AikinChat() {
                         </div>
                         <div
                             className={`max-w-[80%] rounded-xl px-3 py-2 text-[13px] leading-relaxed ${msg.role === 'assistant'
-                                    ? 'bg-white dark:bg-[#0a0a0a]/[0.04] border border-white/[0.06] text-white/80'
+                                    ? 'bg-white border border-white/[0.06] text-white/80'
                                     : 'bg-[#a78bfa]/15 border border-[#a78bfa]/20 text-white/90'
                                 }`}
                         >
@@ -111,7 +111,7 @@ export function AikinChat() {
                         <div className="w-6 h-6 rounded-full bg-[#a78bfa]/20 border border-[#a78bfa]/20 flex items-center justify-center">
                             <Bot className="w-3 h-3 text-[#a78bfa]" />
                         </div>
-                        <div className="bg-white dark:bg-[#0a0a0a]/[0.04] border border-white/[0.06] rounded-xl px-3 py-2">
+                        <div className="bg-white border border-white/[0.06] rounded-xl px-3 py-2">
                             <Loader2 className="w-3.5 h-3.5 text-white/30 animate-spin" />
                         </div>
                     </div>
@@ -126,7 +126,7 @@ export function AikinChat() {
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Ask Aikin anything..."
-                    className="flex-1 bg-white dark:bg-[#0a0a0a]/[0.04] border border-white/[0.06] rounded-xl px-3.5 py-2.5 text-[13px] text-white/90 placeholder-white/25 outline-none focus:border-[#a78bfa]/40 transition-colors"
+                    className="flex-1 bg-white border border-white/[0.06] rounded-xl px-3.5 py-2.5 text-[13px] text-white/90 placeholder-white/25 outline-none focus:border-[#a78bfa]/40 transition-colors"
                 />
                 <button
                     onClick={sendMessage}

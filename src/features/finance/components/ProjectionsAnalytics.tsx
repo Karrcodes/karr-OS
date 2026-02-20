@@ -116,9 +116,9 @@ export function ProjectionsAnalytics() {
                     rel="noreferrer"
                     className="md:col-span-1 bg-gradient-to-br from-[#1d4ed8] to-[#1e3a8a] p-5 rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col justify-between group overflow-hidden relative"
                 >
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white dark:bg-[#0a0a0a]/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none group-hover:bg-white dark:bg-[#0a0a0a]/20 transition-all duration-500"></div>
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none group-hover:bg-white/20 transition-all duration-500"></div>
                     <div className="flex items-center justify-between z-10">
-                        <div className="w-10 h-10 bg-white dark:bg-[#0a0a0a]/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
                             <Briefcase className="w-5 h-5 text-white" />
                         </div>
                         <ExternalLink className="w-5 h-5 text-white/50 group-hover:text-white transition-colors" />
@@ -130,26 +130,26 @@ export function ProjectionsAnalytics() {
                 </a>
 
                 <div className="md:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="bg-white dark:bg-[#0a0a0a] p-5 rounded-2xl border border-black/[0.06] dark:border-white/[0.06] shadow-sm flex flex-col justify-center">
+                    <div className="bg-white p-5 rounded-2xl border border-black/[0.06] shadow-sm flex flex-col justify-center">
                         <div className="flex items-center gap-2 text-[11px] font-bold text-black/40 uppercase tracking-widest mb-1">
                             <DollarSign className="w-4 h-4 text-emerald-500" /> Pay Cycle
                         </div>
-                        <div className="text-[28px] font-black text-black dark:text-white">
+                        <div className="text-[28px] font-black text-black">
                             {paydaysThisMonth} <span className="text-[14px] text-black/40 font-semibold ml-1">Fridays</span>
                         </div>
                         <p className="text-[11px] text-black/40 mt-1">You will be paid {paydaysThisMonth} times in {monthName}.</p>
                     </div>
-                    <div className="bg-white dark:bg-[#0a0a0a] p-5 rounded-2xl border border-black/[0.06] dark:border-white/[0.06] shadow-sm flex flex-col justify-center">
+                    <div className="bg-white p-5 rounded-2xl border border-black/[0.06] shadow-sm flex flex-col justify-center">
                         <div className="flex items-center gap-2 text-[11px] font-bold text-black/40 uppercase tracking-widest mb-1">
                             <CalendarIcon className="w-4 h-4 text-blue-500" /> Rota Projection
                         </div>
-                        <div className="text-[28px] font-black text-black dark:text-white">
+                        <div className="text-[28px] font-black text-black">
                             {shiftsThisMonth} <span className="text-[14px] text-black/40 font-semibold ml-1">Shifts</span>
                         </div>
                         <p className="text-[11px] text-black/40 mt-1">Calculated 3-on / 3-off schedule.</p>
                     </div>
                     <div className="bg-gradient-to-br from-emerald-500 to-emerald-700 p-5 rounded-2xl shadow-sm flex flex-col justify-center text-white relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-white dark:bg-[#0a0a0a]/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
                         <div className="flex items-center gap-2 text-[11px] font-bold text-emerald-100 uppercase tracking-widest mb-1 relative z-10">
                             Net Income
                         </div>
@@ -163,22 +163,22 @@ export function ProjectionsAnalytics() {
             </div>
 
             {/* Rota Calendar */}
-            <div className="bg-white dark:bg-[#0a0a0a] rounded-2xl border border-black/[0.06] dark:border-white/[0.06] shadow-sm overflow-hidden">
-                <div className="p-5 border-b border-black/[0.04] dark:border-white/[0.04] flex items-center justify-between bg-black/[0.01] dark:bg-white dark:bg-[#0a0a0a]/[0.01]">
+            <div className="bg-white rounded-2xl border border-black/[0.06] shadow-sm overflow-hidden">
+                <div className="p-5 border-b border-black/[0.04] flex items-center justify-between bg-black/[0.01]">
                     <div>
-                        <h2 className="text-[16px] font-bold text-black dark:text-white flex items-center gap-2">
+                        <h2 className="text-[16px] font-bold text-black flex items-center gap-2">
                             Rota & Pay Calendar
                             <span className="text-[10px] bg-black/5 text-black/40 px-2 py-0.5 rounded font-bold uppercase tracking-wider">{monthName} {year}</span>
                         </h2>
                     </div>
                     <div className="flex items-center gap-2">
-                        <button onClick={prevMonth} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/5 text-black/40 hover:text-black dark:text-white transition-colors">
+                        <button onClick={prevMonth} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/5 text-black/40 hover:text-black transition-colors">
                             <ChevronLeft className="w-4 h-4" />
                         </button>
-                        <button onClick={() => setCurrentDate(new Date())} className="text-[11px] font-bold text-black/40 hover:text-black dark:text-white px-2 transition-colors uppercase tracking-wider">
+                        <button onClick={() => setCurrentDate(new Date())} className="text-[11px] font-bold text-black/40 hover:text-black px-2 transition-colors uppercase tracking-wider">
                             Today
                         </button>
-                        <button onClick={nextMonth} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/5 text-black/40 hover:text-black dark:text-white transition-colors">
+                        <button onClick={nextMonth} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/5 text-black/40 hover:text-black transition-colors">
                             <ChevronRight className="w-4 h-4" />
                         </button>
                     </div>
@@ -223,7 +223,7 @@ export function ProjectionsAnalytics() {
                                 })
                             }
 
-                            let bgClass = "bg-black/[0.02] dark:bg-white dark:bg-[#0a0a0a]/[0.02] border-transparent"
+                            let bgClass = "bg-black/[0.02] border-transparent"
                             let borderClass = ""
                             let textClass = "text-black/60"
 

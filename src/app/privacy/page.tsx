@@ -5,8 +5,8 @@ import Link from 'next/link'
 
 export default function PrivacyPage() {
     return (
-        <div className="min-h-screen bg-white text-black dark:text-white p-8 md:p-24 max-w-4xl mx-auto">
-            <Link href="/finances" className="inline-flex items-center gap-2 text-sm font-bold text-black dark:text-white mb-12 hover:underline">
+        <div className="min-h-screen bg-white text-black p-8 md:p-24 max-w-4xl mx-auto">
+            <Link href="/finances" className="inline-flex items-center gap-2 text-sm font-bold text-black mb-12 hover:underline">
                 <ArrowLeft className="w-4 h-4" /> Back to Dashboard
             </Link>
 
@@ -17,7 +17,7 @@ export default function PrivacyPage() {
 
             <div className="space-y-12 text-[15px] leading-relaxed text-black/70">
                 <section>
-                    <h2 className="text-xl font-bold text-black dark:text-white mb-4">1. Overview</h2>
+                    <h2 className="text-xl font-bold text-black mb-4">1. Overview</h2>
                     <p>
                         KarrOS is a personal operating system designed for private financial management.
                         This privacy policy explains how we handle your data when you connect your bank
@@ -26,7 +26,7 @@ export default function PrivacyPage() {
                 </section>
 
                 <section>
-                    <h2 className="text-xl font-bold text-black dark:text-white mb-4">2. Data Collection</h2>
+                    <h2 className="text-xl font-bold text-black mb-4">2. Data Collection</h2>
                     <p>
                         When you authorize a bank connection, KarrOS accesses your transaction history
                         and account balances. This data is fetched via Enable Banking and stored
@@ -35,7 +35,7 @@ export default function PrivacyPage() {
                 </section>
 
                 <section>
-                    <h2 className="text-xl font-bold text-black dark:text-white mb-4">3. Data Usage</h2>
+                    <h2 className="text-xl font-bold text-black mb-4">3. Data Usage</h2>
                     <p>
                         Your data is used exclusively to provide you with financial insights,
                         automated ledger entries, and budget tracking within the KarrOS dashboard.
@@ -44,7 +44,7 @@ export default function PrivacyPage() {
                 </section>
 
                 <section>
-                    <h2 className="text-xl font-bold text-black dark:text-white mb-4">4. Security</h2>
+                    <h2 className="text-xl font-bold text-black mb-4">4. Security</h2>
                     <p>
                         We use industry-standard encryption and secure JWT signing to communicate
                         with banking APIs. Your credentials are never stored by KarrOS;
@@ -53,7 +53,7 @@ export default function PrivacyPage() {
                 </section>
 
                 <section>
-                    <h2 className="text-xl font-bold text-black dark:text-white mb-4">5. Third Parties</h2>
+                    <h2 className="text-xl font-bold text-black mb-4">5. Third Parties</h2>
                     <p>
                         We use **Enable Banking** as our technical provider for Open Banking
                         connectivity. Their privacy policy applies to the data transmission
@@ -62,7 +62,7 @@ export default function PrivacyPage() {
                 </section>
             </div>
 
-            <footer className="mt-24 pt-12 border-t border-black/[0.05] dark:border-white/[0.05] text-black/30 text-[13px]">
+            <footer className="mt-24 pt-12 border-t border-black/[0.05] text-black/30 text-[13px]">
                 &copy; 2026 KarrOS. Built for privacy.
             </footer>
         </div>

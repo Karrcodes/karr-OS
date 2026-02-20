@@ -30,7 +30,7 @@ const typeConfig = {
 export function PocketsGrid({ pockets }: PocketsGridProps) {
     if (pockets.length === 0) {
         return (
-            <div className="rounded-xl border border-black/[0.07] dark:border-white/[0.07] bg-black/[0.02] dark:bg-white/[0.02] p-6 text-center">
+            <div className="rounded-xl border border-black/[0.07] bg-black/[0.02] p-6 text-center">
                 <p className="text-black/30 text-sm">No pockets yet — create one in Settings.</p>
             </div>
         )
@@ -49,7 +49,7 @@ export function PocketsGrid({ pockets }: PocketsGridProps) {
                 return (
                     <div
                         key={pocket.id}
-                        className="group relative rounded-xl border border-black/[0.07] dark:border-white/[0.07] bg-white dark:bg-[#0a0a0a] p-4 hover:bg-black/[0.01] dark:bg-white/[0.01] hover:border-black/[0.12] transition-all duration-200 shadow-sm"
+                        className="group relative rounded-xl border border-black/[0.07] bg-white p-4 hover:bg-black/[0.01] hover:border-black/[0.12] transition-all duration-200 shadow-sm"
                     >
                         <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center gap-2">
@@ -72,7 +72,7 @@ export function PocketsGrid({ pockets }: PocketsGridProps) {
                         </div>
 
                         <div className="mb-3">
-                            <p className="text-2xl font-bold text-black dark:text-white tracking-tight">
+                            <p className="text-2xl font-bold text-black tracking-tight">
                                 £{(pocket.balance ?? 0).toFixed(2)}
                             </p>
                             {pocket.target_budget > 0 && (

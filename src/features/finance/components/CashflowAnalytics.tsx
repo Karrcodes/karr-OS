@@ -58,18 +58,18 @@ export function CashflowAnalytics() {
 
     if (loading) {
         return (
-            <div className="rounded-xl border border-black/[0.07] dark:border-white/[0.07] bg-white dark:bg-[#0a0a0a] p-5 animate-pulse flex items-center justify-center min-h-[160px]">
+            <div className="rounded-xl border border-black/[0.07] bg-white p-5 animate-pulse flex items-center justify-center min-h-[160px]">
                 <Activity className="w-5 h-5 text-black/20" />
             </div>
         )
     }
 
     return (
-        <div className="rounded-xl border border-black/[0.07] dark:border-white/[0.07] bg-white dark:bg-[#0a0a0a] p-5 shadow-sm">
+        <div className="rounded-xl border border-black/[0.07] bg-white p-5 shadow-sm">
             <div className="flex items-start justify-between mb-6">
                 <div>
-                    <h2 className="text-[15px] font-bold text-black dark:text-white flex items-center gap-2">
-                        {view === '30d' ? <Activity className="w-4 h-4 text-black dark:text-white" /> : <BarChart2 className="w-4 h-4 text-[#059669]" />}
+                    <h2 className="text-[15px] font-bold text-black flex items-center gap-2">
+                        {view === '30d' ? <Activity className="w-4 h-4 text-black" /> : <BarChart2 className="w-4 h-4 text-[#059669]" />}
                         {view === '30d' ? 'Cashflow' : 'Historical Income'}
                     </h2>
                     <p className="text-[12px] text-black/35 mt-0.5">
@@ -77,23 +77,23 @@ export function CashflowAnalytics() {
                     </p>
                 </div>
                 <div className="text-right flex flex-col items-end gap-2">
-                    <div className="flex items-center gap-1 bg-black/[0.04] dark:bg-white/[0.04] rounded-lg p-0.5">
+                    <div className="flex items-center gap-1 bg-black/[0.04] rounded-lg p-0.5">
                         <button
                             onClick={() => setView('30d')}
-                            className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors ${view === '30d' ? 'bg-white dark:bg-[#0a0a0a] shadow-sm text-black dark:text-white' : 'text-black/40 hover:text-black/60'}`}
+                            className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors ${view === '30d' ? 'bg-white shadow-sm text-black' : 'text-black/40 hover:text-black/60'}`}
                         >
                             30d
                         </button>
                         <button
                             onClick={() => setView('all-time')}
-                            className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors ${view === 'all-time' ? 'bg-white dark:bg-[#0a0a0a] shadow-sm text-black dark:text-white' : 'text-black/40 hover:text-black/60'}`}
+                            className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors ${view === 'all-time' ? 'bg-white shadow-sm text-black' : 'text-black/40 hover:text-black/60'}`}
                         >
                             All Time
                         </button>
                     </div>
                     {view === '30d' ? (
                         <>
-                            <div className="text-[20px] font-bold tracking-tight text-black dark:text-white mt-1">
+                            <div className="text-[20px] font-bold tracking-tight text-black mt-1">
                                 £{Math.max(0, totalIncome - totalSpent).toFixed(2)}
                             </div>
                             <div className="flex items-center justify-end gap-1 text-[11px] font-semibold uppercase tracking-wider text-black/40">
@@ -123,9 +123,9 @@ export function CashflowAnalytics() {
                             <div className="flex items-center gap-1.5 text-[12px] font-semibold text-black/60">
                                 <ArrowDownToLine className="w-3.5 h-3.5 text-[#059669]" /> Inflow
                             </div>
-                            <span className="text-[14px] font-bold text-black dark:text-white">£{totalIncome.toFixed(2)}</span>
+                            <span className="text-[14px] font-bold text-black">£{totalIncome.toFixed(2)}</span>
                         </div>
-                        <div className="w-full h-2 bg-black/[0.04] dark:bg-white/[0.04] rounded-full overflow-hidden">
+                        <div className="w-full h-2 bg-black/[0.04] rounded-full overflow-hidden">
                             <div className="h-full bg-[#059669] rounded-full w-full" />
                         </div>
                     </div>
@@ -136,9 +136,9 @@ export function CashflowAnalytics() {
                             <div className="flex items-center gap-1.5 text-[12px] font-semibold text-black/60">
                                 <ArrowUpFromLine className="w-3.5 h-3.5 text-[#dc2626]" /> Outflow
                             </div>
-                            <span className="text-[14px] font-bold text-black dark:text-white">£{totalSpent.toFixed(2)}</span>
+                            <span className="text-[14px] font-bold text-black">£{totalSpent.toFixed(2)}</span>
                         </div>
-                        <div className="w-full h-2 bg-black/[0.04] dark:bg-white/[0.04] rounded-full overflow-hidden">
+                        <div className="w-full h-2 bg-black/[0.04] rounded-full overflow-hidden">
                             <div
                                 className="h-full bg-[#dc2626] rounded-full transition-all duration-1000"
                                 style={{ width: `${spentPercentage}%` }}
