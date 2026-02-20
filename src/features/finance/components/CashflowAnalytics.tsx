@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { Activity, ArrowDownToLine, ArrowUpFromLine, BarChart2 } from 'lucide-react'
+import { InfoTooltip } from './InfoTooltip'
 import { useIncome } from '../hooks/useIncome'
 import { useTransactions } from '../hooks/useTransactions'
 
@@ -89,8 +90,9 @@ export function CashflowAnalytics() {
                             <div className="text-[20px] font-bold tracking-tight text-black mt-1">
                                 £{Math.max(0, totalIncome - totalSpent).toFixed(2)}
                             </div>
-                            <div className="text-[11px] font-semibold uppercase tracking-wider text-black/40">
+                            <div className="flex items-center justify-end gap-1 text-[11px] font-semibold uppercase tracking-wider text-black/40">
                                 Net Retained
+                                <InfoTooltip content={'Inflow minus Outflow over the last 30 days, based on transactions tagged as "income" and "spend". Never goes below £0.'} side="left" />
                             </div>
                         </>
                     ) : (
@@ -98,8 +100,9 @@ export function CashflowAnalytics() {
                             <div className="text-[20px] font-bold tracking-tight text-[#059669] mt-1">
                                 £{allTimeEarned.toFixed(2)}
                             </div>
-                            <div className="text-[11px] font-semibold uppercase tracking-wider text-black/40">
+                            <div className="flex items-center justify-end gap-1 text-[11px] font-semibold uppercase tracking-wider text-black/40">
                                 Total Earnings
+                                <InfoTooltip content={'The sum of all transactions in your ledger with type "income", across all time — including sync-imported and manually logged entries.'} side="left" />
                             </div>
                         </>
                     )}

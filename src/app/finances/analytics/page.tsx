@@ -1,16 +1,17 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { ArrowLeft, Wallet, TrendingUp, Receipt, Calendar, CreditCard, PieChart, ArrowUpRight, ArrowDownRight, FileText, Trash2 } from 'lucide-react'
+import { ArrowLeft, Wallet, TrendingUp, Receipt, PieChart, FileText, Trash2 } from 'lucide-react'
 import { usePayslips } from '@/features/finance/hooks/usePayslips'
 import { useTransactions } from '@/features/finance/hooks/useTransactions'
 import { useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
 import { SpendingAnalytics } from '@/features/finance/components/SpendingAnalytics'
+import { PayslipUploader } from '@/features/finance/components/PayslipUploader'
 import { cn } from '@/lib/utils'
 
 export default function FinanceAnalyticsPage() {
     const [activeTab, setActiveTab] = useState<'salary' | 'spending'>('salary')
-    const { payslips, loading: payslipsLoading, deletePayslip } = usePayslips()
+    const { payslips, loading: payslipsLoading, deletePayslip, refetch: refetchPayslips } = usePayslips()
     const { transactions, loading: txLoading } = useTransactions()
     const { activeProfile } = useFinanceProfile()
 
@@ -90,15 +91,19 @@ export default function FinanceAnalyticsPage() {
                         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
                             {activeTab === 'salary' ? (
                                 !salaryStats ? (
-                                    <div className="py-20 text-center bg-white rounded-3xl border border-black/[0.05] shadow-sm">
-                                        <div className="w-16 h-16 bg-black/[0.03] rounded-3xl flex items-center justify-center mx-auto mb-4">
-                                            <TrendingUp className="w-8 h-8 text-black/20" />
+                                    <div className="space-y-6">
+                                        <div className="py-10 text-center bg-white rounded-3xl border border-black/[0.05] shadow-sm">
+                                            <div className="w-16 h-16 bg-black/[0.03] rounded-3xl flex items-center justify-center mx-auto mb-4">
+                                                <TrendingUp className="w-8 h-8 text-black/20" />
+                                            </div>
+                                            <h3 className="text-[16px] font-bold text-black">No Salary Data Yet</h3>
+                                            <p className="text-[13px] text-black/40 mt-1 max-w-xs mx-auto">Upload your first payslip to see professional income analytics.</p>
                                         </div>
-                                        <h3 className="text-[16px] font-bold text-black">No Salary Data Yet</h3>
-                                        <p className="text-[13px] text-black/40 mt-1 max-w-xs mx-auto">Upload your payslips on the main dashboard to see your professional income analytics here.</p>
+                                        <PayslipUploader onSuccess={refetchPayslips} />
                                     </div>
                                 ) : (
                                     <>
+                                        <PayslipUploader onSuccess={refetchPayslips} />
                                         {/* Top Stats Cards */}
                                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                             <div className="bg-white p-5 rounded-2xl border border-black/[0.06] shadow-sm">

@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from 'react'
 import { DollarSign, TrendingDown, Wallet, RefreshCw } from 'lucide-react'
+import { InfoTooltip } from './InfoTooltip'
 import { usePockets } from '../hooks/usePockets'
 import { useRecurring } from '../hooks/useRecurring'
 import { useGoals } from '../hooks/useGoals'
@@ -99,6 +100,7 @@ export function CommandCenter() {
                             icon={<Wallet className="w-5 h-5" />}
                             color="#059669"
                             sub={`${pockets.length} pockets`}
+                            tooltip="The sum of current balances across all your active pockets. This is your immediately spendable money."
                         />
                         <SummaryCard
                             label="Total Debt Projection"
@@ -106,6 +108,7 @@ export function CommandCenter() {
                             icon={<TrendingDown className="w-5 h-5" />}
                             color="#dc2626"
                             sub="Estimated remaining on fixed terms"
+                            tooltip={<span>For each obligation with an end date, this calculates: <strong>payment amount × remaining periods</strong> until that date. Obligations without an end date are excluded. Frequency is normalised (weekly × 4 = monthly, bi-weekly × 2, yearly ÷ 12).</span>}
                         />
                         <SummaryCard
                             label="Monthly Obligations"
@@ -113,6 +116,7 @@ export function CommandCenter() {
                             icon={<DollarSign className="w-5 h-5" />}
                             color="#d97706"
                             sub="Fixed debt payments"
+                            tooltip="All recurring obligations normalised to a monthly equivalent. Monthly = as-is, weekly × 52 ÷ 12, bi-weekly × 26 ÷ 12, yearly ÷ 12."
                         />
                     </div>
 
@@ -163,11 +167,14 @@ export function CommandCenter() {
     )
 }
 
-function SummaryCard({ label, value, icon, color, sub }: { label: string; value: string; icon: React.ReactNode; color: string; sub?: string }) {
+function SummaryCard({ label, value, icon, color, sub, tooltip }: { label: string; value: string; icon: React.ReactNode; color: string; sub?: string; tooltip?: string | React.ReactNode }) {
     return (
         <div className="rounded-xl border border-black/[0.07] bg-white p-4 hover:bg-black/[0.01] transition-colors shadow-sm">
             <div className="flex items-center justify-between mb-3">
-                <p className="text-[11px] uppercase tracking-wider text-black/40 font-semibold">{label}</p>
+                <div className="flex items-center gap-1.5">
+                    <p className="text-[11px] uppercase tracking-wider text-black/40 font-semibold">{label}</p>
+                    {tooltip && <InfoTooltip content={tooltip} side="bottom" />}
+                </div>
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color}12` }}>
                     <span style={{ color }}>{icon}</span>
                 </div>
