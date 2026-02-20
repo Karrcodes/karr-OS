@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect } from 'react'
 import { DollarSign, TrendingDown, Wallet, RefreshCw } from 'lucide-react'
 import { InfoTooltip } from './InfoTooltip'
-import { countRemainingPayments } from '../utils/lenderLogos'
+import { countRemainingPayments, addMonths } from '../utils/lenderLogos'
 import { usePockets } from '../hooks/usePockets'
 import { useRecurring } from '../hooks/useRecurring'
 import { useGoals } from '../hooks/useGoals'
@@ -32,6 +32,9 @@ export function CommandCenter() {
         const now = new Date()
         now.setHours(0, 0, 0, 0)
 
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+        endOfMonth.setHours(23, 59, 59, 999)
+
         obligations.forEach(o => {
             if (o.end_date || o.payments_left) {
                 // Use explicitly stored payments_left if set; otherwise derive from dates
@@ -39,10 +42,31 @@ export function CommandCenter() {
                 totalDebt += o.amount * paymentsLeft
             }
 
-            if (o.frequency === 'monthly') monthlyObligations += o.amount
-            if (o.frequency === 'weekly') monthlyObligations += (o.amount * 52) / 12
-            if (o.frequency === 'bi-weekly') monthlyObligations += (o.amount * 26) / 12
-            if (o.frequency === 'yearly') monthlyObligations += o.amount / 12
+            // Exactly calculate how much is due in the remaining current calendar month
+            let current = new Date(o.next_due_date)
+            current.setHours(0, 0, 0, 0)
+
+            const obsEnd = o.end_date ? new Date(o.end_date) : null
+            if (obsEnd) obsEnd.setHours(23, 59, 59, 999)
+
+            const hasLimit = o.payments_left != null && o.payments_left > 0
+            let occurrences = 0
+
+            while (current <= endOfMonth) {
+                if (hasLimit && occurrences >= o.payments_left!) break
+                if (obsEnd && current > obsEnd) break
+
+                if (current >= now) {
+                    monthlyObligations += o.amount
+                    occurrences++
+                }
+
+                if (o.frequency === 'weekly') current.setDate(current.getDate() + 7)
+                else if (o.frequency === 'bi-weekly') current.setDate(current.getDate() + 14)
+                else if (o.frequency === 'monthly') current = addMonths(current, 1)
+                else if (o.frequency === 'yearly') current = addMonths(current, 12)
+                else break
+            }
         })
 
         return { totalLiquid, totalDebt, monthlyObligations }
