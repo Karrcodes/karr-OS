@@ -8,6 +8,7 @@ import { useGoals } from '@/features/finance/hooks/useGoals'
 import { useSettings } from '@/features/finance/hooks/useSettings'
 import type { Pocket, Goal, RecurringObligation } from '@/features/finance/types/finance.types'
 import { useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
+import { FINANCE_CATEGORIES } from '@/features/finance/constants/categories'
 
 export default function SettingsPage() {
     const { activeProfile, setProfile } = useFinanceProfile()
@@ -208,35 +209,94 @@ function PocketsSettings() {
     )
 }
 
+const LENDERS = [
+    { id: 'klarna', name: 'Klarna', emoji: '💗', color: '#ffb3c7' },
+    { id: 'clearpay', name: 'Clearpay', emoji: '💚', color: '#b2fce1' },
+    { id: 'currys', name: 'Currys Flexipay', emoji: '💜', color: '#6c3082' },
+    { id: 'other', name: 'Other / Subscription', emoji: '💸', color: '#f3f4f6' },
+]
+
 /* ─── Recurring Obligations ──────────────────────── */
 function RecurringObligationsSettings() {
-    const { obligations, loading, createObligation, deleteObligation } = useRecurring()
+    const { obligations, loading, createObligation, updateObligation, deleteObligation } = useRecurring()
     const [adding, setAdding] = useState(false)
+    const [editId, setEditId] = useState<string | null>(null)
     const [form, setForm] = useState<Partial<RecurringObligation>>({
         frequency: 'monthly',
-        amount: 0
+        amount: 0,
+        category: 'other',
+        emoji: '💸',
+        payments_left: null
     })
     const [saving, setSaving] = useState(false)
 
-    const handleAdd = async () => {
+    const calculateEndDate = (startDate: string, frequency: string, paymentsLeft: number) => {
+        if (!startDate || paymentsLeft <= 0) return null
+        const date = new Date(startDate)
+        const totalPayments = paymentsLeft - 1 // One is today/next
+        if (totalPayments <= 0) return startDate
+
+        if (frequency === 'weekly') date.setDate(date.getDate() + (totalPayments * 7))
+        else if (frequency === 'bi-weekly') date.setDate(date.getDate() + (totalPayments * 14))
+        else if (frequency === 'monthly') date.setMonth(date.getMonth() + totalPayments)
+        else if (frequency === 'yearly') date.setFullYear(date.getFullYear() + totalPayments)
+
+        return date.toISOString().split('T')[0]
+    }
+
+    const handleSave = async (isEdit: boolean = false) => {
         if (!form.name || !form.amount || !form.next_due_date || !form.frequency) return
         setSaving(true)
+
+        let endDate = form.end_date || null
+        if (form.payments_left && form.payments_left > 0) {
+            endDate = calculateEndDate(form.next_due_date, form.frequency, form.payments_left)
+        }
+
         try {
-            await createObligation({
+            const data = {
                 name: form.name,
                 amount: form.amount,
                 frequency: form.frequency,
                 next_due_date: form.next_due_date,
-                end_date: form.end_date || null,
-                group_name: form.group_name || null
-            })
-            setForm({ frequency: 'monthly', amount: 0 })
-            setAdding(false)
+                end_date: endDate,
+                group_name: form.group_name || null,
+                category: form.category || 'other',
+                emoji: form.emoji || '💸',
+                description: form.description || null,
+                payments_left: form.payments_left || null
+            }
+
+            if (isEdit && editId) {
+                await updateObligation(editId, data)
+                setEditId(null)
+            } else {
+                await createObligation(data)
+                setAdding(false)
+            }
+            setForm({ frequency: 'monthly', amount: 0, category: 'other', emoji: '💸', payments_left: null })
         } catch (e: any) {
-            alert(`Failed to add obligation: ${e.message || 'Unknown error'}`)
+            alert(`Failed to save obligation: ${e.message || 'Unknown error'}`)
         } finally {
             setSaving(false)
         }
+    }
+
+    const startEdit = (o: RecurringObligation) => {
+        setEditId(o.id)
+        setAdding(false)
+        setForm({
+            name: o.name,
+            amount: o.amount,
+            frequency: o.frequency,
+            next_due_date: o.next_due_date,
+            end_date: o.end_date,
+            group_name: o.group_name,
+            category: o.category || 'other',
+            emoji: o.emoji || '💸',
+            description: o.description,
+            payments_left: o.payments_left
+        })
     }
 
     return (
@@ -247,64 +307,100 @@ function RecurringObligationsSettings() {
                         <div className="space-y-2">
                             {obligations.map((o) => (
                                 <div key={o.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-3 rounded-xl border border-black/[0.07] bg-white p-3">
+                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+                                        style={{ backgroundColor: LENDERS.find(l => l.name === o.name)?.color + '20' || '#00000008' }}>
+                                        {o.emoji || '💸'}
+                                    </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2">
                                             <span className="text-[13px] text-black/80 font-bold truncate">{o.name}</span>
+                                            {o.description && <span className="text-[11px] text-black/40 truncate">— {o.description}</span>}
                                             {o.group_name && <span className="text-[10px] uppercase font-bold tracking-wider text-black/40 bg-black/[0.04] px-1.5 py-0.5 rounded">{o.group_name}</span>}
                                         </div>
                                         <div className="text-[11px] text-black/40 mt-0.5">
-                                            Next due: {new Date(o.next_due_date).toLocaleDateString()}
-                                            {o.end_date && ` • Ends: ${new Date(o.end_date).toLocaleDateString()}`}
+                                            Next: {o.next_due_date} {o.payments_left ? `(${o.payments_left} left)` : ''}
+                                            {o.end_date && ` • Ends: ${o.end_date}`}
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3 sm:ml-auto">
                                         <span className="text-[11px] text-black/40 capitalize px-2 py-1 bg-black/[0.03] rounded-lg border border-black/[0.05]">{o.frequency}</span>
-                                        <span className="text-[13px] text-red-600 font-bold w-20 text-right">£{o.amount.toFixed(2)}</span>
-                                        <button onClick={() => deleteObligation(o.id)} className="icon-btn text-black/20 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                                        <span className="text-[13px] text-red-600 font-bold w-24 text-right">£{o.amount.toFixed(2)}</span>
+                                        <div className="flex items-center gap-1 ml-1">
+                                            <button onClick={() => startEdit(o)} className="icon-btn text-black/20 hover:text-black/60"><Pencil className="w-3.5 h-3.5" /></button>
+                                            <button onClick={() => deleteObligation(o.id)} className="icon-btn text-black/20 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
+                                        </div>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     )}
 
-                    {adding ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-xl border border-[#7c3aed]/20 bg-[#7c3aed]/5 p-4">
-                            <div className="space-y-1">
-                                <label className="text-[10px] uppercase tracking-wider text-black/50 font-bold ml-1">Name / Lender</label>
-                                <input className="input-field w-full" placeholder="e.g. Netflix, Rent, Currys TV" value={form.name ?? ''} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-[10px] uppercase tracking-wider text-black/50 font-bold ml-1">Payment Amount (£)</label>
-                                <input className="input-field w-full" type="number" placeholder="0.00" value={form.amount || ''} onChange={(e) => setForm({ ...form, amount: parseFloat(e.target.value) })} />
+                    {(adding || editId) ? (
+                        <div className="rounded-xl border border-[#7c3aed]/20 bg-[#7c3aed]/5 p-5 space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="sm:col-span-2">
+                                    <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">Lender / Name</label>
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                        {LENDERS.map(l => (
+                                            <button key={l.id}
+                                                onClick={() => {
+                                                    setForm({ ...form, name: l.name, emoji: l.emoji, category: l.id === 'other' ? 'other' : 'bills' });
+                                                }}
+                                                className={`flex items-center gap-2 p-3 rounded-xl border transition-all ${form.name === l.name ? 'bg-white border-[#7c3aed] shadow-sm' : 'bg-black/[0.02] border-black/[0.05] hover:bg-black/[0.04]'}`}>
+                                                <span className="text-xl">{l.emoji}</span>
+                                                <span className="text-[11px] font-bold text-black/60 uppercase tracking-tight">{l.name}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {form.name === 'Other / Subscription' && (
+                                        <input className="input-field w-full mt-2" placeholder="Custom lender or service name..." value={form.name === 'Other / Subscription' ? '' : (form.name ?? '')} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                                    )}
+                                </div>
+                                <div>
+                                    <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">Description / Note</label>
+                                    <input className="input-field w-full" placeholder="e.g. Amazon purchase, Dominoes" value={form.description ?? ''} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+                                </div>
+                                <div>
+                                    <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">Amount (£)</label>
+                                    <input className="input-field w-full" type="number" placeholder="0.00" value={form.amount || ''} onChange={(e) => setForm({ ...form, amount: parseFloat(e.target.value) })} />
+                                </div>
+                                <div>
+                                    <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">Frequency</label>
+                                    <select className="input-field w-full" value={form.frequency ?? 'monthly'} onChange={(e) => setForm({ ...form, frequency: e.target.value as any })}>
+                                        <option value="weekly">Weekly</option>
+                                        <option value="bi-weekly">Bi-weekly</option>
+                                        <option value="monthly">Monthly</option>
+                                        <option value="yearly">Yearly</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">Next Payment Date</label>
+                                    <input className="input-field w-full" type="date" value={form.next_due_date ?? ''} onChange={(e) => setForm({ ...form, next_due_date: e.target.value })} />
+                                </div>
+
+                                {(form.name === 'Klarna' || form.name === 'Clearpay') ? (
+                                    <div>
+                                        <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">Payments Left</label>
+                                        <input className="input-field w-full" type="number" placeholder="e.g. 3" value={form.payments_left ?? ''} onChange={(e) => setForm({ ...form, payments_left: parseInt(e.target.value) })} />
+                                    </div>
+                                ) : (
+                                    <div className={form.name === 'Currys Flexipay' ? '' : 'opacity-40 grayscale pointer-events-none'}>
+                                        <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">End Date (optional)</label>
+                                        <input className="input-field w-full" type="date" value={form.end_date ?? ''} onChange={(e) => setForm({ ...form, end_date: e.target.value })} />
+                                    </div>
+                                )}
+
+                                <div>
+                                    <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">Grouping Name</label>
+                                    <input className="input-field w-full" placeholder="e.g. Currys TV" value={form.group_name ?? ''} onChange={(e) => setForm({ ...form, group_name: e.target.value })} />
+                                </div>
                             </div>
 
-                            <div className="space-y-1">
-                                <label className="text-[10px] uppercase tracking-wider text-black/50 font-bold ml-1">Frequency</label>
-                                <select className="input-field w-full" value={form.frequency ?? 'monthly'} onChange={(e) => setForm({ ...form, frequency: e.target.value as any })}>
-                                    <option value="weekly">Weekly</option>
-                                    <option value="bi-weekly">Bi-Weekly</option>
-                                    <option value="monthly">Monthly</option>
-                                    <option value="yearly">Yearly</option>
-                                </select>
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-[10px] uppercase tracking-wider text-black/50 font-bold ml-1">Next Payment Date</label>
-                                <input className="input-field w-full" type="date" value={form.next_due_date ?? ''} onChange={(e) => setForm({ ...form, next_due_date: e.target.value })} />
-                            </div>
-
-                            <div className="space-y-1">
-                                <label className="text-[10px] uppercase tracking-wider text-black/50 font-bold ml-1">End Date (Optional)</label>
-                                <input className="input-field w-full text-black/60" type="date" value={form.end_date ?? ''} onChange={(e) => setForm({ ...form, end_date: e.target.value })} />
-                                <p className="text-[10px] text-black/30 ml-1">Leave blank for subscriptions/rent</p>
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-[10px] uppercase tracking-wider text-black/50 font-bold ml-1">Group (Optional)</label>
-                                <input className="input-field w-full" placeholder="e.g. Currys Flexipay" value={form.group_name ?? ''} onChange={(e) => setForm({ ...form, group_name: e.target.value })} />
-                            </div>
-
-                            <div className="flex gap-2 sm:col-span-2 mt-2">
-                                <button onClick={handleAdd} disabled={saving} className="btn-primary flex-1">{saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Obligation'}</button>
-                                <button onClick={() => setAdding(false)} className="btn-secondary flex-1">Cancel</button>
+                            <div className="flex gap-2 pt-2">
+                                <button onClick={() => handleSave(!!editId)} disabled={saving} className="btn-primary flex-1 h-11">
+                                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : editId ? 'Update Obligation' : 'Add Obligation'}
+                                </button>
+                                <button onClick={() => { setAdding(false); setEditId(null); setForm({ frequency: 'monthly', amount: 0, category: 'other', emoji: '💸', payments_left: null }); }} className="btn-secondary px-6 h-11">Cancel</button>
                             </div>
                         </div>
                     ) : (

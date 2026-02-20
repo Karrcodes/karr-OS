@@ -73,18 +73,35 @@ const tools = [
         functionDeclarations: [
             {
                 name: "create_recurring_obligation",
-                description: "Creates a new recurring debt, subscription, or obligation like Klarna, rent, or Netflix.",
+                description: "Creates a new recurring debt, subscription, or obligation.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
-                        name: { type: "STRING", description: "The name of the obligation (e.g. Klarna, Spotify)" },
-                        amount: { type: "NUMBER", description: "The amount per payment" },
+                        name: { type: "STRING", description: "Name (e.g. Netflix, Rent, Klarna)" },
+                        amount: { type: "NUMBER" },
                         frequency: { type: "STRING", enum: ["weekly", "bi-weekly", "monthly", "yearly"] },
-                        category: { type: "STRING", description: "The category (e.g. debt, subscription, housing)" },
-                        next_due_date: { type: "STRING", description: "ISO date of the next payment (YYYY-MM-DD)" },
-                        end_date: { type: "STRING", description: "Optional ISO date when the debt is fully paid off (YYYY-MM-DD)" }
+                        category: { type: "STRING", description: "Category ID (groceries, food_drink, transport, shopping, entertainment, housing, bills, health, travel, business, other)" },
+                        emoji: { type: "STRING", description: "A single representative emoji" },
+                        next_due_date: { type: "STRING", description: "YYYY-MM-DD" },
+                        end_date: { type: "STRING", description: "YYYY-MM-DD (optional)" }
                     },
                     required: ["name", "amount", "frequency", "next_due_date"]
+                }
+            },
+            {
+                name: "log_transaction",
+                description: "Logs a one-off spend, transfer, or allocation.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        type: { type: "STRING", enum: ["spend", "transfer"] },
+                        amount: { type: "NUMBER" },
+                        description: { type: "STRING" },
+                        pocket_id: { type: "STRING", description: "UUID of the pocket to spend from" },
+                        category: { type: "STRING", description: "Category ID" },
+                        emoji: { type: "STRING", description: "Emoji" }
+                    },
+                    required: ["type", "amount", "description", "pocket_id"]
                 }
             },
             {
@@ -134,8 +151,10 @@ Current Profile: ${activeProfile === 'personal' ? 'Personal' : 'Studio Karrtesia
 
 Key rules:
 - When asked "Can I buy X for £Y?", check the Main Buffer pocket balance.
-- Use tools to create obligations, pockets, or goals when the user describes them.
-- If a user says "I have a Klarna debt worth £20 due on the 20th", use create_recurring_obligation.
+- Use tools to create obligations, pockets, goals, or log one-off transactions.
+- Categories: groceries, food_drink, transport, shopping, entertainment, housing, bills, health, travel, business, other.
+- When logging a spend, ALWAYS provide a category and a fun, relevant emoji.
+- If a user says "I just spent £10 on a burger", use log_transaction with category 'food_drink' and emoji '🍔'.
 - Always cite actual numbers from his data when giving advice.
 - Keep responses concise — 2-4 sentences max.
 - Use GBP (£) for all amounts.
@@ -178,6 +197,20 @@ ${context}`
                         ({ data, error } = await supabase!.from('fin_pockets').insert({ ...args as any, profile: activeProfile }).select())
                     } else if (name === 'create_goal') {
                         ({ data, error } = await supabase!.from('fin_goals').insert({ ...args as any, profile: activeProfile }).select())
+                    } else if (name === 'log_transaction') {
+                        const { type, amount, pocket_id, description, category, emoji } = args as any
+                        // 1. Log transaction
+                        ({ data, error } = await supabase!.from('fin_transactions').insert({
+                            type, amount, pocket_id, description, category, emoji, profile: activeProfile, date: new Date().toISOString().split('T')[0]
+                        }).select())
+
+                        // 2. Decrement pocket balance if it's a spend
+                        if (!error && type === 'spend' && pocket_id) {
+                            const { data: pocket } = await supabase!.from('fin_pockets').select('balance').eq('id', pocket_id).single()
+                            if (pocket) {
+                                await supabase!.from('fin_pockets').update({ balance: pocket.balance - amount }).eq('id', pocket_id)
+                            }
+                        }
                     }
 
                     if (error) return { name, response: { error: error.message } }

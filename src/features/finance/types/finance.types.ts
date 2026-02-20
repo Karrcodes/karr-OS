@@ -37,7 +37,11 @@ export interface Transaction {
     description: string
     date: string
     pocket_id: string | null
+    category: string | null
+    emoji: string | null
     profile: 'personal' | 'business'
+    provider?: 'manual' | 'gocardless' | 'enable_banking'
+    provider_tx_id?: string | null
     created_at: string
 }
 
@@ -60,6 +64,10 @@ export interface RecurringObligation {
     next_due_date: string // YYYY-MM-DD
     end_date: string | null // YYYY-MM-DD
     group_name: string | null
+    category: string | null
+    emoji: string | null
+    description: string | null
+    payments_left: number | null
     profile: 'personal' | 'business'
     created_at: string
 }

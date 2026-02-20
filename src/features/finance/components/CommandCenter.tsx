@@ -5,6 +5,7 @@ import { DollarSign, TrendingDown, Wallet, RefreshCw } from 'lucide-react'
 import { usePockets } from '../hooks/usePockets'
 import { useRecurring } from '../hooks/useRecurring'
 import { useGoals } from '../hooks/useGoals'
+import { useTransactions } from '../hooks/useTransactions'
 import { PocketsGrid } from './PocketsGrid'
 import { CalendarVisualizer } from './CalendarVisualizer'
 import { GoalsList } from './GoalsList'
@@ -12,12 +13,14 @@ import { KarrAIChat } from './KarrAIChat'
 import { QuickActionFAB } from './QuickActionFAB'
 import { PaydayAllocation } from './PaydayAllocation'
 import { CashflowAnalytics } from './CashflowAnalytics'
+import { TransactionLedger } from './TransactionLedger'
 import { useFinanceProfile } from '../contexts/FinanceProfileContext'
 
 export function CommandCenter() {
     const { pockets, loading: pLoading, refetch: refetchPockets } = usePockets()
     const { obligations, loading: oLoading } = useRecurring()
     const { goals, loading: gLoading, refetch: refetchGoals } = useGoals()
+    const { refetch: refetchTransactions } = useTransactions()
     const { activeProfile, setProfile } = useFinanceProfile()
 
     const summary = useMemo(() => {
@@ -120,16 +123,25 @@ export function CommandCenter() {
                                 <CashflowAnalytics />
                             </div>
                             <div className="xl:col-span-2">
-                                <PaydayAllocation pockets={pockets} goals={goals} onSuccess={() => { refetchPockets(); refetchGoals(); }} />
+                                <PaydayAllocation pockets={pockets} goals={goals} onSuccess={() => { refetchPockets(); refetchGoals(); refetchTransactions(); }} />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
+                            <div className="xl:col-span-2">
+                                <SectionBlock title="Pockets" desc="Your current allocations">
+                                    <PocketsGrid pockets={pockets} />
+                                </SectionBlock>
+                            </div>
+                            <div className="xl:col-span-1">
+                                <SectionBlock title="Recent Ledger" desc="Latest transactions">
+                                    <TransactionLedger />
+                                </SectionBlock>
                             </div>
                         </div>
 
                         <SectionBlock title="Savings Goals" desc="Long-term targets">
                             <GoalsList goals={goals} />
-                        </SectionBlock>
-
-                        <SectionBlock title="Pockets" desc="Your current allocations">
-                            <PocketsGrid pockets={pockets} />
                         </SectionBlock>
 
                         <SectionBlock title="Recurring Obligations" desc="30-Day projections for subs, rent, & debt">
@@ -139,14 +151,14 @@ export function CommandCenter() {
                         <div className="rounded-2xl border border-black/[0.08] bg-white p-5 shadow-sm">
                             <KarrAIChat
                                 context={`Live Balances:\n${pockets.map(p => `- ${p.name}: £${p.balance.toFixed(2)}`).join('\n')}`}
-                                onAction={() => { refetchPockets(); refetchGoals(); }}
+                                onAction={() => { refetchPockets(); refetchGoals(); refetchTransactions(); }}
                             />
                         </div>
                     </div>
                 </div>
             </div>
 
-            <QuickActionFAB pockets={pockets} onSuccess={refetchPockets} />
+            <QuickActionFAB pockets={pockets} onSuccess={() => { refetchPockets(); refetchTransactions(); }} />
         </div>
     )
 }

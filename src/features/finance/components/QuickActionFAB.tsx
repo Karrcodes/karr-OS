@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { Plus, X, ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import type { Pocket } from '../types/finance.types'
+import { FINANCE_CATEGORIES, getCategoryById } from '../constants/categories'
+import { useFinanceProfile } from '../contexts/FinanceProfileContext'
 
 interface QuickActionFABProps {
     pockets: Pocket[]
@@ -21,9 +23,18 @@ export function QuickActionFAB({ pockets, onSuccess }: QuickActionFABProps) {
     const [amount, setAmount] = useState('')
     const [selectedPocket, setSelectedPocket] = useState('')
     const [toPocket, setToPocket] = useState('')
+    const [selectedCategory, setSelectedCategory] = useState('other')
     const [description, setDescription] = useState('')
+    const { activeProfile } = useFinanceProfile()
 
-    const reset = () => { setAmount(''); setSelectedPocket(''); setToPocket(''); setDescription(''); setError(null) }
+    const reset = () => {
+        setAmount('');
+        setSelectedPocket('');
+        setToPocket('');
+        setSelectedCategory('other');
+        setDescription('');
+        setError(null)
+    }
     const handleClose = () => { setOpen(false); reset() }
     const handleTabChange = (tab: Tab) => { setActiveTab(tab); reset() }
 
@@ -39,7 +50,8 @@ export function QuickActionFAB({ pockets, onSuccess }: QuickActionFABProps) {
                 await supabase.from('fin_income').insert({
                     amount: amt,
                     source: description,
-                    date: new Date().toISOString().split('T')[0]
+                    date: new Date().toISOString().split('T')[0],
+                    profile: activeProfile
                 })
             }
             if (activeTab === 'spend') {
@@ -48,12 +60,16 @@ export function QuickActionFAB({ pockets, onSuccess }: QuickActionFABProps) {
                 // We use standard balance now
                 if (pocket && amt > pocket.balance) { setError(`Insufficient balance in ${pocket.name}. Available: £${pocket.balance.toFixed(2)}`); setLoading(false); return }
 
+                const cat = getCategoryById(selectedCategory)
                 await supabase.from('fin_transactions').insert({
                     type: 'spend',
                     amount: amt,
                     pocket_id: selectedPocket,
                     description: description || 'Expense',
-                    date: new Date().toISOString().split('T')[0]
+                    date: new Date().toISOString().split('T')[0],
+                    category: cat.id,
+                    emoji: cat.emoji,
+                    profile: activeProfile
                 })
                 if (pocket) await supabase.from('fin_pockets').update({ balance: pocket.balance - amt }).eq('id', selectedPocket)
             }
@@ -66,8 +82,26 @@ export function QuickActionFAB({ pockets, onSuccess }: QuickActionFABProps) {
 
                 // Record two transaction rows for double entry transfer visibility
                 await supabase.from('fin_transactions').insert([
-                    { type: 'transfer', amount: amt, pocket_id: selectedPocket, description: `Transfer to ${to?.name || 'pocket'}`, date: new Date().toISOString().split('T')[0] },
-                    { type: 'allocate', amount: amt, pocket_id: toPocket, description: `Transfer from ${from?.name || 'pocket'}`, date: new Date().toISOString().split('T')[0] }
+                    {
+                        type: 'transfer',
+                        amount: amt,
+                        pocket_id: selectedPocket,
+                        description: `Transfer to ${to?.name || 'pocket'}`,
+                        date: new Date().toISOString().split('T')[0],
+                        category: 'transfer',
+                        emoji: '🔄',
+                        profile: activeProfile
+                    },
+                    {
+                        type: 'allocate',
+                        amount: amt,
+                        pocket_id: toPocket,
+                        description: `Transfer from ${from?.name || 'pocket'}`,
+                        date: new Date().toISOString().split('T')[0],
+                        category: 'transfer',
+                        emoji: '🔄',
+                        profile: activeProfile
+                    }
                 ])
                 if (from) await supabase.from('fin_pockets').update({ balance: from.balance - amt }).eq('id', from.id)
                 if (to) await supabase.from('fin_pockets').update({ balance: to.balance + amt }).eq('id', to.id)
@@ -159,6 +193,26 @@ export function QuickActionFAB({ pockets, onSuccess }: QuickActionFABProps) {
                                     placeholder={activeTab === 'income' ? 'Weekly paycheck' : 'What was this for?'}
                                     className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[13px] text-black placeholder-black/20 outline-none focus:border-[#7c3aed]/40 transition-colors" />
                             </div>
+
+                            {activeTab === 'spend' && (
+                                <div>
+                                    <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">Category</label>
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {FINANCE_CATEGORIES.filter(c => c.id !== 'income' && c.id !== 'transfer').map((cat) => (
+                                            <button
+                                                key={cat.id}
+                                                onClick={() => setSelectedCategory(cat.id)}
+                                                className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all ${selectedCategory === cat.id
+                                                    ? 'bg-[#7c3aed]/10 border-[#7c3aed]/30 shadow-sm'
+                                                    : 'bg-black/[0.02] border-black/[0.05] hover:bg-black/[0.05]'}`}
+                                            >
+                                                <span className="text-xl mb-1">{cat.emoji}</span>
+                                                <span className="text-[9px] font-bold text-black/60 truncate w-full text-center uppercase tracking-tight">{cat.label}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             {error && (
                                 <p className="text-[12px] text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>
