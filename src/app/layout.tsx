@@ -30,6 +30,7 @@ export const viewport: Viewport = {
 
 
 import { FinanceProfileProvider } from '@/features/finance/contexts/FinanceProfileContext'
+import { SecurityLock } from '@/components/SecurityLock'
 
 export default function RootLayout({
   children,
@@ -45,11 +46,13 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} bg-white text-[#0a0a0a] antialiased`}>
         <FinanceProfileProvider>
-          <Sidebar />
-          {/* md:ml-[220px] — full width on mobile (sidebar is a drawer), shifted on desktop */}
-          <main className="md:ml-[220px] min-h-screen bg-white">
-            {children}
-          </main>
+          <SecurityLock>
+            <Sidebar />
+            {/* md:ml-[220px] — full width on mobile (sidebar is a drawer), shifted on desktop */}
+            <main className="md:ml-[220px] min-h-screen bg-white">
+              {children}
+            </main>
+          </SecurityLock>
         </FinanceProfileProvider>
       </body>
     </html>
