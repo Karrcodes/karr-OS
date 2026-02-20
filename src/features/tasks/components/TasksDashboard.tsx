@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import type { Task } from '../types/tasks.types'
 
 const PRIORITY_CONFIG = {
-    super: { label: 'Super', color: 'bg-red-50 text-red-600 border-red-200', sort: 0 },
+    super: { label: 'Super', color: 'bg-blue-50 text-blue-600 border-blue-200', sort: 0 },
     high: { label: 'High', color: 'bg-orange-50 text-orange-600 border-orange-200', sort: 1 },
     mid: { label: 'Mid', color: 'bg-yellow-50 text-yellow-600 border-yellow-200', sort: 2 },
     low: { label: 'Low', color: 'bg-black/5 text-black/60 border-black/10', sort: 3 }
@@ -21,9 +21,15 @@ function TaskList({ category, title, icon: Icon }: { category: 'todo' | 'grocery
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!newTask.trim()) return
-        await createTask(newTask.trim(), priority)
-        setNewTask('')
-        setPriority('low')
+
+        try {
+            await createTask(newTask.trim(), priority)
+            setNewTask('')
+            setPriority('low')
+        } catch (err: any) {
+            console.error('Task creation failed:', err)
+            alert(err.message || 'Failed to create task. Please check your connection.')
+        }
     }
 
     const handleClearAll = async () => {
