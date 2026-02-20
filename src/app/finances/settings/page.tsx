@@ -222,8 +222,9 @@ function DebtsSettings() {
 
 /* ─── Goals ──────────────────────────────────────── */
 function GoalsSettings() {
-    const { goals, loading, createGoal, deleteGoal } = useGoals()
+    const { goals, loading, createGoal, updateGoal, deleteGoal } = useGoals()
     const [adding, setAdding] = useState(false)
+    const [editId, setEditId] = useState<string | null>(null)
     const [form, setForm] = useState<Partial<Goal>>({ current_amount: 0 })
     const [saving, setSaving] = useState(false)
 
@@ -241,16 +242,42 @@ function GoalsSettings() {
         setSaving(false)
     }
 
+    const handleUpdate = async (id: string) => {
+        setSaving(true)
+        await updateGoal(id, { name: form.name, target_amount: form.target_amount, current_amount: form.current_amount, deadline: form.deadline })
+        setEditId(null)
+        setSaving(false)
+    }
+
+    const startEdit = (g: Goal) => {
+        setEditId(g.id)
+        setForm({ name: g.name, target_amount: g.target_amount, current_amount: g.current_amount, deadline: g.deadline })
+    }
+
     return (
         <Section title="Savings Goals" desc="Define long-term saving targets">
             {loading ? <Spinner /> : (
                 <div className="space-y-2">
                     {goals.map((g) => (
-                        <div key={g.id} className="flex items-center gap-3 rounded-xl border border-black/[0.07] bg-white p-3">
-                            <span className="flex-1 text-[13px] text-black/80 font-medium">{g.name}</span>
-                            <span className="text-[12px] text-black/50">£{g.current_amount.toFixed(2)} / £{g.target_amount.toFixed(2)}</span>
-                            {g.deadline && <span className="text-[11px] text-black/35">{g.deadline}</span>}
-                            <button onClick={() => deleteGoal(g.id)} className="icon-btn text-black/20 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
+                        <div key={g.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-black/[0.07] bg-white p-3">
+                            {editId === g.id ? (
+                                <>
+                                    <input className="input-field flex-1 min-w-[120px]" value={form.name ?? ''} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                                    <input className="input-field w-24" type="number" placeholder="Target £" value={form.target_amount ?? 0} onChange={(e) => setForm({ ...form, target_amount: parseFloat(e.target.value) })} />
+                                    <input className="input-field w-24" type="number" placeholder="Saved £" value={form.current_amount ?? 0} onChange={(e) => setForm({ ...form, current_amount: parseFloat(e.target.value) })} />
+                                    <input className="input-field w-32" type="date" value={form.deadline ?? ''} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
+                                    <button onClick={() => handleUpdate(g.id)} disabled={saving} className="icon-btn text-emerald-600"><Check className="w-4 h-4" /></button>
+                                    <button onClick={() => setEditId(null)} className="icon-btn text-black/30"><X className="w-4 h-4" /></button>
+                                </>
+                            ) : (
+                                <>
+                                    <span className="flex-1 text-[13px] text-black/80 font-medium">{g.name}</span>
+                                    <span className="text-[12px] text-black/50">£{g.current_amount.toFixed(2)} / £{g.target_amount.toFixed(2)}</span>
+                                    {g.deadline && <span className="text-[11px] text-black/35">{g.deadline}</span>}
+                                    <button onClick={() => startEdit(g)} className="icon-btn text-black/25 hover:text-black/60"><Pencil className="w-3.5 h-3.5" /></button>
+                                    <button onClick={() => deleteGoal(g.id)} className="icon-btn text-black/20 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
+                                </>
+                            )}
                         </div>
                     ))}
 
