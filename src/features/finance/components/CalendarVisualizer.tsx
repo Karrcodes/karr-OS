@@ -75,7 +75,7 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
             current.setHours(0, 0, 0, 0)
             const obsEnd = obs.end_date ? new Date(obs.end_date) : lastDay
 
-            // Wind current back to find first occurrence in/before this month
+            // Ensure current is at or before the viewed month
             while (current > firstDay) {
                 if (obs.frequency === 'weekly') current.setDate(current.getDate() - 7)
                 else if (obs.frequency === 'bi-weekly') current.setDate(current.getDate() - 14)
@@ -83,6 +83,20 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                 else if (obs.frequency === 'yearly') current.setFullYear(current.getFullYear() - 1)
                 else break
             }
+
+            // Fast-forward current if it's too far in the past to reach the viewed month
+            while (current < firstDay) {
+                let next = new Date(current)
+                if (obs.frequency === 'weekly') next.setDate(next.getDate() + 7)
+                else if (obs.frequency === 'bi-weekly') next.setDate(next.getDate() + 14)
+                else if (obs.frequency === 'monthly') next.setMonth(next.getMonth() + 1)
+                else if (obs.frequency === 'yearly') next.setFullYear(next.getFullYear() + 1)
+                else break
+
+                if (next > lastDay || (obsEnd && next > obsEnd)) break
+                current = next
+            }
+
             // Wind forward collecting only future payments within this calendar month
             while (current <= lastDay) {
                 if (current >= firstDay && current >= today && current <= obsEnd) {

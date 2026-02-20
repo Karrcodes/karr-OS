@@ -1,13 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
-// Chunk an array into groups of `size`
-function chunk<T>(array: T[], size: number): T[][] {
-    const chunks: T[][] = []
-    for (let i = 0; i < array.length; i += size) {
-        chunks.push(array.slice(i, i + size))
-    }
-    return chunks
+function categoriseDescription(desc: string): string {
+    const d = desc.toLowerCase()
+
+    // Groceries & Food
+    if (d.includes('tesco') || d.includes('sainsbury') || d.includes('asda') || d.includes('morrisons') || d.includes('aldi') || d.includes('lidl') || d.includes('waitrose') || d.includes('co-op') || d.includes('marks & spencer') || d.includes('m&s')) return 'groceries'
+    if (d.includes('deliveroo') || d.includes('uber eats') || d.includes('just eat') || d.includes('dominos') || d.includes('mcdonalds') || d.includes('kfc') || d.includes('burger king')) return 'takeaway'
+    if (d.includes('starbucks') || d.includes('costa') || d.includes('pret a manger') || d.includes('caffe nero') || d.includes('cafe')) return 'coffee'
+    if (d.includes('restaurant') || d.includes('pub') || d.includes('bar') || d.includes('nandos') || d.includes('wagamama') || d.includes('pizza express')) return 'dining'
+
+    // Transport
+    if (d.includes('tfl') || d.includes('transport for london') || d.includes('trainline') || d.includes('northern rail') || d.includes('lner') || d.includes('gwr')) return 'transport'
+    if (d.includes('uber') || d.includes('bolt') || d.includes('free-now')) return 'taxi'
+
+    // Shopping
+    if (d.includes('amazon') || d.includes('amzn') || d.includes('argos') || d.includes('john lewis') || d.includes('boots') || d.includes('superdrug')) return 'shopping'
+    if (d.includes('asos') || d.includes('zara') || d.includes('h&m') || d.includes('primark') || d.includes('next')) return 'clothing'
+    if (d.includes('currys') || d.includes('apple') || d.includes('pc world')) return 'electronics'
+
+    // Entertainment & Subs
+    if (d.includes('netflix') || d.includes('spotify') || d.includes('amazon prime') || d.includes('disney+') || d.includes('now tv') || d.includes('apple') || d.includes('youtube')) return 'subscriptions'
+    if (d.includes('cinema') || d.includes('odeon') || d.includes('vue') || d.includes('cineworld')) return 'entertainment'
+    if (d.includes('gym') || d.includes('puregym') || d.includes('david lloyd') || d.includes('fitness first')) return 'health'
+
+    // Bills
+    if (d.includes('british gas') || d.includes('eon') || d.includes('e.on') || d.includes('edf') || d.includes('ovo') || d.includes('octopus') || d.includes('thames water')) return 'utilities'
+    if (d.includes('ee ') || d.includes('o2 ') || d.includes('vodafone') || d.includes('three') || d.includes('virgin media') || d.includes('bt ') || d.includes('sky ')) return 'telecom'
+    if (d.includes('council tax')) return 'housing'
+
+    return 'other'
 }
 
 export async function POST(req: NextRequest) {
@@ -98,36 +120,11 @@ export async function POST(req: NextRequest) {
 
         }
 
-        // ── Step 2: AI-categorise in batches of 25 ─────────────────────────────
-        const descriptions = parsed.map(p => p.description)
-        const categories: string[] = new Array(parsed.length).fill('other')
-
-        const batches = chunk(descriptions, 25)
-        let offset = 0
-
-        for (const batch of batches) {
-            try {
-                const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-                const res = await fetch(`${baseUrl}/api/ai/categorise`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ descriptions: batch })
-                })
-                if (res.ok) {
-                    const { categories: batchCats } = await res.json()
-                    batchCats.forEach((cat: string, idx: number) => {
-                        categories[offset + idx] = cat
-                    })
-                }
-            } catch {
-                // Silently fall back to 'other' for this batch
-            }
-            offset += batch.length
-        }
-
-        // ── Step 3: Merge categories and upsert ────────────────────────────────
-        const transactions = parsed.map((p, i) => ({ ...p, category: categories[i] }))
-
+        // ── Step 2: Local Rule-Based Categorisation ──────────────────────────
+        const transactions = parsed.map(p => ({
+            ...p,
+            category: p.type === 'spend' ? categoriseDescription(p.description) : 'other'
+        }))
         const { error: insertError, data } = await supabase
             .from('fin_transactions')
             .upsert(transactions, { onConflict: 'provider_tx_id' })
