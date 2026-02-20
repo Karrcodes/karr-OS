@@ -1,3 +1,5 @@
+'use client'
+
 import { FinanceProfileProvider, useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
 import { SavingsManager } from '@/features/finance/components/SavingsManager'
 

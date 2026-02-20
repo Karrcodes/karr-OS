@@ -1,3 +1,5 @@
+'use client'
+
 import { FinanceProfileProvider, useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
 import { LiabilitiesManager } from '@/features/finance/components/LiabilitiesManager'
 
