@@ -73,33 +73,18 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
         filteredObligations.forEach(obs => {
             let current = new Date(obs.next_due_date)
             current.setHours(0, 0, 0, 0)
-            const obsEnd = obs.end_date ? new Date(obs.end_date) : lastDay
+            const obsEnd = obs.end_date ? new Date(obs.end_date) : null
+            if (obsEnd) obsEnd.setHours(23, 59, 59, 999)
 
-            // Ensure current is at or before the viewed month
-            while (current > firstDay) {
-                if (obs.frequency === 'weekly') current.setDate(current.getDate() - 7)
-                else if (obs.frequency === 'bi-weekly') current.setDate(current.getDate() - 14)
-                else if (obs.frequency === 'monthly') current.setMonth(current.getMonth() - 1)
-                else if (obs.frequency === 'yearly') current.setFullYear(current.getFullYear() - 1)
-                else break
-            }
+            let occurrences = 0
+            const maxOccurrences = (obs.payments_left && obs.payments_left > 0) ? obs.payments_left : Infinity
 
-            // Fast-forward current if it's too far in the past to reach the viewed month
-            while (current < firstDay) {
-                let next = new Date(current)
-                if (obs.frequency === 'weekly') next.setDate(next.getDate() + 7)
-                else if (obs.frequency === 'bi-weekly') next.setDate(next.getDate() + 14)
-                else if (obs.frequency === 'monthly') next.setMonth(next.getMonth() + 1)
-                else if (obs.frequency === 'yearly') next.setFullYear(next.getFullYear() + 1)
-                else break
+            // Strictly wind forward from next_due_date
+            while (current <= lastDay && occurrences < maxOccurrences) {
+                if (obsEnd && current > obsEnd) break
 
-                if (next > lastDay || (obsEnd && next > obsEnd)) break
-                current = next
-            }
-
-            // Wind forward collecting only future payments within this calendar month
-            while (current <= lastDay) {
-                if (current >= firstDay && current >= today && current <= obsEnd) {
+                // If this occurrence lands in the viewed month AND is >= today, collect it
+                if (current >= firstDay && current >= today) {
                     payments.push({
                         id: `${obs.id}-${current.getTime()}`,
                         name: obs.name,
@@ -109,6 +94,10 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                         category: obs.category
                     })
                 }
+
+                occurrences++
+
+                // Advance to next payment date
                 if (obs.frequency === 'weekly') current.setDate(current.getDate() + 7)
                 else if (obs.frequency === 'bi-weekly') current.setDate(current.getDate() + 14)
                 else if (obs.frequency === 'monthly') current.setMonth(current.getMonth() + 1)
@@ -140,10 +129,18 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
         filteredObligations.forEach(obs => {
             let current = new Date(obs.next_due_date)
             current.setHours(0, 0, 0, 0)
-            const obsEnd = obs.end_date ? new Date(obs.end_date) : end
+            const obsEnd = obs.end_date ? new Date(obs.end_date) : null
+            if (obsEnd) obsEnd.setHours(23, 59, 59, 999)
 
-            while (current <= end && current <= obsEnd) {
+            let occurrences = 0
+            const maxOccurrences = (obs.payments_left && obs.payments_left > 0) ? obs.payments_left : Infinity
+
+            while (current <= end && occurrences < maxOccurrences) {
+                if (obsEnd && current > obsEnd) break
+
                 if (current >= today) total += obs.amount
+
+                occurrences++
                 if (obs.frequency === 'weekly') current.setDate(current.getDate() + 7)
                 else if (obs.frequency === 'bi-weekly') current.setDate(current.getDate() + 14)
                 else if (obs.frequency === 'monthly') current.setMonth(current.getMonth() + 1)
