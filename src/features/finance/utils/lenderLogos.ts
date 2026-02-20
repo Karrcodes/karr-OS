@@ -11,16 +11,22 @@ export function getLenderLogo(name: string): string | null {
 }
 
 /**
- * Counts the exact number of payments remaining from next_due_date to end_date,
- * only counting dates >= today. More accurate than monthsLeft arithmetic which
- * misses payments in the current calendar month.
+ * Returns the number of remaining payments for an obligation.
+ * Priority: if paymentsLeftOverride is set (user entered it explicitly), use it directly.
+ * Otherwise, iterate actual payment dates from nextDueDate to endDate >= now.
  */
 export function countRemainingPayments(
     nextDueDate: string,
     endDate: string | null,
     frequency: string,
-    now: Date
+    now: Date,
+    paymentsLeftOverride?: number | null
 ): number {
+    // Trust the explicitly stored payments_left first — it's what the user entered
+    if (paymentsLeftOverride != null && paymentsLeftOverride > 0) {
+        return paymentsLeftOverride
+    }
+
     if (!endDate) return 0
 
     let current = new Date(nextDueDate)

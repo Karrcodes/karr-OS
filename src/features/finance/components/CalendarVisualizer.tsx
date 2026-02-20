@@ -150,9 +150,9 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
             if (!groups[name]) groups[name] = { o: [], totalRemaining: 0 }
             groups[name].o.push(obs)
 
-            if (obs.end_date) {
-                // Use exact payment iteration for accuracy
-                const paymentsLeft = countRemainingPayments(obs.next_due_date, obs.end_date, obs.frequency, now)
+            if (obs.end_date || obs.payments_left) {
+                // Use explicitly stored payments_left if set; otherwise derive from dates
+                const paymentsLeft = countRemainingPayments(obs.next_due_date, obs.end_date, obs.frequency, now, obs.payments_left)
                 groups[name].totalRemaining += obs.amount * paymentsLeft
             }
         })

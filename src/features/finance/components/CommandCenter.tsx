@@ -33,9 +33,9 @@ export function CommandCenter() {
         now.setHours(0, 0, 0, 0)
 
         obligations.forEach(o => {
-            if (o.end_date) {
-                // Exact count of remaining payment occurrences from next_due_date → end_date
-                const paymentsLeft = countRemainingPayments(o.next_due_date, o.end_date, o.frequency, now)
+            if (o.end_date || o.payments_left) {
+                // Use explicitly stored payments_left if set; otherwise derive from dates
+                const paymentsLeft = countRemainingPayments(o.next_due_date, o.end_date, o.frequency, now, o.payments_left)
                 totalDebt += o.amount * paymentsLeft
             }
 
