@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Trash2, Pencil, Check, X, Loader2, Settings } from 'lucide-react'
+import { Plus, Trash2, Pencil, Check, X, Loader2, Settings, ArrowUp, ArrowDown } from 'lucide-react'
 import { usePockets } from '@/features/finance/hooks/usePockets'
 import { useDebts } from '@/features/finance/hooks/useDebts'
 import { useGoals } from '@/features/finance/hooks/useGoals'
@@ -76,7 +76,7 @@ function GlobalSettings() {
 
 /* ─── Pockets ────────────────────────────────────── */
 function PocketsSettings() {
-    const { pockets, loading, createPocket, updatePocket, deletePocket } = usePockets()
+    const { pockets, loading, createPocket, updatePocket, deletePocket, updatePocketsOrder } = usePockets()
     const [adding, setAdding] = useState(false)
     const [editId, setEditId] = useState<string | null>(null)
     const [form, setForm] = useState<Partial<Pocket>>({ type: 'general', target_budget: 0, current_balance: 0 })
@@ -86,7 +86,7 @@ function PocketsSettings() {
         if (!form.name) return
         setSaving(true)
         try {
-            await createPocket({ name: form.name!, target_budget: form.target_budget ?? 0, current_balance: form.current_balance ?? 0, balance: 0, type: (form.type as Pocket['type']) ?? 'general' })
+            await createPocket({ name: form.name!, target_budget: form.target_budget ?? 0, current_balance: form.current_balance ?? 0, balance: 0, sort_order: pockets.length, type: (form.type as Pocket['type']) ?? 'general' })
             setForm({ type: 'general', target_budget: 0, current_balance: 0 })
             setAdding(false)
         } catch (e: any) {
@@ -95,6 +95,28 @@ function PocketsSettings() {
             setSaving(false)
         }
     }
+
+    const movePocket = async (index: number, direction: 'up' | 'down') => {
+        if (direction === 'up' && index === 0) return;
+        if (direction === 'down' && index === pockets.length - 1) return;
+
+        const newPockets = [...pockets];
+        const swapIndex = direction === 'up' ? index - 1 : index + 1;
+
+        const temp = newPockets[index];
+        newPockets[index] = newPockets[swapIndex];
+        newPockets[swapIndex] = temp;
+
+        const updates = newPockets.map((p, i) => ({ id: p.id, sort_order: i }));
+        setSaving(true);
+        try {
+            await updatePocketsOrder(updates);
+        } catch (e: any) {
+            alert(`Failed to reorder: ${e.message || 'Unknown error'}`);
+        } finally {
+            setSaving(false);
+        }
+    };
 
     const handleUpdate = async (id: string) => {
         setSaving(true)
@@ -117,7 +139,7 @@ function PocketsSettings() {
         <Section title="Pockets" desc="Create and manage your spending allocations">
             {loading ? <Spinner /> : (
                 <div className="space-y-2">
-                    {pockets.map((p) => (
+                    {pockets.map((p, i) => (
                         <div key={p.id} className="flex items-center gap-3 rounded-xl border border-black/[0.07] bg-white p-3">
                             {editId === p.id ? (
                                 <>
@@ -133,6 +155,10 @@ function PocketsSettings() {
                                 </>
                             ) : (
                                 <>
+                                    <div className="flex flex-col gap-0.5 mr-2">
+                                        <button onClick={() => movePocket(i, 'up')} disabled={i === 0 || saving} className="text-black/20 hover:text-black/60 disabled:opacity-30"><ArrowUp className="w-3 h-3" /></button>
+                                        <button onClick={() => movePocket(i, 'down')} disabled={i === pockets.length - 1 || saving} className="text-black/20 hover:text-black/60 disabled:opacity-30"><ArrowDown className="w-3 h-3" /></button>
+                                    </div>
                                     <span className="flex-1 text-[13px] text-black/80 font-medium">{p.name}</span>
                                     <span className="text-[11px] text-black/35 capitalize">{p.type}</span>
                                     <span className="text-[12px] text-black/45 w-32 text-right">Weekly alloc: £{p.target_budget.toFixed(2)}</span>

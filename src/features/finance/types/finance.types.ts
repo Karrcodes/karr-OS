@@ -4,6 +4,7 @@ export interface Pocket {
     target_budget: number
     current_balance: number
     balance: number // New dynamic cashflow balance
+    sort_order: number
     type: 'general' | 'savings' | 'buffer'
     created_at: string
 }

@@ -14,6 +14,7 @@ export function usePockets() {
         const { data, error } = await supabase
             .from('fin_pockets')
             .select('*')
+            .order('sort_order', { ascending: true })
             .order('created_at', { ascending: true })
 
         if (error) setError(error.message)
@@ -39,7 +40,15 @@ export function usePockets() {
         await fetchPockets()
     }
 
+    const updatePocketsOrder = async (updates: { id: string; sort_order: number }[]) => {
+        // Run updates sequentially to avoid complex batching for now
+        for (const update of updates) {
+            await supabase.from('fin_pockets').update({ sort_order: update.sort_order }).eq('id', update.id)
+        }
+        await fetchPockets()
+    }
+
     useEffect(() => { fetchPockets() }, [])
 
-    return { pockets, loading, error, createPocket, updatePocket, deletePocket, refetch: fetchPockets }
+    return { pockets, loading, error, createPocket, updatePocket, deletePocket, updatePocketsOrder, refetch: fetchPockets }
 }
