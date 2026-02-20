@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react'
 import {
     BarChart3, CheckSquare, FolderKanban, Video,
     SlidersHorizontal, Menu, X, RefreshCw,
-    Lock, BookOpen, Utensils, Dumbbell, Shield
+    Lock, BookOpen, Utensils, Dumbbell, Shield, ChevronDown
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -30,9 +30,17 @@ const navItems = [
 export function Sidebar() {
     const pathname = usePathname()
     const [mobileOpen, setMobileOpen] = useState(false)
+    const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({
+        '/finances': true // Open by default
+    })
 
     // Close drawer on route change
     useEffect(() => { setMobileOpen(false) }, [pathname])
+
+    const toggleFolder = (href: string, e: React.MouseEvent) => {
+        e.preventDefault()
+        setExpandedFolders(prev => ({ ...prev, [href]: !prev[href] }))
+    }
 
     const nav = (
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
@@ -58,16 +66,25 @@ export function Sidebar() {
                         <Link
                             href={item.href}
                             className={cn(
-                                'flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-all duration-150',
+                                'flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-all duration-150 relative group',
                                 isActive ? 'bg-[#7c3aed]/10 text-[#7c3aed]' : 'text-black/50 hover:text-black/80 hover:bg-black/[0.04]'
                             )}
                         >
                             <Icon className={cn('w-4 h-4', isActive ? 'text-[#7c3aed]' : 'text-black/35')} />
                             <span className="text-[13px] font-medium">{item.label}</span>
-                            {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[#7c3aed]" />}
+
+                            {'sub' in item && item.sub && (
+                                <button
+                                    type="button"
+                                    onClick={(e) => toggleFolder(item.href, e)}
+                                    className="ml-auto p-1 rounded hover:bg-black/5 text-black/40 hover:text-black/70 transition-colors"
+                                >
+                                    <ChevronDown className={cn("w-3.5 h-3.5 transition-transform duration-200", expandedFolders[item.href] ? "rotate-180" : "")} />
+                                </button>
+                            )}
                         </Link>
 
-                        {'sub' in item && item.sub && isActive && (
+                        {'sub' in item && item.sub && expandedFolders[item.href] && (
                             <div className="ml-5 mt-0.5 space-y-0.5 border-l border-black/[0.07] pl-3">
                                 {item.sub.map((subItem) => {
                                     const SubIcon = subItem.icon

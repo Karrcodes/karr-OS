@@ -27,7 +27,7 @@ import {
     arrayMove,
     SortableContext,
     sortableKeyboardCoordinates,
-    verticalListSortingStrategy,
+    rectSortingStrategy,
 } from '@dnd-kit/sortable'
 
 export function CommandCenter() {
@@ -120,33 +120,33 @@ export function CommandCenter() {
     // Component Maps for rendering based on sort order
     const sectionComponents: Record<string, React.ReactNode> = {
         'payday': (
-            <div key="payday" id="payday">
+            <DraggableSection key="payday" id="payday" className="xl:col-span-2 h-full">
                 <PaydayAllocation pockets={pockets} goals={goals} onSuccess={() => { refetchPockets(); refetchGoals(); }} />
-            </div>
+            </DraggableSection>
         ),
         'pockets': (
-            <DraggableSection key="pockets" id="pockets" title="Pockets" desc="Your current allocations">
+            <DraggableSection key="pockets" id="pockets" title="Pockets" desc="Your current allocations" className="xl:col-span-2 h-full">
                 <PocketsGrid pockets={pockets} />
             </DraggableSection>
         ),
         'goals': (
-            <DraggableSection key="goals" id="goals" title="Savings Goals" desc="Long-term targets">
+            <DraggableSection key="goals" id="goals" title="Savings Goals" desc="Long-term targets" className="xl:col-span-2 h-full">
                 <GoalsList goals={goals} />
             </DraggableSection>
         ),
         'obligations': (
-            <DraggableSection key="obligations" id="obligations" title="Recurring Obligations" desc="30-Day projections for subs, rent, & debt">
+            <DraggableSection key="obligations" id="obligations" title="Recurring Obligations" desc="30-Day projections for subs, rent, & debt" className="xl:col-span-2 h-full">
                 <CalendarVisualizer obligations={obligations} />
             </DraggableSection>
         ),
         'analytics': (
-            <DraggableSection key="analytics" id="analytics">
+            <DraggableSection key="analytics" id="analytics" className="xl:col-span-1 h-full h-min">
                 <CashflowAnalytics />
             </DraggableSection>
         ),
         'ai': (
-            <DraggableSection key="ai" id="ai" className="!p-0 border-none bg-transparent shadow-none">
-                <div className="rounded-2xl border border-black/[0.08] bg-white p-5 shadow-sm h-full">
+            <DraggableSection key="ai" id="ai" className="xl:col-span-1 bg-transparent border-none shadow-none !p-0 h-full h-min drop-shadow-sm">
+                <div className="rounded-2xl border border-black/[0.08] bg-white p-5 h-full">
                     <KarrAIChat context={`Live Balances:\n${pockets.map(p => `- ${p.name}: £${p.balance.toFixed(2)}`).join('\n')}`} />
                 </div>
             </DraggableSection>
@@ -206,23 +206,9 @@ export function CommandCenter() {
 
                     {/* Main grid */}
                     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                        <SortableContext items={sectionOrder} strategy={verticalListSortingStrategy}>
-                            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                                {/* Left Column: 2/3 width */}
-                                <div className="xl:col-span-2 space-y-6 flex flex-col">
-                                    {sectionOrder
-                                        .filter((id: string) => ['payday', 'pockets', 'goals', 'obligations'].includes(id))
-                                        .map((id: string) => sectionComponents[id])}
-                                </div>
-
-                                {/* Right Column: 1/3 width, sticky */}
-                                <div className="xl:col-span-1 space-y-6">
-                                    <div className="sticky top-6 space-y-6 flex flex-col">
-                                        {sectionOrder
-                                            .filter((id: string) => ['analytics', 'ai'].includes(id))
-                                            .map((id: string) => sectionComponents[id])}
-                                    </div>
-                                </div>
+                        <SortableContext items={sectionOrder} strategy={rectSortingStrategy}>
+                            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start grid-flow-dense pb-12">
+                                {sectionOrder.map((id: string) => sectionComponents[id])}
                             </div>
                         </SortableContext>
                     </DndContext>
