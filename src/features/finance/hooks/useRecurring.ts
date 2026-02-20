@@ -42,6 +42,40 @@ export function useRecurring() {
         await fetchObligations()
     }
 
+    const markObligationAsPaid = async (obligation: RecurringObligation) => {
+        if (obligation.payments_left === 1) {
+            await deleteObligation(obligation.id)
+            return
+        }
+
+        const currentNextDue = new Date(obligation.next_due_date)
+        let newNextDue = new Date(currentNextDue)
+
+        if (obligation.frequency === 'monthly') {
+            const targetMonth = newNextDue.getMonth() + 1
+            newNextDue.setMonth(targetMonth)
+            if (newNextDue.getMonth() !== ((targetMonth % 12) + 12) % 12) newNextDue.setDate(0)
+        } else if (obligation.frequency === 'weekly') {
+            newNextDue.setDate(newNextDue.getDate() + 7)
+        } else if (obligation.frequency === 'bi-weekly') {
+            newNextDue.setDate(newNextDue.getDate() + 14)
+        } else if (obligation.frequency === 'yearly') {
+            const targetMonth = newNextDue.getMonth() + 12
+            newNextDue.setMonth(targetMonth)
+            if (newNextDue.getMonth() !== ((targetMonth % 12) + 12) % 12) newNextDue.setDate(0)
+        }
+
+        const updates: Partial<RecurringObligation> = {
+            next_due_date: newNextDue.toISOString().split('T')[0]
+        }
+
+        if (obligation.payments_left != null && obligation.payments_left > 1) {
+            updates.payments_left = obligation.payments_left - 1
+        }
+
+        await updateObligation(obligation.id, updates)
+    }
+
     useEffect(() => {
         fetchObligations()
     }, [fetchObligations, activeProfile])
@@ -53,6 +87,7 @@ export function useRecurring() {
         createObligation,
         updateObligation,
         deleteObligation,
+        markObligationAsPaid,
         refetch: fetchObligations
     }
 }

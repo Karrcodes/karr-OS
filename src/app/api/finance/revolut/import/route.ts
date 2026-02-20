@@ -125,9 +125,15 @@ export async function POST(req: NextRequest) {
             ...p,
             category: p.type === 'spend' ? categoriseDescription(p.description) : 'other'
         }))
+
+        // Deduplicate the array by provider_tx_id to prevent "cannot affect row a second time" error
+        const uniqueTransactions = transactions.filter((t, index, self) =>
+            index === self.findIndex((tx) => tx.provider_tx_id === t.provider_tx_id)
+        )
+
         const { error: insertError, data } = await supabase
             .from('fin_transactions')
-            .upsert(transactions, { onConflict: 'provider_tx_id' })
+            .upsert(uniqueTransactions, { onConflict: 'provider_tx_id' })
             .select()
 
         if (insertError) {

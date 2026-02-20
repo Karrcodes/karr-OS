@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Calendar as CalendarIcon, CreditCard, ChevronLeft, ChevronRight, List, LayoutGrid, Tag, X } from 'lucide-react'
+import { Calendar as CalendarIcon, CreditCard, ChevronLeft, ChevronRight, List, LayoutGrid, Tag, X, CheckCircle } from 'lucide-react'
 import type { RecurringObligation } from '../types/finance.types'
 import { getLenderLogo, countRemainingPayments } from '../utils/lenderLogos'
+import { useRecurring } from '../hooks/useRecurring'
 
 interface ProjectedPayment {
     id: string
@@ -54,6 +55,7 @@ function isDebt(obs: RecurringObligation) {
 }
 
 export function CalendarVisualizer({ obligations }: { obligations: RecurringObligation[] }) {
+    const { markObligationAsPaid } = useRecurring()
     const [view, setView] = useState<'calendar' | 'list'>('calendar')
     const [filter, setFilter] = useState<FilterMode>('all')
     const [selectedPayment, setSelectedPayment] = useState<ProjectedPayment | null>(null)
@@ -424,6 +426,16 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                                     <p className="text-[12px] text-black/60">{selectedPayment.obligation.description}</p>
                                 </div>
                             )}
+                            <button
+                                onClick={async () => {
+                                    await markObligationAsPaid(selectedPayment.obligation)
+                                    setSelectedPayment(null)
+                                }}
+                                className="w-full mt-2 flex items-center justify-center gap-2 py-3 rounded-xl bg-black text-white hover:bg-black/80 transition-colors text-[13px] font-bold shadow-sm"
+                            >
+                                <CheckCircle className="w-4 h-4" />
+                                Mark as Paid
+                            </button>
                         </div>
                     </div>
                 </div>

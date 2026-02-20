@@ -219,7 +219,7 @@ const LENDERS = [
 
 /* ─── Recurring Obligations ──────────────────────── */
 function RecurringObligationsSettings() {
-    const { obligations, loading, createObligation, updateObligation, deleteObligation } = useRecurring()
+    const { obligations, loading, createObligation, updateObligation, deleteObligation, markObligationAsPaid } = useRecurring()
     const [adding, setAdding] = useState(false)
     const [editId, setEditId] = useState<string | null>(null)
     const [form, setForm] = useState<Partial<RecurringObligation>>({
@@ -339,6 +339,7 @@ function RecurringObligationsSettings() {
                                         <span className="text-[11px] text-black/40 capitalize px-2 py-1 bg-black/[0.03] rounded-lg border border-black/[0.05]">{o.frequency}</span>
                                         <span className="text-[13px] text-red-600 font-bold w-24 text-right">£{o.amount.toFixed(2)}</span>
                                         <div className="flex items-center gap-1 ml-1">
+                                            <button onClick={() => markObligationAsPaid(o)} title="Mark as Paid" className="icon-btn text-black/20 hover:text-emerald-500"><Check className="w-4 h-4" /></button>
                                             <button onClick={() => startEdit(o)} className="icon-btn text-black/20 hover:text-black/60"><Pencil className="w-3.5 h-3.5" /></button>
                                             <button onClick={() => deleteObligation(o.id)} className="icon-btn text-black/20 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
                                         </div>
