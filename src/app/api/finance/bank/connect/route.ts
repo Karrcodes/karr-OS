@@ -8,10 +8,22 @@ export async function POST(req: NextRequest) {
         // The URL Enable Banking will redirect back to
         const redirectUrl = `${new URL(req.url).origin}/finances/callback?profile=${profile}`
 
+        const state = Math.random().toString(36).substring(7)
+        const ninetyDaysFromNow = new Date(Date.now() + 86400000 * 90).toISOString()
+
         const session = await ebRequest('/auth', {
             method: 'POST',
             body: JSON.stringify({
-                aspsp: institution_id,
+                access: {
+                    valid_until: ninetyDaysFromNow,
+                    balances: true,
+                    transactions: true
+                },
+                aspsp: {
+                    name: institution_id, // 'revolut_gb'
+                    country: 'GB'
+                },
+                state: state,
                 redirect_url: redirectUrl,
                 psu_type: 'personal'
             })
