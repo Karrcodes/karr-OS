@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Lock, Fingerprint, ShieldCheck } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { cn } from '@/lib/utils'
 
 const CORRECT_PIN = '7276'
 
@@ -11,12 +12,19 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
     const [pin, setPin] = useState('')
     const [error, setError] = useState(false)
     const [isMounted, setIsMounted] = useState(false)
+    const [isEnrolled, setIsEnrolled] = useState(false)
 
     useEffect(() => {
         setIsMounted(true)
         const unlocked = sessionStorage.getItem('karrOS_unlocked')
         if (unlocked === 'true') {
             setIsUnlocked(true)
+        }
+
+        // Check if biometric is enrolled
+        const credentialId = localStorage.getItem('karrOS_biometric_id')
+        if (credentialId) {
+            setIsEnrolled(true)
         }
     }, [])
 
@@ -43,21 +51,74 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
         sessionStorage.setItem('karrOS_unlocked', 'true')
     }
 
-    const handleBiometric = async () => {
+    const enrollBiometrics = async () => {
         if (!window.PublicKeyCredential) {
             alert('Biometrics not supported on this browser.')
             return
         }
 
         try {
-            // Simplified biometric trigger for demo/UI purposes
-            // In a real prod app, you'd use navigator.credentials.get() with a server-side challenge
-            // For KarrOS local usage, we can simulate the interaction or use a basic WebAuthn call
-            if (window.confirm('Acknowledge FaceID / TouchID request?')) {
+            const challenge = crypto.getRandomValues(new Uint8Array(32))
+            const userId = crypto.getRandomValues(new Uint8Array(16))
+
+            const credential = await navigator.credentials.create({
+                publicKey: {
+                    challenge,
+                    rp: { name: "KarrOS", id: window.location.hostname },
+                    user: {
+                        id: userId,
+                        name: "Karr User",
+                        displayName: "Karr User"
+                    },
+                    pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
+                    authenticatorSelection: {
+                        authenticatorAttachment: "platform",
+                        userVerification: "required"
+                    },
+                    timeout: 60000
+                }
+            }) as PublicKeyCredential
+
+            if (credential) {
+                // Store the credential ID to prove setup
+                localStorage.setItem('karrOS_biometric_id', btoa(String.fromCharCode(...new Uint8Array(credential.rawId))))
+                setIsEnrolled(true)
+                alert('FaceID / Biometrics enrolled successfully!')
+            }
+        } catch (err) {
+            console.error('Enrollment failed:', err)
+            alert('Setup failed. Ensure you are on a secure (HTTPS or localhost) connection and try again.')
+        }
+    }
+
+    const handleBiometric = async () => {
+        if (!isEnrolled) {
+            alert('Please enter your PIN first to setup Biometrics.')
+            return
+        }
+
+        try {
+            const challenge = crypto.getRandomValues(new Uint8Array(32))
+            const credentialId = Uint8Array.from(atob(localStorage.getItem('karrOS_biometric_id')!), c => c.charCodeAt(0))
+
+            const assertion = await navigator.credentials.get({
+                publicKey: {
+                    challenge,
+                    allowCredentials: [{
+                        id: credentialId,
+                        type: 'public-key'
+                    }],
+                    userVerification: "required",
+                    timeout: 60000
+                }
+            })
+
+            if (assertion) {
                 handleUnlock()
             }
         } catch (err) {
-            console.error('Biometric failed:', err)
+            console.error('Biometric verification failed:', err)
+            // If it's a "not found" or "canceled" error, show a less scary message
         }
     }
 
@@ -86,10 +147,10 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
                         <div
                             key={i}
                             className={`w-4 h-4 rounded-full border-2 transition-all duration-200 ${error
-                                    ? 'bg-red-500 border-red-500 scale-110'
-                                    : pin.length > i
-                                        ? 'bg-black border-black scale-110'
-                                        : 'bg-transparent border-black/10'
+                                ? 'bg-red-500 border-red-500 scale-110'
+                                : pin.length > i
+                                    ? 'bg-black border-black scale-110'
+                                    : 'bg-transparent border-black/10'
                                 }`}
                         />
                     ))}
@@ -133,13 +194,30 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
 
                 <div className="w-full h-px bg-black/[0.05] mb-8" />
 
-                <button
-                    onClick={handleBiometric}
-                    className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-black/5 border border-black/[0.05] hover:bg-black hover:text-white transition-all group active:scale-95"
-                >
-                    <Fingerprint className="w-5 h-5 text-black/40 group-hover:text-white transition-colors" />
-                    <span className="text-[13px] font-bold tracking-tight">Use Biometrics</span>
-                </button>
+                <div className="flex flex-col gap-3 w-full">
+                    <button
+                        onClick={handleBiometric}
+                        className={cn(
+                            "flex items-center justify-center gap-2 px-6 py-3 rounded-2xl transition-all group active:scale-95 w-full",
+                            isEnrolled
+                                ? "bg-black text-white hover:bg-neutral-800"
+                                : "bg-black/5 text-black/20 cursor-not-allowed"
+                        )}
+                        disabled={!isEnrolled}
+                    >
+                        <Fingerprint className="w-5 h-5" />
+                        <span className="text-[13px] font-bold tracking-tight">Use Biometrics</span>
+                    </button>
+
+                    {!isEnrolled && pin === CORRECT_PIN && (
+                        <button
+                            onClick={enrollBiometrics}
+                            className="text-[11px] font-bold text-blue-600 hover:text-blue-700 transition-colors animate-pulse"
+                        >
+                            + Setup FaceID / TouchID
+                        </button>
+                    )}
+                </div>
 
                 <p className="mt-8 text-[11px] font-bold text-black/20 uppercase tracking-[0.2em] flex items-center gap-2">
                     <ShieldCheck className="w-3 h-3" />
