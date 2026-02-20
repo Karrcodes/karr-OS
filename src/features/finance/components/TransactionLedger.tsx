@@ -1,27 +1,19 @@
 'use client'
 
+import { useState } from 'react'
 import { useTransactions } from '../hooks/useTransactions'
-import { ArrowUpRight, ArrowDownLeft, RefreshCw, Layers, Link2 } from 'lucide-react'
+import { ArrowUpRight, ArrowDownLeft, RefreshCw, Layers } from 'lucide-react'
 import { useBank } from '../hooks/useBank'
+import { RevolutImportModal } from './RevolutImportModal'
 
 export function TransactionLedger() {
     const { transactions, loading, refetch } = useTransactions()
-    const { syncTransactions, connectBank, loading: syncLoading } = useBank()
+    const { loading: syncLoading } = useBank()
+    const [isModalOpen, setIsModalOpen] = useState(false)
 
-    const handleSync = async () => {
-        try {
-            const count = await syncTransactions()
-            alert(`Synced ${count} new transactions!`)
-            refetch()
-        } catch (e: any) {
-            if (e.message.includes('No active bank connection') || e.message.includes('requisition')) {
-                if (confirm('No bank connection found. Would you like to connect your Revolut account now?')) {
-                    connectBank()
-                }
-            } else {
-                alert(`Sync failed: ${e.message}`)
-            }
-        }
+    const handleSyncSuccess = (count: number) => {
+        alert(`Successfully synced ${count} new transactions!`)
+        refetch()
     }
 
     if (loading) {
@@ -46,11 +38,16 @@ export function TransactionLedger() {
                 <div className="flex flex-col gap-2 mt-4 items-center">
                     <p className="text-[11px] text-black/25">Use the quick action button below to log a spend.</p>
                     <button
-                        onClick={() => handleSync()}
+                        onClick={() => setIsModalOpen(true)}
                         className="text-[11px] font-bold text-[#7c3aed] flex items-center gap-1.5 hover:underline"
                     >
-                        <Link2 className="w-3 h-3" /> Connect Bank Sync
+                        Connect Bank Sync
                     </button>
+                    <RevolutImportModal
+                        isOpen={isModalOpen}
+                        onClose={() => setIsModalOpen(false)}
+                        onSuccess={handleSyncSuccess}
+                    />
                 </div>
             </div>
         )
@@ -61,13 +58,18 @@ export function TransactionLedger() {
             <div className="flex items-center justify-between">
                 <h3 className="text-[11px] uppercase tracking-wider font-bold text-black/30">Recent Ledger</h3>
                 <button
-                    onClick={handleSync}
+                    onClick={() => setIsModalOpen(true)}
                     disabled={syncLoading}
                     className="flex items-center gap-1.5 text-[11px] font-bold text-[#7c3aed] bg-[#7c3aed]/10 px-2 py-1 rounded-lg hover:bg-[#7c3aed]/20 transition-colors disabled:opacity-50"
                 >
                     <RefreshCw className={`w-3 h-3 ${syncLoading ? 'animate-spin' : ''}`} />
                     {syncLoading ? 'Syncing...' : 'Sync Bank'}
                 </button>
+                <RevolutImportModal
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    onSuccess={handleSyncSuccess}
+                />
             </div>
 
             <div className="space-y-2">
