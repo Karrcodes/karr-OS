@@ -611,7 +611,7 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
                                             <div className="flex-[1.5] min-w-0">
                                                 <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">Next Payment</label>
                                                 <input type="date" value={libDate} onChange={(e) => setLibDate(e.target.value)}
-                                                    className="w-full min-w-0 max-w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-[11px] h-[46px] text-[12px] sm:text-[14px] text-black outline-none focus:border-black/40 transition-colors box-border" />
+                                                    className="w-full min-w-0 max-w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 h-[46px] text-[12px] sm:text-[14px] text-black outline-none focus:border-black/40 transition-colors box-border" />
                                             </div>
                                         </div>
 
@@ -632,7 +632,7 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
                                                 <div className={`min-w-0 ${selectedLenderId === 'currys' ? '' : 'opacity-50 grayscale hover:opacity-100 hover:grayscale-0 focus-within:opacity-100 focus-within:grayscale-0 transition-all'}`}>
                                                     <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">End Date (Optional)</label>
                                                     <input type="date" value={libEndDate} onChange={(e) => setLibEndDate(e.target.value)}
-                                                        className="w-full min-w-0 max-w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-[11px] h-[46px] text-[12px] sm:text-[14px] text-black outline-none focus:border-black/40 transition-colors box-border" />
+                                                        className="w-full min-w-0 max-w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 h-[46px] text-[12px] sm:text-[14px] text-black outline-none focus:border-black/40 transition-colors box-border" />
                                                 </div>
                                             )}
                                         </div>
@@ -654,7 +654,7 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
                                             <div className="w-full md:w-[150px] shrink-0 min-w-0">
                                                 <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">Date</label>
                                                 <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
-                                                    className="w-full min-w-0 max-w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-[11px] h-[46px] text-[12px] sm:text-[14px] font-medium text-black outline-none focus:border-black/40 transition-colors box-border" />
+                                                    className="w-full min-w-0 max-w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 h-[46px] text-[12px] sm:text-[14px] font-medium text-black outline-none focus:border-black/40 transition-colors box-border" />
                                             </div>
                                         )}
                                     </div>
