@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS public.fin_rota_overrides (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     date DATE NOT NULL,
     type TEXT NOT NULL CHECK (type IN ('overtime', 'absence', 'holiday')),
+    status TEXT NOT NULL DEFAULT 'approved' CHECK (status IN ('pending', 'approved')),
     profile TEXT NOT NULL DEFAULT 'personal',
     created_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(date, profile)
