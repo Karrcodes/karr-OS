@@ -90,7 +90,7 @@ export default function TransactionsPage() {
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 overflow-y-auto p-6 flex flex-col">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6 flex flex-col">
                 <div className="max-w-4xl mx-auto space-y-4">
                     {/* Filters & Search */}
                     <div className="bg-white p-4 rounded-3xl border border-black/[0.06] shadow-sm flex flex-col gap-3 mb-2">
@@ -190,23 +190,23 @@ export default function TransactionsPage() {
                                             </p>
                                         </div>
                                         <div className="flex items-center justify-between mt-1">
-                                            <div className="flex items-center gap-2 overflow-hidden px-1">
-                                                <p className="text-[10px] uppercase font-bold tracking-wider text-black/40 shrink-0">
+                                            <div className="flex items-center gap-2 overflow-hidden min-w-0">
+                                                <p className="text-[10px] uppercase font-bold tracking-wider text-black/40 truncate">
                                                     {t.category ? getCategoryById(t.category).label : 'Other'}
                                                 </p>
-                                                <span className="w-1 h-1 rounded-full bg-black/10 shrink-0" />
-                                                <p className="text-[11px] font-medium text-black/25 shrink-0">
-                                                    {new Date(t.date).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                <span className="w-1 h-1 rounded-full bg-black/10 flex-shrink-0" />
+                                                <p className="text-[11px] font-medium text-black/25 truncate">
+                                                    {new Date(t.date).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                                                 </p>
                                                 {t.type === 'transfer' && (
                                                     <ArrowUpRight className="w-3 h-3 text-blue-500 ml-1 shrink-0" />
                                                 )}
                                             </div>
-                                            <p className="text-[11px] font-bold text-black/40 truncate text-right ml-2 shrink-0 max-w-[120px] sm:max-w-none">
+                                            <p className="text-[11px] font-bold text-black/40 truncate text-right ml-1 shrink-0 max-w-[100px]">
                                                 {(() => {
-                                                    if (!t.pocket_id) return 'General / Unassigned'
+                                                    if (!t.pocket_id) return 'Unassigned'
                                                     const pocket = pockets.find(p => p.id === t.pocket_id)
-                                                    return pocket ? pocket.name : 'Unknown Pocket'
+                                                    return pocket ? pocket.name : 'Unknown'
                                                 })()}
                                             </p>
                                         </div>
