@@ -97,11 +97,13 @@ Return ONLY a valid JSON object with the following keys, no markdown, no explana
 
         // AI amount always wins over body amount. Body amount is only used if AI completely failed.
         const finalAmount = aiAmount ?? (amount !== undefined && !isNaN(parseFloat(amount)) && parseFloat(amount) > 0 ? parseFloat(amount) : null)
-        if (!finalAmount) {
+        const resolvedAmount = aiAmount || (amount !== undefined && !isNaN(parseFloat(amount)) && parseFloat(amount) > 0 ? parseFloat(amount) : 0.01)
+
+        if (resolvedAmount === 0.01) {
             console.warn('Webhook: Could not determine transaction amount. Body:', JSON.stringify(body))
         }
-        const resolvedAmount = finalAmount || 0.01 // Use near-zero rather than £1 to make bad parses obvious
-        const finalMerchant = merchant || 'Test Transaction (Shortcut Play Button)'
+
+        const finalMerchant = merchant || 'Test Transaction'
 
         // Fallback pocket specifically requested by the user for testing
         if (!parsedPocketName) {
@@ -197,18 +199,37 @@ Return ONLY a valid JSON object with the following keys, no markdown, no explana
         }
 
         // 5. Insert into Supabase
-        const { data, error } = await supabase
+        const { data, error: insertError } = await supabase
             .from('fin_transactions')
             .insert(transactionData)
             .select()
 
-        if (error) {
-            console.error('Webhook DB Insert Error:', error)
-            return NextResponse.json({ error: 'Database insertion failed', details: error.message }, { status: 500 })
+        if (insertError) {
+            console.error('Webhook DB Insert Error:', insertError.message, insertError.details)
+            return NextResponse.json({
+                error: 'Database insertion failed',
+                details: insertError.message,
+                debug: {
+                    parsedAmount: resolvedAmount,
+                    parsedMerchant: finalMerchant,
+                    pocketId: resolvedPocketId,
+                    profile: 'personal'
+                }
+            }, { status: 500 })
         }
 
+        console.log('Webhook: Successfully inserted transaction:', data?.[0]?.id)
+
         // 5. Success Return
-        return NextResponse.json({ success: true, transaction: data[0] }, { status: 200 })
+        return NextResponse.json({
+            success: true,
+            transaction: data?.[0],
+            debug: {
+                aiParsed: parsedPocketName,
+                resolvedPocketId: resolvedPocketId,
+                amount: resolvedAmount
+            }
+        }, { status: 200 })
 
     } catch (err: any) {
         console.error('Webhook Error:', err)
