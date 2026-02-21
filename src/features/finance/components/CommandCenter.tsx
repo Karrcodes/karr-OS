@@ -78,7 +78,7 @@ export function CommandCenter() {
             {/* Page Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between px-6 py-5 border-b border-black/[0.06] bg-white flex-shrink-0 shadow-sm z-10 gap-4 md:gap-0">
                 <div>
-                    <h1 className="text-[22px] font-bold text-black tracking-tight">Command Center</h1>
+                    <h1 className="text-[22px] font-bold text-black tracking-tight">Finance Dashboard</h1>
                     <p className="text-[12px] text-black/35 mt-0.5">Finance Module · {activeProfile === 'personal' ? 'Personal' : 'Studio Karrtesian'}</p>
                 </div>
                 <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
@@ -107,13 +107,15 @@ export function CommandCenter() {
                             onClick={() => setProfile('personal')}
                             className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeProfile === 'personal' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
                         >
-                            Personal
+                            <span className="hidden md:inline">Personal</span>
+                            <span className="md:hidden">P</span>
                         </button>
                         <button
                             onClick={() => setProfile('business')}
                             className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeProfile === 'business' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
                         >
-                            Business
+                            <span className="hidden md:inline">Business</span>
+                            <span className="md:hidden">B</span>
                         </button>
                     </div>
                 </div>
@@ -121,7 +123,7 @@ export function CommandCenter() {
 
             <div className="flex-1 overflow-y-auto bg-[#fafafa]">
                 <div className="p-6 pb-2 select-none flex items-center gap-2 text-[13px] font-bold text-black/40 uppercase tracking-wider">
-                    Finance Dashboard
+                    Overview
                 </div>
                 <div className="px-6 pb-6 space-y-8">
                     {/* Summary Cards */}
@@ -224,7 +226,7 @@ export function CommandCenter() {
 
 function SummaryCard({ label, value, icon, color, sub, tooltip }: { label: string; value: string; icon: React.ReactNode; color: string; sub?: string; tooltip?: string | React.ReactNode }) {
     return (
-        <div className="rounded-xl border border-black/[0.07] bg-white p-4 hover:bg-black/[0.01] transition-colors shadow-sm">
+        <div className="rounded-xl border border-black/[0.07] bg-white p-4 hover:bg-black/[0.01] transition-colors shadow-sm flex flex-col h-full">
             <div className="flex flex-col gap-2 mb-3">
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color}12` }}>
                     <span style={{ color }}>{icon}</span>
@@ -234,8 +236,10 @@ function SummaryCard({ label, value, icon, color, sub, tooltip }: { label: strin
                     {tooltip && <InfoTooltip content={tooltip} side="bottom" />}
                 </div>
             </div>
-            <p className="text-2xl font-bold text-black tracking-tight privacy-blur">{value}</p>
-            {sub && <p className="text-[11px] text-black/35 mt-1">{sub}</p>}
+            <div className="mt-auto pt-2">
+                <p className="text-2xl font-bold text-black tracking-tight privacy-blur">{value}</p>
+                {sub && <p className="text-[11px] text-black/35 mt-1">{sub}</p>}
+            </div>
         </div>
     )
 }
