@@ -126,7 +126,8 @@ export function ProjectionsAnalytics() {
         }
 
         // wdFR=1 is a specific flag to trigger pre-fill logic in modern MS Forms
-        const baseUrl = `https://forms.office.com/Pages/ResponsePage.aspx?id=${formId}&wdFR=1&answers=${encodeURIComponent(JSON.stringify(answers))}`
+        // 'Answers' must be capitalized for Customer Voice / Forms Pro engines.
+        const baseUrl = `https://forms.office.com/Pages/ResponsePage.aspx?id=${formId}&wdFR=1&Answers=${encodeURIComponent(JSON.stringify(answers))}`
 
         // Save Holidays to DB before redirecting
         const holDates = Object.keys(dayOverrides).filter(k => dayOverrides[k] === 'holiday')
