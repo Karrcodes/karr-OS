@@ -15,6 +15,7 @@ import {
 import { cn } from '@/lib/utils'
 import { Reorder } from 'framer-motion'
 import { useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
+import { useSettings } from '@/features/finance/hooks/useSettings'
 
 const navItems = [
     { label: 'Control Centre', href: '/system/control-centre', icon: LayoutDashboard },
@@ -112,6 +113,7 @@ export function Sidebar() {
     const [orderedTabs, setOrderedTabs] = useState(navItems.map(item => item.label))
     const [orderedFinanceSubTabs, setOrderedFinanceSubTabs] = useState<string[]>([])
     const [isMounted, setIsMounted] = useState(false)
+    const { settings, setSetting, loading: settingsLoading } = useSettings()
 
     // Touch handlers for swipe to close on mobile
     const [touchStartX, setTouchStartX] = useState<number | null>(null)
@@ -168,14 +170,56 @@ export function Sidebar() {
         }
     }, [])
 
+    // Sync from Supabase once settings are loaded
+    useEffect(() => {
+        if (settingsLoading) return
+
+        const dbOrder = settings['karrOS_sidebar_order']
+        if (dbOrder) {
+            try {
+                const parsed = JSON.parse(dbOrder)
+                const existingLabels = navItems.map(i => i.label)
+                const validParsed = parsed.filter((label: string) => existingLabels.includes(label))
+                const missing = existingLabels.filter(label => !validParsed.includes(label))
+                const finalOrder = [...validParsed, ...missing]
+
+                // Only update if different
+                if (JSON.stringify(finalOrder) !== localStorage.getItem('karrOS_sidebar_order')) {
+                    setOrderedTabs(finalOrder)
+                    localStorage.setItem('karrOS_sidebar_order', JSON.stringify(finalOrder))
+                }
+            } catch (e) { }
+        }
+
+        const dbSubOrder = settings['karrOS_finance_subtabs_order']
+        const financeItem = navItems.find(i => i.label === 'Finances')
+        const defaultSubLabels = financeItem?.sub?.map(s => s.label) || []
+
+        if (dbSubOrder) {
+            try {
+                const parsed = JSON.parse(dbSubOrder)
+                const validParsed = parsed.filter((label: string) => defaultSubLabels.includes(label))
+                const missing = defaultSubLabels.filter(label => !validParsed.includes(label))
+                const finalSubOrder = [...validParsed, ...missing]
+
+                if (JSON.stringify(finalSubOrder) !== localStorage.getItem('karrOS_finance_subtabs_order')) {
+                    setOrderedFinanceSubTabs(finalSubOrder)
+                    localStorage.setItem('karrOS_finance_subtabs_order', JSON.stringify(finalSubOrder))
+                }
+            } catch (e) { }
+        }
+    }, [settingsLoading, settings])
+
     const handleReorder = (newOrder: string[]) => {
         setOrderedTabs(newOrder)
         localStorage.setItem('karrOS_sidebar_order', JSON.stringify(newOrder))
+        setSetting('karrOS_sidebar_order', JSON.stringify(newOrder))
     }
 
     const handleSubReorder = (newOrder: string[]) => {
         setOrderedFinanceSubTabs(newOrder)
         localStorage.setItem('karrOS_finance_subtabs_order', JSON.stringify(newOrder))
+        setSetting('karrOS_finance_subtabs_order', JSON.stringify(newOrder))
     }
 
     // Close drawer on route change
@@ -238,34 +282,65 @@ export function Sidebar() {
 
                         {'sub' in item && item.sub && expandedFolders[item.href] && label === 'Finances' && (
                             <div className="ml-5 mt-0.5 space-y-0.5 border-l border-black/[0.07] pl-3">
-                                <Reorder.Group axis="y" values={orderedFinanceSubTabs} onReorder={handleSubReorder} className="list-none m-0 p-0 space-y-0.5">
-                                    {orderedFinanceSubTabs.map((subLabel) => {
-                                        const subItem = item.sub?.find(s => s.label === subLabel)
-                                        if (!subItem) return null
-                                        const SubIcon = subItem.icon
-                                        const subActive = pathname === subItem.href
-                                        return (
-                                            <Reorder.Item key={subLabel} value={subLabel} className="cursor-grab active:cursor-grabbing">
-                                                <Link
-                                                    href={subItem.href}
-                                                    draggable={false}
-                                                    className={cn(
-                                                        'flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] transition-colors group/sub',
-                                                        subActive ? 'text-black bg-black/5 font-semibold' : 'text-black/35 hover:text-black/60'
-                                                    )}
-                                                >
-                                                    <SubIcon className="w-3 h-3 shrink-0" />
-                                                    <span className="flex-1 truncate">{subItem.label}</span>
-                                                    <div className="flex items-center gap-1">
-                                                        {(subItem as any).caps?.map((c: string) => (
-                                                            <CapBadge key={c} cap={c as 'P' | 'B'} />
-                                                        ))}
-                                                    </div>
-                                                </Link>
-                                            </Reorder.Item>
-                                        )
-                                    })}
-                                </Reorder.Group>
+                                {isReorderable ? (
+                                    <Reorder.Group axis="y" values={orderedFinanceSubTabs} onReorder={handleSubReorder} className="list-none m-0 p-0 space-y-0.5">
+                                        {orderedFinanceSubTabs.map((subLabel) => {
+                                            const subItem = item.sub?.find(s => s.label === subLabel)
+                                            if (!subItem) return null
+                                            const SubIcon = subItem.icon
+                                            const subActive = pathname === subItem.href
+                                            return (
+                                                <Reorder.Item key={subLabel} value={subLabel} className="cursor-grab active:cursor-grabbing">
+                                                    <Link
+                                                        href={subItem.href}
+                                                        draggable={false}
+                                                        className={cn(
+                                                            'flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] transition-colors group/sub',
+                                                            subActive ? 'text-black bg-black/5 font-semibold' : 'text-black/35 hover:text-black/60'
+                                                        )}
+                                                    >
+                                                        <SubIcon className="w-3 h-3 shrink-0" />
+                                                        <span className="flex-1 truncate">{subItem.label}</span>
+                                                        <div className="flex items-center gap-1">
+                                                            {(subItem as any).caps?.map((c: string) => (
+                                                                <CapBadge key={c} cap={c as 'P' | 'B'} />
+                                                            ))}
+                                                        </div>
+                                                    </Link>
+                                                </Reorder.Item>
+                                            )
+                                        })}
+                                    </Reorder.Group>
+                                ) : (
+                                    <div className="list-none m-0 p-0 space-y-0.5">
+                                        {orderedFinanceSubTabs.map((subLabel) => {
+                                            const subItem = item.sub?.find(s => s.label === subLabel)
+                                            if (!subItem) return null
+                                            const SubIcon = subItem.icon
+                                            const subActive = pathname === subItem.href
+                                            return (
+                                                <div key={subLabel}>
+                                                    <Link
+                                                        href={subItem.href}
+                                                        draggable={false}
+                                                        className={cn(
+                                                            'flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] transition-colors group/sub',
+                                                            subActive ? 'text-black bg-black/5 font-semibold' : 'text-black/35 hover:text-black/60'
+                                                        )}
+                                                    >
+                                                        <SubIcon className="w-3 h-3 shrink-0" />
+                                                        <span className="flex-1 truncate">{subItem.label}</span>
+                                                        <div className="flex items-center gap-1">
+                                                            {(subItem as any).caps?.map((c: string) => (
+                                                                <CapBadge key={c} cap={c as 'P' | 'B'} />
+                                                            ))}
+                                                        </div>
+                                                    </Link>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -312,13 +387,19 @@ export function Sidebar() {
             return <div key={item.label}>{content}</div>
         })
 
-    const nav = (
+    const renderNav = (isMobile: boolean) => (
         <nav className="flex-1 px-3 py-4 overflow-y-auto">
             <p className="text-[9px] tracking-[0.2em] text-black/25 uppercase font-semibold px-2 mb-3">Modules</p>
             {isMounted ? (
-                <Reorder.Group axis="y" values={orderedTabs} onReorder={handleReorder} className="space-y-0.5 list-none m-0 p-0">
-                    {renderContent(orderedTabs, true)}
-                </Reorder.Group>
+                !isMobile ? (
+                    <Reorder.Group axis="y" values={orderedTabs} onReorder={handleReorder} className="space-y-0.5 list-none m-0 p-0">
+                        {renderContent(orderedTabs, true)}
+                    </Reorder.Group>
+                ) : (
+                    <div className="space-y-0.5">
+                        {renderContent(orderedTabs, false)}
+                    </div>
+                )
             ) : (
                 <div className="space-y-0.5">
                     {renderContent(navItems.map(i => i.label), false)}
@@ -336,7 +417,7 @@ export function Sidebar() {
                         <Image src="/karros-logo.png.jpeg" alt="KarrOS" width={160} height={40} priority className="h-10 w-auto object-contain cursor-pointer" />
                     </Link>
                 </div>
-                {nav}
+                {renderNav(false)}
 
                 {/* Version Indicator */}
                 <div className="px-5 py-3 border-t border-black/[0.03]">
@@ -400,7 +481,7 @@ export function Sidebar() {
                                 <X className="w-4 h-4 text-black/40" />
                             </button>
                         </div>
-                        {nav}
+                        {renderNav(true)}
                         <ProfileMenu />
                     </aside>
                 </div>
