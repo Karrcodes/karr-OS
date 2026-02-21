@@ -526,7 +526,7 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
                                 <div>
                                     <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">Amount (£)</label>
                                     <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00"
-                                        className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-3 text-xl font-bold text-black placeholder-black/20 outline-none focus:border-black/40 transition-colors" />
+                                        className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 h-[46px] text-xl font-bold text-black placeholder-black/20 outline-none focus:border-black/40 transition-colors box-border" />
                                 </div>
 
                                 {activeTab !== 'income' && activeTab !== 'liability' && (
@@ -535,7 +535,7 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
                                             {activeTab === 'transfer' ? 'From' : 'Source'}
                                         </label>
                                         <select value={selectedPocket} onChange={(e) => setSelectedPocket(e.target.value)}
-                                            className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-3 text-[14px] text-black outline-none focus:border-black/40 appearance-none">
+                                            className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 h-[46px] text-[14px] text-black outline-none focus:border-black/40 appearance-none box-border">
                                             <option value="">Select source…</option>
                                             <optgroup label="Pockets">
                                                 {pockets.map((p) => <option key={p.id} value={p.id}>{p.name} — £{p.balance?.toFixed(2) ?? '0.00'}</option>)}
@@ -553,7 +553,7 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
                                     <div>
                                         <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">To</label>
                                         <select value={toPocket} onChange={(e) => setToPocket(e.target.value)}
-                                            className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-3 text-[14px] text-black outline-none focus:border-black/40 appearance-none">
+                                            className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 h-[46px] text-[14px] text-black outline-none focus:border-black/40 appearance-none box-border">
                                             <option value="">Select destination…</option>
                                             <optgroup label="Pockets">
                                                 {pockets.filter((p) => p.id !== selectedPocket).map((p) => <option key={p.id} value={p.id}>{p.name} — £{p.balance?.toFixed(2) ?? '0.00'}</option>)}
@@ -579,21 +579,21 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
                                                             setLibName(l.id === 'other' ? '' : l.name)
                                                             setLibEmoji(l.emoji)
                                                         }}
-                                                        className={`flex items-center gap-2 p-2 rounded-xl border transition-all ${selectedLenderId === l.id ? 'bg-white border-black shadow-[0_2px_10px_rgba(124,58,237,0.1)] ring-1 ring-black/20' : 'bg-black/[0.03] border-black/[0.05] hover:border-black/[0.15] hover:bg-black/[0.05]'}`}>
+                                                        className={`flex items-center gap-2 px-3 h-[46px] rounded-xl border transition-all box-border overflow-hidden ${selectedLenderId === l.id ? 'bg-white border-black shadow-[0_2px_10px_rgba(124,58,237,0.1)] ring-1 ring-black/20' : 'bg-black/[0.03] border-black/[0.05] hover:border-black/[0.15] hover:bg-black/[0.05]'}`}>
                                                         {getLenderLogo(l.name) ? (
-                                                            <div className="w-6 h-6 rounded bg-white flex items-center justify-center overflow-hidden flex-shrink-0">
+                                                            <div className="w-5 h-5 rounded bg-white flex items-center justify-center overflow-hidden flex-shrink-0">
                                                                 <img src={getLenderLogo(l.name)!} alt={l.name} className="w-full h-full object-contain" />
                                                             </div>
                                                         ) : (
                                                             <span className="text-lg leading-none">{l.emoji}</span>
                                                         )}
-                                                        <span className="text-[11px] font-bold text-black/70 tracking-tight">{l.name}</span>
+                                                        <span className="text-[12px] font-bold text-black/70 tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">{l.name}</span>
                                                     </button>
                                                 ))}
                                             </div>
                                             {selectedLenderId === 'other' && (
                                                 <input value={libName} onChange={(e) => setLibName(e.target.value)} placeholder="e.g. Netflix, Gym"
-                                                    className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-3 text-[14px] text-black outline-none focus:border-black/40 transition-colors" />
+                                                    className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 h-[46px] text-[14px] text-black outline-none focus:border-black/40 transition-colors box-border" />
                                             )}
                                         </div>
 
@@ -601,7 +601,7 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
                                             <div className="flex-1 min-w-0">
                                                 <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">Frequency</label>
                                                 <select value={libFreq} onChange={(e) => setLibFreq(e.target.value as any)}
-                                                    className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-3 text-[14px] text-black outline-none focus:border-black/40 appearance-none">
+                                                    className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 h-[46px] text-[14px] text-black outline-none focus:border-black/40 appearance-none box-border">
                                                     <option value="weekly">Weekly</option>
                                                     <option value="bi-weekly">Bi-weekly</option>
                                                     <option value="monthly">Monthly</option>
@@ -611,7 +611,7 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
                                             <div className="flex-[1.5] min-w-0">
                                                 <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">Next Payment</label>
                                                 <input type="date" value={libDate} onChange={(e) => setLibDate(e.target.value)}
-                                                    className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-3 text-[14px] text-black outline-none focus:border-black/40 transition-colors box-border" />
+                                                    className="w-full min-w-0 max-w-full appearance-none block bg-black/[0.03] border border-black/[0.08] rounded-xl px-2 h-[46px] text-[12px] sm:text-[14px] text-black outline-none focus:border-black/40 transition-colors box-border" />
                                             </div>
                                         </div>
 
@@ -619,20 +619,20 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
                                             <div>
                                                 <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">Description / Note</label>
                                                 <input value={libDesc} onChange={(e) => setLibDesc(e.target.value)} placeholder="e.g. Monitor, Deliveroo"
-                                                    className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-3 text-[14px] text-black outline-none focus:border-black/40 transition-colors" />
+                                                    className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 h-[46px] text-[14px] text-black outline-none focus:border-black/40 transition-colors box-border" />
                                             </div>
 
                                             {(selectedLenderId === 'klarna' || selectedLenderId === 'clearpay') ? (
                                                 <div>
                                                     <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">Payments Left</label>
                                                     <input type="number" value={libPaymentsLeft} onChange={(e) => setLibPaymentsLeft(e.target.value)} placeholder="e.g. 3"
-                                                        className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-3 text-[14px] text-black outline-none focus:border-black/40 transition-colors" />
+                                                        className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 h-[46px] text-[14px] text-black outline-none focus:border-black/40 transition-colors box-border" />
                                                 </div>
                                             ) : (
                                                 <div className={`min-w-0 ${selectedLenderId === 'currys' ? '' : 'opacity-50 grayscale hover:opacity-100 hover:grayscale-0 focus-within:opacity-100 focus-within:grayscale-0 transition-all'}`}>
                                                     <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">End Date (Optional)</label>
                                                     <input type="date" value={libEndDate} onChange={(e) => setLibEndDate(e.target.value)}
-                                                        className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-3 text-[14px] text-black outline-none focus:border-black/40 transition-colors box-border" />
+                                                        className="w-full min-w-0 max-w-full appearance-none block bg-black/[0.03] border border-black/[0.08] rounded-xl px-2 h-[46px] text-[12px] sm:text-[14px] text-black outline-none focus:border-black/40 transition-colors box-border" />
                                                 </div>
                                             )}
                                         </div>
@@ -647,14 +647,14 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
                                             </label>
                                             <input value={description} onChange={(e) => setDescription(e.target.value)}
                                                 placeholder={activeTab === 'income' ? 'Salary' : 'What was this for?'}
-                                                className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-3 text-[14px] text-black placeholder-black/20 outline-none focus:border-black/40 transition-colors" />
+                                                className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 h-[46px] text-[14px] text-black placeholder-black/20 outline-none focus:border-black/40 transition-colors box-border" />
                                         </div>
 
                                         {activeTab === 'income' && (
                                             <div className="w-full md:w-[150px] shrink-0 min-w-0">
                                                 <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">Date</label>
                                                 <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
-                                                    className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-3 text-[14px] font-medium text-black outline-none focus:border-black/40 transition-colors box-border" />
+                                                    className="w-full min-w-0 max-w-full appearance-none block bg-black/[0.03] border border-black/[0.08] rounded-xl px-2 h-[46px] text-[12px] sm:text-[14px] font-medium text-black outline-none focus:border-black/40 transition-colors box-border" />
                                             </div>
                                         )}
                                     </div>
