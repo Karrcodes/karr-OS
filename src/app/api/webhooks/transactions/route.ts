@@ -25,6 +25,7 @@ export async function POST(request: Request) {
         let { amount, merchant, date, notificationText } = body
         let parsedPocketName = null
         let parsedCategory = 'other'
+        let aiAmount: number | null = null
 
         // If the user sends the raw iOS notification text, parse it automatically via AI
         // Example: "Revolut\nTesco Express, Cardiff Wales\n£1.35"
@@ -51,27 +52,45 @@ Return ONLY a valid JSON object with the following keys, no markdown, no explana
   "target_pocket": string (must be exactly "Daily Essentials 🍔" or "Fun 🛍️"),
   "category": string (one of the allowed categories)
 }`
+                console.log('Webhook notification text received:', notificationText)
+
                 const result = await geminiModel.generateContent(prompt)
                 const text = result.response.text().trim()
                 const cleaned = text.replace(/```json?/g, '').replace(/```/g, '').trim()
                 const parsed = JSON.parse(cleaned)
 
-                if (parsed.amount) amount = typeof parsed.amount === 'string' ? parseFloat(parsed.amount.replace(/[^0-9.]/g, '')) : parsed.amount
+                console.log('Webhook AI parsed result:', parsed)
+
+                // Always use AI amount if it returned a positive number (never fallback to body amount)
+                if (parsed.amount != null && !isNaN(Number(parsed.amount)) && Number(parsed.amount) > 0) {
+                    aiAmount = typeof parsed.amount === 'string'
+                        ? parseFloat(parsed.amount.replace(/[^0-9.]/g, ''))
+                        : Number(parsed.amount)
+                }
                 if (parsed.merchant) merchant = parsed.merchant
                 if (parsed.target_pocket) parsedPocketName = parsed.target_pocket
                 if (parsed.category) parsedCategory = parsed.category.toLowerCase()
 
             } catch (aiError) {
                 console.error('Webhook AI Parsing Error:', aiError)
-                // Fallback extraction if AI fails
-                const match = notificationText.match(/[£$€]?([0-9.,]+)/)
-                if (match) amount = amount || parseFloat(match[1].replace(',', ''))
+                // Fallback: try to extract a currency amount from the notification text
+                // Look for £/$ OR just a number with a decimal point at the ending
+                const match = notificationText.match(/[£$€]?\s*([0-9]+[.,][0-9]{2})/) || notificationText.match(/([0-9]+[.,][0-9]{2})/)
+                if (match) {
+                    const extracted = parseFloat(match[1].replace(',', '.'))
+                    if (!isNaN(extracted) && extracted > 0) aiAmount = extracted
+                    console.log('Webhook: Regex fallback extracted amount:', aiAmount)
+                }
                 merchant = merchant || notificationText.split('\n')[1] || 'Unknown Merchant'
             }
         }
 
-        // Fallback to mock data if fields are missing
-        const finalAmount = amount !== undefined && !isNaN(parseFloat(amount)) ? parseFloat(amount) : 1.00
+        // AI amount always wins over body amount. Body amount is only used if AI completely failed.
+        const finalAmount = aiAmount ?? (amount !== undefined && !isNaN(parseFloat(amount)) && parseFloat(amount) > 0 ? parseFloat(amount) : null)
+        if (!finalAmount) {
+            console.warn('Webhook: Could not determine transaction amount. Body:', JSON.stringify(body))
+        }
+        const resolvedAmount = finalAmount || 0.01 // Use near-zero rather than £1 to make bad parses obvious
         const finalMerchant = merchant || 'Test Transaction (Shortcut Play Button)'
 
         // Fallback pocket specifically requested by the user for testing
@@ -106,7 +125,7 @@ Return ONLY a valid JSON object with the following keys, no markdown, no explana
                 resolvedPocketId = pocketData.id
 
                 // 3.5 Deduct Balance
-                const newBalance = Number(pocketData.balance) - Number(finalAmount)
+                const newBalance = Number(pocketData.balance) - Number(resolvedAmount)
                 const { error: updateError } = await supabase
                     .from('fin_pockets')
                     .update({ balance: newBalance })
@@ -128,7 +147,7 @@ Return ONLY a valid JSON object with the following keys, no markdown, no explana
         // 'pocket_id' -> resolved ID or null
         // 'profile' -> 'personal'
         const transactionData = {
-            amount: Number(finalAmount),
+            amount: Number(resolvedAmount),
             description: finalMerchant,
             date: transDate.toISOString(),
             type: 'spend',
