@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS public.sys_roadmap (
     content TEXT NOT NULL,
     type TEXT NOT NULL CHECK (type IN ('future', 'major_update')),
     version TEXT, -- Only for major_update
+    is_completed BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

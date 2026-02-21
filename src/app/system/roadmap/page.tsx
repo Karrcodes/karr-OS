@@ -1,12 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowLeft, Rocket, Sparkles, Clock, Plus, Trash2, History } from 'lucide-react'
+import { ArrowLeft, Rocket, Sparkles, Clock, Plus, Trash2, History, Check } from 'lucide-react'
 import { useRoadmap } from '@/features/system/hooks/useRoadmap'
 import { cn } from '@/lib/utils'
 
 export default function SystemRoadmapPage() {
-    const { items, loading, addRoadmapItem, deleteRoadmapItem } = useRoadmap()
+    const { items, loading, addRoadmapItem, toggleRoadmapItem, deleteRoadmapItem } = useRoadmap()
     const [newFeature, setNewFeature] = useState('')
     const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -21,7 +21,8 @@ export default function SystemRoadmapPage() {
         try {
             await addRoadmapItem({
                 content: newFeature.trim(),
-                type: 'future'
+                type: 'future',
+                is_completed: false
             })
             setNewFeature('')
         } catch (err) {
@@ -87,10 +88,23 @@ export default function SystemRoadmapPage() {
                                 <div key={item.id} className="bg-white p-5 rounded-2xl border border-black/[0.06] shadow-sm group relative">
                                     <div className="flex items-start justify-between gap-4">
                                         <div className="flex items-start gap-3">
-                                            <div className="w-5 h-5 rounded-full bg-orange-50 flex items-center justify-center shrink-0 mt-0.5">
-                                                <Sparkles className="w-2.5 h-2.5 text-orange-400" />
-                                            </div>
-                                            <p className="text-[13px] text-black/70 font-medium leading-relaxed">{item.content}</p>
+                                            <button
+                                                onClick={() => toggleRoadmapItem(item.id, !item.is_completed)}
+                                                className={cn(
+                                                    "w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-1 transition-all",
+                                                    item.is_completed
+                                                        ? "bg-emerald-100 text-emerald-600 border border-emerald-200"
+                                                        : "bg-orange-50 text-orange-400 border border-orange-100 hover:border-orange-300"
+                                                )}
+                                            >
+                                                {item.is_completed ? <Check className="w-3 h-3" /> : <Sparkles className="w-2.5 h-2.5" />}
+                                            </button>
+                                            <p className={cn(
+                                                "text-[13px] font-medium leading-relaxed transition-all",
+                                                item.is_completed ? "text-black/30 line-through" : "text-black/70"
+                                            )}>
+                                                {item.content}
+                                            </p>
                                         </div>
                                         <button
                                             onClick={() => deleteRoadmapItem(item.id)}
@@ -100,7 +114,12 @@ export default function SystemRoadmapPage() {
                                         </button>
                                     </div>
                                     <div className="mt-4 pt-4 border-t border-black/[0.03] flex items-center justify-between">
-                                        <span className="text-[10px] font-bold text-black/20 uppercase tracking-widest">Planned</span>
+                                        <span className={cn(
+                                            "text-[10px] font-bold uppercase tracking-widest",
+                                            item.is_completed ? "text-emerald-500/60" : "text-black/20"
+                                        )}>
+                                            {item.is_completed ? 'Completed' : 'Planned'}
+                                        </span>
                                         <span className="text-[10px] text-black/20">{new Date(item.created_at).toLocaleDateString('en-GB')}</span>
                                     </div>
                                 </div>

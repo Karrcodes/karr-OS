@@ -110,7 +110,7 @@ export default function FinanceAnalyticsPage() {
                                                 <div className="flex items-center gap-2 text-[11px] font-bold text-black/30 uppercase tracking-widest mb-3">
                                                     <Wallet className="w-3.5 h-3.5" /> Avg. Take Home
                                                 </div>
-                                                <div className="text-[24px] font-bold text-black group flex items-baseline gap-1">
+                                                <div className="text-[24px] font-bold text-black group flex items-baseline gap-1 privacy-blur">
                                                     <span className="text-[18px] opacity-30">£</span>
                                                     {salaryStats.avgNet.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                 </div>
@@ -120,7 +120,7 @@ export default function FinanceAnalyticsPage() {
                                                 <div className="flex items-center gap-2 text-[11px] font-bold text-black/30 uppercase tracking-widest mb-3">
                                                     <TrendingUp className="w-3.5 h-3.5" /> Peak Month
                                                 </div>
-                                                <div className="text-[24px] font-bold text-[#059669] flex items-baseline gap-1">
+                                                <div className="text-[24px] font-bold text-[#059669] flex items-baseline gap-1 privacy-blur">
                                                     <span className="text-[18px] opacity-30">£</span>
                                                     {salaryStats.highestNet.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                 </div>
@@ -130,7 +130,7 @@ export default function FinanceAnalyticsPage() {
                                                 <div className="flex items-center gap-2 text-[11px] font-bold text-black/30 uppercase tracking-widest mb-3">
                                                     <Receipt className="w-3.5 h-3.5" /> Total Tax Paid
                                                 </div>
-                                                <div className="text-[24px] font-bold text-[#dc2626] flex items-baseline gap-1">
+                                                <div className="text-[24px] font-bold text-[#dc2626] flex items-baseline gap-1 privacy-blur">
                                                     <span className="text-[18px] opacity-30">£</span>
                                                     {salaryStats.totalTax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                 </div>
@@ -140,7 +140,7 @@ export default function FinanceAnalyticsPage() {
                                                 <div className="flex items-center gap-2 text-[11px] font-bold text-black/30 uppercase tracking-widest mb-3">
                                                     <PieChart className="w-3.5 h-3.5" /> Pension Savings
                                                 </div>
-                                                <div className="text-[24px] font-bold text-black flex items-baseline gap-1">
+                                                <div className="text-[24px] font-bold text-black flex items-baseline gap-1 privacy-blur">
                                                     <span className="text-[18px] opacity-30">£</span>
                                                     {salaryStats.totalPension.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                 </div>
@@ -165,7 +165,7 @@ export default function FinanceAnalyticsPage() {
                                                                         className="w-full max-w-[24px] bg-[#059669]/80 rounded-t-md relative z-10 group-hover:bg-[#059669] transition-all"
                                                                         style={{ height: `${(m.net / max) * 100}%` }}
                                                                     >
-                                                                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20 font-bold">
+                                                                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20 font-bold privacy-blur">
                                                                             £{m.net.toFixed(0)}
                                                                         </div>
                                                                     </div>
@@ -231,21 +231,21 @@ export default function FinanceAnalyticsPage() {
                                                             <div className="flex items-center gap-4 mt-1.5 overflow-x-auto no-scrollbar py-0.5">
                                                                 <div className="flex items-center gap-1.5 whitespace-nowrap">
                                                                     <span className="text-[9px] font-bold text-black/25 uppercase tracking-wider">Gross</span>
-                                                                    <span className="text-[12px] font-bold text-black/40">£{p.gross_pay?.toFixed(2) || '---'}</span>
+                                                                    <span className="text-[12px] font-bold text-black/40 privacy-blur">£{p.gross_pay?.toFixed(2) || '---'}</span>
                                                                 </div>
                                                                 <div className="flex items-center gap-1.5 whitespace-nowrap">
                                                                     <span className="text-[9px] font-bold text-[#dc2626]/40 uppercase tracking-wider">Tax</span>
-                                                                    <span className="text-[12px] font-bold text-[#dc2626]/60">£{p.tax_paid?.toFixed(2) || '---'}</span>
+                                                                    <span className="text-[12px] font-bold text-[#dc2626]/60 privacy-blur">£{p.tax_paid?.toFixed(2) || '---'}</span>
                                                                 </div>
                                                                 <div className="flex items-center gap-1.5 whitespace-nowrap">
                                                                     <span className="text-[9px] font-bold text-black/40 uppercase tracking-wider">Pension</span>
-                                                                    <span className="text-[12px] font-bold text-black/60">£{p.pension_contributions?.toFixed(2) || '---'}</span>
+                                                                    <span className="text-[12px] font-bold text-black/60 privacy-blur">£{p.pension_contributions?.toFixed(2) || '---'}</span>
                                                                 </div>
                                                             </div>
                                                         </div>
 
                                                         <div className="text-right flex flex-col items-end gap-2">
-                                                            <div className="text-[16px] font-bold text-[#059669]">
+                                                            <div className="text-[16px] font-bold text-[#059669] privacy-blur">
                                                                 +£{p.net_pay.toFixed(2)}
                                                             </div>
                                                             <button

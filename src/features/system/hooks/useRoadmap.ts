@@ -6,6 +6,7 @@ export interface RoadmapItem {
     content: string
     type: 'future' | 'major_update'
     version?: string
+    is_completed: boolean
     created_at: string
 }
 
@@ -35,6 +36,16 @@ export function useRoadmap() {
         await fetchRoadmap()
     }
 
+    const toggleRoadmapItem = async (id: string, is_completed: boolean) => {
+        const { error: err } = await supabase
+            .from('sys_roadmap')
+            .update({ is_completed })
+            .eq('id', id)
+
+        if (err) throw err
+        await fetchRoadmap()
+    }
+
     const deleteRoadmapItem = async (id: string) => {
         const { error: err } = await supabase
             .from('sys_roadmap')
@@ -54,6 +65,7 @@ export function useRoadmap() {
         loading,
         error,
         addRoadmapItem,
+        toggleRoadmapItem,
         deleteRoadmapItem,
         refetch: fetchRoadmap
     }

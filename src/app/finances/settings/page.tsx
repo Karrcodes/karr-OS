@@ -80,7 +80,7 @@ function GlobalSettings() {
             )}
             {settings['weekly_income_baseline'] && (
                 <p className="text-[12px] text-black/35 mt-2">
-                    Current baseline: <span className="text-black/60 font-medium">£{settings['weekly_income_baseline']}/week</span>
+                    Current baseline: <span className="text-black/60 font-medium privacy-blur">£{settings['weekly_income_baseline']}/week</span>
                 </p>
             )}
         </Section>
@@ -173,9 +173,9 @@ function PocketsSettings() {
                                         <button onClick={() => movePocket(i, 'up')} disabled={i === 0 || saving} className="text-black/20 hover:text-black/60 disabled:opacity-30"><ArrowUp className="w-3 h-3" /></button>
                                         <button onClick={() => movePocket(i, 'down')} disabled={i === pockets.length - 1 || saving} className="text-black/20 hover:text-black/60 disabled:opacity-30"><ArrowDown className="w-3 h-3" /></button>
                                     </div>
-                                    <span className="flex-1 text-[13px] text-black/80 font-medium">{p.name} <span className="text-[11px] text-black/40 font-normal ml-1">£{(p.balance || 0).toFixed(2)}</span></span>
+                                    <span className="flex-1 text-[13px] text-black/80 font-medium">{p.name} <span className="text-[11px] text-black/40 font-normal ml-1 privacy-blur">£{(p.balance || 0).toFixed(2)}</span></span>
                                     <span className="text-[11px] text-black/35 capitalize">{p.type}</span>
-                                    <span className="text-[12px] text-black/45 w-32 text-right">Weekly alloc: £{p.target_budget.toFixed(2)}</span>
+                                    <span className="text-[12px] text-black/45 w-32 text-right">Weekly alloc: <span className="privacy-blur">£{p.target_budget.toFixed(2)}</span></span>
                                     <button onClick={() => startEdit(p)} className="icon-btn text-black/25 hover:text-black/60"><Pencil className="w-3.5 h-3.5" /></button>
                                     <button onClick={() => deletePocket(p.id)} className="icon-btn text-black/20 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
                                 </>
