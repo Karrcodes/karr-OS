@@ -2,11 +2,12 @@
 
 import { useMemo, useState } from 'react'
 import { PieChart, ArrowDownLeft, ArrowUpRight, ArrowLeft } from 'lucide-react'
-import type { Transaction } from '../types/finance.types'
+import type { Transaction, Pocket } from '../types/finance.types'
 import { getCategoryById } from '../constants/categories'
 
 interface SpendingAnalyticsProps {
     transactions: Transaction[]
+    pockets: Pocket[]
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -20,38 +21,68 @@ const CATEGORY_COLORS: Record<string, string> = {
     'other': '#64748b'
 }
 
-export function SpendingAnalytics({ transactions }: SpendingAnalyticsProps) {
+export function SpendingAnalytics({ transactions, pockets }: SpendingAnalyticsProps) {
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+    const [groupBy, setGroupBy] = useState<'pocket' | 'category'>('pocket')
 
     const stats = useMemo(() => {
         const spends = transactions.filter(t => t.type === 'spend')
         const totalSpend = spends.reduce((sum, t) => sum + t.amount, 0)
 
-        const byCategory = spends.reduce((acc, t) => {
-            const cat = t.category || 'other'
-            if (!acc[cat]) acc[cat] = { total: 0, transactions: [] }
-            acc[cat].total += t.amount
-            acc[cat].transactions.push(t)
+        const grouped = spends.reduce((acc, t) => {
+            let key = ''
+            if (groupBy === 'category') {
+                key = t.category || 'other'
+            } else {
+                key = t.pocket_id || 'unassigned'
+            }
+
+            if (!acc[key]) acc[key] = { total: 0, transactions: [] }
+            acc[key].total += t.amount
+            acc[key].transactions.push(t)
             return acc
         }, {} as Record<string, { total: number; transactions: Transaction[] }>)
 
-        const sortedCategories = Object.entries(byCategory)
-            .map(([name, data]) => {
-                const catDef = getCategoryById(name)
+        const sortedGroups = Object.entries(grouped)
+            .map(([key, data]) => {
+                let name = key
+                let label = key
+                let emoji = '💸'
+
+                if (groupBy === 'category') {
+                    const catDef = getCategoryById(key)
+                    label = catDef.label
+                    emoji = catDef.emoji
+                } else {
+                    if (key === 'unassigned') {
+                        label = 'General / Unassigned'
+                        emoji = '💰'
+                    } else {
+                        const pocket = pockets.find(p => p.id === key)
+                        if (pocket) {
+                            name = pocket.id
+                            label = pocket.name
+                            emoji = Array.from(pocket.name).pop() || '💰'
+                        } else {
+                            label = 'Unknown Pocket'
+                            emoji = '❓'
+                        }
+                    }
+                }
+
                 return {
                     name,
-                    label: catDef.label,
+                    label,
                     amount: data.total,
                     transactions: data.transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
                     percentage: totalSpend > 0 ? (data.total / totalSpend) * 100 : 0,
-                    emoji: catDef.emoji,
-                    color: CATEGORY_COLORS[name] || '#64748b'
+                    emoji
                 }
             })
             .sort((a, b) => b.amount - a.amount)
 
-        return { totalSpend, sortedCategories }
-    }, [transactions])
+        return { totalSpend, sortedGroups }
+    }, [transactions, pockets, groupBy])
 
     if (transactions.length === 0) {
         return (
@@ -67,7 +98,7 @@ export function SpendingAnalytics({ transactions }: SpendingAnalyticsProps) {
 
     // Drill-down view for a selected category
     if (selectedCategory) {
-        const category = stats.sortedCategories.find(c => c.name === selectedCategory)
+        const category = stats.sortedGroups.find(c => c.name === selectedCategory)
         if (!category) return null
 
         return (
@@ -84,8 +115,7 @@ export function SpendingAnalytics({ transactions }: SpendingAnalyticsProps) {
                 <div className="bg-white p-6 rounded-3xl border border-black/[0.06] shadow-sm">
                     <div className="flex items-center gap-4">
                         <div
-                            className="w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-sm"
-                            style={{ backgroundColor: category.color }}
+                            className="w-14 h-14 rounded-2xl flex items-center justify-center text-black shadow-sm bg-black/[0.02] border border-black/[0.05]"
                         >
                             <span className="text-2xl leading-none">{category.emoji}</span>
                         </div>
@@ -134,6 +164,26 @@ export function SpendingAnalytics({ transactions }: SpendingAnalyticsProps) {
     // Overview
     return (
         <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <h3 className="text-[16px] font-bold text-black tracking-tight flex items-center gap-2">
+                    <PieChart className="w-5 h-5 text-black/40" /> Overview
+                </h3>
+                <div className="flex bg-black/[0.03] p-1 rounded-xl">
+                    <button
+                        onClick={() => setGroupBy('pocket')}
+                        className={`px-4 py-1.5 rounded-lg text-[12px] font-bold transition-all ${groupBy === 'pocket' ? 'bg-white text-black shadow-sm' : 'text-black/30 hover:text-black/50'}`}
+                    >
+                        By Pocket
+                    </button>
+                    <button
+                        onClick={() => setGroupBy('category')}
+                        className={`px-4 py-1.5 rounded-lg text-[12px] font-bold transition-all ${groupBy === 'category' ? 'bg-white text-black shadow-sm' : 'text-black/30 hover:text-black/50'}`}
+                    >
+                        By Category
+                    </button>
+                </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                 {/* Total Spend Card */}
                 <div className="bg-white p-6 rounded-3xl border border-black/[0.06] shadow-sm flex flex-col justify-between">
@@ -149,7 +199,7 @@ export function SpendingAnalytics({ transactions }: SpendingAnalyticsProps) {
                     </div>
 
                     <div className="mt-8 space-y-3">
-                        {stats.sortedCategories.slice(0, 3).map((cat, i) => (
+                        {stats.sortedGroups.slice(0, 3).map((cat, i) => (
                             <div key={i} className="space-y-1.5">
                                 <div className="flex justify-between items-end">
                                     <span className="text-[11px] font-bold text-black/60">{cat.label}</span>
@@ -157,8 +207,8 @@ export function SpendingAnalytics({ transactions }: SpendingAnalyticsProps) {
                                 </div>
                                 <div className="h-1.5 bg-black/[0.03] rounded-full overflow-hidden">
                                     <div
-                                        className="h-full rounded-full transition-all"
-                                        style={{ width: `${cat.percentage}%`, backgroundColor: cat.color }}
+                                        className="h-full rounded-full transition-all bg-black"
+                                        style={{ width: `${cat.percentage}%` }}
                                     />
                                 </div>
                             </div>
@@ -171,15 +221,14 @@ export function SpendingAnalytics({ transactions }: SpendingAnalyticsProps) {
                     <h3 className="text-[14px] font-bold text-black mb-1">Top Categories</h3>
                     <p className="text-[11px] text-black/30 mb-4">Tap a category to see its transactions</p>
                     <div className="space-y-2">
-                        {stats.sortedCategories.map((cat, i) => (
+                        {stats.sortedGroups.map((cat, i) => (
                             <button
                                 key={i}
                                 onClick={() => setSelectedCategory(cat.name)}
                                 className="w-full flex items-center gap-3 p-3 rounded-2xl border border-black/[0.04] hover:bg-black/[0.02] hover:border-black/[0.08] transition-all group text-left"
                             >
                                 <div
-                                    className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm flex-shrink-0 group-hover:scale-105 transition-transform"
-                                    style={{ backgroundColor: cat.color }}
+                                    className="w-10 h-10 rounded-xl flex items-center justify-center text-black shadow-sm flex-shrink-0 group-hover:scale-105 transition-transform bg-black/[0.02] border border-black/[0.05]"
                                 >
                                     <span className="text-xl leading-none">{cat.emoji}</span>
                                 </div>

@@ -10,7 +10,7 @@ import {
     Shield, ChevronDown, Check,
     TrendingUp, Calendar, CreditCard, PiggyBank,
     Moon, Sun, Laptop, Target, Briefcase, Heart, Gift,
-    LayoutDashboard, EyeOff
+    LayoutDashboard, EyeOff, Receipt
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Reorder } from 'framer-motion'
@@ -28,6 +28,7 @@ const navItems = [
         icon: BarChart3,
         sub: [
             { label: 'Projections', href: '/finances/projections', icon: Calendar, caps: ['P'] },
+            { label: 'Transactions', href: '/finances/transactions', icon: Receipt, caps: ['P', 'B'] },
             { label: 'Analytics', href: '/finances/analytics', icon: TrendingUp, caps: ['P'] },
             { label: 'Liabilities', href: '/finances/liabilities', icon: CreditCard, caps: ['P', 'B'] },
             { label: 'Savings', href: '/finances/savings', icon: PiggyBank, caps: ['P', 'B'] },

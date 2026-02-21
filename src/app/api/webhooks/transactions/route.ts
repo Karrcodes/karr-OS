@@ -34,8 +34,8 @@ export async function POST(request: Request) {
 Extract the transaction details and determine the correct budget pocket and spending category.
 
 Available Pockets (ONLY choose one of these two):
-1. "Daily Essentials 🍔" (for groceries, convenience stores, taxis, ride booking apps, pharmacies, everyday needs)
-2. "Fun 🛍️" (for clothes shopping, Amazon, electronics, restaurants, pubs, takeaways, entertainment)
+1. "Daily Essentials 🍔" (for groceries, ALL food and drinks, coffee shops (e.g. Lavazza, Starbucks), convenience stores, taxis, ride booking apps, pharmacies)
+2. "Fun 🛍️" (for clothes shopping, Amazon, electronics, expressly sit-down restaurants, pubs, takeaways, entertainment)
 
 Available Categories (ONLY choose one): 'food', 'transport', 'housing', 'shopping', 'entertainment', 'utilities', 'health', 'other'
 

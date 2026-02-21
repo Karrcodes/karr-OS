@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import { ArrowLeft, Wallet, TrendingUp, Receipt, PieChart, FileText, Trash2 } from 'lucide-react'
 import { useTransactions } from '@/features/finance/hooks/useTransactions'
 import { usePayslips } from '@/features/finance/hooks/usePayslips'
+import { usePockets } from '@/features/finance/hooks/usePockets'
 import { useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
 import { SpendingAnalytics } from '@/features/finance/components/SpendingAnalytics'
 import { PayslipUploader } from '@/features/finance/components/PayslipUploader'
@@ -14,9 +15,10 @@ export default function FinanceAnalyticsPage() {
     const [activeTab, setActiveTab] = useState<'salary' | 'spending'>('salary')
     const { payslips, loading: payslipsLoading, deletePayslip, refetch: refetchPayslips } = usePayslips()
     const { transactions, loading: txLoading } = useTransactions()
+    const { pockets, loading: pLoading } = usePockets()
     const { activeProfile } = useFinanceProfile()
 
-    const loading = activeTab === 'salary' ? payslipsLoading : txLoading
+    const loading = activeTab === 'salary' ? payslipsLoading : (txLoading || pLoading)
 
     const salaryStats = useMemo(() => {
         if (payslips.length === 0) return null
@@ -263,7 +265,7 @@ export default function FinanceAnalyticsPage() {
                                     </>
                                 )
                             ) : (
-                                <SpendingAnalytics transactions={transactions} />
+                                <SpendingAnalytics transactions={transactions} pockets={pockets} />
                             )}
                         </div>
                     )}
