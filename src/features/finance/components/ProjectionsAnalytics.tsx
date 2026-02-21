@@ -29,13 +29,6 @@ export function ProjectionsAnalytics() {
     // Persistent overrides from DB
     const { overrides: bookedOverrides, saveOverrides, deleteOverrideByDate, updateOverrideStatus } = useRota()
 
-    const [bookingOpen, setBookingOpen] = useState(false)
-    const [bookDays, setBookDays] = useState('')
-    const [bookFirst, setBookFirst] = useState('')
-    const [bookLast, setBookLast] = useState('')
-    const [bookReturn, setBookReturn] = useState('')
-    const [bookReason, setBookReason] = useState('Annual Leave')
-
     // Modals State
     const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false)
     const [itemToCancel, setItemToCancel] = useState<{ date: string, type: string, id?: string } | null>(null)
@@ -64,18 +57,7 @@ export function ProjectionsAnalytics() {
         return { abs, hol, ot }
     }, [dayOverrides])
 
-    const handleOpenBooking = () => {
-        const { hol } = activeStaged
-        setBookDays(hol.length.toString())
-        if (hol.length > 0) {
-            setBookFirst(hol[0])
-            setBookLast(hol[hol.length - 1])
-            const retDate = new Date(hol[hol.length - 1])
-            retDate.setDate(retDate.getDate() + 1)
-            setBookReturn(retDate.toISOString().split('T')[0])
-        }
-        setBookingOpen(true)
-    }
+    // handleOpenBooking is no longer needed
 
     const handleConfirmStaged = async (type: 'overtime' | 'absence') => {
         const dates = Object.keys(dayOverrides).filter(k => dayOverrides[k] === type)
@@ -96,7 +78,6 @@ export function ProjectionsAnalytics() {
         const formId = "j_NRZWJQb0-a7XxZvz4tGEMcjSxEbT1OkE4gUvilROBUNzdGTFlCWkFPTjk5RlhWNFdNNk4xREtQSy4u"
         const baseUrl = `https://forms.office.com/Pages/ResponsePage.aspx?id=${formId}`
 
-        // Save Holidays to DB as 'pending'
         const holDates = Object.keys(dayOverrides).filter(k => dayOverrides[k] === 'holiday')
         try {
             await saveOverrides(holDates.map(date => ({ date, type: 'holiday' as const, status: 'pending' as const })))
@@ -106,28 +87,10 @@ export function ProjectionsAnalytics() {
                 return next
             })
 
-            const clipboardText = `Badge: 3711148963
-Name: Umaru AbdulAlim
-Dept: HLOP
-Shift: 12 hour (0600-1800)
-Today's Date: ${new Date().toLocaleDateString('en-GB')}
-First Date of Holiday: ${bookFirst ? new Date(bookFirst).toLocaleDateString('en-GB') : ''}
-Last Date of Holiday: ${bookLast ? new Date(bookLast).toLocaleDateString('en-GB') : ''}
-Total Days: ${bookDays}
-Return Date: ${bookReturn ? new Date(bookReturn).toLocaleDateString('en-GB') : ''}
-Reason: ${bookReason}`
-
-            navigator.clipboard.writeText(clipboardText).then(() => {
-                alert("Success! Holiday has been requested and added to your rota as PENDING.\n\nPlease complete the Staffline form. Your details have been copied to your clipboard.")
-                window.open(baseUrl, '_blank')
-                setBookingOpen(false)
-            }).catch(() => {
-                window.open(baseUrl, '_blank')
-                setBookingOpen(false)
-            })
+            window.open(baseUrl, '_blank')
         } catch (err) {
             console.error(err)
-            alert("Failed to save holiday booking to rota.")
+            alert("Failed to save holiday request.")
         }
     }
 
@@ -518,7 +481,7 @@ Reason: ${bookReason}`
                                 )}
                                 {activeStaged.hol.length > 0 && (
                                     <button
-                                        onClick={handleOpenBooking}
+                                        onClick={submitBooking}
                                         className="px-3 py-1.5 rounded-lg border border-purple-200 bg-purple-50 text-purple-700 text-[12px] font-bold hover:bg-purple-100 transition-colors"
                                     >
                                         Book Holiday
@@ -556,74 +519,7 @@ Reason: ${bookReason}`
                 </div>
             </div>
 
-            {/* Holiday Booking Modal */}
-            {bookingOpen && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setBookingOpen(false)} />
-                    <div className="relative w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 duration-300">
-                        <div className="px-5 py-4 border-b border-black/[0.06] flex items-center justify-between bg-black/[0.02]">
-                            <h3 className="text-[16px] font-bold text-black flex items-center gap-2">
-                                <span className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600 text-lg">✈️</span>
-                                Holiday Request
-                            </h3>
-                            <button onClick={() => setBookingOpen(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-black/40 hover:bg-black/5 hover:text-black transition-colors">
-                                <X className="w-4 h-4" />
-                            </button>
-                        </div>
-                        <div className="p-5 space-y-5">
-                            <div className="p-3 bg-purple-50 rounded-xl border border-purple-100/50">
-                                <p className="text-[12px] text-purple-700 leading-relaxed">
-                                    <span className="font-bold flex items-center gap-1.5 mb-1">
-                                        <Info className="w-3.5 h-3.5" /> Staffline Form Note
-                                    </span>
-                                    Direct pre-filling is blocked by your employer. We have copied all your details to your clipboard for easy pasting!
-                                </p>
-                            </div>
-
-                            <div className="space-y-4 pt-1">
-                                <div>
-                                    <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">First Date</label>
-                                    <input type="date" value={bookFirst} onChange={e => setBookFirst(e.target.value)} className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[14px] outline-none focus:border-purple-500" />
-                                </div>
-                                <div>
-                                    <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">Last Date</label>
-                                    <input type="date" value={bookLast} onChange={e => setBookLast(e.target.value)} className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[14px] outline-none focus:border-purple-500" />
-                                </div>
-                                <div>
-                                    <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">Total Days</label>
-                                    <input type="number" value={bookDays} onChange={e => {
-                                        const newDays = e.target.value
-                                        setBookDays(newDays)
-                                        const parsedDays = parseInt(newDays, 10)
-                                        if (!isNaN(parsedDays) && parsedDays > 0 && bookFirst) {
-                                            const first = new Date(bookFirst)
-                                            const last = new Date(first)
-                                            last.setDate(first.getDate() + (parsedDays - 1))
-                                            setBookLast(last.toISOString().split('T')[0])
-                                            const ret = new Date(last)
-                                            ret.setDate(last.getDate() + 1)
-                                            setBookReturn(ret.toISOString().split('T')[0])
-                                        }
-                                    }} className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[14px] outline-none focus:border-purple-500" />
-                                </div>
-                                <div>
-                                    <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">Return Date</label>
-                                    <input type="date" value={bookReturn} onChange={e => setBookReturn(e.target.value)} className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[14px] outline-none focus:border-purple-500" />
-                                </div>
-                                <div>
-                                    <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">Reason for Leave</label>
-                                    <input type="text" value={bookReason} onChange={e => setBookReason(e.target.value)} placeholder="Personal / Holiday" className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[14px] outline-none focus:border-purple-500" />
-                                </div>
-                            </div>
-                        </div>
-                        <div className="p-5 border-t border-black/[0.06] bg-black/[0.01]">
-                            <button onClick={submitBooking} className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-purple-600 text-white font-bold text-[15px] hover:bg-purple-700 transition-colors shadow-sm shadow-purple-200">
-                                Confirm & Open Forms <ExternalLink className="w-4 h-4 opacity-70" />
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Holiday Booking Modal Removed */}
 
             {/* Cancel Confirmation Modal */}
             {cancelConfirmOpen && (
