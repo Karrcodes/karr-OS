@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Calendar as CalendarIcon, ExternalLink, Briefcase, DollarSign, ChevronLeft, ChevronRight, Info, Check, X, Trash2 } from 'lucide-react'
+import { Calendar as CalendarIcon, ExternalLink, Briefcase, DollarSign, ChevronLeft, ChevronRight, Info, Check, X, Trash2, Clock } from 'lucide-react'
 import { useRota } from '../hooks/useRota'
 
 // Hardcoded anchor: User states next shift starts on "Monday". 
@@ -27,7 +27,7 @@ export function ProjectionsAnalytics() {
     const [dayOverrides, setDayOverrides] = useState<Record<string, 'overtime' | 'absence' | 'holiday'>>({})
 
     // Persistent overrides from DB
-    const { overrides: bookedOverrides, saveOverrides, deleteOverrideByDate } = useRota()
+    const { overrides: bookedOverrides, saveOverrides, deleteOverrideByDate, updateOverrideStatus } = useRota()
 
     const [bookingOpen, setBookingOpen] = useState(false)
     const [bookDays, setBookDays] = useState('')
@@ -36,9 +36,11 @@ export function ProjectionsAnalytics() {
     const [bookReturn, setBookReturn] = useState('')
     const [bookReason, setBookReason] = useState('Annual Leave')
 
-    // Cancellation Confirmation State
+    // Modals State
     const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false)
-    const [itemToCancel, setItemToCancel] = useState<{ date: string, type: string } | null>(null)
+    const [itemToCancel, setItemToCancel] = useState<{ date: string, type: string, id?: string } | null>(null)
+    const [approvalModalOpen, setApprovalModalOpen] = useState(false)
+    const [itemToApprove, setItemToApprove] = useState<{ date: string, id: string } | null>(null)
 
     // Merged overrides for calculation
     const allOverrides = useMemo(() => {
@@ -78,7 +80,7 @@ export function ProjectionsAnalytics() {
     const handleConfirmStaged = async (type: 'overtime' | 'absence') => {
         const dates = Object.keys(dayOverrides).filter(k => dayOverrides[k] === type)
         try {
-            await saveOverrides(dates.map(date => ({ date, type })))
+            await saveOverrides(dates.map(date => ({ date, type, status: 'approved' as const })))
             setDayOverrides(prev => {
                 const next = { ...prev }
                 dates.forEach(d => delete next[d])
@@ -92,47 +94,12 @@ export function ProjectionsAnalytics() {
 
     const submitBooking = async () => {
         const formId = "j_NRZWJQb0-a7XxZvz4tGEMcjSxEbT1OkE4gUvilROBUNzdGTFlCWkFPTjk5RlhWNFdNNk4xREtQSy4u"
+        const baseUrl = `https://forms.office.com/Pages/ResponsePage.aspx?id=${formId}`
 
-        const IDs = {
-            today: "rabbc8d260b7647f49e584cf4ae6791ae",
-            badge: "r38f9b0a08112418f999c9be4b039ea12",
-            name: "r9e5f1108f508457b860ff4a5009cb316",
-            dept: "r2e22e78b63e04d97afef3084d56f2048",
-            shift: "rb4fd0ddc565c4eda8d049f0ea1df8a19",
-            days: "r77734ecce2d242f68ce5b9b4ef034430",
-            first: "r174c10835f374d6a8cc50adb883619ad",
-            last: "r796739c016a84af18c0c1aaa47db48f6",
-            return: "r776081eb9aeb440ba39a517960c00407",
-            reason: "rbbc3b3b348b04bb998be461b02a2e307"
-        }
-
-        const todayStr = new Date().toISOString().split('T')[0]
-        const firstStr = bookFirst ? new Date(bookFirst).toISOString().split('T')[0] : ''
-        const lastStr = bookLast ? new Date(bookLast).toISOString().split('T')[0] : ''
-        const returnStr = bookReturn ? new Date(bookReturn).toISOString().split('T')[0] : ''
-
-        // Construct modern pre-filled format
-        const answers = {
-            [IDs.today]: todayStr,
-            [IDs.badge]: "3711148963",
-            [IDs.name]: "Umaru AbdulAlim",
-            [IDs.dept]: "HLOP",
-            [IDs.shift]: "12 hour (0600-1800)",
-            [IDs.days]: bookDays,
-            [IDs.first]: firstStr,
-            [IDs.last]: lastStr,
-            [IDs.return]: returnStr,
-            [IDs.reason]: bookReason
-        }
-
-        // wdFR=1 is a specific flag to trigger pre-fill logic in modern MS Forms
-        // 'Answers' must be capitalized for Customer Voice / Forms Pro engines.
-        const baseUrl = `https://forms.office.com/Pages/ResponsePage.aspx?id=${formId}&wdFR=1&Answers=${encodeURIComponent(JSON.stringify(answers))}`
-
-        // Save Holidays to DB before redirecting
+        // Save Holidays to DB as 'pending'
         const holDates = Object.keys(dayOverrides).filter(k => dayOverrides[k] === 'holiday')
         try {
-            await saveOverrides(holDates.map(date => ({ date, type: 'holiday' as const })))
+            await saveOverrides(holDates.map(date => ({ date, type: 'holiday' as const, status: 'pending' as const })))
             setDayOverrides(prev => {
                 const next = { ...prev }
                 holDates.forEach(d => delete next[d])
@@ -143,15 +110,15 @@ export function ProjectionsAnalytics() {
 Name: Umaru AbdulAlim
 Dept: HLOP
 Shift: 12 hour (0600-1800)
-Today's Date: ${new Date().toLocaleDateString()}
-First Date of Holiday: ${bookFirst ? new Date(bookFirst).toLocaleDateString() : ''}
-Last Date of Holiday: ${bookLast ? new Date(bookLast).toLocaleDateString() : ''}
+Today's Date: ${new Date().toLocaleDateString('en-GB')}
+First Date of Holiday: ${bookFirst ? new Date(bookFirst).toLocaleDateString('en-GB') : ''}
+Last Date of Holiday: ${bookLast ? new Date(bookLast).toLocaleDateString('en-GB') : ''}
 Total Days: ${bookDays}
-Return Date: ${bookReturn ? new Date(bookReturn).toLocaleDateString() : ''}
+Return Date: ${bookReturn ? new Date(bookReturn).toLocaleDateString('en-GB') : ''}
 Reason: ${bookReason}`
 
             navigator.clipboard.writeText(clipboardText).then(() => {
-                alert("Success! Holidays have been booked on your rota.\n\nWe are now attempting to pre-fill the form for you. Backup details are on your clipboard.")
+                alert("Success! Holiday has been requested and added to your rota as PENDING.\n\nPlease complete the Staffline form. Your details have been copied to your clipboard.")
                 window.open(baseUrl, '_blank')
                 setBookingOpen(false)
             }).catch(() => {
@@ -238,9 +205,11 @@ Reason: ${bookReason}`
             const isShift = cycleDay < 3
 
             const isPayday = date.getDay() === 5
-            const override = allOverrides[dateStr]
+            const overrideRecord = bookedOverrides.find(o => o.date === dateStr)
+            const override = overrideRecord?.type || dayOverrides[dateStr]
             const isStaged = !!dayOverrides[dateStr]
-            const isBooked = bookedOverrides.some(o => o.date === dateStr)
+            const isBooked = !!overrideRecord
+            const status = overrideRecord?.status || (isStaged ? 'pending' : 'approved')
 
             if (override === 'overtime') { otCount++; }
             if (override === 'absence' && isShift) { absencesCount++; }
@@ -260,6 +229,8 @@ Reason: ${bookReason}`
                 override,
                 isStaged,
                 isBooked,
+                status,
+                id: overrideRecord?.id,
                 isToday: new Date().toDateString() === date.toDateString()
             })
         }
@@ -284,8 +255,8 @@ Reason: ${bookReason}`
         setCurrentDate(new Date(year, monthIndex - 1, 1))
     }
 
-    const handleCancelClick = (dateStr: string, type: string) => {
-        setItemToCancel({ date: dateStr, type })
+    const handleCancelClick = (dateStr: string, type: string, id?: string) => {
+        setItemToCancel({ date: dateStr, type, id })
         setCancelConfirmOpen(true)
     }
 
@@ -298,6 +269,23 @@ Reason: ${bookReason}`
         } catch (err) {
             console.error(err)
             alert("Failed to cancel booking.")
+        }
+    }
+
+    const handleApproveHoliday = (dateStr: string, id: string) => {
+        setItemToApprove({ date: dateStr, id })
+        setApprovalModalOpen(true)
+    }
+
+    const confirmApproval = async () => {
+        if (!itemToApprove) return
+        try {
+            await updateOverrideStatus(itemToApprove.id, 'approved')
+            setApprovalModalOpen(false)
+            setItemToApprove(null)
+        } catch (err) {
+            console.error(err)
+            alert("Failed to approve holiday.")
         }
     }
 
@@ -399,7 +387,11 @@ Reason: ${bookReason}`
 
                             const handleClick = () => {
                                 if (isBooked) {
-                                    handleCancelClick(dateStr, override!)
+                                    if (override === 'holiday' && d.status === 'pending') {
+                                        handleApproveHoliday(dateStr, d.id!)
+                                    } else {
+                                        handleCancelClick(dateStr, override!, d.id)
+                                    }
                                     return
                                 }
 
@@ -477,7 +469,11 @@ Reason: ${bookReason}`
                                             {isHoliday && (
                                                 <div className="flex items-center gap-1">
                                                     <span className={`text-[8px] sm:text-[9px] bg-purple-500 text-white px-1 py-0.5 rounded font-bold tracking-widest uppercase shadow-sm ${!isBooked && 'opacity-50'}`}>HOL</span>
-                                                    {isBooked && <Check className="w-2.5 h-2.5 text-purple-600" />}
+                                                    {isBooked && (
+                                                        d.status === 'approved'
+                                                            ? <Check className="w-2.5 h-2.5 text-purple-600" />
+                                                            : <Clock className="w-2.5 h-2.5 text-purple-600 animate-pulse" />
+                                                    )}
                                                 </div>
                                             )}
                                         </div>
@@ -578,9 +574,9 @@ Reason: ${bookReason}`
                             <div className="p-3 bg-purple-50 rounded-xl border border-purple-100/50">
                                 <p className="text-[12px] text-purple-700 leading-relaxed">
                                     <span className="font-bold flex items-center gap-1.5 mb-1">
-                                        <Info className="w-3.5 h-3.5" /> Microsoft Forms Note
+                                        <Info className="w-3.5 h-3.5" /> Staffline Form Note
                                     </span>
-                                    We are attempting to **auto-prefill** the form using your details. If any fields are missing, they have also been copied to your clipboard for easy pasting!
+                                    Direct pre-filling is blocked by your employer. We have copied all your details to your clipboard for easy pasting!
                                 </p>
                             </div>
 
@@ -639,7 +635,7 @@ Reason: ${bookReason}`
                         </div>
                         <h3 className="text-lg font-bold text-black mb-2">Cancel {itemToCancel?.type} booking?</h3>
                         <p className="text-[14px] text-black/60 mb-6 leading-relaxed">
-                            Are you sure you want to remove this booking from your rota on <span className="font-bold text-black">{itemToCancel?.date}</span>?
+                            Are you sure you want to remove this booking from your rota on <span className="font-bold text-black">{itemToCancel?.date ? new Date(itemToCancel.date).toLocaleDateString('en-GB') : ''}</span>?
                         </p>
                         <div className="flex gap-3">
                             <button onClick={() => setCancelConfirmOpen(false)} className="flex-1 py-3 rounded-xl border border-black/[0.1] text-black/60 font-bold text-[14px] hover:bg-black/[0.05] transition-colors">
@@ -647,6 +643,36 @@ Reason: ${bookReason}`
                             </button>
                             <button onClick={confirmCancel} className="flex-1 py-3 rounded-xl bg-red-600 text-white font-bold text-[14px] hover:bg-red-700 transition-colors shadow-lg shadow-red-200">
                                 Yes, Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Approval Confirmation Modal */}
+            {approvalModalOpen && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setApprovalModalOpen(false)} />
+                    <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col p-6 text-center animate-in zoom-in-95 duration-200">
+                        <div className="w-16 h-16 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mx-auto mb-4">
+                            <Check className="w-8 h-8" />
+                        </div>
+                        <h3 className="text-lg font-bold text-black mb-1">Approve Holiday?</h3>
+                        <p className="text-[12px] text-black/40 font-bold uppercase tracking-wider mb-2">
+                            {itemToApprove?.date ? new Date(itemToApprove.date).toLocaleDateString('en-GB') : ''}
+                        </p>
+                        <p className="text-[14px] text-black/60 mb-6 leading-relaxed">
+                            Has your employer officially approved this holiday?
+                        </p>
+                        <div className="flex flex-col gap-2">
+                            <button onClick={confirmApproval} className="w-full py-3 rounded-xl bg-purple-600 text-white font-bold text-[14px] hover:bg-purple-700 transition-colors shadow-lg shadow-purple-200">
+                                Yes, Mark as Approved
+                            </button>
+                            <button onClick={() => { setApprovalModalOpen(false); handleCancelClick(itemToApprove!.date, 'holiday', itemToApprove!.id); }} className="w-full py-3 rounded-xl border border-red-200 text-red-600 font-bold text-[14px] hover:bg-red-50 transition-colors">
+                                No, Cancel Holiday
+                            </button>
+                            <button onClick={() => setApprovalModalOpen(false)} className="w-full py-3 rounded-xl text-black/40 font-bold text-[14px] hover:bg-black/5 transition-colors">
+                                Not Yet
                             </button>
                         </div>
                     </div>

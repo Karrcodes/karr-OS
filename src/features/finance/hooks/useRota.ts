@@ -34,6 +34,17 @@ export function useRota() {
         await fetchOverrides()
     }
 
+    const updateOverrideStatus = async (id: string, status: 'pending' | 'approved') => {
+        const { error } = await supabase
+            .from('fin_rota_overrides')
+            .update({ status })
+            .eq('id', id)
+            .eq('profile', activeProfile)
+
+        if (error) throw error
+        await fetchOverrides()
+    }
+
     const deleteOverrideByDate = async (date: string) => {
         const { error } = await supabase
             .from('fin_rota_overrides')
@@ -52,6 +63,7 @@ export function useRota() {
         loading,
         error,
         saveOverrides,
+        updateOverrideStatus,
         deleteOverrideByDate,
         refetch: fetchOverrides
     }

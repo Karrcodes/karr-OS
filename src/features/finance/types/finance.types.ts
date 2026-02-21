@@ -105,6 +105,7 @@ export interface RotaOverride {
     id: string
     date: string // YYYY-MM-DD
     type: 'overtime' | 'absence' | 'holiday'
+    status: 'pending' | 'approved'
     profile: 'personal' | 'business'
     created_at: string
 }
