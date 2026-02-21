@@ -303,6 +303,18 @@ export function Sidebar() {
                     <Image src="/karros-logo.png.jpeg" alt="KarrOS" width={160} height={40} priority className="h-10 w-auto object-contain" />
                 </div>
                 {nav}
+
+                {/* Version Indicator */}
+                <div className="px-5 py-3 border-t border-black/[0.03]">
+                    <Link
+                        href="/system/roadmap"
+                        className="flex items-center gap-2 text-[10px] font-bold text-black/20 hover:text-black/40 transition-colors group"
+                    >
+                        <span className="w-1.5 h-1.5 rounded-full bg-black/10 group-hover:bg-black/20" />
+                        v1.2.0
+                    </Link>
+                </div>
+
                 <ProfileMenu />
             </aside>
 
