@@ -155,29 +155,29 @@ export function CommandCenter() {
                     {/* Main Layout Stack */}
                     <div className="flex flex-col gap-6 pb-12">
                         {/* Unified Responsive Grid (Mobile -> Tablet -> Desktop) */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-stretch">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 items-stretch">
 
                             {/* Cashflow Analytics */}
-                            <div className="order-3 md:order-1 xl:order-1 col-span-1 md:col-span-1 xl:col-span-2">
+                            <div className="order-3 lg:order-1 xl:order-1 col-span-1 lg:col-span-1 xl:col-span-2">
                                 <CashflowAnalytics monthlyObligations={summary.monthlyObligations} />
                             </div>
 
                             {/* Savings Goals */}
-                            <div className="order-1 md:order-2 xl:order-2 col-span-1 h-full">
+                            <div className="order-1 lg:order-2 xl:order-2 col-span-1 h-full">
                                 <SectionBlock title="Savings Goals" desc="Long-term targets">
                                     <GoalsList goals={goals} onRefresh={refetchGoals} />
                                 </SectionBlock>
                             </div>
 
                             {/* Pockets */}
-                            <div className="order-2 md:order-4 xl:order-4 col-span-1 md:col-span-2 xl:col-span-3">
+                            <div className="order-2 lg:order-4 xl:order-4 col-span-1 lg:col-span-2 xl:col-span-3">
                                 <SectionBlock title="Pockets" desc="Your current allocations">
                                     <PocketsGrid pockets={pockets} />
                                 </SectionBlock>
                             </div>
 
                             {/* Liabilities */}
-                            <div className="order-5 md:order-5 xl:order-5 col-span-1 md:col-span-2 xl:col-span-3">
+                            <div className="order-5 lg:order-5 xl:order-5 col-span-1 lg:col-span-2 xl:col-span-3">
                                 <SectionBlock title="Liabilities" desc="30-Day projections for subs & debt">
                                     <CalendarVisualizer obligations={obligations} />
                                 </SectionBlock>
@@ -225,13 +225,13 @@ export function CommandCenter() {
 function SummaryCard({ label, value, icon, color, sub, tooltip }: { label: string; value: string; icon: React.ReactNode; color: string; sub?: string; tooltip?: string | React.ReactNode }) {
     return (
         <div className="rounded-xl border border-black/[0.07] bg-white p-4 hover:bg-black/[0.01] transition-colors shadow-sm">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex flex-col gap-2 mb-3">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color}12` }}>
+                    <span style={{ color }}>{icon}</span>
+                </div>
                 <div className="flex items-center gap-1.5">
                     <p className="text-[11px] uppercase tracking-wider text-black/40 font-semibold">{label}</p>
                     {tooltip && <InfoTooltip content={tooltip} side="bottom" />}
-                </div>
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color}12` }}>
-                    <span style={{ color }}>{icon}</span>
                 </div>
             </div>
             <p className="text-2xl font-bold text-black tracking-tight privacy-blur">{value}</p>

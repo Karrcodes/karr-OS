@@ -105,7 +105,7 @@ export default function FinanceAnalyticsPage() {
                                     <>
                                         <PayslipUploader onSuccess={refetchPayslips} />
                                         {/* Top Stats Cards */}
-                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                             <div className="bg-white p-5 rounded-2xl border border-black/[0.06] shadow-sm">
                                                 <div className="flex items-center gap-2 text-[11px] font-bold text-black/30 uppercase tracking-widest mb-3">
                                                     <Wallet className="w-3.5 h-3.5" /> Avg. Take Home

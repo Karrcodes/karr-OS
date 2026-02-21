@@ -120,16 +120,23 @@ export function LiabilitiesManager() {
                                         )
                                     })()}
                                     <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-[14px] text-black/90 font-bold truncate">{o.name}</span>
-                                            {o.description && <span className="text-[12px] text-black/40 truncate">— {o.description}</span>}
-                                            {o.group_name && <span className="text-[10px] uppercase font-bold tracking-wider text-black/40 bg-black/[0.04] px-1.5 py-0.5 rounded">{o.group_name}</span>}
-                                        </div>
-                                        <div className="text-[12px] text-black/40 mt-1 flex items-center gap-2">
-                                            <span className="inline-block w-2 h-2 rounded-full bg-black/40" />
-                                            Next: {new Date(o.next_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                                            {o.payments_left ? <span className="text-black/30 text-[11px]">({o.payments_left} left)</span> : ''}
-                                            {o.end_date && <span className="text-black/30 text-[11px]">• Ends: {new Date(o.end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}</span>}
+                                        <div className="flex flex-col min-w-0 gap-1.5 mt-0.5">
+                                            <p className="text-[14px] font-bold text-black truncate">{o.name}</p>
+                                            <div className="flex flex-wrap items-center gap-1.5">
+                                                <span className="text-[10px] font-bold uppercase tracking-widest text-black/50 bg-black/5 px-2 py-0.5 rounded-md text-nowrap">
+                                                    Next: {new Date(o.next_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                                                </span>
+                                                {(o.payments_left ?? 0) > 0 && (
+                                                    <span className="px-2 py-0.5 rounded-md bg-orange-500/10 text-orange-600 text-[10px] font-bold uppercase tracking-widest text-nowrap">
+                                                        {o.payments_left} left
+                                                    </span>
+                                                )}
+                                                {o.end_date && (
+                                                    <span className="text-black/30 text-[10px] font-semibold text-nowrap">
+                                                        Ends {new Date(o.end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto sm:ml-auto bg-black/[0.02] p-2 rounded-xl border border-black/[0.04]">
