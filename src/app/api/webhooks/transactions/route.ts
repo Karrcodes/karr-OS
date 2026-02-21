@@ -21,7 +21,17 @@ export async function POST(request: Request) {
     try {
         // 2. Parse Payload
         const body = await request.json()
-        const { amount, merchant, date } = body
+        let { amount, merchant, date, notificationText } = body
+
+        // If the user sends the raw iOS notification text, parse it automatically
+        // Example: "Paid £1 at Wikimedia\nDaily Essentials Balance: £87.90"
+        if (notificationText) {
+            const match = notificationText.match(/Paid £([0-9.,]+) (?:at|to) (.*?)(?:\n|$)/i)
+            if (match) {
+                amount = amount || match[1].replace(',', '')
+                merchant = merchant || match[2].trim()
+            }
+        }
 
         // Fallback to mock data if fields are missing (e.g. from pressing 'Play' in Shortcuts)
         const finalAmount = amount !== undefined ? amount : 1.00
@@ -40,16 +50,18 @@ export async function POST(request: Request) {
         }
 
         // 3. Database Mapping
-        // We know we must map 'merchant' -> 'description'
+        // We map 'merchant' -> 'description'
         // 'amount' -> 'amount'
-        // 'type' -> 'expense'
-        // 'from_pocket' -> 'Main Buffer'
+        // 'type' -> 'spend'
+        // 'pocket_id' -> null (Requires categorisation later in UI)
+        // 'profile' -> 'personal'
         const transactionData = {
             amount: Number(finalAmount),
             description: finalMerchant,
             date: transDate.toISOString(),
-            type: 'expense',
-            from_pocket: 'Main Buffer',
+            type: 'spend',
+            pocket_id: null,
+            profile: 'personal',
         }
 
         // 4. Insert into Supabase
