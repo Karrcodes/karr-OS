@@ -94,33 +94,33 @@ export function CommandCenter() {
                             {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
                         </div>
                     </div>
-                    <div className="flex items-center gap-2 order-2 sm:order-3">
+                    <div className="flex items-center gap-2 order-2 sm:order-1">
+                        <div className="flex bg-black/[0.04] p-1 rounded-xl border border-black/[0.06] items-center w-fit order-1 sm:order-2">
+                            <button
+                                onClick={() => setProfile('personal')}
+                                className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeProfile === 'personal' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
+                            >
+                                Personal
+                            </button>
+                            <button
+                                onClick={() => setProfile('business')}
+                                className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeProfile === 'business' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
+                            >
+                                Business
+                            </button>
+                        </div>
                         <button
                             onClick={togglePrivacy}
-                            className={`p-2 rounded-xl border transition-all ${isPrivacyEnabled ? 'border-[#059669]/30 text-[#059669] bg-[#059669]/10 shadow-[0_2px_10px_rgba(5,150,105,0.1)]' : 'bg-white border-black/[0.06] text-black/40 hover:text-black/60 hover:border-black/[0.15] shadow-sm'}`}
+                            className={`p-2 rounded-xl border transition-all ${isPrivacyEnabled ? 'border-[#059669]/30 text-[#059669] bg-[#059669]/10 shadow-[0_2px_10px_rgba(5,150,105,0.1)]' : 'bg-white border-black/[0.06] text-black/40 hover:text-black/60 hover:border-black/[0.15] shadow-sm'} order-2 sm:order-1`}
                             title={isPrivacyEnabled ? "Disable Privacy Mode" : "Enable Privacy Mode"}
                         >
                             {isPrivacyEnabled ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                     </div>
-                    <div className="flex bg-black/[0.04] p-1 rounded-xl border border-black/[0.06] items-center order-3 sm:order-1 w-fit">
-                        <button
-                            onClick={() => setProfile('personal')}
-                            className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeProfile === 'personal' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
-                        >
-                            Personal
-                        </button>
-                        <button
-                            onClick={() => setProfile('business')}
-                            className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeProfile === 'business' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
-                        >
-                            Business
-                        </button>
-                    </div>
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto bg-[#fafafa]">
+            <div className="flex-1 overflow-y-auto bg-[#fafafa] flex flex-col">
                 <div className="p-6 pb-2 select-none flex items-center gap-2 text-[13px] font-bold text-black/40 uppercase tracking-wider">
                     Overview
                 </div>

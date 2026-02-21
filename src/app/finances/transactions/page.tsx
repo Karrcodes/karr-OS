@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { ArrowLeft, ArrowUpRight, ArrowDownLeft, FileText, Search, Filter } from 'lucide-react'
 import { useTransactions } from '@/features/finance/hooks/useTransactions'
 import { useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
+import { KarrFooter } from '@/components/KarrFooter'
 
 export default function TransactionsPage() {
     const { transactions, loading } = useTransactions()
@@ -46,7 +47,7 @@ export default function TransactionsPage() {
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-6 flex flex-col">
                 <div className="max-w-4xl mx-auto space-y-4">
                     {loading ? (
                         <div className="space-y-3 animate-pulse">
@@ -99,6 +100,7 @@ export default function TransactionsPage() {
                         </div>
                     )}
                 </div>
+                <KarrFooter />
             </div>
         </div>
     )

@@ -17,7 +17,7 @@ import { Reorder } from 'framer-motion'
 import { useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
 
 const navItems = [
-    { label: 'Control Centre', href: '/dashboard', icon: LayoutDashboard, disabled: true },
+    { label: 'Control Centre', href: '/system/control-centre', icon: LayoutDashboard },
     { label: 'Tasks', href: '/tasks', icon: CheckSquare },
     { label: 'Goals', href: '/goals', icon: Target, disabled: true },
     { label: 'Career', href: '/career', icon: Briefcase, disabled: true },
@@ -112,6 +112,30 @@ export function Sidebar() {
     const [orderedTabs, setOrderedTabs] = useState(navItems.map(item => item.label))
     const [orderedFinanceSubTabs, setOrderedFinanceSubTabs] = useState<string[]>([])
     const [isMounted, setIsMounted] = useState(false)
+
+    // Touch handlers for swipe to close on mobile
+    const [touchStartX, setTouchStartX] = useState<number | null>(null)
+    const [touchEndX, setTouchEndX] = useState<number | null>(null)
+
+    const minSwipeDistance = 50
+
+    const onTouchStart = (e: React.TouchEvent) => {
+        setTouchEndX(null)
+        setTouchStartX(e.targetTouches[0].clientX)
+    }
+
+    const onTouchMove = (e: React.TouchEvent) => {
+        setTouchEndX(e.targetTouches[0].clientX)
+    }
+
+    const onTouchEnd = () => {
+        if (!touchStartX || !touchEndX) return
+        const distance = touchStartX - touchEndX
+        const isLeftSwipe = distance > minSwipeDistance
+        if (isLeftSwipe) {
+            setMobileOpen(false)
+        }
+    }
 
     useEffect(() => {
         setIsMounted(true)
@@ -308,7 +332,9 @@ export function Sidebar() {
             {/* ── Desktop sidebar (always visible ≥ md) ─────────────────── */}
             <aside className="hidden md:flex fixed left-0 top-0 h-full w-[220px] bg-white border-r border-black/[0.07] flex-col z-50 shadow-[1px_0_0_0_rgba(0,0,0,0.04)]">
                 <div className="px-5 pt-5 pb-4 border-b border-black/[0.06] flex items-center h-[72px]">
-                    <Image src="/karros-logo.png.jpeg" alt="KarrOS" width={160} height={40} priority className="h-10 w-auto object-contain" />
+                    <Link href="/system/control-centre">
+                        <Image src="/karros-logo.png.jpeg" alt="KarrOS" width={160} height={40} priority className="h-10 w-auto object-contain cursor-pointer" />
+                    </Link>
                 </div>
                 {nav}
 
@@ -335,7 +361,9 @@ export function Sidebar() {
                     <Menu className="w-5 h-5 text-black/60" />
                 </button>
                 <div className="flex-1 flex justify-center items-center h-full">
-                    <Image src="/karros-logo.png.jpeg" alt="KarrOS" width={120} height={32} priority className="h-7 w-auto object-contain" />
+                    <Link href="/system/control-centre" className="flex justify-center items-center" onClick={() => setMobileOpen(false)}>
+                        <Image src="/karros-logo.png.jpeg" alt="KarrOS" width={120} height={32} priority className="h-7 w-auto object-contain" />
+                    </Link>
                 </div>
                 <button
                     onClick={() => window.location.reload()}
@@ -355,9 +383,16 @@ export function Sidebar() {
                         onClick={() => setMobileOpen(false)}
                     />
                     {/* Drawer panel */}
-                    <aside className="relative w-[260px] bg-white h-full flex flex-col shadow-2xl">
+                    <aside
+                        className="relative w-[260px] bg-white h-full flex flex-col shadow-2xl"
+                        onTouchStart={onTouchStart}
+                        onTouchMove={onTouchMove}
+                        onTouchEnd={onTouchEnd}
+                    >
                         <div className="px-5 pt-5 pb-4 border-b border-black/[0.06] flex items-center justify-between h-[72px]">
-                            <Image src="/karros-logo.png.jpeg" alt="KarrOS" width={120} height={32} priority className="h-7 w-auto object-contain" />
+                            <Link href="/system/control-centre" onClick={() => setMobileOpen(false)}>
+                                <Image src="/karros-logo.png.jpeg" alt="KarrOS" width={120} height={32} priority className="h-7 w-auto object-contain cursor-pointer" />
+                            </Link>
                             <button
                                 onClick={() => setMobileOpen(false)}
                                 className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/[0.05] transition-colors"

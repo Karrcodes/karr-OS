@@ -43,9 +43,9 @@ export default function FinanceAnalyticsPage() {
             {/* Header */}
             <div className="bg-white border-b border-black/[0.06] px-6 py-5 z-20 shadow-sm flex-shrink-0">
                 <div className="max-w-5xl mx-auto space-y-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
-                            <a href="/finances" className="w-10 h-10 rounded-xl bg-black/[0.03] flex items-center justify-center hover:bg-black/[0.06] transition-colors">
+                            <a href="/finances" className="w-10 h-10 rounded-xl bg-black/[0.03] flex items-center justify-center hover:bg-black/[0.06] transition-colors shrink-0">
                                 <ArrowLeft className="w-5 h-5 text-black/40" />
                             </a>
                             <div>
@@ -55,7 +55,7 @@ export default function FinanceAnalyticsPage() {
                         </div>
 
                         {/* Tab Switcher */}
-                        <div className="flex bg-black/[0.03] p-1 rounded-xl">
+                        <div className="flex bg-black/[0.03] p-1 rounded-xl w-fit">
                             <button
                                 onClick={() => setActiveTab('salary')}
                                 className={cn(
@@ -80,7 +80,7 @@ export default function FinanceAnalyticsPage() {
             </div>
 
             {/* Main Content — scrolls independently, header never moves */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-6 flex flex-col">
                 <div className="max-w-5xl mx-auto">
                     {loading ? (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

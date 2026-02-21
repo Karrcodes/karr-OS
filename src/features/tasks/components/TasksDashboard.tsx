@@ -189,7 +189,7 @@ export function TasksDashboard() {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 pb-32">
+            <div className="flex-1 overflow-y-auto p-6 pb-32 flex flex-col">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
                     <TaskList category="todo" title="Action Items" icon={CheckSquare} />
                     <TaskList category="grocery" title="Grocery List" icon={ShoppingCart} />

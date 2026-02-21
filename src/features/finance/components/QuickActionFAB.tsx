@@ -412,12 +412,12 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
                         </div>
 
                         {/* Tabs */}
-                        <div className="flex gap-1 p-3 border-b border-black/[0.06]">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 p-3 border-b border-black/[0.06]">
                             {tabs.map(({ id, label, icon: Icon, color }) => (
                                 <button
                                     key={id}
                                     onClick={() => handleTabChange(id)}
-                                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-[12px] font-semibold transition-all ${activeTab === id ? 'bg-black/[0.05] text-black' : 'text-black/40 hover:text-black/60'
+                                    className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-[12px] font-semibold transition-all ${activeTab === id ? 'bg-black/[0.05] text-black' : 'text-black/40 hover:text-black/60'
                                         }`}
                                 >
                                     <Icon className="w-3.5 h-3.5" style={{ color: activeTab === id ? color : undefined }} />
@@ -428,7 +428,7 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
 
                         {/* Form Body Contexts */}
                         {allocating && activeTab === 'income' ? (
-                            <div className="p-5 flex flex-col">
+                            <div className="p-5 flex flex-col max-h-[70vh] overflow-y-auto">
                                 <div className="flex items-center justify-between mb-4">
                                     <div>
                                         <h2 className="text-[16px] font-bold text-[#059669]">Distribute Income</h2>
@@ -494,7 +494,7 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
                                 </div>
                             </div>
                         ) : (
-                            <div className="p-5 space-y-4">
+                            <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
 
                                 {/* AI Payslip Block */}
                                 {activeTab === 'income' && (

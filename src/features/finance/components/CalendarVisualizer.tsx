@@ -211,14 +211,14 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
     return (
         <div className="rounded-2xl border border-black/[0.08] bg-white overflow-hidden shadow-sm">
             {/* Header */}
-            <div className="p-4 border-b border-black/[0.06] flex items-center justify-between bg-black/[0.01] gap-3 flex-wrap">
-                <div className="flex items-center gap-2">
+            <div className="p-4 border-b border-black/[0.06] flex items-start sm:items-center justify-between bg-black/[0.01] gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-2">
                     <h2 className="text-[14px] font-bold text-black flex items-center gap-2">
                         <CalendarIcon className="w-4 h-4 text-black" />
                         {view === 'calendar' ? 'Payment Calendar' : 'Obligation Breakdown'}
                     </h2>
                     {/* Filter pills */}
-                    <div className="flex p-0.5 bg-black/[0.04] rounded-lg ml-1">
+                    <div className="flex p-0.5 bg-black/[0.04] rounded-lg sm:ml-1 w-fit">
                         {(['all', 'debt', 'subscription'] as FilterMode[]).map(f => (
                             <button
                                 key={f}

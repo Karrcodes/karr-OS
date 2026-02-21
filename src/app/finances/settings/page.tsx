@@ -7,6 +7,7 @@ import { useSettings } from '@/features/finance/hooks/useSettings'
 import type { Pocket } from '@/features/finance/types/finance.types'
 import { useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
 import { Section, Spinner } from '@/features/finance/components/SharedSettingsUI'
+import { KarrFooter } from '@/components/KarrFooter'
 
 export default function SettingsPage() {
     const { activeProfile, setProfile } = useFinanceProfile()
@@ -37,9 +38,10 @@ export default function SettingsPage() {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto bg-[#fafafa] p-6 space-y-8">
+            <div className="flex-1 overflow-y-auto bg-[#fafafa] p-6 space-y-8 flex flex-col">
                 <GlobalSettings />
                 <PocketsSettings />
+                <KarrFooter />
             </div>
         </div>
     )
