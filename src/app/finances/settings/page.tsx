@@ -12,7 +12,7 @@ import { KarrFooter } from '@/components/KarrFooter'
 export default function SettingsPage() {
     const { activeProfile, setProfile } = useFinanceProfile()
     return (
-        <div className="flex flex-col h-full bg-white">
+        <div className="h-screen bg-[#fafafa] flex flex-col overflow-hidden">
             {/* Header */}
             <div className="flex items-center gap-3 px-6 py-5 border-b border-black/[0.06] bg-white">
                 <div className="w-8 h-8 rounded-lg bg-black/[0.04] flex items-center justify-center">
@@ -38,9 +38,11 @@ export default function SettingsPage() {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto bg-[#fafafa] p-6 space-y-8 flex flex-col">
-                <GlobalSettings />
-                <PocketsSettings />
+            <div className="flex-1 overflow-y-auto bg-[#fafafa] p-6 space-y-8 flex flex-col items-center">
+                <div className="w-full max-w-5xl flex-1 space-y-8">
+                    <GlobalSettings />
+                    <PocketsSettings />
+                </div>
                 <KarrFooter />
             </div>
         </div>

@@ -10,7 +10,7 @@ function SavingsPage() {
     return (
         <div className="h-screen bg-[#fafafa] flex flex-col overflow-hidden">
             <div className="bg-white border-b border-black/[0.06] px-6 py-5 z-20 shadow-sm flex-shrink-0">
-                <div className="max-w-5xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="w-full max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <h1 className="text-[20px] font-bold text-black tracking-tight">Savings Goals</h1>
                         <p className="text-[12px] text-black/35 mt-0.5">
@@ -34,8 +34,8 @@ function SavingsPage() {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 flex flex-col">
-                <div className="max-w-5xl mx-auto">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 flex flex-col items-center">
+                <div className="w-full max-w-7xl flex-1">
                     <SavingsManager />
                 </div>
                 <KarrFooter />
