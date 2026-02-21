@@ -179,7 +179,7 @@ export default function TransactionsPage() {
 
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-2 min-w-0 flex-1">
                                                 <p className="text-[14px] font-bold text-black truncate">{t.description || 'Transaction'}</p>
                                                 {t.provider === 'revolut_csv' && (
                                                     <span className="text-[9px] font-bold text-black bg-black/5 px-1.5 py-0.5 rounded border border-black/10 tracking-widest uppercase shrink-0">Sync</span>
