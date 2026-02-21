@@ -466,7 +466,22 @@ export function ProjectionsAnalytics() {
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>
                                         <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">Total Days</label>
-                                        <input type="number" value={bookDays} onChange={e => setBookDays(e.target.value)} className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-2 text-[13px] outline-none focus:border-purple-500" />
+                                        <input type="number" value={bookDays} onChange={e => {
+                                            const newDays = e.target.value
+                                            setBookDays(newDays)
+                                            const parsedDays = parseInt(newDays, 10)
+                                            if (!isNaN(parsedDays) && parsedDays > 0 && bookFirst) {
+                                                const first = new Date(bookFirst)
+
+                                                const last = new Date(first)
+                                                last.setDate(first.getDate() + (parsedDays - 1))
+                                                setBookLast(last.toISOString().split('T')[0])
+
+                                                const ret = new Date(last)
+                                                ret.setDate(last.getDate() + 1)
+                                                setBookReturn(ret.toISOString().split('T')[0])
+                                            }
+                                        }} className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-2 text-[13px] outline-none focus:border-purple-500" />
                                     </div>
                                     <div>
                                         <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">Return Date</label>
