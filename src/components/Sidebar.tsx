@@ -23,17 +23,30 @@ const navItems = [
         href: '/finances',
         icon: BarChart3,
         sub: [
-            { label: 'Projections', href: '/finances/projections', icon: Calendar },
-            { label: 'Analytics', href: '/finances/analytics', icon: TrendingUp },
-            { label: 'Liabilities', href: '/finances/liabilities', icon: CreditCard },
-            { label: 'Savings', href: '/finances/savings', icon: PiggyBank },
-            { label: 'Settings', href: '/finances/settings', icon: SlidersHorizontal }
+            { label: 'Projections', href: '/finances/projections', icon: Calendar, caps: ['P'] },
+            { label: 'Analytics', href: '/finances/analytics', icon: TrendingUp, caps: ['P', 'B'] },
+            { label: 'Liabilities', href: '/finances/liabilities', icon: CreditCard, caps: ['P', 'B'] },
+            { label: 'Savings', href: '/finances/savings', icon: PiggyBank, caps: ['P', 'B'] },
+            { label: 'Settings', href: '/finances/settings', icon: SlidersHorizontal, caps: ['P', 'B'] }
         ],
     },
     { label: 'Health & Wellbeing', href: '/health', icon: Heart, disabled: true },
     { label: 'Security Vault', href: '/vault', icon: Shield, disabled: true },
     { label: 'Wishlist', href: '/wishlist', icon: Gift, disabled: true },
 ]
+
+function CapBadge({ cap }: { cap: 'P' | 'B' }) {
+    return (
+        <span className={cn(
+            "w-3.5 h-3.5 flex items-center justify-center rounded-[2px] text-[8px] font-bold border shrink-0 select-none",
+            cap === 'P'
+                ? "bg-blue-50 text-blue-600 border-blue-200/50"
+                : "bg-emerald-50 text-emerald-600 border-emerald-200/50"
+        )}>
+            {cap}
+        </span>
+    )
+}
 
 function ProfileMenu() {
     const [isOpen, setIsOpen] = useState(false)
@@ -93,10 +106,12 @@ export function Sidebar() {
     })
 
     const [orderedTabs, setOrderedTabs] = useState(navItems.map(item => item.label))
+    const [orderedFinanceSubTabs, setOrderedFinanceSubTabs] = useState<string[]>([])
     const [isMounted, setIsMounted] = useState(false)
 
     useEffect(() => {
         setIsMounted(true)
+        // Load main tabs order
         const savedOrder = localStorage.getItem('karrOS_sidebar_order')
         if (savedOrder) {
             try {
@@ -107,11 +122,32 @@ export function Sidebar() {
                 setOrderedTabs([...validParsed, ...missing])
             } catch (e) { }
         }
+
+        // Load finance sub-tabs order
+        const savedSubOrder = localStorage.getItem('karrOS_finance_subtabs_order')
+        const financeItem = navItems.find(i => i.label === 'Finances')
+        const defaultSubLabels = financeItem?.sub?.map(s => s.label) || []
+
+        if (savedSubOrder) {
+            try {
+                const parsed = JSON.parse(savedSubOrder)
+                const validParsed = parsed.filter((label: string) => defaultSubLabels.includes(label))
+                const missing = defaultSubLabels.filter(label => !validParsed.includes(label))
+                setOrderedFinanceSubTabs([...validParsed, ...missing])
+            } catch (e) { }
+        } else {
+            setOrderedFinanceSubTabs(defaultSubLabels)
+        }
     }, [])
 
     const handleReorder = (newOrder: string[]) => {
         setOrderedTabs(newOrder)
         localStorage.setItem('karrOS_sidebar_order', JSON.stringify(newOrder))
+    }
+
+    const handleSubReorder = (newOrder: string[]) => {
+        setOrderedFinanceSubTabs(newOrder)
+        localStorage.setItem('karrOS_finance_subtabs_order', JSON.stringify(newOrder))
     }
 
     // Close drawer on route change
@@ -168,7 +204,41 @@ export function Sidebar() {
                             )}
                         </Link>
 
-                        {'sub' in item && item.sub && expandedFolders[item.href] && (
+                        {'sub' in item && item.sub && expandedFolders[item.href] && label === 'Finances' && (
+                            <div className="ml-5 mt-0.5 space-y-0.5 border-l border-black/[0.07] pl-3">
+                                <Reorder.Group axis="y" values={orderedFinanceSubTabs} onReorder={handleSubReorder} className="list-none m-0 p-0 space-y-0.5">
+                                    {orderedFinanceSubTabs.map((subLabel) => {
+                                        const subItem = item.sub?.find(s => s.label === subLabel)
+                                        if (!subItem) return null
+                                        const SubIcon = subItem.icon
+                                        const subActive = pathname === subItem.href
+                                        return (
+                                            <Reorder.Item key={subLabel} value={subLabel} className="cursor-grab active:cursor-grabbing">
+                                                <Link
+                                                    href={subItem.href}
+                                                    draggable={false}
+                                                    className={cn(
+                                                        'flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] transition-colors group/sub',
+                                                        subActive ? 'text-black bg-black/5 font-semibold' : 'text-black/35 hover:text-black/60'
+                                                    )}
+                                                >
+                                                    <SubIcon className="w-3 h-3 shrink-0" />
+                                                    <span className="flex-1 truncate">{subItem.label}</span>
+                                                    <div className="flex items-center gap-1">
+                                                        {(subItem as any).caps?.map((c: string) => (
+                                                            <CapBadge key={c} cap={c as 'P' | 'B'} />
+                                                        ))}
+                                                    </div>
+                                                </Link>
+                                            </Reorder.Item>
+                                        )
+                                    })}
+                                </Reorder.Group>
+                            </div>
+                        )}
+
+                        {/* Fallback for other potential sub-tabs that aren't 'Finances' */}
+                        {'sub' in item && item.sub && expandedFolders[item.href] && label !== 'Finances' && (
                             <div className="ml-5 mt-0.5 space-y-0.5 border-l border-black/[0.07] pl-3">
                                 {item.sub.map((subItem) => {
                                     const SubIcon = subItem.icon
