@@ -56,16 +56,6 @@ export function CashflowAnalytics({ monthlyObligations }: { monthlyObligations: 
         return { allTimeEarned: total, monthlyData: sorted, maxMonthly: max }
     }, [transactions])
 
-    const loading = tLoading || sLoading
-
-    if (loading) {
-        return (
-            <div className="rounded-xl border border-black/[0.07] bg-white p-5 animate-pulse flex items-center justify-center min-h-[160px]">
-                <Activity className="w-5 h-5 text-black/20" />
-            </div>
-        )
-    }
-
     // Calculate this week's expected pay (Staffline 3-on/3-off)
     const currentWeekExpectedPay = useMemo(() => {
         const ROTA_ANCHOR_UTC = Date.UTC(2026, 1, 23)
@@ -92,6 +82,16 @@ export function CashflowAnalytics({ monthlyObligations }: { monthlyObligations: 
 
         return shiftsThisWeek * HOURS_PER_SHIFT * BASE_RATE * (1 - DEDUCTION_RATE)
     }, [])
+
+    const loading = tLoading || sLoading
+
+    if (loading) {
+        return (
+            <div className="rounded-xl border border-black/[0.07] bg-white p-5 animate-pulse flex items-center justify-center min-h-[160px]">
+                <Activity className="w-5 h-5 text-black/20" />
+            </div>
+        )
+    }
 
     return (
         <div className="rounded-xl border border-black/[0.07] bg-white p-5 shadow-sm h-full flex flex-col">
