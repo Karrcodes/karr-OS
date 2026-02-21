@@ -5,9 +5,11 @@ import { useTransactions } from '../hooks/useTransactions'
 import { ArrowUpRight, ArrowDownLeft, RefreshCw, Layers } from 'lucide-react'
 import { useBank } from '../hooks/useBank'
 import { RevolutImportModal } from './RevolutImportModal'
+import { usePockets } from '../hooks/usePockets'
 
 export function TransactionLedger() {
     const { transactions, loading, refetch, clearTransactions } = useTransactions()
+    const { pockets, loading: pocketsLoading } = usePockets()
     const { loading: bankSyncLoading } = useBank()
     const [isModalOpen, setIsModalOpen] = useState(false)
 
@@ -16,7 +18,7 @@ export function TransactionLedger() {
         refetch()
     }
 
-    if (loading) {
+    if (loading || pocketsLoading) {
         return (
             <div className="space-y-3 animate-pulse">
                 {[1, 2, 3].map(i => (
@@ -82,42 +84,47 @@ export function TransactionLedger() {
             </div>
 
             <div className="space-y-2">
-                {recentTransactions.map((t) => (
-                    <div key={t.id} className="flex items-center gap-3 p-3 rounded-xl border border-black/[0.04] bg-white hover:bg-black/[0.01] transition-colors group">
-                        <div className="w-10 h-10 rounded-xl bg-black/[0.03] border border-black/[0.05] flex items-center justify-center text-lg flex-shrink-0 group-hover:scale-105 transition-transform">
-                            {t.emoji || '💸'}
-                        </div>
+                {recentTransactions.map((t) => {
+                    const pocketName = pockets.find(p => p.id === t.pocket_id)?.name || 'General'
+                    return (
+                        <div key={t.id} className="flex items-center gap-3 p-3 rounded-xl border border-black/[0.04] bg-white hover:bg-black/[0.01] transition-colors group">
+                            <div className="w-10 h-10 rounded-xl bg-black/[0.03] border border-black/[0.05] flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform overflow-hidden px-1">
+                                <span className="text-[9px] font-bold text-black/40 text-center uppercase leading-tight line-clamp-2" title={pocketName}>
+                                    {pocketName}
+                                </span>
+                            </div>
 
-                        <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <p className="text-[13px] font-bold text-black truncate">{t.description || 'Transaction'}</p>
-                                    {t.provider === 'enable_banking' && (
-                                        <span className="text-[9px] font-bold text-black bg-black/5 px-1 py-0.5 rounded border border-black/10">BANK</span>
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-[13px] font-bold text-black truncate">{t.description || 'Transaction'}</p>
+                                        {t.provider === 'enable_banking' && (
+                                            <span className="text-[9px] font-bold text-black bg-black/5 px-1 py-0.5 rounded border border-black/10">BANK</span>
+                                        )}
+                                    </div>
+                                    <p className={`text-[13px] font-bold ${t.type === 'spend' ? 'text-black' : 'text-[#059669]'}`}>
+                                        {t.type === 'spend' ? '-' : '+'}£{t.amount.toFixed(2)}
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                    <p className="text-[10px] uppercase font-bold tracking-wider text-black/30">
+                                        {t.category || 'other'}
+                                    </p>
+                                    <span className="w-1 h-1 rounded-full bg-black/10" />
+                                    <p className="text-[10px] font-medium text-black/25">
+                                        {new Date(t.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                                    </p>
+                                    {t.type === 'transfer' && (
+                                        <ArrowUpRight className="w-2.5 h-2.5 text-blue-500" />
+                                    )}
+                                    {t.type === 'allocate' && (
+                                        <ArrowDownLeft className="w-2.5 h-2.5 text-emerald-500" />
                                     )}
                                 </div>
-                                <p className={`text-[13px] font-bold ${t.type === 'spend' ? 'text-black' : 'text-[#059669]'}`}>
-                                    {t.type === 'spend' ? '-' : '+'}£{t.amount.toFixed(2)}
-                                </p>
-                            </div>
-                            <div className="flex items-center gap-2 mt-0.5">
-                                <p className="text-[10px] uppercase font-bold tracking-wider text-black/30">
-                                    {t.category || 'other'}
-                                </p>
-                                <span className="w-1 h-1 rounded-full bg-black/10" />
-                                <p className="text-[10px] font-medium text-black/25">
-                                    {new Date(t.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                                </p>
-                                {t.type === 'transfer' && (
-                                    <ArrowUpRight className="w-2.5 h-2.5 text-blue-500" />
-                                )}
-                                {t.type === 'allocate' && (
-                                    <ArrowDownLeft className="w-2.5 h-2.5 text-emerald-500" />
-                                )}
                             </div>
                         </div>
-                    </div>
-                ))}
+                    )
+                })}
             </div>
         </div>
     )

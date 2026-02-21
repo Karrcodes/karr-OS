@@ -15,6 +15,7 @@ import { KarrAIChat } from './KarrAIChat'
 import { QuickActionFAB } from './QuickActionFAB'
 import { PaydayAllocation } from './PaydayAllocation'
 import { CashflowAnalytics } from './CashflowAnalytics'
+import { ExpectedCashflowCard } from './ExpectedCashflowCard'
 import { TransactionLedger } from './TransactionLedger'
 import { useFinanceProfile } from '../contexts/FinanceProfileContext'
 
@@ -149,9 +150,10 @@ export function CommandCenter() {
                         {/* Unified Responsive Grid (Mobile -> Tablet -> Desktop) */}
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
 
-                            {/* Cashflow Analytics */}
+                            {/* Cashflow Analytics & Expected Cashflow */}
                             <div className="order-3 md:order-1 xl:order-1 col-span-1">
                                 <CashflowAnalytics />
+                                <ExpectedCashflowCard monthlyObligations={summary.monthlyObligations} />
                             </div>
 
                             {/* Log Income (Payday Allocator) */}
