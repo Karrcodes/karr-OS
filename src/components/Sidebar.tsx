@@ -9,12 +9,15 @@ import {
     SlidersHorizontal, Menu, X, RefreshCw,
     Shield, ChevronDown, Check,
     TrendingUp, Calendar, CreditCard, PiggyBank,
-    Moon, Sun, Laptop, Target, Briefcase, Heart, Gift
+    Moon, Sun, Laptop, Target, Briefcase, Heart, Gift,
+    LayoutDashboard, EyeOff
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Reorder } from 'framer-motion'
+import { useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
 
 const navItems = [
+    { label: 'Control Centre', href: '/dashboard', icon: LayoutDashboard, disabled: true },
     { label: 'Tasks', href: '/tasks', icon: CheckSquare },
     { label: 'Goals', href: '/goals', icon: Target, disabled: true },
     { label: 'Career', href: '/career', icon: Briefcase, disabled: true },
@@ -104,6 +107,7 @@ export function Sidebar() {
     const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({
         '/finances': true // Open by default
     })
+    const { isPrivacyEnabled } = useFinanceProfile()
 
     const [orderedTabs, setOrderedTabs] = useState(navItems.map(item => item.label))
     const [orderedFinanceSubTabs, setOrderedFinanceSubTabs] = useState<string[]>([])
@@ -191,6 +195,10 @@ export function Sidebar() {
                         >
                             <Icon className={cn('w-4 h-4', isActive ? 'text-black' : 'text-black/35')} />
                             <span className="text-[13px] font-medium pointer-events-none">{item.label}</span>
+
+                            {item.label === 'Finances' && isPrivacyEnabled && (
+                                <EyeOff className="w-3.5 h-3.5 text-emerald-500 ml-1.5 animate-pulse" />
+                            )}
 
                             {'sub' in item && item.sub && (
                                 <button
