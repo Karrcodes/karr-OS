@@ -4,30 +4,40 @@ import { supabase } from '@/lib/supabase'
 function categoriseDescription(desc: string): string {
     const d = desc.toLowerCase()
 
-    // Groceries & Food
-    if (d.includes('tesco') || d.includes('sainsbury') || d.includes('asda') || d.includes('morrisons') || d.includes('aldi') || d.includes('lidl') || d.includes('waitrose') || d.includes('co-op') || d.includes('marks & spencer') || d.includes('m&s')) return 'groceries'
-    if (d.includes('deliveroo') || d.includes('uber eats') || d.includes('just eat') || d.includes('dominos') || d.includes('mcdonalds') || d.includes('kfc') || d.includes('burger king')) return 'takeaway'
-    if (d.includes('starbucks') || d.includes('costa') || d.includes('pret a manger') || d.includes('caffe nero') || d.includes('cafe')) return 'coffee'
-    if (d.includes('restaurant') || d.includes('pub') || d.includes('bar') || d.includes('nandos') || d.includes('wagamama') || d.includes('pizza express')) return 'dining'
+    // Groceries
+    if (d.includes('tesco') || d.includes('sainsbury') || d.includes('asda') || d.includes('morrisons') || d.includes('aldi') || d.includes('lidl') || d.includes('waitrose') || d.includes('co-op') || d.includes('marks & spencer') || d.includes('m&s') || d.includes('iceland') || d.includes('farmfoods') || d.includes('spar')) return 'groceries'
+
+    // Food & Drink (Coffee, Takeaways, Dining, Restaurants)
+    if (d.includes('deliveroo') || d.includes('uber eats') || d.includes('just eat') || d.includes('dominos') || d.includes('mcdonalds') || d.includes('kfc') || d.includes('burger king') || d.includes('greggs') || d.includes('papa john') || d.includes('subway') || d.includes('five guys') || d.includes('krispy kreme') ||
+        d.includes('starbucks') || d.includes('costa') || d.includes('pret a manger') || d.includes('caffe nero') || d.includes('cafe') || d.includes('lavazza') || d.includes('blank street') || d.includes('gail') || d.includes('joe & the juice') ||
+        d.includes('restaurant') || d.includes('pub') || d.includes('bar') || d.includes('nandos') || d.includes('wagamama') || d.includes('pizza express') || d.includes('leon') || d.includes('itsou') || d.includes('honest burgers')) return 'food_drink'
 
     // Transport
-    if (d.includes('tfl') || d.includes('transport for london') || d.includes('trainline') || d.includes('northern rail') || d.includes('lner') || d.includes('gwr')) return 'transport'
-    if (d.includes('uber') || d.includes('bolt') || d.includes('free-now')) return 'taxi'
+    if (d.includes('tfl') || d.includes('transport for london') || d.includes('trainline') || d.includes('northern rail') || d.includes('lner') || d.includes('gwr') || d.includes('crosscountry') || d.includes('avanti') || d.includes('scotrail') || d.includes('national express') || d.includes('megabus') || d.includes('stagecoach') || d.includes('first bus') || d.includes('arriva') ||
+        d.includes('uber') || d.includes('bolt') || d.includes('free-now') || d.includes('kapten') || d.includes('ola') || d.includes('lime') || d.includes('tier') || d.includes('voi')) return 'transport'
 
     // Shopping
-    if (d.includes('amazon') || d.includes('amzn') || d.includes('argos') || d.includes('john lewis') || d.includes('boots') || d.includes('superdrug')) return 'shopping'
-    if (d.includes('asos') || d.includes('zara') || d.includes('h&m') || d.includes('primark') || d.includes('next')) return 'clothing'
-    if (d.includes('currys') || d.includes('apple') || d.includes('pc world')) return 'electronics'
+    if (d.includes('amazon') || d.includes('amzn') || d.includes('argos') || d.includes('john lewis') || d.includes('boots') || d.includes('superdrug') || d.includes('b&m') || d.includes('home bargains') || d.includes('poundland') || d.includes('wilko') || d.includes('ikea') ||
+        d.includes('asos') || d.includes('zara') || d.includes('h&m') || d.includes('primark') || d.includes('next') || d.includes('uniqlo') || d.includes('urban outfitters') || d.includes('jd sports') || d.includes('sports direct') || d.includes('nike') || d.includes('adidas') ||
+        d.includes('apple') || d.includes('currys') || d.includes('pc world') || d.includes('samsung') || d.includes('argos')) return 'shopping'
 
     // Entertainment & Subs
-    if (d.includes('netflix') || d.includes('spotify') || d.includes('amazon prime') || d.includes('disney+') || d.includes('now tv') || d.includes('apple') || d.includes('youtube')) return 'subscriptions'
-    if (d.includes('cinema') || d.includes('odeon') || d.includes('vue') || d.includes('cineworld')) return 'entertainment'
-    if (d.includes('gym') || d.includes('puregym') || d.includes('david lloyd') || d.includes('fitness first')) return 'health'
+    if (d.includes('netflix') || d.includes('spotify') || d.includes('amazon prime') || d.includes('disney+') || d.includes('now tv') || d.includes('apple.com/bill') || d.includes('youtube') || d.includes('paramount') || d.includes('hulu') ||
+        d.includes('cinema') || d.includes('odeon') || d.includes('vue') || d.includes('cineworld') || d.includes('everyman') || d.includes('picturehouse') ||
+        d.includes('playstation') || d.includes('xbox') || d.includes('nintendo') || d.includes('steam') || d.includes('epic games') || d.includes('blizzard') || d.includes('ea ')) return 'entertainment'
 
-    // Bills
-    if (d.includes('british gas') || d.includes('eon') || d.includes('e.on') || d.includes('edf') || d.includes('ovo') || d.includes('octopus') || d.includes('thames water')) return 'utilities'
-    if (d.includes('ee ') || d.includes('o2 ') || d.includes('vodafone') || d.includes('three') || d.includes('virgin media') || d.includes('bt ') || d.includes('sky ')) return 'telecom'
-    if (d.includes('council tax')) return 'housing'
+    // Health
+    if (d.includes('gym') || d.includes('puregym') || d.includes('david lloyd') || d.includes('fitness first') || d.includes('the gym group') || d.includes('nuffield') || d.includes('virgin active') || d.includes('bupa') || d.includes('pharmacy') || d.includes('specsavers') || d.includes('vision express') || d.includes('dentist')) return 'health'
+
+    // Bills & Utilities
+    if (d.includes('british gas') || d.includes('eon') || d.includes('e.on') || d.includes('edf') || d.includes('ovo') || d.includes('octopus') || d.includes('thames water') || d.includes('welsh water') || d.includes('severn trent') || d.includes('scottish water') ||
+        d.includes('ee ') || d.includes('o2 ') || d.includes('vodafone') || d.includes('three') || d.includes('virgin media') || d.includes('bt ') || d.includes('sky ') || d.includes('talktalk') || d.includes('plusnet') || d.includes('giffgaff') || d.includes('smarty') || d.includes('lebara')) return 'bills'
+
+    // Housing
+    if (d.includes('council tax') || d.includes('rent') || d.includes('mortgage') || d.includes('tv licence')) return 'housing'
+
+    // Travel
+    if (d.includes('airbnb') || d.includes('booking.com') || d.includes('expedia') || d.includes('hotels.com') || d.includes('easyjet') || d.includes('ryanair') || d.includes('british airways') || d.includes('wizz air') || d.includes('virgin atlantic') || d.includes('premier inn') || d.includes('travelodge') || d.includes('holiday inn')) return 'travel'
 
     return 'other'
 }
