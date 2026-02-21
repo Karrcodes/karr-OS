@@ -113,29 +113,58 @@ Return ONLY a valid JSON object with the following keys, no markdown, no explana
         // 3. Resolve Pocket
         let resolvedPocketId = null
         if (parsedPocketName) {
+            console.log(`Webhook: Attempting to resolve pocket: "${parsedPocketName}"`)
             // Lookup the exact pocket name in KarrOS for the personal profile
-            const { data: pocketData } = await supabase
+            const { data: pocketData, error: pocketError } = await supabase
                 .from('fin_pockets')
-                .select('id, balance')
+                .select('id, balance, name')
                 .eq('profile', 'personal')
                 .ilike('name', parsedPocketName)
                 .single()
 
-            if (pocketData) {
-                resolvedPocketId = pocketData.id
+            let targetedPocket = pocketData
+
+            // Fallback: If exact match fails, get all pockets and do a fuzzy match in JS
+            // (helpful for emoji/encoding or slight spacing mismatches)
+            if (pocketError || !pocketData) {
+                console.log(`Webhook: Exact pocket match failed for "${parsedPocketName}". Trying fuzzy fallback...`)
+                const { data: allPockets } = await supabase
+                    .from('fin_pockets')
+                    .select('id, balance, name')
+                    .eq('profile', 'personal')
+
+                if (allPockets) {
+                    // Try matching without emojis or case-insensitive partial match
+                    const clean = (s: string) => s.toLowerCase().replace(/[^\w\s]/g, '').trim()
+                    const targetClean = clean(parsedPocketName)
+
+                    targetedPocket = allPockets.find(p => clean(p.name) === targetClean) || null
+
+                    if (targetedPocket) {
+                        console.log(`Webhook: Fuzzy matched to pocket: "${targetedPocket.name}" (${targetedPocket.id})`)
+                    }
+                }
+            }
+
+            if (targetedPocket) {
+                resolvedPocketId = targetedPocket.id
+                console.log(`Webhook: Successfully resolved pocket ID: ${resolvedPocketId}`)
 
                 // 3.5 Deduct Balance
-                const newBalance = Number(pocketData.balance) - Number(resolvedAmount)
+                const newBalance = Number(targetedPocket.balance) - Number(resolvedAmount)
+                console.log(`Webhook: Updating balance for pocket ${resolvedPocketId}: ${targetedPocket.balance} -> ${newBalance}`)
                 const { error: updateError } = await supabase
                     .from('fin_pockets')
                     .update({ balance: newBalance })
                     .eq('id', resolvedPocketId)
 
                 if (updateError) {
-                    console.error('Webhook Pocket Update Error:', updateError)
+                    console.error('Webhook: Pocket Balance Update Error:', updateError.message, updateError.details)
+                } else {
+                    console.log('Webhook: Successfully updated pocket balance.')
                 }
             } else {
-                console.warn(`Webhook: Could not find a KarrOS pocket named "${parsedPocketName}"`)
+                console.warn(`Webhook: Could not find any pocket matching "${parsedPocketName}" even with fuzzy fallback.`)
             }
         }
 
