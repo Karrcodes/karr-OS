@@ -64,7 +64,7 @@ Return ONLY a valid JSON object with the following keys, no markdown, no explana
             } catch (aiError) {
                 console.error('Webhook AI Parsing Error:', aiError)
                 // Fallback extraction if AI fails
-                const match = notificationText.match(/£([0-9.,]+)/)
+                const match = notificationText.match(/[£$€]?([0-9.,]+)/)
                 if (match) amount = amount || parseFloat(match[1].replace(',', ''))
                 merchant = merchant || notificationText.split('\n')[1] || 'Unknown Merchant'
             }
@@ -135,6 +135,7 @@ Return ONLY a valid JSON object with the following keys, no markdown, no explana
             category: parsedCategory,
             pocket_id: resolvedPocketId,
             profile: 'personal',
+            provider: 'apple_pay',
         }
 
         // 5. Insert into Supabase

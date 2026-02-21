@@ -78,7 +78,7 @@ export function TransactionDetailsModal({ transaction, pockets, isOpen, onClose 
                             <div className="flex-1 min-w-0">
                                 <p className="text-[10px] uppercase tracking-wider font-bold text-black/40 mb-0.5">Date</p>
                                 <p className="text-[13px] font-semibold text-black truncate">
-                                    {new Date(transaction.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                    {new Date(transaction.date).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                 </p>
                             </div>
                         </div>

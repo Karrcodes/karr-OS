@@ -164,7 +164,7 @@ export function SpendingAnalytics({ transactions, pockets }: SpendingAnalyticsPr
                                 <div className="flex-1 min-w-0">
                                     <p className="text-[13px] font-bold text-black truncate">{t.description || 'Transaction'}</p>
                                     <p className="text-[11px] text-black/30 font-medium">
-                                        {new Date(t.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                        {new Date(t.date).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                     </p>
                                 </div>
                                 <p className="text-[14px] font-bold text-black privacy-blur">

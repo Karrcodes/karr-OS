@@ -197,7 +197,7 @@ export default function TransactionsPage() {
                                                 </p>
                                                 <span className="w-1 h-1 rounded-full bg-black/10 shrink-0" />
                                                 <p className="text-[11px] font-medium text-black/25 shrink-0">
-                                                    {new Date(t.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                    {new Date(t.date).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                                 </p>
                                                 {t.type === 'transfer' && (
                                                     <ArrowUpRight className="w-3 h-3 text-blue-500 ml-1 shrink-0" />

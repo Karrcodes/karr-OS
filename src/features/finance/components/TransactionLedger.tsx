@@ -91,7 +91,7 @@ export function TransactionLedger() {
                                     </p>
                                     <span className="w-1 h-1 rounded-full bg-black/10" />
                                     <p className="text-[10px] font-medium text-black/25">
-                                        {new Date(t.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                                        {new Date(t.date).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                                     </p>
                                     {t.type === 'transfer' && (
                                         <ArrowUpRight className="w-2.5 h-2.5 text-blue-500" />

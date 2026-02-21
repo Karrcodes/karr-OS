@@ -40,7 +40,7 @@ export interface Transaction {
     category: string | null
     emoji: string | null
     profile: 'personal' | 'business'
-    provider?: 'manual' | 'gocardless' | 'enable_banking' | 'revolut_csv'
+    provider?: 'manual' | 'gocardless' | 'enable_banking' | 'revolut_csv' | 'apple_pay'
     provider_tx_id?: string | null
     created_at: string
 }
