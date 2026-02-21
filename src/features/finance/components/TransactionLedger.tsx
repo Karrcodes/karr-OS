@@ -89,8 +89,8 @@ export function TransactionLedger() {
                     return (
                         <div key={t.id} className="flex items-center gap-3 p-3 rounded-xl border border-black/[0.04] bg-white hover:bg-black/[0.01] transition-colors group">
                             <div className="w-10 h-10 rounded-xl bg-black/[0.03] border border-black/[0.05] flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform overflow-hidden px-1">
-                                <span className="text-[9px] font-bold text-black/40 text-center uppercase leading-tight line-clamp-2" title={pocketName}>
-                                    {pocketName}
+                                <span className="text-lg leading-none" title={pocketName}>
+                                    {pocketName ? Array.from(pocketName).pop() : '💰'}
                                 </span>
                             </div>
 

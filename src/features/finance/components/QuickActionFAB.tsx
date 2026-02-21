@@ -10,6 +10,14 @@ import { usePayslips } from '../hooks/usePayslips'
 import { useIncome } from '../hooks/useIncome'
 import { useRecurring } from '../hooks/useRecurring'
 import { useRouter } from 'next/navigation'
+import { getLenderLogo } from '../utils/lenderLogos'
+
+const LENDERS = [
+    { id: 'klarna', name: 'Klarna', emoji: '💗', color: '#ffb3c7' },
+    { id: 'clearpay', name: 'Clearpay', emoji: '💚', color: '#b2fce1' },
+    { id: 'currys', name: 'Currys Flexipay', emoji: '💜', color: '#6c3082' },
+    { id: 'other', name: 'Other / Subscription', emoji: '💸', color: '#f3f4f6' },
+]
 
 interface QuickActionFABProps {
     pockets?: Pocket[]
@@ -53,6 +61,12 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
     const [libName, setLibName] = useState('')
     const [libFreq, setLibFreq] = useState<'weekly' | 'bi-weekly' | 'monthly' | 'yearly'>('monthly')
     const [libDate, setLibDate] = useState(new Date().toISOString().split('T')[0])
+    const [libDesc, setLibDesc] = useState('')
+    const [libGroup, setLibGroup] = useState('')
+    const [libEndDate, setLibEndDate] = useState('')
+    const [libPaymentsLeft, setLibPaymentsLeft] = useState('')
+    const [selectedLenderId, setSelectedLenderId] = useState<string>('other')
+    const [libEmoji, setLibEmoji] = useState('💸')
 
     const reset = () => {
         setAmount(''); setSelectedPocket(''); setToPocket(''); setSelectedCategory('other');
@@ -61,6 +75,8 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
         setGrossPay(''); setTaxPaid(''); setPension(''); setStudentLoan('');
         setAllocating(false); setAllocations({});
         setLibName(''); setLibFreq('monthly'); setLibDate(new Date().toISOString().split('T')[0]);
+        setLibDesc(''); setLibGroup(''); setLibEndDate(''); setLibPaymentsLeft('');
+        setSelectedLenderId('other'); setLibEmoji('💸');
     }
     const handleClose = () => { setOpen(false); reset() }
     const handleTabChange = (tab: Tab) => {
@@ -169,17 +185,39 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
             if (activeTab === 'liability') {
                 if (!libName) { setError('Enter a name for the liability.'); setLoading(false); return }
 
+                const calculateEndDate = (startDate: string, frequency: string, paymentsLeftStr: string) => {
+                    const paymentsLeft = parseInt(paymentsLeftStr)
+                    if (!startDate || isNaN(paymentsLeft) || paymentsLeft <= 0) return null
+                    const dateObj = new Date(startDate)
+                    const totalPayments = paymentsLeft - 1
+                    if (totalPayments <= 0) return startDate
+
+                    if (frequency === 'weekly') dateObj.setDate(dateObj.getDate() + (totalPayments * 7))
+                    else if (frequency === 'bi-weekly') dateObj.setDate(dateObj.getDate() + (totalPayments * 14))
+                    else if (frequency === 'monthly') dateObj.setMonth(dateObj.getMonth() + totalPayments)
+                    else if (frequency === 'yearly') dateObj.setFullYear(dateObj.getFullYear() + totalPayments)
+
+                    return dateObj.toISOString().split('T')[0]
+                }
+
+                let finalEndDate = libEndDate || null
+                const parsedPaymentsLeft = parseInt(libPaymentsLeft) || null
+
+                if (parsedPaymentsLeft && parsedPaymentsLeft > 0) {
+                    finalEndDate = calculateEndDate(libDate, libFreq, libPaymentsLeft)
+                }
+
                 await createObligation({
                     name: libName,
                     amount: amt,
                     frequency: libFreq,
                     next_due_date: libDate,
-                    category: 'bills',
-                    emoji: '💸',
-                    description: null,
-                    end_date: null,
-                    group_name: null,
-                    payments_left: null
+                    category: selectedLenderId === 'other' ? 'other' : 'bills',
+                    emoji: libEmoji,
+                    description: libDesc || null,
+                    end_date: finalEndDate,
+                    group_name: libGroup || null,
+                    payments_left: parsedPaymentsLeft
                 })
             }
             onSuccess(); handleClose()
@@ -521,10 +559,33 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
                                 {activeTab === 'liability' && (
                                     <div className="space-y-4">
                                         <div>
-                                            <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">Lender / Name</label>
-                                            <input value={libName} onChange={(e) => setLibName(e.target.value)} placeholder="e.g. Klarna, Netflix"
-                                                className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[13px] text-black outline-none focus:border-black/40" />
+                                            <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-2 block">Provider / Tag</label>
+                                            <div className="grid grid-cols-2 gap-2 mb-3">
+                                                {LENDERS.map(l => (
+                                                    <button key={l.id}
+                                                        onClick={() => {
+                                                            setSelectedLenderId(l.id)
+                                                            setLibName(l.id === 'other' ? '' : l.name)
+                                                            setLibEmoji(l.emoji)
+                                                        }}
+                                                        className={`flex items-center gap-2 p-2 rounded-xl border transition-all ${selectedLenderId === l.id ? 'bg-white border-black shadow-[0_2px_10px_rgba(124,58,237,0.1)] ring-1 ring-black/20' : 'bg-black/[0.03] border-black/[0.05] hover:border-black/[0.15] hover:bg-black/[0.05]'}`}>
+                                                        {getLenderLogo(l.name) ? (
+                                                            <div className="w-6 h-6 rounded bg-white flex items-center justify-center overflow-hidden flex-shrink-0">
+                                                                <img src={getLenderLogo(l.name)!} alt={l.name} className="w-full h-full object-contain" />
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-lg leading-none">{l.emoji}</span>
+                                                        )}
+                                                        <span className="text-[11px] font-bold text-black/70 tracking-tight">{l.name}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            {selectedLenderId === 'other' && (
+                                                <input value={libName} onChange={(e) => setLibName(e.target.value)} placeholder="e.g. Netflix, Gym"
+                                                    className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[13px] text-black outline-none focus:border-black/40" />
+                                            )}
                                         </div>
+
                                         <div className="flex gap-3">
                                             <div className="flex-1">
                                                 <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">Frequency</label>
@@ -541,6 +602,28 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
                                                 <input type="date" value={libDate} onChange={(e) => setLibDate(e.target.value)}
                                                     className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[13px] text-black outline-none focus:border-black/40" />
                                             </div>
+                                        </div>
+
+                                        <div className="space-y-4 pt-4 border-t border-black/[0.06]">
+                                            <div>
+                                                <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">Description / Note</label>
+                                                <input value={libDesc} onChange={(e) => setLibDesc(e.target.value)} placeholder="e.g. Monitor, Deliveroo"
+                                                    className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[13px] text-black outline-none focus:border-black/40" />
+                                            </div>
+
+                                            {(selectedLenderId === 'klarna' || selectedLenderId === 'clearpay') ? (
+                                                <div>
+                                                    <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">Payments Left</label>
+                                                    <input type="number" value={libPaymentsLeft} onChange={(e) => setLibPaymentsLeft(e.target.value)} placeholder="e.g. 3"
+                                                        className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[13px] text-black outline-none focus:border-black/40" />
+                                                </div>
+                                            ) : (
+                                                <div className={selectedLenderId === 'currys' ? '' : 'opacity-50 grayscale hover:opacity-100 hover:grayscale-0 focus-within:opacity-100 focus-within:grayscale-0 transition-all'}>
+                                                    <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">End Date (Optional)</label>
+                                                    <input type="date" value={libEndDate} onChange={(e) => setLibEndDate(e.target.value)}
+                                                        className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[13px] text-black outline-none focus:border-black/40" />
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 )}
