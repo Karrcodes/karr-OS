@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Plus, X, ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import type { Pocket, Goal, RecurringObligation } from '../types/finance.types'
@@ -42,6 +42,17 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
     const [description, setDescription] = useState('')
     const { activeProfile } = useFinanceProfile()
     const router = useRouter()
+
+    useEffect(() => {
+        if (open) {
+            document.body.style.overflow = 'hidden'
+        } else {
+            document.body.style.overflow = ''
+        }
+        return () => {
+            document.body.style.overflow = ''
+        }
+    }, [open])
 
     // Payday Allocation State
     const { logIncome } = useIncome()
@@ -402,7 +413,7 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
             {open && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center">
                     <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={handleClose} />
-                    <div className="relative w-full max-w-md mx-4 rounded-2xl bg-white border border-black/[0.08] shadow-2xl">
+                    <div className="relative w-[calc(100%-2rem)] max-w-md mx-4 rounded-2xl bg-white border border-black/[0.08] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
                         {/* Header */}
                         <div className="flex items-center justify-between px-5 py-4 border-b border-black/[0.06]">
                             <p className="text-[15px] font-bold text-black">Quick Action</p>
@@ -428,7 +439,7 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
 
                         {/* Form Body Contexts */}
                         {allocating && activeTab === 'income' ? (
-                            <div className="p-5 flex flex-col max-h-[70vh] overflow-y-auto">
+                            <div className="p-5 flex flex-col overflow-y-auto no-scrollbar pb-8">
                                 <div className="flex items-center justify-between mb-4">
                                     <div>
                                         <h2 className="text-[16px] font-bold text-[#059669]">Distribute Income</h2>
@@ -494,7 +505,7 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
                                 </div>
                             </div>
                         ) : (
-                            <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
+                            <div className="p-5 space-y-4 overflow-y-auto overflow-x-hidden no-scrollbar pb-8">
 
                                 {/* AI Payslip Block */}
                                 {activeTab === 'income' && (
