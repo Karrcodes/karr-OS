@@ -14,24 +14,26 @@ export default function SettingsPage() {
     return (
         <div className="h-screen bg-[#fafafa] flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="flex items-center gap-3 px-6 py-5 border-b border-black/[0.06] bg-white">
-                <div className="w-8 h-8 rounded-lg bg-black/[0.04] flex items-center justify-center">
-                    <Settings className="w-4 h-4 text-black/40" />
+            <div className="flex flex-col gap-3 px-4 py-4 border-b border-black/[0.06] bg-white">
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-black/[0.04] flex items-center justify-center flex-shrink-0">
+                        <Settings className="w-4 h-4 text-black/40" />
+                    </div>
+                    <div>
+                        <h1 className="text-[18px] font-bold text-black">Settings</h1>
+                        <p className="text-[11px] text-black/35">Configure your {activeProfile === 'personal' ? 'Personal' : 'Studio Karrtesian'} module</p>
+                    </div>
                 </div>
-                <div>
-                    <h1 className="text-[20px] font-bold text-black">Settings</h1>
-                    <p className="text-[12px] text-black/35">Configure your {activeProfile === 'personal' ? 'Personal' : 'Studio Karrtesian'} module</p>
-                </div>
-                <div className="ml-auto flex bg-black/[0.04] p-1 rounded-xl border border-black/[0.06]">
+                <div className="flex bg-black/[0.04] p-1 rounded-xl border border-black/[0.06] w-full">
                     <button
                         onClick={() => setProfile('personal')}
-                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeProfile === 'personal' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
+                        className={`flex-1 py-1.5 rounded-lg text-[12px] font-bold transition-all ${activeProfile === 'personal' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
                     >
                         Personal
                     </button>
                     <button
                         onClick={() => setProfile('business')}
-                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeProfile === 'business' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
+                        className={`flex-1 py-1.5 rounded-lg text-[12px] font-bold transition-all ${activeProfile === 'business' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
                     >
                         Business
                     </button>

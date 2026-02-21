@@ -56,54 +56,35 @@ export default function TransactionsPage() {
     return (
         <div className="h-screen bg-[#fafafa] flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="bg-white border-b border-black/[0.06] px-6 py-5 z-20 shadow-sm flex-shrink-0">
-                <div className="max-w-4xl mx-auto flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <a href="/finances" className="w-10 h-10 rounded-xl bg-black/[0.03] flex items-center justify-center hover:bg-black/[0.06] transition-colors">
-                            <ArrowLeft className="w-5 h-5 text-black/40" />
+            <div className="bg-white border-b border-black/[0.06] px-4 py-4 z-20 shadow-sm flex-shrink-0">
+                <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <a href="/finances" className="w-9 h-9 rounded-xl bg-black/[0.03] flex items-center justify-center hover:bg-black/[0.06] transition-colors flex-shrink-0">
+                            <ArrowLeft className="w-4 h-4 text-black/40" />
                         </a>
-                        <div>
-                            <h1 className="text-[20px] font-bold text-black tracking-tight">Transactions</h1>
-                            <p className="text-[12px] text-black/35 mt-0.5">{activeProfile === 'personal' ? 'Personal' : 'Business'} · {transactions.length} total</p>
+                        <div className="min-w-0">
+                            <h1 className="text-[18px] font-bold text-black tracking-tight">Transactions</h1>
+                            <p className="text-[11px] text-black/35 mt-0.5 truncate">{activeProfile === 'personal' ? 'Personal' : 'Business'} · {transactions.length} total</p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        <div className="flex items-center bg-black/[0.03] p-1 rounded-xl">
-                            <button
-                                onClick={() => setActiveProfile('personal')}
-                                className={`px-4 py-1.5 rounded-lg text-[12px] font-bold transition-all ${activeProfile === 'personal' ? 'bg-white text-black shadow-sm' : 'text-black/30 hover:text-black/50'}`}
-                            >
-                                Personal
-                            </button>
-                            <button
-                                onClick={() => setActiveProfile('business')}
-                                className={`px-4 py-1.5 rounded-lg text-[12px] font-bold transition-all ${activeProfile === 'business' ? 'bg-white text-black shadow-sm' : 'text-black/30 hover:text-black/50'}`}
-                            >
-                                Business
-                            </button>
-                        </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                        <button
+                            onClick={() => setIsImportModalOpen(true)}
+                            disabled={bankSyncLoading}
+                            className="flex items-center gap-1.5 text-[12px] font-bold text-black bg-black/5 px-3 py-1.5 rounded-xl hover:bg-black/10 transition-colors disabled:opacity-50"
+                        >
+                            <RefreshCw className={`w-3.5 h-3.5 ${bankSyncLoading ? 'animate-spin' : ''}`} />
+                            <span className="hidden sm:inline">{bankSyncLoading ? 'Syncing...' : 'Sync CSV'}</span>
+                        </button>
 
-                        <div className="h-6 w-[1px] bg-black/[0.06]" />
-
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => setIsImportModalOpen(true)}
-                                disabled={bankSyncLoading}
-                                className="flex items-center gap-1.5 text-[12px] font-bold text-black bg-black/5 px-3 py-1.5 rounded-xl hover:bg-black/10 transition-colors disabled:opacity-50"
-                            >
-                                <RefreshCw className={`w-3.5 h-3.5 ${bankSyncLoading ? 'animate-spin' : ''}`} />
-                                {bankSyncLoading ? 'Syncing...' : 'Sync CSV'}
-                            </button>
-
-                            <button
-                                onClick={() => { if (confirm('Clear all transactions in this profile?')) clearTransactions() }}
-                                className="flex items-center gap-1.5 text-[12px] font-bold text-red-500 bg-red-50 px-3 py-1.5 rounded-xl hover:bg-red-100 transition-colors"
-                            >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                Clear All
-                            </button>
-                        </div>
+                        <button
+                            onClick={() => { if (confirm('Clear all transactions in this profile?')) clearTransactions() }}
+                            className="flex items-center gap-1.5 text-[12px] font-bold text-red-500 bg-red-50 px-3 py-1.5 rounded-xl hover:bg-red-100 transition-colors"
+                        >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Clear All</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -112,37 +93,55 @@ export default function TransactionsPage() {
             <div className="flex-1 overflow-y-auto p-6 flex flex-col">
                 <div className="max-w-4xl mx-auto space-y-4">
                     {/* Filters & Search */}
-                    <div className="bg-white p-4 rounded-3xl border border-black/[0.06] shadow-sm flex flex-col sm:flex-row items-end sm:items-center gap-2 mb-2">
-                        <select
-                            value={timeFilter}
-                            onChange={e => setTimeFilter(e.target.value)}
-                            className="bg-black/[0.03] border border-black/[0.06] rounded-xl px-3 py-2 text-[13px] outline-none focus:border-black/30 transition-colors w-full sm:w-36 cursor-pointer font-bold text-black/60"
-                        >
-                            <option value="all">All Time</option>
-                            <option value="30days">Last 30 Days</option>
-                            <option value="3months">Last 3 Months</option>
-                            <option value="6months">Last 6 Months</option>
-                            <option value="1year">Last 1 Year</option>
-                        </select>
-                        <select
-                            value={selectedPocket}
-                            onChange={e => setSelectedPocket(e.target.value)}
-                            className="bg-black/[0.03] border border-black/[0.06] rounded-xl px-3 py-2 text-[13px] outline-none focus:border-black/30 transition-colors w-full sm:w-48 cursor-pointer font-bold text-black/60"
-                        >
-                            <option value="all">All Pockets</option>
-                            {pockets.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                            <option value="null">Unassigned</option>
-                        </select>
-                        <select
-                            value={selectedCategory}
-                            onChange={e => setSelectedCategory(e.target.value)}
-                            className="bg-black/[0.03] border border-black/[0.06] rounded-xl px-3 py-2 text-[13px] outline-none focus:border-black/30 transition-colors w-full sm:w-48 cursor-pointer font-bold text-black/60 capitalize"
-                        >
-                            <option value="all">All Categories</option>
-                            {FINANCE_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
-                        </select>
+                    <div className="bg-white p-4 rounded-3xl border border-black/[0.06] shadow-sm flex flex-col gap-3 mb-2">
+                        {/* Profile Toggle */}
+                        <div className="flex bg-black/[0.03] p-1 rounded-xl w-full">
+                            <button
+                                onClick={() => setActiveProfile('personal')}
+                                className={`flex-1 py-1.5 rounded-lg text-[12px] font-bold transition-all ${activeProfile === 'personal' ? 'bg-white text-black shadow-sm' : 'text-black/30 hover:text-black/50'}`}
+                            >
+                                Personal
+                            </button>
+                            <button
+                                onClick={() => setActiveProfile('business')}
+                                className={`flex-1 py-1.5 rounded-lg text-[12px] font-bold transition-all ${activeProfile === 'business' ? 'bg-white text-black shadow-sm' : 'text-black/30 hover:text-black/50'}`}
+                            >
+                                Business
+                            </button>
+                        </div>
 
-                        <div className="relative w-full sm:flex-1">
+                        <div className="flex flex-col sm:flex-row gap-2">
+                            <select
+                                value={timeFilter}
+                                onChange={e => setTimeFilter(e.target.value)}
+                                className="bg-black/[0.03] border border-black/[0.06] rounded-xl px-3 py-2 text-[13px] outline-none focus:border-black/30 transition-colors w-full cursor-pointer font-bold text-black/60"
+                            >
+                                <option value="all">All Time</option>
+                                <option value="30days">Last 30 Days</option>
+                                <option value="3months">Last 3 Months</option>
+                                <option value="6months">Last 6 Months</option>
+                                <option value="1year">Last 1 Year</option>
+                            </select>
+                            <select
+                                value={selectedPocket}
+                                onChange={e => setSelectedPocket(e.target.value)}
+                                className="bg-black/[0.03] border border-black/[0.06] rounded-xl px-3 py-2 text-[13px] outline-none focus:border-black/30 transition-colors w-full cursor-pointer font-bold text-black/60"
+                            >
+                                <option value="all">All Pockets</option>
+                                {pockets.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                <option value="null">Unassigned</option>
+                            </select>
+                            <select
+                                value={selectedCategory}
+                                onChange={e => setSelectedCategory(e.target.value)}
+                                className="bg-black/[0.03] border border-black/[0.06] rounded-xl px-3 py-2 text-[13px] outline-none focus:border-black/30 transition-colors w-full cursor-pointer font-bold text-black/60 capitalize"
+                            >
+                                <option value="all">All Categories</option>
+                                {FINANCE_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
+                            </select>
+                        </div>
+
+                        <div className="relative w-full">
                             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-black/20" />
                             <input
                                 type="text"
