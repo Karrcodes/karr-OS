@@ -91,26 +91,28 @@ export default function SystemRoadmapPage() {
                                             <button
                                                 onClick={() => toggleRoadmapItem(item.id, !item.is_completed)}
                                                 className={cn(
-                                                    "w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-1 transition-all",
+                                                    "w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 transition-all border-2",
                                                     item.is_completed
-                                                        ? "bg-emerald-100 text-emerald-600 border border-emerald-200"
-                                                        : "bg-orange-50 text-orange-400 border border-orange-100 hover:border-orange-300"
+                                                        ? "bg-emerald-500 text-white border-emerald-500 shadow-sm"
+                                                        : "bg-white text-transparent border-black/10 hover:border-black/20"
                                                 )}
+                                                title={item.is_completed ? "Mark as planned" : "Mark as completed"}
                                             >
-                                                {item.is_completed ? <Check className="w-3 h-3" /> : <Sparkles className="w-2.5 h-2.5" />}
+                                                <Check className={cn("w-3.5 h-3.5", item.is_completed ? "opacity-100" : "opacity-0")} />
                                             </button>
                                             <p className={cn(
-                                                "text-[13px] font-medium leading-relaxed transition-all",
-                                                item.is_completed ? "text-black/30 line-through" : "text-black/70"
+                                                "text-[14px] font-medium leading-relaxed transition-all",
+                                                item.is_completed ? "text-black/30 line-through" : "text-black/80"
                                             )}>
                                                 {item.content}
                                             </p>
                                         </div>
                                         <button
                                             onClick={() => deleteRoadmapItem(item.id)}
-                                            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-50 text-red-400 transition-all"
+                                            className="opacity-30 group-hover:opacity-100 p-2 rounded-lg hover:bg-red-50 hover:text-red-500 transition-all"
+                                            title="Delete idea"
                                         >
-                                            <Trash2 className="w-3.5 h-3.5" />
+                                            <Trash2 className="w-4 h-4" />
                                         </button>
                                     </div>
                                     <div className="mt-4 pt-4 border-t border-black/[0.03] flex items-center justify-between">
