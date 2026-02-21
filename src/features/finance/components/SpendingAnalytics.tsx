@@ -62,7 +62,7 @@ export function SpendingAnalytics({ transactions, pockets }: SpendingAnalyticsPr
                         if (pocket) {
                             name = pocket.id
                             label = pocket.name
-                            emoji = Array.from(pocket.name).pop() || '💰'
+                            emoji = pocket.name.split(' ').pop() || '💰'
                         } else {
                             label = 'Unknown Pocket'
                             emoji = '❓'
