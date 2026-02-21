@@ -41,8 +41,8 @@ export default function FinanceAnalyticsPage() {
     return (
         <div className="h-screen bg-[#fafafa] flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="bg-white border-b border-black/[0.06] px-6 py-5 z-20 shadow-sm flex-shrink-0">
-                <div className="max-w-5xl mx-auto space-y-4">
+            <div className="bg-white border-b border-black/[0.06] px-4 sm:px-6 py-5 z-20 shadow-sm flex-shrink-0">
+                <div className="w-full max-w-7xl mx-auto space-y-4">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0">
                             <a href="/finances" className="w-10 h-10 rounded-xl bg-black/[0.03] flex items-center justify-center hover:bg-black/[0.06] transition-colors shrink-0 mt-0.5 sm:mt-0">
@@ -80,8 +80,8 @@ export default function FinanceAnalyticsPage() {
             </div>
 
             {/* Main Content — scrolls independently, header never moves */}
-            <div className="flex-1 overflow-y-auto p-6 flex flex-col">
-                <div className="max-w-5xl mx-auto">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 flex flex-col items-center">
+                <div className="w-full max-w-7xl flex-1 flex flex-col">
                     {loading ? (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             {[1, 2, 3].map(i => (
@@ -268,8 +268,8 @@ export default function FinanceAnalyticsPage() {
                         </div>
                     )}
                 </div>
-                <KarrFooter />
             </div>
+            <KarrFooter />
         </div >
     )
 }
