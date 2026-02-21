@@ -200,6 +200,7 @@ export function Sidebar() {
                         key={item.label}
                         value={item.label}
                         className="relative cursor-grab active:cursor-grabbing"
+                        layout="position"
                     >
                         {content}
                     </Reorder.Item>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Calendar as CalendarIcon, ExternalLink, Briefcase, DollarSign, ChevronLeft, ChevronRight, Info } from 'lucide-react'
+import { Calendar as CalendarIcon, ExternalLink, Briefcase, DollarSign, ChevronLeft, ChevronRight, Info, Check, X } from 'lucide-react'
 
 // Hardcoded anchor: User states next shift starts on "Monday". 
 // Given current date (Feb 20, 2026 - Friday), next Monday is Feb 23, 2026.
@@ -24,6 +24,53 @@ const DEDUCTION_RATE = 0.1877 // ~18.77% deduced from payslip
 export function ProjectionsAnalytics() {
     const [currentDate, setCurrentDate] = useState(new Date())
     const [dayOverrides, setDayOverrides] = useState<Record<string, 'overtime' | 'absence' | 'holiday'>>({})
+
+    const [bookingOpen, setBookingOpen] = useState(false)
+    const [bookDays, setBookDays] = useState('')
+    const [bookFirst, setBookFirst] = useState('')
+    const [bookLast, setBookLast] = useState('')
+    const [bookReturn, setBookReturn] = useState('')
+    const [bookReason, setBookReason] = useState('Annual Leave')
+
+    const activeOverrides = useMemo(() => {
+        const abs = Object.keys(dayOverrides).filter(k => dayOverrides[k] === 'absence').sort()
+        const hol = Object.keys(dayOverrides).filter(k => dayOverrides[k] === 'holiday').sort()
+        return { abs, hol }
+    }, [dayOverrides])
+
+    const handleOpenBooking = () => {
+        const { hol } = activeOverrides
+        setBookDays(hol.length.toString())
+        if (hol.length > 0) {
+            setBookFirst(hol[0])
+            setBookLast(hol[hol.length - 1])
+            const retDate = new Date(hol[hol.length - 1])
+            retDate.setDate(retDate.getDate() + 1)
+            setBookReturn(retDate.toISOString().split('T')[0])
+        }
+        setBookingOpen(true)
+    }
+
+    const submitBooking = () => {
+        const formId = "j_NRZWJQb0-a7XxZvz4tGEMcjSxEbT1OkE4gUvilROBUNzdGTFlCWkFPTjk5RlhWNFdNNk4xREtQSy4u"
+        const baseUrl = `https://forms.office.com/Pages/ResponsePage.aspx?id=${formId}`
+
+        const params = new URLSearchParams()
+        params.append('r38f9b0a08112418f999c9be4b039ea12', "3711148963") // Badge
+        params.append('r9e5f1108f508457b860ff4a5009cb316', "Umaru AbdulAlim") // Name
+        params.append('r2e22e78b63e04d97afef3084d56f2048', "HLOP") // Dept
+        params.append('rb4fd0ddc565c4eda8d049f0ea1df8a19', "12 hour (0600-1800)") // Shift
+        params.append('rabbc8d260b7647f49e584cf4ae6791ae', new Date().toISOString().split('T')[0]) // Today
+
+        if (bookFirst) params.append('r174c10835f374d6a8cc50adb883619ad', bookFirst)
+        if (bookLast) params.append('r796739c016a84af18c0c1aaa47db48f6', bookLast)
+        if (bookReturn) params.append('r776081eb9aeb440ba39a517960c00407', bookReturn)
+        if (bookDays) params.append('r77734ecce2d242f68ce5b9b4ef034430', bookDays)
+        if (bookReason) params.append('rbbc3b3b348b04bb998be461b02a2e307', bookReason)
+
+        window.open(`${baseUrl}&${params.toString()}`, '_blank')
+        setBookingOpen(false)
+    }
 
     const monthName = currentDate.toLocaleString('default', { month: 'long' })
     const year = currentDate.getFullYear()
@@ -331,6 +378,37 @@ export function ProjectionsAnalytics() {
                         })}
                     </div>
 
+                    {(activeOverrides.abs.length > 0 || activeOverrides.hol.length > 0) && (
+                        <div className="mt-5 p-4 rounded-xl border border-black/[0.08] bg-black/[0.02] flex items-center justify-between">
+                            <div className="text-[13px] font-semibold text-black/70">
+                                Unsaved Overrides
+                                <span className="ml-2 px-2 py-0.5 rounded-full bg-black/10 text-[10px] uppercase font-bold text-black/60">
+                                    {activeOverrides.abs.length} ABS, {activeOverrides.hol.length} HOL
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2 block sm:hidden md:flex">
+                                {activeOverrides.abs.length > 0 && (
+                                    <button
+                                        onClick={() => {
+                                            alert("Absence logged locally for Projections.")
+                                        }}
+                                        className="px-3 py-1.5 rounded-lg border border-red-200 bg-red-50 text-red-700 text-[12px] font-bold hover:bg-red-100 transition-colors"
+                                    >
+                                        Confirm Absence
+                                    </button>
+                                )}
+                                {activeOverrides.hol.length > 0 && (
+                                    <button
+                                        onClick={handleOpenBooking}
+                                        className="px-3 py-1.5 rounded-lg border border-purple-200 bg-purple-50 text-purple-700 text-[12px] font-bold hover:bg-purple-100 transition-colors"
+                                    >
+                                        Book Holiday
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     <div className="mt-6 flex flex-wrap items-center gap-4 text-[11px] text-black/40 font-medium border-t border-black/[0.04] pt-4 select-none">
                         <div className="flex items-center gap-2">
                             <div className="w-3 h-3 rounded bg-[#dbeafe] border border-[#bfdbfe]" /> Shift Day
@@ -353,6 +431,63 @@ export function ProjectionsAnalytics() {
                     </div>
                 </div>
             </div>
+
+            {/* Holiday Booking Modal */}
+            {bookingOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setBookingOpen(false)} />
+                    <div className="relative w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 duration-300">
+                        <div className="px-5 py-4 border-b border-black/[0.06] flex items-center justify-between bg-black/[0.02]">
+                            <h3 className="text-[16px] font-bold text-black flex items-center gap-2">
+                                <span className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600 text-lg">✈️</span>
+                                Holiday Request
+                            </h3>
+                            <button onClick={() => setBookingOpen(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-black/40 hover:bg-black/5 hover:text-black transition-colors">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                        <div className="p-5 space-y-4">
+                            <p className="text-[13px] text-black/60 leading-relaxed">
+                                Complete these details to generate your pre-filled Microsoft Forms request. Your Badge ID and personal details will be automatically attached.
+                            </p>
+
+                            <div className="space-y-4 pt-2">
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">First Date</label>
+                                        <input type="date" value={bookFirst} onChange={e => setBookFirst(e.target.value)} className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-2 text-[13px] outline-none focus:border-purple-500" />
+                                    </div>
+                                    <div>
+                                        <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">Last Date</label>
+                                        <input type="date" value={bookLast} onChange={e => setBookLast(e.target.value)} className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-2 text-[13px] outline-none focus:border-purple-500" />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">Total Days</label>
+                                        <input type="number" value={bookDays} onChange={e => setBookDays(e.target.value)} className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-2 text-[13px] outline-none focus:border-purple-500" />
+                                    </div>
+                                    <div>
+                                        <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">Return Date</label>
+                                        <input type="date" value={bookReturn} onChange={e => setBookReturn(e.target.value)} className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-2 text-[13px] outline-none focus:border-purple-500" />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">Reason for Leave</label>
+                                    <input type="text" value={bookReason} onChange={e => setBookReason(e.target.value)} className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-2 text-[13px] outline-none focus:border-purple-500" />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-5 border-t border-black/[0.06] bg-black/[0.01]">
+                            <button onClick={submitBooking} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-purple-600 text-white font-bold text-[14px] hover:bg-purple-700 transition-colors shadow-sm shadow-purple-200">
+                                Open Microsoft Form <ExternalLink className="w-4 h-4 opacity-70" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div >
     )
 }
