@@ -56,21 +56,27 @@ export function ProjectionsAnalytics() {
         const formId = "j_NRZWJQb0-a7XxZvz4tGEMcjSxEbT1OkE4gUvilROBUNzdGTFlCWkFPTjk5RlhWNFdNNk4xREtQSy4u"
         const baseUrl = `https://forms.office.com/Pages/ResponsePage.aspx?id=${formId}`
 
-        const params = new URLSearchParams()
-        params.append('r38f9b0a08112418f999c9be4b039ea12', "3711148963") // Badge
-        params.append('r9e5f1108f508457b860ff4a5009cb316', "Umaru AbdulAlim") // Name
-        params.append('r2e22e78b63e04d97afef3084d56f2048', "HLOP") // Dept
-        params.append('rb4fd0ddc565c4eda8d049f0ea1df8a19', "12 hour (0600-1800)") // Shift
-        params.append('rabbc8d260b7647f49e584cf4ae6791ae', new Date().toISOString().split('T')[0]) // Today
+        // MS Forms explicitly blocks raw URL parameter injection unless the author enables "Pre-filled Link" and generates an encrypted answers hash.
+        // As a fallback, we copy the pre-filled data to the user's clipboard for instant pasting.
+        const clipboardText = `Badge: 3711148963
+Name: Umaru AbdulAlim
+Dept: HLOP
+Shift: 12 hour (0600-1800)
+Today's Date: ${new Date().toLocaleDateString()}
+First Date of Holiday: ${bookFirst ? new Date(bookFirst).toLocaleDateString() : ''}
+Last Date of Holiday: ${bookLast ? new Date(bookLast).toLocaleDateString() : ''}
+Total Days: ${bookDays}
+Return Date: ${bookReturn ? new Date(bookReturn).toLocaleDateString() : ''}
+Reason: ${bookReason}`
 
-        if (bookFirst) params.append('r174c10835f374d6a8cc50adb883619ad', bookFirst)
-        if (bookLast) params.append('r796739c016a84af18c0c1aaa47db48f6', bookLast)
-        if (bookReturn) params.append('r776081eb9aeb440ba39a517960c00407', bookReturn)
-        if (bookDays) params.append('r77734ecce2d242f68ce5b9b4ef034430', bookDays)
-        if (bookReason) params.append('rbbc3b3b348b04bb998be461b02a2e307', bookReason)
-
-        window.open(`${baseUrl}&${params.toString()}`, '_blank')
-        setBookingOpen(false)
+        navigator.clipboard.writeText(clipboardText).then(() => {
+            alert("Microsoft Forms blocks external link pre-filling.\n\nYour details have been copied to your clipboard! Please simply paste them into the form.")
+            window.open(baseUrl, '_blank')
+            setBookingOpen(false)
+        }).catch(() => {
+            window.open(baseUrl, '_blank')
+            setBookingOpen(false)
+        })
     }
 
     const monthName = currentDate.toLocaleString('default', { month: 'long' })
@@ -459,58 +465,55 @@ export function ProjectionsAnalytics() {
                                 <X className="w-4 h-4" />
                             </button>
                         </div>
-                        <div className="p-5 space-y-4">
-                            <p className="text-[13px] text-black/60 leading-relaxed">
-                                Complete these details to generate your pre-filled Microsoft Forms request. Your Badge ID and personal details will be automatically attached.
-                            </p>
+                        <div className="p-5 space-y-5">
+                            <div className="p-3 bg-purple-50 rounded-xl border border-purple-100/50">
+                                <p className="text-[12px] text-purple-700 leading-relaxed">
+                                    <span className="font-bold flex items-center gap-1.5 mb-1">
+                                        <Info className="w-3.5 h-3.5" /> Microsoft Forms Note
+                                    </span>
+                                    Automatic pre-filling is blocked by Staffline&apos;s form. We&apos;ve copied your details below; hitting the button will put them on your clipboard for pasting!
+                                </p>
+                            </div>
 
-                            <div className="space-y-4 pt-2">
-                                <div className="flex flex-wrap gap-3">
-                                    <div className="flex-1 min-w-[130px]">
-                                        <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">First Date</label>
-                                        <input type="date" value={bookFirst} onChange={e => setBookFirst(e.target.value)} className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-2 text-[13px] outline-none focus:border-purple-500" />
-                                    </div>
-                                    <div className="flex-1 min-w-[130px]">
-                                        <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">Last Date</label>
-                                        <input type="date" value={bookLast} onChange={e => setBookLast(e.target.value)} className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-2 text-[13px] outline-none focus:border-purple-500" />
-                                    </div>
+                            <div className="space-y-4 pt-1">
+                                <div>
+                                    <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">First Date</label>
+                                    <input type="date" value={bookFirst} onChange={e => setBookFirst(e.target.value)} className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[14px] outline-none focus:border-purple-500" />
                                 </div>
-
-                                <div className="flex flex-wrap gap-3">
-                                    <div className="flex-1 min-w-[130px]">
-                                        <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">Total Days</label>
-                                        <input type="number" value={bookDays} onChange={e => {
-                                            const newDays = e.target.value
-                                            setBookDays(newDays)
-                                            const parsedDays = parseInt(newDays, 10)
-                                            if (!isNaN(parsedDays) && parsedDays > 0 && bookFirst) {
-                                                const first = new Date(bookFirst)
-
-                                                const last = new Date(first)
-                                                last.setDate(first.getDate() + (parsedDays - 1))
-                                                setBookLast(last.toISOString().split('T')[0])
-
-                                                const ret = new Date(last)
-                                                ret.setDate(last.getDate() + 1)
-                                                setBookReturn(ret.toISOString().split('T')[0])
-                                            }
-                                        }} className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-2 text-[13px] outline-none focus:border-purple-500" />
-                                    </div>
-                                    <div className="flex-1 min-w-[130px]">
-                                        <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">Return Date</label>
-                                        <input type="date" value={bookReturn} onChange={e => setBookReturn(e.target.value)} className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-2 text-[13px] outline-none focus:border-purple-500" />
-                                    </div>
+                                <div>
+                                    <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">Last Date</label>
+                                    <input type="date" value={bookLast} onChange={e => setBookLast(e.target.value)} className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[14px] outline-none focus:border-purple-500" />
                                 </div>
-
+                                <div>
+                                    <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">Total Days</label>
+                                    <input type="number" value={bookDays} onChange={e => {
+                                        const newDays = e.target.value
+                                        setBookDays(newDays)
+                                        const parsedDays = parseInt(newDays, 10)
+                                        if (!isNaN(parsedDays) && parsedDays > 0 && bookFirst) {
+                                            const first = new Date(bookFirst)
+                                            const last = new Date(first)
+                                            last.setDate(first.getDate() + (parsedDays - 1))
+                                            setBookLast(last.toISOString().split('T')[0])
+                                            const ret = new Date(last)
+                                            ret.setDate(last.getDate() + 1)
+                                            setBookReturn(ret.toISOString().split('T')[0])
+                                        }
+                                    }} className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[14px] outline-none focus:border-purple-500" />
+                                </div>
+                                <div>
+                                    <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">Return Date</label>
+                                    <input type="date" value={bookReturn} onChange={e => setBookReturn(e.target.value)} className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[14px] outline-none focus:border-purple-500" />
+                                </div>
                                 <div>
                                     <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">Reason for Leave</label>
-                                    <input type="text" value={bookReason} onChange={e => setBookReason(e.target.value)} className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-2 text-[13px] outline-none focus:border-purple-500" />
+                                    <input type="text" value={bookReason} onChange={e => setBookReason(e.target.value)} placeholder="Personal / Holiday" className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[14px] outline-none focus:border-purple-500" />
                                 </div>
                             </div>
                         </div>
                         <div className="p-5 border-t border-black/[0.06] bg-black/[0.01]">
-                            <button onClick={submitBooking} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-purple-600 text-white font-bold text-[14px] hover:bg-purple-700 transition-colors shadow-sm shadow-purple-200">
-                                Open Microsoft Form <ExternalLink className="w-4 h-4 opacity-70" />
+                            <button onClick={submitBooking} className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-purple-600 text-white font-bold text-[15px] hover:bg-purple-700 transition-colors shadow-sm shadow-purple-200">
+                                Copy & Open Forms <ExternalLink className="w-4 h-4 opacity-70" />
                             </button>
                         </div>
                     </div>
