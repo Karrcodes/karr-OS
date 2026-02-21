@@ -1,22 +1,12 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { PieChart, Wallet, ArrowDownLeft, ArrowUpRight, ShoppingBag, Utensils, Home, Car, Zap, Heart, Layers, ArrowLeft, X } from 'lucide-react'
+import { PieChart, ArrowDownLeft, ArrowUpRight, ArrowLeft } from 'lucide-react'
 import type { Transaction } from '../types/finance.types'
+import { getCategoryById } from '../constants/categories'
 
 interface SpendingAnalyticsProps {
     transactions: Transaction[]
-}
-
-const CATEGORY_ICONS: Record<string, any> = {
-    'housing': Home,
-    'food': Utensils,
-    'transport': Car,
-    'utilities': Zap,
-    'shopping': ShoppingBag,
-    'health': Heart,
-    'entertainment': Layers,
-    'other': Wallet
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -46,14 +36,18 @@ export function SpendingAnalytics({ transactions }: SpendingAnalyticsProps) {
         }, {} as Record<string, { total: number; transactions: Transaction[] }>)
 
         const sortedCategories = Object.entries(byCategory)
-            .map(([name, data]) => ({
-                name,
-                amount: data.total,
-                transactions: data.transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
-                percentage: totalSpend > 0 ? (data.total / totalSpend) * 100 : 0,
-                icon: CATEGORY_ICONS[name] || Wallet,
-                color: CATEGORY_COLORS[name] || '#64748b'
-            }))
+            .map(([name, data]) => {
+                const catDef = getCategoryById(name)
+                return {
+                    name,
+                    label: catDef.label,
+                    amount: data.total,
+                    transactions: data.transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+                    percentage: totalSpend > 0 ? (data.total / totalSpend) * 100 : 0,
+                    emoji: catDef.emoji,
+                    color: CATEGORY_COLORS[name] || '#64748b'
+                }
+            })
             .sort((a, b) => b.amount - a.amount)
 
         return { totalSpend, sortedCategories }
@@ -75,7 +69,6 @@ export function SpendingAnalytics({ transactions }: SpendingAnalyticsProps) {
     if (selectedCategory) {
         const category = stats.sortedCategories.find(c => c.name === selectedCategory)
         if (!category) return null
-        const Icon = category.icon
 
         return (
             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-1 duration-300">
@@ -94,10 +87,10 @@ export function SpendingAnalytics({ transactions }: SpendingAnalyticsProps) {
                             className="w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-sm"
                             style={{ backgroundColor: category.color }}
                         >
-                            <Icon className="w-7 h-7" />
+                            <span className="text-2xl leading-none">{category.emoji}</span>
                         </div>
                         <div>
-                            <h2 className="text-[20px] font-bold text-black capitalize">{category.name}</h2>
+                            <h2 className="text-[20px] font-bold text-black">{category.label}</h2>
                             <p className="text-[12px] text-black/40 font-medium">{category.transactions.length} transactions · {category.percentage.toFixed(1)}% of total spending</p>
                         </div>
                         <div className="ml-auto text-right">
@@ -141,7 +134,7 @@ export function SpendingAnalytics({ transactions }: SpendingAnalyticsProps) {
     // Overview
     return (
         <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                 {/* Total Spend Card */}
                 <div className="bg-white p-6 rounded-3xl border border-black/[0.06] shadow-sm flex flex-col justify-between">
                     <div>
@@ -159,7 +152,7 @@ export function SpendingAnalytics({ transactions }: SpendingAnalyticsProps) {
                         {stats.sortedCategories.slice(0, 3).map((cat, i) => (
                             <div key={i} className="space-y-1.5">
                                 <div className="flex justify-between items-end">
-                                    <span className="text-[11px] font-bold text-black/60 capitalize">{cat.name}</span>
+                                    <span className="text-[11px] font-bold text-black/60">{cat.label}</span>
                                     <span className="text-[11px] font-bold text-black/30 privacy-blur">£{cat.amount.toFixed(0)}</span>
                                 </div>
                                 <div className="h-1.5 bg-black/[0.03] rounded-full overflow-hidden">
@@ -188,10 +181,10 @@ export function SpendingAnalytics({ transactions }: SpendingAnalyticsProps) {
                                     className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm flex-shrink-0 group-hover:scale-105 transition-transform"
                                     style={{ backgroundColor: cat.color }}
                                 >
-                                    <cat.icon className="w-5 h-5" />
+                                    <span className="text-xl leading-none">{cat.emoji}</span>
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-[13px] font-bold text-black capitalize">{cat.name}</p>
+                                    <p className="text-[13px] font-bold text-black">{cat.label}</p>
                                     <p className="text-[10px] text-black/30 font-bold uppercase tracking-wider">{cat.percentage.toFixed(1)}% · {cat.transactions.length} tx</p>
                                 </div>
                                 <div className="text-right">

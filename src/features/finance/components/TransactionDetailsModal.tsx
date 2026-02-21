@@ -35,7 +35,7 @@ export function TransactionDetailsModal({ transaction, pockets, isOpen, onClose 
                 <div className="pr-10 mb-6">
                     <div className="flex items-center gap-3 mb-2">
                         <div className="w-12 h-12 rounded-2xl bg-black/[0.03] border border-black/[0.05] flex items-center justify-center text-2xl shrink-0 shadow-sm">
-                            {transaction.emoji || '💸'}
+                            {pocketName !== 'General' ? Array.from(pocketName).pop() : (transaction.emoji || '💸')}
                         </div>
                         <div>
                             <h2 className="text-[18px] font-bold text-black leading-tight">{transaction.description || 'Transaction'}</h2>

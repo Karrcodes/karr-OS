@@ -97,7 +97,7 @@ export function TransactionLedger() {
                         >
                             <div className="w-10 h-10 rounded-xl bg-black/[0.03] border border-black/[0.05] flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform overflow-hidden px-1">
                                 <span className="text-lg leading-none" title={pocketName}>
-                                    {pocketName ? Array.from(pocketName).pop() : '💰'}
+                                    {pocketName !== 'General' ? Array.from(pocketName).pop() : (t.emoji || '💸')}
                                 </span>
                             </div>
 

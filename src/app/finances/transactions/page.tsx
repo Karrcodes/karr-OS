@@ -76,7 +76,10 @@ export default function TransactionsPage() {
                                     className="w-full text-left flex items-center gap-4 p-4 rounded-2xl border border-black/[0.04] bg-white hover:bg-black/[0.01] transition-colors group"
                                 >
                                     <div className="w-12 h-12 rounded-2xl bg-black/[0.03] border border-black/[0.05] flex items-center justify-center text-xl flex-shrink-0 group-hover:scale-105 transition-transform shadow-sm">
-                                        {t.emoji || '💸'}
+                                        {(() => {
+                                            const pocket = pockets.find(p => p.id === t.pocket_id)
+                                            return pocket ? Array.from(pocket.name).pop() : (t.emoji || '💸')
+                                        })()}
                                     </div>
 
                                     <div className="flex-1 min-w-0">

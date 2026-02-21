@@ -7,7 +7,7 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
 async function test() {
-    const notificationText = `Revolut\nPrimark, Cardiff Wales\n£26.00`;
+    const notificationText = `Revolut\nLavazza, Cardiff Wales\n£6.00`;
     const prompt = `You are a financial parsing assistant. The user has provided an Apple Pay / Revolut transaction notification text.
 Extract the transaction details and determine the correct budget pocket and spending category.
 
