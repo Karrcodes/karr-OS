@@ -12,6 +12,7 @@ import {
     Moon, Sun, Laptop, Target, Briefcase, Heart, Gift
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Reorder } from 'framer-motion'
 
 const navItems = [
     { label: 'Tasks', href: '/tasks', icon: CheckSquare },
@@ -91,6 +92,28 @@ export function Sidebar() {
         '/finances': true // Open by default
     })
 
+    const [orderedTabs, setOrderedTabs] = useState(navItems.map(item => item.label))
+    const [isMounted, setIsMounted] = useState(false)
+
+    useEffect(() => {
+        setIsMounted(true)
+        const savedOrder = localStorage.getItem('karrOS_sidebar_order')
+        if (savedOrder) {
+            try {
+                const parsed = JSON.parse(savedOrder)
+                const existingLabels = navItems.map(i => i.label)
+                const validParsed = parsed.filter((label: string) => existingLabels.includes(label))
+                const missing = existingLabels.filter(label => !validParsed.includes(label))
+                setOrderedTabs([...validParsed, ...missing])
+            } catch (e) { }
+        }
+    }, [])
+
+    const handleReorder = (newOrder: string[]) => {
+        setOrderedTabs(newOrder)
+        localStorage.setItem('karrOS_sidebar_order', JSON.stringify(newOrder))
+    }
+
     // Close drawer on route change
     useEffect(() => { setMobileOpen(false) }, [pathname])
 
@@ -99,42 +122,46 @@ export function Sidebar() {
         setExpandedFolders(prev => ({ ...prev, [href]: !prev[href] }))
     }
 
-    const nav = (
-        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-            <p className="text-[9px] tracking-[0.2em] text-black/25 uppercase font-semibold px-2 mb-3">Modules</p>
-            {navItems.map((item) => {
-                const isActive = !('disabled' in item && item.disabled) && pathname.startsWith(item.href)
-                const Icon = item.icon
+    const renderContent = (itemsToRender: string[], isReorderable: boolean) =>
+        itemsToRender.map((label) => {
+            const item = navItems.find((i) => i.label === label)
+            if (!item) return null
 
-                if ('disabled' in item && item.disabled) {
-                    return (
-                        <div key={item.href} className="flex items-center justify-between gap-3 px-2.5 py-2 rounded-lg cursor-not-allowed opacity-25">
-                            <div className="flex items-center gap-2.5">
-                                <Icon className="w-4 h-4 text-black/50" />
-                                <span className="text-[13px] text-black/60 font-medium">{item.label}</span>
-                            </div>
-                            <span className="text-[9px] tracking-widest text-black/40 uppercase font-semibold bg-black/5 px-1.5 py-0.5 rounded">Soon</span>
+            const isActive = !('disabled' in item && item.disabled) && pathname.startsWith(item.href)
+            const Icon = item.icon
+
+            let content
+
+            if ('disabled' in item && item.disabled) {
+                content = (
+                    <div className="flex items-center justify-between gap-3 px-2.5 py-2 rounded-lg cursor-not-allowed opacity-25 select-none hover:bg-black/5 transition-colors">
+                        <div className="flex items-center gap-2.5">
+                            <Icon className="w-4 h-4 text-black/50" />
+                            <span className="text-[13px] text-black/60 font-medium">{item.label}</span>
                         </div>
-                    )
-                }
-
-                return (
-                    <div key={item.href}>
+                        <span className="text-[9px] tracking-widest text-black/40 uppercase font-semibold bg-black/5 px-1.5 py-0.5 rounded">Soon</span>
+                    </div>
+                )
+            } else {
+                content = (
+                    <div className="select-none">
                         <Link
                             href={item.href}
+                            draggable={false}
                             className={cn(
                                 'flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-all duration-150 relative group',
                                 isActive ? 'bg-black/10 text-black' : 'text-black/50 hover:text-black/80 hover:bg-black/[0.04]'
                             )}
                         >
                             <Icon className={cn('w-4 h-4', isActive ? 'text-black' : 'text-black/35')} />
-                            <span className="text-[13px] font-medium">{item.label}</span>
+                            <span className="text-[13px] font-medium pointer-events-none">{item.label}</span>
 
                             {'sub' in item && item.sub && (
                                 <button
                                     type="button"
                                     onClick={(e) => toggleFolder(item.href, e)}
-                                    className="ml-auto p-1 rounded hover:bg-black/5 text-black/40 hover:text-black/70 transition-colors"
+                                    className="ml-auto p-1 rounded hover:bg-black/5 text-black/40 hover:text-black/70 transition-colors z-10 relative"
+                                    draggable={false}
                                 >
                                     <ChevronDown className={cn("w-3.5 h-3.5 transition-transform duration-200", expandedFolders[item.href] ? "rotate-180" : "")} />
                                 </button>
@@ -150,6 +177,7 @@ export function Sidebar() {
                                         <Link
                                             key={subItem.href}
                                             href={subItem.href}
+                                            draggable={false}
                                             className={cn(
                                                 'flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] transition-colors',
                                                 subActive ? 'text-black bg-black/8' : 'text-black/35 hover:text-black/60'
@@ -164,7 +192,35 @@ export function Sidebar() {
                         )}
                     </div>
                 )
-            })}
+            }
+
+            if (isReorderable) {
+                return (
+                    <Reorder.Item
+                        key={item.label}
+                        value={item.label}
+                        className="relative cursor-grab active:cursor-grabbing"
+                    >
+                        {content}
+                    </Reorder.Item>
+                )
+            }
+
+            return <div key={item.label}>{content}</div>
+        })
+
+    const nav = (
+        <nav className="flex-1 px-3 py-4 overflow-y-auto">
+            <p className="text-[9px] tracking-[0.2em] text-black/25 uppercase font-semibold px-2 mb-3">Modules</p>
+            {isMounted ? (
+                <Reorder.Group axis="y" values={orderedTabs} onReorder={handleReorder} className="space-y-0.5 list-none m-0 p-0">
+                    {renderContent(orderedTabs, true)}
+                </Reorder.Group>
+            ) : (
+                <div className="space-y-0.5">
+                    {renderContent(navItems.map(i => i.label), false)}
+                </div>
+            )}
         </nav>
     )
 
