@@ -24,9 +24,26 @@ const CATEGORY_COLORS: Record<string, string> = {
 export function SpendingAnalytics({ transactions, pockets }: SpendingAnalyticsProps) {
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
     const [groupBy, setGroupBy] = useState<'pocket' | 'category'>('pocket')
+    const [timeFilter, setTimeFilter] = useState<string>('all')
 
     const stats = useMemo(() => {
-        const spends = transactions.filter(t => t.type === 'spend')
+        const spends = transactions.filter(t => {
+            if (t.type !== 'spend') return false
+
+            if (timeFilter !== 'all') {
+                const txDate = new Date(t.date)
+                const now = new Date()
+                const diffTime = Math.abs(now.getTime() - txDate.getTime())
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+                if (timeFilter === '30days') return diffDays <= 30
+                if (timeFilter === '3months') return diffDays <= 90
+                if (timeFilter === '6months') return diffDays <= 180
+                if (timeFilter === '1year') return diffDays <= 365
+            }
+            return true
+        })
+
         const totalSpend = spends.reduce((sum, t) => sum + t.amount, 0)
 
         const grouped = spends.reduce((acc, t) => {
@@ -82,7 +99,7 @@ export function SpendingAnalytics({ transactions, pockets }: SpendingAnalyticsPr
             .sort((a, b) => b.amount - a.amount)
 
         return { totalSpend, sortedGroups }
-    }, [transactions, pockets, groupBy])
+    }, [transactions, pockets, groupBy, timeFilter])
 
     if (transactions.length === 0) {
         return (
@@ -164,23 +181,38 @@ export function SpendingAnalytics({ transactions, pockets }: SpendingAnalyticsPr
     // Overview
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <h3 className="text-[16px] font-bold text-black tracking-tight flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row items-end sm:items-center justify-between gap-4">
+                <h3 className="text-[16px] font-bold text-black tracking-tight flex items-center gap-2 w-full sm:w-auto">
                     <PieChart className="w-5 h-5 text-black/40" /> Overview
                 </h3>
-                <div className="flex bg-black/[0.03] p-1 rounded-xl">
-                    <button
-                        onClick={() => setGroupBy('pocket')}
-                        className={`px-4 py-1.5 rounded-lg text-[12px] font-bold transition-all ${groupBy === 'pocket' ? 'bg-white text-black shadow-sm' : 'text-black/30 hover:text-black/50'}`}
+
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <select
+                        value={timeFilter}
+                        onChange={e => setTimeFilter(e.target.value)}
+                        className="bg-black/[0.03] border border-black/[0.06] rounded-xl px-3 py-1.5 h-8 text-[12px] outline-none focus:border-black/30 transition-colors cursor-pointer font-bold text-black/60"
                     >
-                        By Pocket
-                    </button>
-                    <button
-                        onClick={() => setGroupBy('category')}
-                        className={`px-4 py-1.5 rounded-lg text-[12px] font-bold transition-all ${groupBy === 'category' ? 'bg-white text-black shadow-sm' : 'text-black/30 hover:text-black/50'}`}
-                    >
-                        By Category
-                    </button>
+                        <option value="all">All Time</option>
+                        <option value="30days">Last 30 Days</option>
+                        <option value="3months">Last 3 Months</option>
+                        <option value="6months">Last 6 Months</option>
+                        <option value="1year">Last 1 Year</option>
+                    </select>
+
+                    <div className="flex bg-black/[0.03] p-1 rounded-xl">
+                        <button
+                            onClick={() => setGroupBy('pocket')}
+                            className={`px-3 py-1 rounded-lg text-[12px] font-bold transition-all ${groupBy === 'pocket' ? 'bg-white text-black shadow-sm' : 'text-black/30 hover:text-black/50'}`}
+                        >
+                            Pockets
+                        </button>
+                        <button
+                            onClick={() => setGroupBy('category')}
+                            className={`px-3 py-1 rounded-lg text-[12px] font-bold transition-all ${groupBy === 'category' ? 'bg-white text-black shadow-sm' : 'text-black/30 hover:text-black/50'}`}
+                        >
+                            Categories
+                        </button>
+                    </div>
                 </div>
             </div>
 

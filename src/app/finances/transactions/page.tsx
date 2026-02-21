@@ -20,6 +20,7 @@ export default function TransactionsPage() {
     const [search, setSearch] = useState('')
     const [selectedCategory, setSelectedCategory] = useState<string>('all')
     const [selectedPocket, setSelectedPocket] = useState<string>('all')
+    const [timeFilter, setTimeFilter] = useState<string>('all')
     const [selectedTx, setSelectedTx] = useState<Transaction | null>(null)
     const [isImportModalOpen, setIsImportModalOpen] = useState(false)
 
@@ -36,7 +37,20 @@ export default function TransactionsPage() {
         const matchesPocket = selectedPocket === 'all' ||
             (selectedPocket === 'null' ? t.pocket_id === null : t.pocket_id === selectedPocket)
 
-        return matchesSearch && matchesCat && matchesPocket
+        let matchesTime = true
+        if (timeFilter !== 'all') {
+            const txDate = new Date(t.date)
+            const now = new Date()
+            const diffTime = Math.abs(now.getTime() - txDate.getTime())
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+            if (timeFilter === '30days') matchesTime = diffDays <= 30
+            if (timeFilter === '3months') matchesTime = diffDays <= 90
+            if (timeFilter === '6months') matchesTime = diffDays <= 180
+            if (timeFilter === '1year') matchesTime = diffDays <= 365
+        }
+
+        return matchesSearch && matchesCat && matchesPocket && matchesTime
     })
 
     return (
@@ -99,6 +113,17 @@ export default function TransactionsPage() {
                 <div className="max-w-4xl mx-auto space-y-4">
                     {/* Filters & Search */}
                     <div className="bg-white p-4 rounded-3xl border border-black/[0.06] shadow-sm flex flex-col sm:flex-row items-end sm:items-center gap-2 mb-2">
+                        <select
+                            value={timeFilter}
+                            onChange={e => setTimeFilter(e.target.value)}
+                            className="bg-black/[0.03] border border-black/[0.06] rounded-xl px-3 py-2 text-[13px] outline-none focus:border-black/30 transition-colors w-full sm:w-36 cursor-pointer font-bold text-black/60"
+                        >
+                            <option value="all">All Time</option>
+                            <option value="30days">Last 30 Days</option>
+                            <option value="3months">Last 3 Months</option>
+                            <option value="6months">Last 6 Months</option>
+                            <option value="1year">Last 1 Year</option>
+                        </select>
                         <select
                             value={selectedPocket}
                             onChange={e => setSelectedPocket(e.target.value)}
