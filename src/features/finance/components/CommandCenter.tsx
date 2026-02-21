@@ -16,6 +16,7 @@ import { QuickActionFAB } from './QuickActionFAB'
 import { CashflowAnalytics } from './CashflowAnalytics'
 import { TransactionLedger } from './TransactionLedger'
 import { useFinanceProfile } from '../contexts/FinanceProfileContext'
+import { KarrFooter } from '@/components/KarrFooter'
 
 export function CommandCenter() {
     const { pockets, loading: pLoading, refetch: refetchPockets } = usePockets()
@@ -102,20 +103,18 @@ export function CommandCenter() {
                             {isPrivacyEnabled ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                     </div>
-                    <div className="flex bg-black/[0.04] p-1 rounded-xl border border-black/[0.06] items-center order-3 md:order-1">
+                    <div className="flex bg-black/[0.04] p-1 rounded-xl border border-black/[0.06] items-center order-3 md:order-1 w-fit">
                         <button
                             onClick={() => setProfile('personal')}
                             className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeProfile === 'personal' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
                         >
-                            <span className="hidden md:inline">Personal</span>
-                            <span className="md:hidden">P</span>
+                            Personal
                         </button>
                         <button
                             onClick={() => setProfile('business')}
                             className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeProfile === 'business' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
                         >
-                            <span className="hidden md:inline">Business</span>
-                            <span className="md:hidden">B</span>
+                            Business
                         </button>
                     </div>
                 </div>
@@ -219,6 +218,7 @@ export function CommandCenter() {
                         />
                     </div>
                 </div>
+                <KarrFooter />
             </div>
         </div>
     )

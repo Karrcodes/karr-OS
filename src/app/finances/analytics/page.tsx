@@ -8,6 +8,7 @@ import { useFinanceProfile } from '@/features/finance/contexts/FinanceProfileCon
 import { SpendingAnalytics } from '@/features/finance/components/SpendingAnalytics'
 import { PayslipUploader } from '@/features/finance/components/PayslipUploader'
 import { cn } from '@/lib/utils'
+import { KarrFooter } from '@/components/KarrFooter'
 
 export default function FinanceAnalyticsPage() {
     const [activeTab, setActiveTab] = useState<'salary' | 'spending'>('salary')
@@ -267,6 +268,7 @@ export default function FinanceAnalyticsPage() {
                         </div>
                     )}
                 </div>
+                <KarrFooter />
             </div>
         </div >
     )

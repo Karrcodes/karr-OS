@@ -5,6 +5,7 @@ import { CheckSquare, ShoppingCart, Plus, Trash2, RefreshCw } from 'lucide-react
 import { useTasks } from '../hooks/useTasks'
 import { cn } from '@/lib/utils'
 import type { Task } from '../types/tasks.types'
+import { KarrFooter } from '@/components/KarrFooter'
 
 const PRIORITY_CONFIG = {
     super: { label: 'Super', color: 'bg-blue-50 text-blue-600 border-blue-200', sort: 0 },
@@ -193,6 +194,7 @@ export function TasksDashboard() {
                     <TaskList category="todo" title="Action Items" icon={CheckSquare} />
                     <TaskList category="grocery" title="Grocery List" icon={ShoppingCart} />
                 </div>
+                <KarrFooter />
             </div>
         </div>
     )

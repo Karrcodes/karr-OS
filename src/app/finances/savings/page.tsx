@@ -2,6 +2,7 @@
 
 import { FinanceProfileProvider, useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
 import { SavingsManager } from '@/features/finance/components/SavingsManager'
+import { KarrFooter } from '@/components/KarrFooter'
 
 function SavingsPage() {
     const { activeProfile, setProfile } = useFinanceProfile()
@@ -37,6 +38,7 @@ function SavingsPage() {
                 <div className="max-w-5xl mx-auto">
                     <SavingsManager />
                 </div>
+                <KarrFooter />
             </div>
         </div>
     )

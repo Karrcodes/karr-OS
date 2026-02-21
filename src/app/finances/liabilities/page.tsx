@@ -2,6 +2,7 @@
 
 import { FinanceProfileProvider, useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
 import { LiabilitiesManager } from '@/features/finance/components/LiabilitiesManager'
+import { KarrFooter } from '@/components/KarrFooter'
 
 function LiabilitiesPage() {
     const { activeProfile, setProfile } = useFinanceProfile()
@@ -37,6 +38,7 @@ function LiabilitiesPage() {
                 <div className="max-w-5xl mx-auto">
                     <LiabilitiesManager />
                 </div>
+                <KarrFooter />
             </div>
         </div>
     )

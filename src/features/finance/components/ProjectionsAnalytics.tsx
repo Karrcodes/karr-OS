@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { Calendar as CalendarIcon, ExternalLink, Briefcase, DollarSign, ChevronLeft, ChevronRight, Info, Check, X, Trash2, Clock } from 'lucide-react'
 import { useRota } from '../hooks/useRota'
+import { KarrFooter } from '@/components/KarrFooter'
 
 // Hardcoded anchor: User states next shift starts on "Monday". 
 // Given current date (Feb 20, 2026 - Friday), next Monday is Feb 23, 2026.
@@ -441,7 +442,7 @@ export function ProjectionsAnalytics() {
                                             )}
                                         </div>
                                         {isPayday && (
-                                            <div className={`flex items-center gap-0.5 font-bold text-[10px] sm:text-[11px] opacity-90 privacy-blur ${isShift && !override ? 'text-emerald-600' : 'text-emerald-700'}`}>
+                                            <div className={`hidden sm:flex items-center gap-0.5 font-bold text-[10px] sm:text-[11px] opacity-90 privacy-blur ${isShift && !override ? 'text-emerald-600' : 'text-emerald-700'}`}>
                                                 <span>£{(weeklyPayMap[dateStr] || 0).toFixed(0)}</span>
                                             </div>
                                         )}
@@ -574,6 +575,7 @@ export function ProjectionsAnalytics() {
                     </div>
                 </div>
             )}
+            <KarrFooter />
         </div >
     )
 }
