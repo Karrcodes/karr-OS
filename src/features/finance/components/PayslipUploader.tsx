@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import { UploadCloud, Loader2, CheckCircle, AlertCircle, X } from 'lucide-react'
 import { usePayslips } from '../hooks/usePayslips'
 import { useIncome } from '../hooks/useIncome'
+import { cn } from '@/lib/utils'
 
 interface PayslipUploaderProps {
     onSuccess?: () => void
@@ -94,51 +95,68 @@ export function PayslipUploader({ onSuccess }: PayslipUploaderProps) {
     }
 
     return (
-        <div className="bg-white rounded-3xl border border-black/[0.06] shadow-sm p-6 space-y-4">
+        <div className="bg-white rounded-2xl border border-black/[0.06] shadow-sm p-4 space-y-3">
             <div className="flex items-center justify-between">
-                <h3 className="text-[14px] font-bold text-black">Upload Payslips</h3>
-                <span className="text-[10px] font-bold text-black/30 uppercase tracking-wider">AI Extraction</span>
+                <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-black/[0.03] flex items-center justify-center">
+                        <UploadCloud className="w-4 h-4 text-black/40" />
+                    </div>
+                    <div>
+                        <h3 className="text-[13px] font-bold text-black">Upload Payslips</h3>
+                        <p className="text-[10px] text-black/30 font-medium tracking-tight">AI-Powered Extraction (PDF/JPG)</p>
+                    </div>
+                </div>
+
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/*,application/pdf"
+                    className="hidden"
+                    onChange={handleInputChange}
+                />
+
+                <button
+                    onClick={() => !uploading && fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className={cn(
+                        "px-4 py-2 rounded-xl text-[12px] font-bold transition-all flex items-center gap-2",
+                        uploading
+                            ? "bg-black/[0.05] text-black/20 cursor-not-allowed"
+                            : "bg-black text-white hover:bg-black/80 shadow-sm active:scale-95"
+                    )}
+                >
+                    {uploading ? (
+                        <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            Parsing...
+                        </>
+                    ) : (
+                        <>
+                            <UploadCloud className="w-3.5 h-3.5" />
+                            Select Files
+                        </>
+                    )}
+                </button>
             </div>
 
-            <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept="image/*,application/pdf"
-                className="hidden"
-                onChange={handleInputChange}
-            />
-
-            <div
-                onClick={() => !uploading && fileInputRef.current?.click()}
-                onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
-                onDragLeave={() => setDragging(false)}
-                onDrop={handleDrop}
-                className={`
-                    relative flex flex-col items-center justify-center gap-3 p-8 rounded-2xl border-2 border-dashed 
-                    cursor-pointer transition-all duration-200
-                    ${dragging ? 'border-black/60 bg-black/5 scale-[1.01]' : 'border-black/10 hover:border-black/40 hover:bg-black'}
-                    ${uploading ? 'pointer-events-none opacity-70' : ''}
-                `}
-            >
-                {uploading ? (
-                    <>
-                        <Loader2 className="w-8 h-8 text-black animate-spin" />
-                        <p className="text-[13px] font-bold text-black">Parsing with AI...</p>
-                        <p className="text-[11px] text-black/30">This may take a moment</p>
-                    </>
-                ) : (
-                    <>
-                        <div className="w-12 h-12 rounded-2xl bg-black/10 flex items-center justify-center">
-                            <UploadCloud className="w-6 h-6 text-black" />
-                        </div>
-                        <div className="text-center">
-                            <p className="text-[14px] font-bold text-black">Drop payslips here or click to upload</p>
-                            <p className="text-[12px] text-black/30 mt-1">Supports JPG, PNG, PDF · Multiple files for batch import</p>
-                        </div>
-                    </>
-                )}
-            </div>
+            {/* Hidden dropzone area that wrapping the whole component might be too invasive, 
+                so we'll keep a small, discreet dropzone area if they want to drag. */}
+            {!uploading && (
+                <div
+                    onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
+                    onDragLeave={() => setDragging(false)}
+                    onDrop={handleDrop}
+                    className={cn(
+                        "h-12 flex items-center justify-center rounded-xl border border-dashed transition-all",
+                        dragging
+                            ? "border-black/40 bg-black/[0.02] scale-[1.01]"
+                            : "border-transparent bg-transparent"
+                    )}
+                >
+                    {dragging && <p className="text-[11px] font-bold text-black/40">Drop files to import</p>}
+                </div>
+            )}
 
             {results.length > 0 && (
                 <div className="space-y-2">

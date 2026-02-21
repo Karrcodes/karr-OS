@@ -48,8 +48,8 @@ export default function FinanceAnalyticsPage() {
                                 <ArrowLeft className="w-5 h-5 text-black/40" />
                             </a>
                             <div>
-                                <h1 className="text-[20px] font-bold text-black tracking-tight">Finance Analytics</h1>
-                                <p className="text-[12px] text-black/35 mt-0.5">Insights & breakdowns for {activeProfile} profile</p>
+                                <h1 className="text-[20px] font-bold text-black tracking-tight">Personal Analytics</h1>
+                                <p className="text-[12px] text-black/35 mt-0.5">Comprehensive insights & salary breakdowns</p>
                             </div>
                         </div>
 

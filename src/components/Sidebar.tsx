@@ -24,7 +24,7 @@ const navItems = [
         icon: BarChart3,
         sub: [
             { label: 'Projections', href: '/finances/projections', icon: Calendar, caps: ['P'] },
-            { label: 'Analytics', href: '/finances/analytics', icon: TrendingUp, caps: ['P', 'B'] },
+            { label: 'Analytics', href: '/finances/analytics', icon: TrendingUp, caps: ['P'] },
             { label: 'Liabilities', href: '/finances/liabilities', icon: CreditCard, caps: ['P', 'B'] },
             { label: 'Savings', href: '/finances/savings', icon: PiggyBank, caps: ['P', 'B'] },
             { label: 'Settings', href: '/finances/settings', icon: SlidersHorizontal, caps: ['P', 'B'] }
