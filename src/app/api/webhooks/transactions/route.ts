@@ -15,16 +15,28 @@ export async function POST(request: Request) {
     console.log('Webhook: Received request. Auth presence:', !!authHeader)
 
     // Lenient auth check (handles 'bearer' or 'Bearer' and trims secret)
-    const isAuthorized = secret && authHeader &&
-        authHeader.toLowerCase() === `bearer ${secret.trim().toLowerCase()}`
+    const normalizedHeader = authHeader?.toLowerCase() || ''
+    const normalizedSecret = secret?.trim().toLowerCase() || ''
+    const expectedHeader = `bearer ${normalizedSecret}`
+    const isAuthorized = secret && authHeader && normalizedHeader === expectedHeader
 
     if (!isAuthorized) {
-        console.error('Webhook: Unauthorized access attempt. Secret configured:', !!secret)
+        console.error('Webhook: Unauthorized access attempt.')
+        console.log('Debug - Header received:', normalizedHeader)
+        console.log('Debug - Expected header:', expectedHeader)
+
         return NextResponse.json({
             error: 'Unauthorized',
             debug: {
                 authReceived: !!authHeader,
-                secretConfigured: !!secret
+                secretConfigured: !!secret,
+                forensic: {
+                    headerLength: normalizedHeader.length,
+                    expectedLength: expectedHeader.length,
+                    headerStart: normalizedHeader.substring(0, 10),
+                    expectedStart: expectedHeader.substring(0, 10),
+                    match: normalizedHeader === expectedHeader
+                }
             }
         }, { status: 401 })
     }
