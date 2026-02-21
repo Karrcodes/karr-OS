@@ -6,12 +6,15 @@ import { ArrowUpRight, ArrowDownLeft, RefreshCw, Layers } from 'lucide-react'
 import { useBank } from '../hooks/useBank'
 import { RevolutImportModal } from './RevolutImportModal'
 import { usePockets } from '../hooks/usePockets'
+import { TransactionDetailsModal } from './TransactionDetailsModal'
+import type { Transaction } from '../types/finance.types'
 
 export function TransactionLedger() {
     const { transactions, loading, refetch, clearTransactions } = useTransactions()
     const { pockets, loading: pocketsLoading } = usePockets()
     const { loading: bankSyncLoading } = useBank()
     const [isModalOpen, setIsModalOpen] = useState(false)
+    const [selectedTx, setSelectedTx] = useState<Transaction | null>(null)
 
     const handleSyncSuccess = (count: number) => {
         alert(`Successfully synced ${count} new transactions!`)
@@ -87,7 +90,11 @@ export function TransactionLedger() {
                 {recentTransactions.map((t) => {
                     const pocketName = pockets.find(p => p.id === t.pocket_id)?.name || 'General'
                     return (
-                        <div key={t.id} className="flex items-center gap-3 p-3 rounded-xl border border-black/[0.04] bg-white hover:bg-black/[0.01] transition-colors group">
+                        <button
+                            key={t.id}
+                            onClick={() => setSelectedTx(t)}
+                            className="w-full text-left flex items-center gap-3 p-3 rounded-xl border border-black/[0.04] bg-white hover:bg-black/[0.01] transition-colors group"
+                        >
                             <div className="w-10 h-10 rounded-xl bg-black/[0.03] border border-black/[0.05] flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform overflow-hidden px-1">
                                 <span className="text-lg leading-none" title={pocketName}>
                                     {pocketName ? Array.from(pocketName).pop() : '💰'}
@@ -100,6 +107,9 @@ export function TransactionLedger() {
                                         <p className="text-[13px] font-bold text-black truncate">{t.description || 'Transaction'}</p>
                                         {t.provider === 'enable_banking' && (
                                             <span className="text-[9px] font-bold text-black bg-black/5 px-1 py-0.5 rounded border border-black/10 flex-shrink-0">BANK</span>
+                                        )}
+                                        {t.provider === 'revolut_csv' && (
+                                            <span className="text-[9px] font-bold text-black bg-black/5 px-1 py-0.5 rounded border border-black/10 flex-shrink-0">CSV</span>
                                         )}
                                     </div>
                                     <p className={`text-[13px] font-bold ${t.type === 'spend' ? 'text-black' : 'text-[#059669]'} privacy-blur`}>
@@ -122,10 +132,17 @@ export function TransactionLedger() {
                                     )}
                                 </div>
                             </div>
-                        </div>
+                        </button>
                     )
                 })}
             </div>
+
+            <TransactionDetailsModal
+                transaction={selectedTx}
+                pockets={pockets}
+                isOpen={!!selectedTx}
+                onClose={() => setSelectedTx(null)}
+            />
         </div>
     )
 }

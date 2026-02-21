@@ -3,13 +3,18 @@
 import { useState } from 'react'
 import { ArrowLeft, ArrowUpRight, ArrowDownLeft, FileText, Search, Filter } from 'lucide-react'
 import { useTransactions } from '@/features/finance/hooks/useTransactions'
+import { usePockets } from '@/features/finance/hooks/usePockets'
 import { useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
 import { KarrFooter } from '@/components/KarrFooter'
+import { TransactionDetailsModal } from '@/features/finance/components/TransactionDetailsModal'
+import type { Transaction } from '@/features/finance/types/finance.types'
 
 export default function TransactionsPage() {
     const { transactions, loading } = useTransactions()
+    const { pockets } = usePockets()
     const { activeProfile } = useFinanceProfile()
     const [search, setSearch] = useState('')
+    const [selectedTx, setSelectedTx] = useState<Transaction | null>(null)
 
     const filtered = transactions.filter(t =>
         t.description?.toLowerCase().includes(search.toLowerCase()) ||
@@ -65,7 +70,11 @@ export default function TransactionsPage() {
                     ) : (
                         <div className="space-y-3">
                             {filtered.map((t) => (
-                                <div key={t.id} className="flex items-center gap-4 p-4 rounded-2xl border border-black/[0.04] bg-white hover:bg-black/[0.01] transition-colors group">
+                                <button
+                                    key={t.id}
+                                    onClick={() => setSelectedTx(t)}
+                                    className="w-full text-left flex items-center gap-4 p-4 rounded-2xl border border-black/[0.04] bg-white hover:bg-black/[0.01] transition-colors group"
+                                >
                                     <div className="w-12 h-12 rounded-2xl bg-black/[0.03] border border-black/[0.05] flex items-center justify-center text-xl flex-shrink-0 group-hover:scale-105 transition-transform shadow-sm">
                                         {t.emoji || '💸'}
                                     </div>
@@ -95,11 +104,19 @@ export default function TransactionsPage() {
                                             )}
                                         </div>
                                     </div>
-                                </div>
+                                </button>
                             ))}
                         </div>
                     )}
                 </div>
+
+                <TransactionDetailsModal
+                    transaction={selectedTx}
+                    pockets={pockets}
+                    isOpen={!!selectedTx}
+                    onClose={() => setSelectedTx(null)}
+                />
+
                 <KarrFooter />
             </div>
         </div>
