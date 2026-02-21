@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Calendar as CalendarIcon, ExternalLink, Briefcase, DollarSign, ChevronLeft, ChevronRight, Info, Check, X } from 'lucide-react'
+import { Calendar as CalendarIcon, ExternalLink, Briefcase, DollarSign, ChevronLeft, ChevronRight, Info, Check, X, Trash2 } from 'lucide-react'
+import { useRota } from '../hooks/useRota'
 
 // Hardcoded anchor: User states next shift starts on "Monday". 
 // Given current date (Feb 20, 2026 - Friday), next Monday is Feb 23, 2026.
@@ -25,6 +26,9 @@ export function ProjectionsAnalytics() {
     const [currentDate, setCurrentDate] = useState(new Date())
     const [dayOverrides, setDayOverrides] = useState<Record<string, 'overtime' | 'absence' | 'holiday'>>({})
 
+    // Persistent overrides from DB
+    const { overrides: bookedOverrides, saveOverrides, deleteOverrideByDate } = useRota()
+
     const [bookingOpen, setBookingOpen] = useState(false)
     const [bookDays, setBookDays] = useState('')
     const [bookFirst, setBookFirst] = useState('')
@@ -32,7 +36,26 @@ export function ProjectionsAnalytics() {
     const [bookReturn, setBookReturn] = useState('')
     const [bookReason, setBookReason] = useState('Annual Leave')
 
-    const activeOverrides = useMemo(() => {
+    // Cancellation Confirmation State
+    const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false)
+    const [itemToCancel, setItemToCancel] = useState<{ date: string, type: string } | null>(null)
+
+    // Merged overrides for calculation
+    const allOverrides = useMemo(() => {
+        const result: Record<string, 'overtime' | 'absence' | 'holiday'> = {}
+        // Booked (DB) takes base precedence
+        bookedOverrides.forEach(o => {
+            result[o.date] = o.type
+        })
+        // Staged (Local) overrides booked locally for visual feedback if needed, 
+        // but here we probably want them to be distinct.
+        Object.entries(dayOverrides).forEach(([date, type]) => {
+            result[date] = type
+        })
+        return result
+    }, [bookedOverrides, dayOverrides])
+
+    const activeStaged = useMemo(() => {
         const abs = Object.keys(dayOverrides).filter(k => dayOverrides[k] === 'absence').sort()
         const hol = Object.keys(dayOverrides).filter(k => dayOverrides[k] === 'holiday').sort()
         const ot = Object.keys(dayOverrides).filter(k => dayOverrides[k] === 'overtime').sort()
@@ -40,7 +63,7 @@ export function ProjectionsAnalytics() {
     }, [dayOverrides])
 
     const handleOpenBooking = () => {
-        const { hol } = activeOverrides
+        const { hol } = activeStaged
         setBookDays(hol.length.toString())
         if (hol.length > 0) {
             setBookFirst(hol[0])
@@ -52,13 +75,67 @@ export function ProjectionsAnalytics() {
         setBookingOpen(true)
     }
 
-    const submitBooking = () => {
-        const formId = "j_NRZWJQb0-a7XxZvz4tGEMcjSxEbT1OkE4gUvilROBUNzdGTFlCWkFPTjk5RlhWNFdNNk4xREtQSy4u"
-        const baseUrl = `https://forms.office.com/Pages/ResponsePage.aspx?id=${formId}`
+    const handleConfirmStaged = async (type: 'overtime' | 'absence') => {
+        const dates = Object.keys(dayOverrides).filter(k => dayOverrides[k] === type)
+        try {
+            await saveOverrides(dates.map(date => ({ date, type })))
+            setDayOverrides(prev => {
+                const next = { ...prev }
+                dates.forEach(d => delete next[d])
+                return next
+            })
+        } catch (err) {
+            console.error(err)
+            alert("Failed to confirm overrides.")
+        }
+    }
 
-        // MS Forms explicitly blocks raw URL parameter injection unless the author enables "Pre-filled Link" and generates an encrypted answers hash.
-        // As a fallback, we copy the pre-filled data to the user's clipboard for instant pasting.
-        const clipboardText = `Badge: 3711148963
+    const submitBooking = async () => {
+        const formId = "j_NRZWJQb0-a7XxZvz4tGEMcjSxEbT1OkE4gUvilROBUNzdGTFlCWkFPTjk5RlhWNFdNNk4xREtQSy4u"
+
+        const IDs = {
+            today: "rabbc8d260b7647f49e584cf4ae6791ae",
+            badge: "r38f9b0a08112418f999c9be4b039ea12",
+            name: "r9e5f1108f508457b860ff4a5009cb316",
+            dept: "r2e22e78b63e04d97afef3084d56f2048",
+            shift: "rb4fd0ddc565c4eda8d049f0ea1df8a19",
+            days: "r77734ecce2d242f68ce5b9b4ef034430",
+            first: "r174c10835f374d6a8cc50adb883619ad",
+            last: "r796739c016a84af18c0c1aaa47db48f6",
+            return: "r776081eb9aeb440ba39a517960c00407",
+            reason: "rbbc3b3b348b04bb998be461b02a2e307"
+        }
+
+        const todayStr = new Date().toISOString().split('T')[0]
+        const firstStr = bookFirst ? new Date(bookFirst).toISOString().split('T')[0] : ''
+        const lastStr = bookLast ? new Date(bookLast).toISOString().split('T')[0] : ''
+        const returnStr = bookReturn ? new Date(bookReturn).toISOString().split('T')[0] : ''
+
+        const params = new URLSearchParams()
+        params.append(IDs.today, todayStr)
+        params.append(IDs.badge, "3711148963")
+        params.append(IDs.name, "Umaru AbdulAlim")
+        params.append(IDs.dept, "HLOP")
+        params.append(IDs.shift, "12 hour (0600-1800)")
+        params.append(IDs.days, bookDays)
+        params.append(IDs.first, firstStr)
+        params.append(IDs.last, lastStr)
+        params.append(IDs.return, returnStr)
+        params.append(IDs.reason, bookReason)
+
+        const baseUrl = `https://forms.office.com/Pages/ResponsePage.aspx?id=${formId}&${params.toString()}`
+
+        // Save Holidays to DB before redirecting
+        const holDates = Object.keys(dayOverrides).filter(k => dayOverrides[k] === 'holiday')
+        try {
+            await saveOverrides(holDates.map(date => ({ date, type: 'holiday' as const })))
+            setDayOverrides(prev => {
+                const next = { ...prev }
+                holDates.forEach(d => delete next[d])
+                return next
+            })
+
+            const clipboardText = `Badge: 3711148963
 Name: Umaru AbdulAlim
 Dept: HLOP
 Shift: 12 hour (0600-1800)
@@ -69,14 +146,18 @@ Total Days: ${bookDays}
 Return Date: ${bookReturn ? new Date(bookReturn).toLocaleDateString() : ''}
 Reason: ${bookReason}`
 
-        navigator.clipboard.writeText(clipboardText).then(() => {
-            alert("Microsoft Forms blocks external link pre-filling.\n\nYour details have been copied to your clipboard! Please simply paste them into the form.")
-            window.open(baseUrl, '_blank')
-            setBookingOpen(false)
-        }).catch(() => {
-            window.open(baseUrl, '_blank')
-            setBookingOpen(false)
-        })
+            navigator.clipboard.writeText(clipboardText).then(() => {
+                alert("Success! Holidays have been booked on your rota.\n\nWe are now attempting to pre-fill the form for you. Backup details are on your clipboard.")
+                window.open(baseUrl, '_blank')
+                setBookingOpen(false)
+            }).catch(() => {
+                window.open(baseUrl, '_blank')
+                setBookingOpen(false)
+            })
+        } catch (err) {
+            console.error(err)
+            alert("Failed to save holiday booking to rota.")
+        }
     }
 
     const monthName = currentDate.toLocaleString('default', { month: 'long' })
@@ -87,19 +168,14 @@ Reason: ${bookReason}`
         const daysInMonth = getDaysInMonth(year, monthIndex)
         const firstDayIdx = getFirstDayOfMonth(year, monthIndex)
 
-        // For arrears logic, we need to calculate earnings for some days BEFORE the current month 
-        // to determine the pay for the first Friday(s) of this month.
-        // Let's calculate for a range of -14 to +31 days from start of month.
         const monthStart = new Date(year, monthIndex, 1)
         const calculationStart = new Date(monthStart)
-        calculationStart.setDate(calculationStart.getDate() - 14) // 2 weeks padding
-
-        const calculationEnd = new Date(year, monthIndex, daysInMonth + 7) // 1 week padding
+        calculationStart.setDate(calculationStart.getDate() - 14)
+        const calculationEnd = new Date(year, monthIndex, daysInMonth + 7)
 
         const weeklyPayMap: Record<string, number> = {}
         const dailyEarnings: Record<string, number> = {}
 
-        // 1. Calculate daily earnings for the relevant range
         let curr = new Date(calculationStart)
         while (curr <= calculationEnd) {
             const dateUTC = Date.UTC(curr.getFullYear(), curr.getMonth(), curr.getDate())
@@ -108,7 +184,7 @@ Reason: ${bookReason}`
             const isShift = cycleDay < 3
 
             const dateStr = curr.toISOString().split('T')[0]
-            const override = dayOverrides[dateStr]
+            const override = allOverrides[dateStr]
 
             let isWorked = isShift && override !== 'absence'
             let isOT = override === 'overtime'
@@ -120,16 +196,14 @@ Reason: ${bookReason}`
 
             dailyEarnings[dateStr] = gross * (1 - DEDUCTION_RATE)
 
-            // 2. Determine which Payday (Friday) this day belongs to
-            // Accounting week: Sun -> Sat. Payday: Following Fri.
-            const dayOfWeek = curr.getDay() // 0=Sun, 6=Sat
+            const dayOfWeek = curr.getDay()
             const daysUntilSaturday = 6 - dayOfWeek
 
             const accountingSat = new Date(curr)
             accountingSat.setDate(curr.getDate() + daysUntilSaturday)
 
             const paydayFri = new Date(accountingSat)
-            paydayFri.setDate(accountingSat.getDate() + 6) // Sat + 6 days = Next Fri
+            paydayFri.setDate(accountingSat.getDate() + 6)
 
             const paydayStr = paydayFri.toISOString().split('T')[0]
             weeklyPayMap[paydayStr] = (weeklyPayMap[paydayStr] || 0) + dailyEarnings[dateStr]
@@ -145,12 +219,10 @@ Reason: ${bookReason}`
         let holidaysCount = 0
         let totalMonthNet = 0
 
-        // Padding previous month
         for (let i = 0; i < firstDayIdx; i++) {
             daysArr.push(null)
         }
 
-        // Current month days
         for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(year, monthIndex, day)
             date.setHours(0, 0, 0, 0)
@@ -162,7 +234,9 @@ Reason: ${bookReason}`
             const isShift = cycleDay < 3
 
             const isPayday = date.getDay() === 5
-            const override = dayOverrides[dateStr]
+            const override = allOverrides[dateStr]
+            const isStaged = !!dayOverrides[dateStr]
+            const isBooked = bookedOverrides.some(o => o.date === dateStr)
 
             if (override === 'overtime') { otCount++; }
             if (override === 'absence' && isShift) { absencesCount++; }
@@ -180,6 +254,8 @@ Reason: ${bookReason}`
                 isShift,
                 isPayday,
                 override,
+                isStaged,
+                isBooked,
                 isToday: new Date().toDateString() === date.toDateString()
             })
         }
@@ -194,7 +270,7 @@ Reason: ${bookReason}`
             projectedNet: totalMonthNet,
             weeklyPayMap
         }
-    }, [year, monthIndex, dayOverrides])
+    }, [year, monthIndex, allOverrides, dayOverrides, bookedOverrides])
 
     const nextMonth = () => {
         setCurrentDate(new Date(year, monthIndex + 1, 1))
@@ -202,6 +278,23 @@ Reason: ${bookReason}`
 
     const prevMonth = () => {
         setCurrentDate(new Date(year, monthIndex - 1, 1))
+    }
+
+    const handleCancelClick = (dateStr: string, type: string) => {
+        setItemToCancel({ date: dateStr, type })
+        setCancelConfirmOpen(true)
+    }
+
+    const confirmCancel = async () => {
+        if (!itemToCancel) return
+        try {
+            await deleteOverrideByDate(itemToCancel.date)
+            setCancelConfirmOpen(false)
+            setItemToCancel(null)
+        } catch (err) {
+            console.error(err)
+            alert("Failed to cancel booking.")
+        }
     }
 
     return (
@@ -295,12 +388,18 @@ Reason: ${bookReason}`
                         {days.map((d, i) => {
                             if (!d) return <div key={i} className="aspect-square bg-transparent rounded-xl" />
 
-                            const { day, isShift, isPayday, isToday, override, dateStr } = d
+                            const { day, isShift, isPayday, isToday, override, dateStr, isStaged, isBooked } = d
                             const isOvertime = override === 'overtime'
                             const isAbsence = override === 'absence'
                             const isHoliday = override === 'holiday'
 
-                            const toggleState = () => {
+                            const handleClick = () => {
+                                if (isBooked) {
+                                    handleCancelClick(dateStr, override!)
+                                    return
+                                }
+
+                                // Toggle staged state
                                 setDayOverrides(prev => {
                                     const current = prev[dateStr]
                                     let next: 'overtime' | 'absence' | 'holiday' | undefined
@@ -322,28 +421,27 @@ Reason: ${bookReason}`
                             }
 
                             let bgClass = "bg-black/[0.02] border-transparent"
-                            let borderClass = ""
+                            let borderClass = "border-black/[0.08]"
                             let textClass = "text-black/60"
 
-                            // Overrides styling takes precedence
                             if (isOvertime) {
-                                bgClass = "bg-orange-50 border-orange-200"
+                                bgClass = isBooked ? "bg-orange-100 border-orange-200" : "bg-orange-50/50 border-orange-200/50 border-dashed"
                                 textClass = "text-orange-900"
                             } else if (isAbsence) {
-                                bgClass = "bg-red-50 border-red-200"
+                                bgClass = isBooked ? "bg-red-100 border-red-200" : "bg-red-50/50 border-red-200/50 border-dashed"
                                 textClass = "text-red-900"
                             } else if (isHoliday) {
-                                bgClass = "bg-purple-50 border-purple-200"
+                                bgClass = isBooked ? "bg-purple-100 border-purple-200" : "bg-purple-50/50 border-purple-200/50 border-dashed"
                                 textClass = "text-purple-900"
                             } else if (isShift && isPayday) {
-                                bgClass = "bg-[#dbeafe]" // Blueish
-                                borderClass = "border-emerald-300" // Green border
+                                bgClass = "bg-[#dbeafe]"
+                                borderClass = "border-emerald-300"
                                 textClass = "text-blue-900"
                             } else if (isShift) {
-                                bgClass = "bg-[#dbeafe]" // Solid blue
+                                bgClass = "bg-[#dbeafe]"
                                 textClass = "text-blue-900"
                             } else if (isPayday) {
-                                bgClass = "bg-[#d1fae5]" // Solid green
+                                bgClass = "bg-[#d1fae5]"
                                 textClass = "text-emerald-900"
                             }
 
@@ -351,19 +449,33 @@ Reason: ${bookReason}`
                                 borderClass = "border-black shadow-sm"
                             }
 
-                            // Keep symbols to a minimum size-wise
                             return (
                                 <div
                                     key={i}
-                                    onClick={toggleState}
-                                    className={`aspect-square cursor-pointer hover:border-black/20 relative rounded-xl border p-1.5 sm:p-2 sm:pt-1.5 transition-all flex flex-col justify-between select-none ${bgClass} ${borderClass}`}
+                                    onClick={handleClick}
+                                    className={`aspect-square cursor-pointer hover:border-black/20 relative rounded-xl border p-1.5 sm:p-2 sm:pt-1.5 transition-all flex flex-col justify-between select-none ${bgClass} ${borderClass} ${isBooked ? 'ring-1 ring-black/5 shadow-sm' : ''}`}
                                 >
                                     <div className="flex justify-between items-start">
                                         <div className="flex flex-col gap-1 items-start">
                                             <span className={`text-[12px] sm:text-[14px] font-bold ${textClass}`}>{day}</span>
-                                            {isOvertime && <span className="text-[8px] sm:text-[9px] bg-orange-500 text-white px-1 py-0.5 rounded font-bold tracking-widest uppercase shadow-sm">OT</span>}
-                                            {isAbsence && <span className="text-[8px] sm:text-[9px] bg-red-500 text-white px-1 py-0.5 rounded font-bold tracking-widest uppercase shadow-sm">ABS</span>}
-                                            {isHoliday && <span className="text-[8px] sm:text-[9px] bg-purple-500 text-white px-1 py-0.5 rounded font-bold tracking-widest uppercase shadow-sm">HOL</span>}
+                                            {isOvertime && (
+                                                <div className="flex items-center gap-1">
+                                                    <span className={`text-[8px] sm:text-[9px] bg-orange-500 text-white px-1 py-0.5 rounded font-bold tracking-widest uppercase shadow-sm ${!isBooked && 'opacity-50'}`}>OT</span>
+                                                    {isBooked && <Check className="w-2.5 h-2.5 text-orange-600" />}
+                                                </div>
+                                            )}
+                                            {isAbsence && (
+                                                <div className="flex items-center gap-1">
+                                                    <span className={`text-[8px] sm:text-[9px] bg-red-500 text-white px-1 py-0.5 rounded font-bold tracking-widest uppercase shadow-sm ${!isBooked && 'opacity-50'}`}>ABS</span>
+                                                    {isBooked && <Check className="w-2.5 h-2.5 text-red-600" />}
+                                                </div>
+                                            )}
+                                            {isHoliday && (
+                                                <div className="flex items-center gap-1">
+                                                    <span className={`text-[8px] sm:text-[9px] bg-purple-500 text-white px-1 py-0.5 rounded font-bold tracking-widest uppercase shadow-sm ${!isBooked && 'opacity-50'}`}>HOL</span>
+                                                    {isBooked && <Check className="w-2.5 h-2.5 text-purple-600" />}
+                                                </div>
+                                            )}
                                         </div>
                                         {isPayday && (
                                             <div className={`flex items-center gap-0.5 font-bold text-[10px] sm:text-[11px] opacity-90 ${isShift && !override ? 'text-emerald-600' : 'text-emerald-700'}`}>
@@ -385,28 +497,26 @@ Reason: ${bookReason}`
                         })}
                     </div>
 
-                    {(activeOverrides.abs.length > 0 || activeOverrides.hol.length > 0 || activeOverrides.ot.length > 0) && (
+                    {(activeStaged.abs.length > 0 || activeStaged.hol.length > 0 || activeStaged.ot.length > 0) && (
                         <div className="mt-5 p-4 rounded-xl border border-black/[0.08] bg-black/[0.02] flex items-center justify-between">
                             <div className="text-[13px] font-semibold text-black/70 flex flex-wrap gap-2 items-center">
-                                Unsaved Overrides
+                                Pending Overrides
                                 <div className="flex gap-1">
-                                    {activeOverrides.abs.length > 0 && <span className="px-2 py-0.5 rounded-full bg-red-100 text-[10px] uppercase font-bold text-red-700">{activeOverrides.abs.length} ABS</span>}
-                                    {activeOverrides.hol.length > 0 && <span className="px-2 py-0.5 rounded-full bg-purple-100 text-[10px] uppercase font-bold text-purple-700">{activeOverrides.hol.length} HOL</span>}
-                                    {activeOverrides.ot.length > 0 && <span className="px-2 py-0.5 rounded-full bg-orange-100 text-[10px] uppercase font-bold text-orange-700">{activeOverrides.ot.length} OT</span>}
+                                    {activeStaged.abs.length > 0 && <span className="px-2 py-0.5 rounded-full bg-red-100 text-[10px] uppercase font-bold text-red-700">{activeStaged.abs.length} ABS</span>}
+                                    {activeStaged.hol.length > 0 && <span className="px-2 py-0.5 rounded-full bg-purple-100 text-[10px] uppercase font-bold text-purple-700">{activeStaged.hol.length} HOL</span>}
+                                    {activeStaged.ot.length > 0 && <span className="px-2 py-0.5 rounded-full bg-orange-100 text-[10px] uppercase font-bold text-orange-700">{activeStaged.ot.length} OT</span>}
                                 </div>
                             </div>
                             <div className="flex flex-wrap items-center gap-2 block sm:hidden md:flex">
-                                {activeOverrides.abs.length > 0 && (
+                                {activeStaged.abs.length > 0 && (
                                     <button
-                                        onClick={() => {
-                                            alert("Absence logged locally for Projections.")
-                                        }}
+                                        onClick={() => handleConfirmStaged('absence')}
                                         className="px-3 py-1.5 rounded-lg border border-red-200 bg-red-50 text-red-700 text-[12px] font-bold hover:bg-red-100 transition-colors"
                                     >
                                         Confirm Absence
                                     </button>
                                 )}
-                                {activeOverrides.hol.length > 0 && (
+                                {activeStaged.hol.length > 0 && (
                                     <button
                                         onClick={handleOpenBooking}
                                         className="px-3 py-1.5 rounded-lg border border-purple-200 bg-purple-50 text-purple-700 text-[12px] font-bold hover:bg-purple-100 transition-colors"
@@ -414,11 +524,9 @@ Reason: ${bookReason}`
                                         Book Holiday
                                     </button>
                                 )}
-                                {activeOverrides.ot.length > 0 && (
+                                {activeStaged.ot.length > 0 && (
                                     <button
-                                        onClick={() => {
-                                            alert("Overtime logged locally for Projections.")
-                                        }}
+                                        onClick={() => handleConfirmStaged('overtime')}
                                         className="px-3 py-1.5 rounded-lg border border-orange-200 bg-orange-50 text-orange-700 text-[12px] font-bold hover:bg-orange-100 transition-colors"
                                     >
                                         Confirm Overtime
@@ -433,19 +541,16 @@ Reason: ${bookReason}`
                             <div className="w-3 h-3 rounded bg-[#dbeafe] border border-[#bfdbfe]" /> Shift Day
                         </div>
                         <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded bg-orange-50 border border-orange-200" /> Overtime Shift
+                            <div className="w-3 h-3 rounded bg-orange-100 border border-orange-200" /> Booked Overtime
                         </div>
                         <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded bg-[#d1fae5] border border-emerald-200" /> Payday OFF
+                            <div className="w-3 h-3 rounded bg-red-100 border border-red-200" /> Booked Absence
                         </div>
                         <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded border border-emerald-300 bg-[#dbeafe]" /> Payday ON SHIFT
+                            <div className="w-3 h-3 rounded bg-purple-100 border border-purple-200" /> Booked Holiday
                         </div>
                         <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded bg-red-50 border border-red-200" /> Absence / Unpaid
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded bg-purple-50 border border-purple-200" /> Paid Holiday
+                            <div className="w-3 h-3 rounded border border-black/20 border-dashed" /> Staged (Pending)
                         </div>
                     </div>
                 </div>
@@ -453,7 +558,7 @@ Reason: ${bookReason}`
 
             {/* Holiday Booking Modal */}
             {bookingOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setBookingOpen(false)} />
                     <div className="relative w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 duration-300">
                         <div className="px-5 py-4 border-b border-black/[0.06] flex items-center justify-between bg-black/[0.02]">
@@ -471,7 +576,7 @@ Reason: ${bookReason}`
                                     <span className="font-bold flex items-center gap-1.5 mb-1">
                                         <Info className="w-3.5 h-3.5" /> Microsoft Forms Note
                                     </span>
-                                    Automatic pre-filling is blocked by Staffline&apos;s form. We&apos;ve copied your details below; hitting the button will put them on your clipboard for pasting!
+                                    We are attempting to **auto-prefill** the form using your details. If any fields are missing, they have also been copied to your clipboard for easy pasting!
                                 </p>
                             </div>
 
@@ -513,7 +618,31 @@ Reason: ${bookReason}`
                         </div>
                         <div className="p-5 border-t border-black/[0.06] bg-black/[0.01]">
                             <button onClick={submitBooking} className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-purple-600 text-white font-bold text-[15px] hover:bg-purple-700 transition-colors shadow-sm shadow-purple-200">
-                                Copy & Open Forms <ExternalLink className="w-4 h-4 opacity-70" />
+                                Confirm & Open Forms <ExternalLink className="w-4 h-4 opacity-70" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Cancel Confirmation Modal */}
+            {cancelConfirmOpen && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setCancelConfirmOpen(false)} />
+                    <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col p-6 text-center animate-in zoom-in-95 duration-200">
+                        <div className="w-16 h-16 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4">
+                            <Trash2 className="w-8 h-8" />
+                        </div>
+                        <h3 className="text-lg font-bold text-black mb-2">Cancel {itemToCancel?.type} booking?</h3>
+                        <p className="text-[14px] text-black/60 mb-6 leading-relaxed">
+                            Are you sure you want to remove this booking from your rota on <span className="font-bold text-black">{itemToCancel?.date}</span>?
+                        </p>
+                        <div className="flex gap-3">
+                            <button onClick={() => setCancelConfirmOpen(false)} className="flex-1 py-3 rounded-xl border border-black/[0.1] text-black/60 font-bold text-[14px] hover:bg-black/[0.05] transition-colors">
+                                Back
+                            </button>
+                            <button onClick={confirmCancel} className="flex-1 py-3 rounded-xl bg-red-600 text-white font-bold text-[14px] hover:bg-red-700 transition-colors shadow-lg shadow-red-200">
+                                Yes, Cancel
                             </button>
                         </div>
                     </div>

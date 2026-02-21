@@ -100,3 +100,11 @@ export interface FinanceSummary {
     goals: Goal[]
     weeklyIncomeBaseline: number
 }
+
+export interface RotaOverride {
+    id: string
+    date: string // YYYY-MM-DD
+    type: 'overtime' | 'absence' | 'holiday'
+    profile: 'personal' | 'business'
+    created_at: string
+}
