@@ -93,15 +93,16 @@ export function CommandCenter() {
                             {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
                         </div>
                     </div>
-                    <div className="flex bg-black/[0.04] p-1 rounded-xl border border-black/[0.06] w-fit order-2 md:order-1 items-center">
+                    <div className="flex items-center gap-2 order-2 md:order-3">
                         <button
                             onClick={togglePrivacy}
-                            className={`px-2.5 py-1.5 rounded-lg flex items-center justify-center transition-all ${isPrivacyEnabled ? 'text-[#059669] bg-[#059669]/10' : 'text-black/40 hover:text-black/60'}`}
+                            className={`p-2 rounded-xl border transition-all ${isPrivacyEnabled ? 'border-[#059669]/30 text-[#059669] bg-[#059669]/10 shadow-[0_2px_10px_rgba(5,150,105,0.1)]' : 'bg-white border-black/[0.06] text-black/40 hover:text-black/60 hover:border-black/[0.15] shadow-sm'}`}
                             title={isPrivacyEnabled ? "Disable Privacy Mode" : "Enable Privacy Mode"}
                         >
                             {isPrivacyEnabled ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
-                        <div className="w-[1px] h-4 bg-black/10 mx-1" />
+                    </div>
+                    <div className="flex bg-black/[0.04] p-1 rounded-xl border border-black/[0.06] items-center order-3 md:order-1">
                         <button
                             onClick={() => setProfile('personal')}
                             className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeProfile === 'personal' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
@@ -154,7 +155,7 @@ export function CommandCenter() {
                     {/* Main Layout Stack */}
                     <div className="flex flex-col gap-6 pb-12">
                         {/* Unified Responsive Grid (Mobile -> Tablet -> Desktop) */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-stretch">
 
                             {/* Cashflow Analytics */}
                             <div className="order-3 md:order-1 xl:order-1 col-span-1 md:col-span-1 xl:col-span-2">

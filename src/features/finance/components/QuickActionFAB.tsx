@@ -8,6 +8,7 @@ import { FINANCE_CATEGORIES, getCategoryById } from '../constants/categories'
 import { useFinanceProfile } from '../contexts/FinanceProfileContext'
 import { usePayslips } from '../hooks/usePayslips'
 import { useIncome } from '../hooks/useIncome'
+import { useRecurring } from '../hooks/useRecurring'
 import { useRouter } from 'next/navigation'
 
 interface QuickActionFABProps {
@@ -37,6 +38,7 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
     // Payday Allocation State
     const { logIncome } = useIncome()
     const { logPayslip } = usePayslips()
+    const { createObligation } = useRecurring()
     const [date, setDate] = useState(new Date().toISOString().split('T')[0])
     const [grossPay, setGrossPay] = useState('')
     const [taxPaid, setTaxPaid] = useState('')
@@ -47,20 +49,21 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
     const [allocating, setAllocating] = useState(false)
     const [allocations, setAllocations] = useState<{ [key: string]: number }>({})
 
+    // Liability State
+    const [libName, setLibName] = useState('')
+    const [libFreq, setLibFreq] = useState<'weekly' | 'bi-weekly' | 'monthly' | 'yearly'>('monthly')
+    const [libDate, setLibDate] = useState(new Date().toISOString().split('T')[0])
+
     const reset = () => {
         setAmount(''); setSelectedPocket(''); setToPocket(''); setSelectedCategory('other');
         setDescription(''); setError(null); setSuccessMessage(null);
         setDate(new Date().toISOString().split('T')[0]);
         setGrossPay(''); setTaxPaid(''); setPension(''); setStudentLoan('');
         setAllocating(false); setAllocations({});
+        setLibName(''); setLibFreq('monthly'); setLibDate(new Date().toISOString().split('T')[0]);
     }
     const handleClose = () => { setOpen(false); reset() }
     const handleTabChange = (tab: Tab) => {
-        if (tab === 'liability') {
-            handleClose()
-            router.push('/finances/liabilities')
-            return
-        }
         setActiveTab(tab); reset()
     }
 
@@ -70,39 +73,73 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
         setLoading(true); setError(null)
 
         try {
+            // SPEND TAB
             if (activeTab === 'spend') {
-                if (!selectedPocket) { setError('Select a pocket.'); setLoading(false); return }
-                const pocket = pockets.find((p) => p.id === selectedPocket)
-                // We use standard balance now
-                if (pocket && amt > pocket.balance) { setError(`Insufficient balance in ${pocket.name}. Available: £${pocket.balance.toFixed(2)}`); setLoading(false); return }
+                if (!selectedPocket) { setError('Select a source.'); setLoading(false); return }
+
+                const isGoal = selectedPocket.startsWith('goal_')
+                const actualId = isGoal ? selectedPocket.replace('goal_', '') : selectedPocket
 
                 const cat = getCategoryById(selectedCategory)
-                await supabase.from('fin_transactions').insert({
-                    type: 'spend',
-                    amount: amt,
-                    pocket_id: selectedPocket,
-                    description: description || 'Expense',
-                    date: new Date().toISOString().split('T')[0],
-                    category: cat.id,
-                    emoji: cat.emoji,
-                    profile: activeProfile
-                })
-                if (pocket) await supabase.from('fin_pockets').update({ balance: pocket.balance - amt }).eq('id', selectedPocket)
-            }
-            if (activeTab === 'transfer') {
-                if (!selectedPocket || !toPocket) { setError('Select both pockets.'); setLoading(false); return }
-                if (selectedPocket === toPocket) { setError('Cannot transfer to same pocket.'); setLoading(false); return }
-                const from = pockets.find((p) => p.id === selectedPocket)
-                const to = pockets.find((p) => p.id === toPocket)
-                if (from && amt > from.balance) { setError(`Insufficient balance in ${from.name}.`); setLoading(false); return }
 
-                // Record two transaction rows for double entry transfer visibility
+                if (isGoal) {
+                    const goal = goals?.find((g) => g.id === actualId)
+                    if (goal && amt > goal.current_amount) { setError(`Insufficient balance in ${goal.name}.`); setLoading(false); return }
+
+                    await supabase.from('fin_transactions').insert({
+                        type: 'spend',
+                        amount: amt,
+                        pocket_id: null,
+                        description: `[Goal: ${goal?.name}] ${description || 'Expense'}`,
+                        date: new Date().toISOString().split('T')[0],
+                        category: cat.id,
+                        emoji: cat.emoji,
+                        profile: activeProfile
+                    })
+                    if (goal) await supabase.from('fin_goals').update({ current_amount: goal.current_amount - amt }).eq('id', actualId)
+                } else {
+                    const pocket = pockets.find((p) => p.id === actualId)
+                    if (pocket && amt > pocket.balance) { setError(`Insufficient balance in ${pocket.name}. Available: £${pocket.balance.toFixed(2)}`); setLoading(false); return }
+
+                    await supabase.from('fin_transactions').insert({
+                        type: 'spend',
+                        amount: amt,
+                        pocket_id: actualId,
+                        description: description || 'Expense',
+                        date: new Date().toISOString().split('T')[0],
+                        category: cat.id,
+                        emoji: cat.emoji,
+                        profile: activeProfile
+                    })
+                    if (pocket) await supabase.from('fin_pockets').update({ balance: pocket.balance - amt }).eq('id', actualId)
+                }
+            }
+            // TRANSFER TAB
+            if (activeTab === 'transfer') {
+                if (!selectedPocket || !toPocket) { setError('Select both sources/destinations.'); setLoading(false); return }
+                if (selectedPocket === toPocket) { setError('Cannot transfer to same place.'); setLoading(false); return }
+
+                const fromIsGoal = selectedPocket.startsWith('goal_')
+                const fromId = fromIsGoal ? selectedPocket.replace('goal_', '') : selectedPocket
+                const fromName = fromIsGoal ? goals?.find(g => g.id === fromId)?.name : pockets.find(p => p.id === fromId)?.name
+
+                const toIsGoal = toPocket.startsWith('goal_')
+                const toId = toIsGoal ? toPocket.replace('goal_', '') : toPocket
+                const toName = toIsGoal ? goals?.find(g => g.id === toId)?.name : pockets.find(p => p.id === toId)?.name
+
+                const fromPocket = !fromIsGoal ? pockets.find(p => p.id === fromId) : null
+                const fromGoal = fromIsGoal ? goals?.find(g => g.id === fromId) : null
+
+                const fromBalance = fromIsGoal ? (fromGoal?.current_amount || 0) : (fromPocket?.balance || 0)
+                if (amt > fromBalance) { setError(`Insufficient balance in ${fromName}.`); setLoading(false); return }
+
+                // Record two transaction rows for double entry
                 await supabase.from('fin_transactions').insert([
                     {
                         type: 'transfer',
                         amount: amt,
-                        pocket_id: selectedPocket,
-                        description: `Transfer to ${to?.name || 'pocket'}`,
+                        pocket_id: fromIsGoal ? null : fromId,
+                        description: `Transfer to ${toName || 'destination'}${fromIsGoal ? ` (from Goal: ${fromName})` : ''}`,
                         date: new Date().toISOString().split('T')[0],
                         category: 'transfer',
                         emoji: '🔄',
@@ -111,16 +148,39 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
                     {
                         type: 'allocate',
                         amount: amt,
-                        pocket_id: toPocket,
-                        description: `Transfer from ${from?.name || 'pocket'}`,
+                        pocket_id: toIsGoal ? null : toId,
+                        description: `Transfer from ${fromName || 'source'}${toIsGoal ? ` (to Goal: ${toName})` : ''}`,
                         date: new Date().toISOString().split('T')[0],
                         category: 'transfer',
                         emoji: '🔄',
                         profile: activeProfile
                     }
                 ])
-                if (from) await supabase.from('fin_pockets').update({ balance: from.balance - amt }).eq('id', from.id)
-                if (to) await supabase.from('fin_pockets').update({ balance: to.balance + amt }).eq('id', to.id)
+
+                if (fromIsGoal && fromGoal) await supabase.from('fin_goals').update({ current_amount: fromGoal.current_amount - amt }).eq('id', fromId)
+                if (!fromIsGoal && fromPocket) await supabase.from('fin_pockets').update({ balance: fromPocket.balance - amt }).eq('id', fromId)
+
+                const toPocketObj = !toIsGoal ? pockets.find(p => p.id === toId) : null
+                const toGoalObj = toIsGoal ? goals?.find(g => g.id === toId) : null
+
+                if (toIsGoal && toGoalObj) await supabase.from('fin_goals').update({ current_amount: toGoalObj.current_amount + amt }).eq('id', toId)
+                if (!toIsGoal && toPocketObj) await supabase.from('fin_pockets').update({ balance: toPocketObj.balance + amt }).eq('id', toId)
+            }
+            if (activeTab === 'liability') {
+                if (!libName) { setError('Enter a name for the liability.'); setLoading(false); return }
+
+                await createObligation({
+                    name: libName,
+                    amount: amt,
+                    frequency: libFreq,
+                    next_due_date: libDate,
+                    category: 'bills',
+                    emoji: '💸',
+                    description: null,
+                    end_date: null,
+                    group_name: null,
+                    payments_left: null
+                })
             }
             onSuccess(); handleClose()
         } catch (e: unknown) {
@@ -423,24 +483,65 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
                                 {activeTab !== 'income' && activeTab !== 'liability' && (
                                     <div>
                                         <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">
-                                            {activeTab === 'transfer' ? 'From Pocket' : 'Pocket'}
+                                            {activeTab === 'transfer' ? 'From' : 'Source'}
                                         </label>
                                         <select value={selectedPocket} onChange={(e) => setSelectedPocket(e.target.value)}
                                             className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[13px] text-black outline-none focus:border-black/40 appearance-none">
-                                            <option value="">Select pocket…</option>
-                                            {pockets.map((p) => <option key={p.id} value={p.id}>{p.name} — £{p.balance?.toFixed(2) ?? '0.00'}</option>)}
+                                            <option value="">Select source…</option>
+                                            <optgroup label="Pockets">
+                                                {pockets.map((p) => <option key={p.id} value={p.id}>{p.name} — £{p.balance?.toFixed(2) ?? '0.00'}</option>)}
+                                            </optgroup>
+                                            {activeTab === 'spend' && goals && goals.length > 0 && (
+                                                <optgroup label="Savings Goals">
+                                                    {goals.map((g) => <option key={`goal_${g.id}`} value={`goal_${g.id}`}>{g.name} — £{g.current_amount?.toFixed(2) ?? '0.00'}</option>)}
+                                                </optgroup>
+                                            )}
                                         </select>
                                     </div>
                                 )}
 
                                 {activeTab === 'transfer' && (
                                     <div>
-                                        <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">To Pocket</label>
+                                        <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">To</label>
                                         <select value={toPocket} onChange={(e) => setToPocket(e.target.value)}
                                             className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[13px] text-black outline-none focus:border-black/40 appearance-none">
-                                            <option value="">Select pocket…</option>
-                                            {pockets.filter((p) => p.id !== selectedPocket).map((p) => <option key={p.id} value={p.id}>{p.name} — £{p.balance?.toFixed(2) ?? '0.00'}</option>)}
+                                            <option value="">Select destination…</option>
+                                            <optgroup label="Pockets">
+                                                {pockets.filter((p) => p.id !== selectedPocket).map((p) => <option key={p.id} value={p.id}>{p.name} — £{p.balance?.toFixed(2) ?? '0.00'}</option>)}
+                                            </optgroup>
+                                            {goals && goals.length > 0 && (
+                                                <optgroup label="Savings Goals">
+                                                    {goals.filter(g => `goal_${g.id}` !== selectedPocket).map((g) => <option key={`goal_${g.id}`} value={`goal_${g.id}`}>{g.name} — £{g.current_amount?.toFixed(2) ?? '0.00'}</option>)}
+                                                </optgroup>
+                                            )}
                                         </select>
+                                    </div>
+                                )}
+
+                                {activeTab === 'liability' && (
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">Lender / Name</label>
+                                            <input value={libName} onChange={(e) => setLibName(e.target.value)} placeholder="e.g. Klarna, Netflix"
+                                                className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[13px] text-black outline-none focus:border-black/40" />
+                                        </div>
+                                        <div className="flex gap-3">
+                                            <div className="flex-1">
+                                                <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">Frequency</label>
+                                                <select value={libFreq} onChange={(e) => setLibFreq(e.target.value as any)}
+                                                    className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[13px] text-black outline-none focus:border-black/40 appearance-none">
+                                                    <option value="weekly">Weekly</option>
+                                                    <option value="bi-weekly">Bi-weekly</option>
+                                                    <option value="monthly">Monthly</option>
+                                                    <option value="yearly">Yearly</option>
+                                                </select>
+                                            </div>
+                                            <div className="flex-[1.5]">
+                                                <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">Next Payment</label>
+                                                <input type="date" value={libDate} onChange={(e) => setLibDate(e.target.value)}
+                                                    className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[13px] text-black outline-none focus:border-black/40" />
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
 
@@ -497,7 +598,7 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
                                 ) : (
                                     <button onClick={handleSubmit} disabled={loading}
                                         className="w-full py-3 rounded-xl bg-black text-white font-semibold text-[14px] hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2">
-                                        {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : activeTab === 'spend' ? 'Log Spend' : 'Transfer'}
+                                        {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : activeTab === 'spend' ? 'Log Spend' : activeTab === 'liability' ? 'Add Liability' : 'Transfer'}
                                     </button>
                                 )}
                             </div>

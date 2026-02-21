@@ -66,9 +66,32 @@ export function CashflowAnalytics({ monthlyObligations }: { monthlyObligations: 
         )
     }
 
-    const weeklyBase = parseFloat(settings['weekly_income_baseline'] || '0')
-    const monthlyStructuralIncome = (weeklyBase * 52) / 12
-    const expectedRemaining = Math.max(0, monthlyStructuralIncome - monthlyObligations)
+    // Calculate this week's expected pay (Staffline 3-on/3-off)
+    const currentWeekExpectedPay = useMemo(() => {
+        const ROTA_ANCHOR_UTC = Date.UTC(2026, 1, 23)
+        const HOURS_PER_SHIFT = 11.5
+        const BASE_RATE = 15.26
+        const DEDUCTION_RATE = 0.1877
+
+        const now = new Date()
+        now.setHours(0, 0, 0, 0)
+        const currentDay = now.getDay() // 0=Sun
+
+        const accountingSun = new Date(now)
+        accountingSun.setDate(now.getDate() - currentDay)
+
+        let shiftsThisWeek = 0
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(accountingSun)
+            d.setDate(accountingSun.getDate() + i)
+            const dateUTC = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())
+            const diffDays = Math.round((dateUTC - ROTA_ANCHOR_UTC) / 86400000)
+            const cycleDay = ((diffDays % 6) + 6) % 6
+            if (cycleDay < 3) shiftsThisWeek++
+        }
+
+        return shiftsThisWeek * HOURS_PER_SHIFT * BASE_RATE * (1 - DEDUCTION_RATE)
+    }, [])
 
     return (
         <div className="rounded-xl border border-black/[0.07] bg-white p-5 shadow-sm h-full flex flex-col">
@@ -127,9 +150,9 @@ export function CashflowAnalytics({ monthlyObligations }: { monthlyObligations: 
                     <div>
                         <div className="flex justify-between items-end mb-1.5">
                             <div className="flex items-center gap-1.5 text-[12px] font-semibold text-black/60">
-                                <ArrowRightLeft className="w-3.5 h-3.5 text-orange-500" /> Expected
+                                <ArrowRightLeft className="w-3.5 h-3.5 text-orange-500" /> This Week's Expected Pay
                             </div>
-                            <span className="text-[14px] font-bold text-black privacy-blur">£{expectedRemaining.toFixed(2)}</span>
+                            <span className="text-[14px] font-bold text-black privacy-blur">£{currentWeekExpectedPay.toFixed(2)}</span>
                         </div>
                         <div className="w-full h-2 bg-black/[0.04] rounded-full overflow-hidden">
                             <div className="h-full bg-orange-500/80 rounded-full w-full" />
