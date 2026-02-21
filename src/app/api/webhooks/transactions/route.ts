@@ -28,7 +28,16 @@ export async function POST(request: Request) {
         }
 
         // Parse date properly (fallback to now if invalid or missing)
-        const transDate = date ? new Date(date) : new Date()
+        let transDate = new Date()
+        if (date) {
+            const parsedDate = new Date(date)
+            // Check if the parsed date is valid before using it
+            if (!isNaN(parsedDate.getTime())) {
+                transDate = parsedDate
+            } else {
+                console.warn(`Webhook received invalid date string: "${date}". Falling back to current time.`)
+            }
+        }
 
         // 3. Database Mapping
         // We know we must map 'merchant' -> 'description'
