@@ -90,8 +90,8 @@ export default function TransactionsPage() {
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6 flex flex-col">
-                <div className="max-w-4xl mx-auto space-y-4">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 flex flex-col items-center">
+                <div className="w-full max-w-4xl flex-1 space-y-4">
                     {/* Filters & Search */}
                     <div className="bg-white p-4 rounded-3xl border border-black/[0.06] shadow-sm flex flex-col gap-3 mb-2">
                         {/* Profile Toggle */}
