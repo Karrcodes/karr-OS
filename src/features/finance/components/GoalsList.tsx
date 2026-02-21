@@ -80,10 +80,10 @@ export function GoalsList({ goals, onRefresh }: GoalsListProps) {
                                 </div>
                             </div>
                             <div className="text-right">
-                                <p className="text-[14px] font-bold text-black">
+                                <p className="text-[14px] font-bold text-black privacy-blur">
                                     £{goal.current_amount.toFixed(2)}
                                 </p>
-                                <p className="text-[10px] text-black/35">of £{goal.target_amount.toFixed(2)}</p>
+                                <p className="text-[10px] text-black/35">of <span className="privacy-blur">£{goal.target_amount.toFixed(2)}</span></p>
                             </div>
                         </div>
                         <ProgressBar value={goal.current_amount} max={goal.target_amount} />
@@ -100,8 +100,8 @@ export function GoalsList({ goals, onRefresh }: GoalsListProps) {
                                     Restart Cycle
                                 </button>
                             ) : (
-                                <span className="text-[10px] text-black/35 font-medium">
-                                    £{Math.max(0, goal.target_amount - goal.current_amount).toFixed(2)} to go
+                                <span className="text-[10px] text-black/35 font-medium flex gap-1">
+                                    <span className="privacy-blur">£{Math.max(0, goal.target_amount - goal.current_amount).toFixed(2)}</span> to go
                                 </span>
                             )}
                         </div>

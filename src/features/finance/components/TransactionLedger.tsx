@@ -102,7 +102,7 @@ export function TransactionLedger() {
                                             <span className="text-[9px] font-bold text-black bg-black/5 px-1 py-0.5 rounded border border-black/10">BANK</span>
                                         )}
                                     </div>
-                                    <p className={`text-[13px] font-bold ${t.type === 'spend' ? 'text-black' : 'text-[#059669]'}`}>
+                                    <p className={`text-[13px] font-bold ${t.type === 'spend' ? 'text-black' : 'text-[#059669]'} privacy-blur`}>
                                         {t.type === 'spend' ? '-' : '+'}£{t.amount.toFixed(2)}
                                     </p>
                                 </div>

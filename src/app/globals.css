@@ -131,4 +131,12 @@
   .icon-btn:hover {
     @apply bg-black/[0.06];
   }
+
+  /* Privacy Mode Utility */
+  .privacy-enabled .privacy-blur {
+    filter: blur(5px);
+    transition: filter 0.2s ease;
+    user-select: none;
+    pointer-events: none;
+  }
 }

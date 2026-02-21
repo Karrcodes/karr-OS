@@ -238,7 +238,7 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                         <button onClick={() => setView('list')} className={`p-1.5 rounded-md transition-all ${view === 'list' ? 'bg-white shadow-sm text-black' : 'text-black/40 hover:text-black/60'}`}><List className="w-3.5 h-3.5" /></button>
                     </div>
                     <div className="text-right">
-                        <div className="text-[16px] font-extrabold text-black">
+                        <div className="text-[16px] font-extrabold text-black privacy-blur">
                             £{view === 'calendar' ? calendarData.totalMonth.toFixed(2) : total30Days.toFixed(2)}
                         </div>
                         <p className="text-[9px] uppercase tracking-wider font-bold text-black/30">{view === 'calendar' ? 'This Month' : 'Next 30d'}</p>
@@ -315,7 +315,7 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                                                 {payments.length > 2 && (
                                                     <span className="text-[8px] text-black/30 font-bold">+{payments.length - 2} more</span>
                                                 )}
-                                                <span className="text-[8px] font-bold text-red-500 mt-auto">-£{dayTotal.toFixed(0)}</span>
+                                                <span className="text-[8px] font-bold text-red-500 mt-auto privacy-blur">-£{dayTotal.toFixed(0)}</span>
                                             </>
                                         )}
                                     </div>
@@ -340,7 +340,7 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                                     </div>
                                     {data.totalRemaining > 0 && (
                                         <div className="text-right">
-                                            <div className="text-[13px] font-bold text-black/70">£{data.totalRemaining.toFixed(2)}</div>
+                                            <div className="text-[13px] font-bold text-black/70 privacy-blur">£{data.totalRemaining.toFixed(2)}</div>
                                             <p className="text-[9px] text-black/30 uppercase font-bold">Remaining</p>
                                         </div>
                                     )}
@@ -350,7 +350,7 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                                         <div key={obs.id} className="bg-black/[0.02] rounded-xl p-3 border border-black/[0.03] hover:border-black/[0.08] transition-all">
                                             <div className="flex justify-between items-start mb-1">
                                                 <div className="font-bold text-[12px] text-black/80">{obs.description || obs.group_name || 'Loan'}</div>
-                                                <div className="text-[12px] font-bold text-red-600">£{obs.amount.toFixed(2)} <span className="text-[10px] text-black/20 font-normal">/ {obs.frequency}</span></div>
+                                                <div className="text-[12px] font-bold text-red-600"><span className="privacy-blur">£{obs.amount.toFixed(2)}</span> <span className="text-[10px] text-black/20 font-normal">/ {obs.frequency}</span></div>
                                             </div>
                                             <div className="flex justify-between items-center mt-2">
                                                 <div className="flex items-center gap-1 text-[10px] text-black/40 bg-black/[0.04] px-1.5 py-0.5 rounded">
@@ -389,7 +389,7 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                             <div className="mt-4 pt-4 border-t border-black/[0.04] flex items-end justify-between">
                                 <div>
                                     <p className="text-[10px] uppercase tracking-wider font-bold text-black/30 mb-0.5">Amount</p>
-                                    <div className="text-[24px] font-black text-red-500 leading-none">£{selectedPayment.obligation.amount.toFixed(2)}</div>
+                                    <div className="text-[24px] font-black text-red-500 leading-none privacy-blur">£{selectedPayment.obligation.amount.toFixed(2)}</div>
                                 </div>
                                 <div className="text-right">
                                     <p className="text-[10px] uppercase tracking-wider font-bold text-black/30 mb-0.5">Occurrence</p>

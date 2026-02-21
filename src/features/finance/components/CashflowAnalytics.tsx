@@ -1,13 +1,15 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Activity, ArrowDownToLine, ArrowUpFromLine, BarChart2 } from 'lucide-react'
+import { Activity, ArrowDownToLine, ArrowUpFromLine, BarChart2, ArrowRightLeft } from 'lucide-react'
 import { InfoTooltip } from './InfoTooltip'
 import { useIncome } from '../hooks/useIncome'
 import { useTransactions } from '../hooks/useTransactions'
+import { useSettings } from '../hooks/useSettings'
 
-export function CashflowAnalytics() {
+export function CashflowAnalytics({ monthlyObligations }: { monthlyObligations: number }) {
     const { transactions, loading: tLoading } = useTransactions()
+    const { settings, loading: sLoading } = useSettings()
     const [view, setView] = useState<'30d' | 'all-time'>('30d')
 
     const { totalIncome, totalSpent, spentPercentage } = useMemo(() => {
@@ -54,7 +56,7 @@ export function CashflowAnalytics() {
         return { allTimeEarned: total, monthlyData: sorted, maxMonthly: max }
     }, [transactions])
 
-    const loading = tLoading
+    const loading = tLoading || sLoading
 
     if (loading) {
         return (
@@ -64,8 +66,12 @@ export function CashflowAnalytics() {
         )
     }
 
+    const weeklyBase = parseFloat(settings['weekly_income_baseline'] || '0')
+    const monthlyStructuralIncome = (weeklyBase * 52) / 12
+    const expectedRemaining = Math.max(0, monthlyStructuralIncome - monthlyObligations)
+
     return (
-        <div className="rounded-xl border border-black/[0.07] bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-black/[0.07] bg-white p-5 shadow-sm h-full flex flex-col">
             <div className="flex items-start justify-between mb-6">
                 <div>
                     <h2 className="text-[15px] font-bold text-black flex items-center gap-2">
@@ -93,7 +99,7 @@ export function CashflowAnalytics() {
                     </div>
                     {view === '30d' ? (
                         <>
-                            <div className="text-[20px] font-bold tracking-tight text-black mt-1">
+                            <div className="text-[20px] font-bold tracking-tight text-black mt-1 privacy-blur">
                                 £{Math.max(0, totalIncome - totalSpent).toFixed(2)}
                             </div>
                             <div className="flex items-center justify-end gap-1 text-[11px] font-semibold uppercase tracking-wider text-black/40">
@@ -103,7 +109,7 @@ export function CashflowAnalytics() {
                         </>
                     ) : (
                         <>
-                            <div className="text-[20px] font-bold tracking-tight text-[#059669] mt-1">
+                            <div className="text-[20px] font-bold tracking-tight text-[#059669] mt-1 privacy-blur">
                                 £{allTimeEarned.toFixed(2)}
                             </div>
                             <div className="flex items-center justify-end gap-1 text-[11px] font-semibold uppercase tracking-wider text-black/40">
@@ -116,14 +122,26 @@ export function CashflowAnalytics() {
             </div>
 
             {view === '30d' ? (
-                <div className="space-y-4">
+                <div className="space-y-4 flex-1 flex flex-col justify-end">
+                    {/* Expected Bar */}
+                    <div>
+                        <div className="flex justify-between items-end mb-1.5">
+                            <div className="flex items-center gap-1.5 text-[12px] font-semibold text-black/60">
+                                <ArrowRightLeft className="w-3.5 h-3.5 text-orange-500" /> Expected
+                            </div>
+                            <span className="text-[14px] font-bold text-black privacy-blur">£{expectedRemaining.toFixed(2)}</span>
+                        </div>
+                        <div className="w-full h-2 bg-black/[0.04] rounded-full overflow-hidden">
+                            <div className="h-full bg-orange-500/80 rounded-full w-full" />
+                        </div>
+                    </div>
                     {/* Income Bar */}
                     <div>
                         <div className="flex justify-between items-end mb-1.5">
                             <div className="flex items-center gap-1.5 text-[12px] font-semibold text-black/60">
                                 <ArrowDownToLine className="w-3.5 h-3.5 text-[#059669]" /> Inflow
                             </div>
-                            <span className="text-[14px] font-bold text-black">£{totalIncome.toFixed(2)}</span>
+                            <span className="text-[14px] font-bold text-black privacy-blur">£{totalIncome.toFixed(2)}</span>
                         </div>
                         <div className="w-full h-2 bg-black/[0.04] rounded-full overflow-hidden">
                             <div className="h-full bg-[#059669] rounded-full w-full" />
@@ -136,7 +154,7 @@ export function CashflowAnalytics() {
                             <div className="flex items-center gap-1.5 text-[12px] font-semibold text-black/60">
                                 <ArrowUpFromLine className="w-3.5 h-3.5 text-[#dc2626]" /> Outflow
                             </div>
-                            <span className="text-[14px] font-bold text-black">£{totalSpent.toFixed(2)}</span>
+                            <span className="text-[14px] font-bold text-black privacy-blur">£{totalSpent.toFixed(2)}</span>
                         </div>
                         <div className="w-full h-2 bg-black/[0.04] rounded-full overflow-hidden">
                             <div
@@ -158,7 +176,7 @@ export function CashflowAnalytics() {
                                         className="w-full max-w-[40px] bg-[#059669]/10 rounded-t-sm relative hover:bg-[#059669]/30 transition-colors min-h-[4px]"
                                         style={{ height: `${(d.amount / maxMonthly) * 100}%` }}
                                     >
-                                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+                                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none privacy-blur">
                                             £{d.amount.toFixed(2)}
                                         </div>
                                     </div>

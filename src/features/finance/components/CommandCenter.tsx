@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState, useEffect } from 'react'
-import { DollarSign, TrendingDown, Wallet, RefreshCw } from 'lucide-react'
+import { DollarSign, TrendingDown, Wallet, RefreshCw, Eye, EyeOff } from 'lucide-react'
 import { InfoTooltip } from './InfoTooltip'
 import { countRemainingPayments, addMonths } from '../utils/lenderLogos'
 import { usePockets } from '../hooks/usePockets'
@@ -13,9 +13,7 @@ import { CalendarVisualizer } from './CalendarVisualizer'
 import { GoalsList } from './GoalsList'
 import { KarrAIChat } from './KarrAIChat'
 import { QuickActionFAB } from './QuickActionFAB'
-import { PaydayAllocation } from './PaydayAllocation'
 import { CashflowAnalytics } from './CashflowAnalytics'
-import { ExpectedCashflowCard } from './ExpectedCashflowCard'
 import { TransactionLedger } from './TransactionLedger'
 import { useFinanceProfile } from '../contexts/FinanceProfileContext'
 
@@ -24,7 +22,7 @@ export function CommandCenter() {
     const { obligations, loading: oLoading } = useRecurring()
     const { goals, loading: gLoading, refetch: refetchGoals } = useGoals()
     const { refetch: refetchTransactions } = useTransactions()
-    const { activeProfile, setProfile } = useFinanceProfile()
+    const { activeProfile, setProfile, isPrivacyEnabled, togglePrivacy } = useFinanceProfile()
 
     const summary = useMemo(() => {
         const totalLiquid = pockets.reduce((s, p) => s + p.balance, 0)
@@ -95,7 +93,15 @@ export function CommandCenter() {
                             {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
                         </div>
                     </div>
-                    <div className="flex bg-black/[0.04] p-1 rounded-xl border border-black/[0.06] w-fit order-2 md:order-1">
+                    <div className="flex bg-black/[0.04] p-1 rounded-xl border border-black/[0.06] w-fit order-2 md:order-1 items-center">
+                        <button
+                            onClick={togglePrivacy}
+                            className={`px-2.5 py-1.5 rounded-lg flex items-center justify-center transition-all ${isPrivacyEnabled ? 'text-[#059669] bg-[#059669]/10' : 'text-black/40 hover:text-black/60'}`}
+                            title={isPrivacyEnabled ? "Disable Privacy Mode" : "Enable Privacy Mode"}
+                        >
+                            {isPrivacyEnabled ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                        <div className="w-[1px] h-4 bg-black/10 mx-1" />
                         <button
                             onClick={() => setProfile('personal')}
                             className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeProfile === 'personal' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
@@ -150,19 +156,13 @@ export function CommandCenter() {
                         {/* Unified Responsive Grid (Mobile -> Tablet -> Desktop) */}
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
 
-                            {/* Cashflow Analytics & Expected Cashflow */}
-                            <div className="order-3 md:order-1 xl:order-1 col-span-1">
-                                <CashflowAnalytics />
-                                <ExpectedCashflowCard monthlyObligations={summary.monthlyObligations} />
-                            </div>
-
-                            {/* Log Income (Payday Allocator) */}
-                            <div className="order-4 md:order-3 xl:order-2 col-span-1 md:col-span-2 xl:col-span-1 h-full">
-                                <PaydayAllocation pockets={pockets} goals={goals} onSuccess={() => { refetchPockets(); refetchGoals(); refetchTransactions(); }} />
+                            {/* Cashflow Analytics */}
+                            <div className="order-3 md:order-1 xl:order-1 col-span-1 md:col-span-1 xl:col-span-2">
+                                <CashflowAnalytics monthlyObligations={summary.monthlyObligations} />
                             </div>
 
                             {/* Savings Goals */}
-                            <div className="order-1 md:order-2 xl:order-3 col-span-1 h-full">
+                            <div className="order-1 md:order-2 xl:order-2 col-span-1 h-full">
                                 <SectionBlock title="Savings Goals" desc="Long-term targets">
                                     <GoalsList goals={goals} onRefresh={refetchGoals} />
                                 </SectionBlock>
@@ -233,7 +233,7 @@ function SummaryCard({ label, value, icon, color, sub, tooltip }: { label: strin
                     <span style={{ color }}>{icon}</span>
                 </div>
             </div>
-            <p className="text-2xl font-bold text-black tracking-tight">{value}</p>
+            <p className="text-2xl font-bold text-black tracking-tight privacy-blur">{value}</p>
             {sub && <p className="text-[11px] text-black/35 mt-1">{sub}</p>}
         </div>
     )

@@ -72,12 +72,12 @@ export function PocketsGrid({ pockets }: PocketsGridProps) {
                         </div>
 
                         <div className="mb-3">
-                            <p className="text-2xl font-bold text-black tracking-tight">
+                            <p className="text-2xl font-bold text-black tracking-tight privacy-blur">
                                 £{(pocket.balance ?? 0).toFixed(2)}
                             </p>
                             {pocket.target_budget > 0 && (
                                 <p className="text-[11px] text-black/35 mt-0.5">
-                                    remaining of £{pocket.target_budget.toFixed(2)} alloc
+                                    remaining of <span className="privacy-blur">£{pocket.target_budget.toFixed(2)}</span> alloc
                                 </p>
                             )}
                         </div>
@@ -88,7 +88,7 @@ export function PocketsGrid({ pockets }: PocketsGridProps) {
                                 <div className="flex justify-between mt-1.5">
                                     <span className="text-[10px] text-black/40">{pct.toFixed(0)}% available</span>
                                     <span className="text-[10px] text-black/40">
-                                        £{Math.max(0, pocket.target_budget - (pocket.balance ?? 0)).toFixed(2)} spent
+                                        <span className="privacy-blur">£{Math.max(0, pocket.target_budget - (pocket.balance ?? 0)).toFixed(2)}</span> spent
                                     </span>
                                 </div>
                             </>
