@@ -111,19 +111,22 @@ export function ProjectionsAnalytics() {
         const lastStr = bookLast ? new Date(bookLast).toISOString().split('T')[0] : ''
         const returnStr = bookReturn ? new Date(bookReturn).toISOString().split('T')[0] : ''
 
-        const params = new URLSearchParams()
-        params.append(IDs.today, todayStr)
-        params.append(IDs.badge, "3711148963")
-        params.append(IDs.name, "Umaru AbdulAlim")
-        params.append(IDs.dept, "HLOP")
-        params.append(IDs.shift, "12 hour (0600-1800)")
-        params.append(IDs.days, bookDays)
-        params.append(IDs.first, firstStr)
-        params.append(IDs.last, lastStr)
-        params.append(IDs.return, returnStr)
-        params.append(IDs.reason, bookReason)
+        // Construct modern pre-filled format
+        const answers = {
+            [IDs.today]: todayStr,
+            [IDs.badge]: "3711148963",
+            [IDs.name]: "Umaru AbdulAlim",
+            [IDs.dept]: "HLOP",
+            [IDs.shift]: "12 hour (0600-1800)",
+            [IDs.days]: bookDays,
+            [IDs.first]: firstStr,
+            [IDs.last]: lastStr,
+            [IDs.return]: returnStr,
+            [IDs.reason]: bookReason
+        }
 
-        const baseUrl = `https://forms.office.com/Pages/ResponsePage.aspx?id=${formId}&${params.toString()}`
+        // wdFR=1 is a specific flag to trigger pre-fill logic in modern MS Forms
+        const baseUrl = `https://forms.office.com/Pages/ResponsePage.aspx?id=${formId}&wdFR=1&answers=${encodeURIComponent(JSON.stringify(answers))}`
 
         // Save Holidays to DB before redirecting
         const holDates = Object.keys(dayOverrides).filter(k => dayOverrides[k] === 'holiday')
