@@ -134,7 +134,7 @@ export function LiabilitiesManager() {
                                     </div>
                                     <div className="flex items-center gap-4 sm:ml-auto bg-black/[0.02] p-2 rounded-xl border border-black/[0.04]">
                                         <div className="flex flex-col items-end mr-2">
-                                            <span className="text-[15px] text-red-600 font-bold tracking-tight">£{o.amount.toFixed(2)}</span>
+                                            <span className="text-[15px] text-red-600 font-bold tracking-tight privacy-blur">£{o.amount.toFixed(2)}</span>
                                             <span className="text-[10px] text-black/40 font-bold uppercase tracking-widest">{o.frequency}</span>
                                         </div>
                                         <div className="flex items-center gap-1 border-l border-black/[0.06] pl-3">

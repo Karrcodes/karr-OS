@@ -80,8 +80,8 @@ export function SavingsManager() {
 
                                         <div>
                                             <div className="flex items-center justify-between text-[13px] mb-2">
-                                                <span className="font-bold text-black">£{g.current_amount.toFixed(2)} <span className="text-black/40 font-medium">saved</span></span>
-                                                <span className="text-black/40 font-medium">of £{g.target_amount.toFixed(2)}</span>
+                                                <span className="font-bold text-black"><span className="privacy-blur">£{g.current_amount.toFixed(2)}</span> <span className="text-black/40 font-medium">saved</span></span>
+                                                <span className="text-black/40 font-medium whitespace-nowrap">of <span className="privacy-blur">£{g.target_amount.toFixed(2)}</span></span>
                                             </div>
                                             <div className="h-2 w-full bg-black/[0.04] rounded-full overflow-hidden">
                                                 <div

@@ -299,7 +299,7 @@ export function ProjectionsAnalytics() {
                         <div className="flex items-center gap-2 text-[11px] font-bold text-emerald-100 uppercase tracking-widest mb-1 relative z-10">
                             Net Income
                         </div>
-                        <div className="text-[28px] font-black relative z-10 flex items-baseline gap-1">
+                        <div className="text-[28px] font-black relative z-10 flex items-baseline gap-1 privacy-blur">
                             <span className="text-[18px] opacity-70">£</span>
                             {projectedNet.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
@@ -441,7 +441,7 @@ export function ProjectionsAnalytics() {
                                             )}
                                         </div>
                                         {isPayday && (
-                                            <div className={`flex items-center gap-0.5 font-bold text-[10px] sm:text-[11px] opacity-90 ${isShift && !override ? 'text-emerald-600' : 'text-emerald-700'}`}>
+                                            <div className={`flex items-center gap-0.5 font-bold text-[10px] sm:text-[11px] opacity-90 privacy-blur ${isShift && !override ? 'text-emerald-600' : 'text-emerald-700'}`}>
                                                 <span>£{(weeklyPayMap[dateStr] || 0).toFixed(0)}</span>
                                             </div>
                                         )}

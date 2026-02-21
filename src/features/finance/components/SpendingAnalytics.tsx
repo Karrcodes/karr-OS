@@ -101,7 +101,7 @@ export function SpendingAnalytics({ transactions }: SpendingAnalyticsProps) {
                             <p className="text-[12px] text-black/40 font-medium">{category.transactions.length} transactions · {category.percentage.toFixed(1)}% of total spending</p>
                         </div>
                         <div className="ml-auto text-right">
-                            <div className="text-[28px] font-bold text-black flex items-baseline gap-1">
+                            <div className="text-[28px] font-bold text-black flex items-baseline gap-1 privacy-blur">
                                 <span className="text-[20px] opacity-30">£</span>
                                 {category.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                             </div>
@@ -127,7 +127,7 @@ export function SpendingAnalytics({ transactions }: SpendingAnalyticsProps) {
                                         {new Date(t.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                                     </p>
                                 </div>
-                                <p className="text-[14px] font-bold text-black">
+                                <p className="text-[14px] font-bold text-black privacy-blur">
                                     -£{t.amount.toFixed(2)}
                                 </p>
                             </div>
@@ -148,7 +148,7 @@ export function SpendingAnalytics({ transactions }: SpendingAnalyticsProps) {
                         <div className="flex items-center gap-2 text-[11px] font-bold text-black/30 uppercase tracking-widest mb-4">
                             <PieChart className="w-3.5 h-3.5" /> Total Spending Analytics
                         </div>
-                        <div className="text-[32px] font-bold text-black flex items-baseline gap-1.5">
+                        <div className="text-[32px] font-bold text-black flex items-baseline gap-1.5 privacy-blur">
                             <span className="text-[20px] opacity-30">£</span>
                             {stats.totalSpend.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </div>
@@ -160,7 +160,7 @@ export function SpendingAnalytics({ transactions }: SpendingAnalyticsProps) {
                             <div key={i} className="space-y-1.5">
                                 <div className="flex justify-between items-end">
                                     <span className="text-[11px] font-bold text-black/60 capitalize">{cat.name}</span>
-                                    <span className="text-[11px] font-bold text-black/30">£{cat.amount.toFixed(0)}</span>
+                                    <span className="text-[11px] font-bold text-black/30 privacy-blur">£{cat.amount.toFixed(0)}</span>
                                 </div>
                                 <div className="h-1.5 bg-black/[0.03] rounded-full overflow-hidden">
                                     <div
@@ -195,7 +195,7 @@ export function SpendingAnalytics({ transactions }: SpendingAnalyticsProps) {
                                     <p className="text-[10px] text-black/30 font-bold uppercase tracking-wider">{cat.percentage.toFixed(1)}% · {cat.transactions.length} tx</p>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-[14px] font-bold text-black">£{cat.amount.toFixed(2)}</p>
+                                    <p className="text-[14px] font-bold text-black privacy-blur">£{cat.amount.toFixed(2)}</p>
                                     <ArrowUpRight className="w-3.5 h-3.5 text-black/20 ml-auto mt-0.5 group-hover:text-black transition-colors" />
                                 </div>
                             </button>
