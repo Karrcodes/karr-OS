@@ -30,24 +30,7 @@ export async function POST(request: Request) {
 
     if (!isAuthorized) {
         console.error('Webhook: Unauthorized access attempt.')
-        // Forensic character analysis for the last few characters
-        const getCodes = (s: string) => s.split('').map(c => c.charCodeAt(0)).join(',')
-
-        return NextResponse.json({
-            error: 'Unauthorized',
-            debug: {
-                authReceived: !!authHeader,
-                secretConfigured: !!secret,
-                forensic: {
-                    headerLength: rawHeader.length,
-                    expectedLength: `bearer ${normalizedSecret}`.length,
-                    headerCodes: getCodes(rawHeader.slice(-5)),
-                    secretCodes: getCodes(normalizedSecret.slice(-5)),
-                    match: false,
-                    cleanMatch: cleanHeader === cleanSecret
-                }
-            }
-        }, { status: 401 })
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     try {
