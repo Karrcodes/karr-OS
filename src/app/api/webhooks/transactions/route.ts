@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { geminiModel } from '@/lib/gemini'
 
 // We need to initialize the admin client (service role) to bypass RLS 
 // if the webhook is coming in anonymously from iOS shortcuts.
@@ -23,31 +24,58 @@ export async function POST(request: Request) {
         const body = await request.json()
         let { amount, merchant, date, notificationText } = body
         let parsedPocketName = null
+        let parsedCategory = 'other'
 
-        // If the user sends the raw iOS notification text, parse it automatically
-        // Example: "Paid £1 at Wikimedia\nDaily Essentials Balance: £87.90"
+        // If the user sends the raw iOS notification text, parse it automatically via AI
+        // Example: "Revolut\nTesco Express, Cardiff Wales\n£1.35"
         if (notificationText) {
-            // Extract Amount and Merchant
-            const match = notificationText.match(/Paid £([0-9.,]+) (?:at|to) (.*?)(?:\n|$)/i)
-            if (match) {
-                amount = amount || match[1].replace(',', '')
-                merchant = merchant || match[2].trim()
-            }
-            // Extract Pocket Name (anything before "Balance: £")
-            const pocketMatch = notificationText.match(/(.*?)\s+Balance:\s+£/i)
-            if (pocketMatch && pocketMatch[1]) {
-                const rawName = pocketMatch[1].trim()
-                // Strip out "Paid £X at Y" if it accidentally carried over due to lack of newline
-                parsedPocketName = rawName.split('\n').pop()?.trim() || null
+            try {
+                const prompt = `You are a financial parsing assistant. The user has provided an Apple Pay / Revolut transaction notification text.
+Extract the transaction details and determine the correct budget pocket and spending category.
+
+Available Pockets (ONLY choose one of these two):
+1. "Daily Essentials 🍔" (for groceries, convenience stores, taxis, ride booking apps, pharmacies, everyday needs)
+2. "Fun 🛍️" (for clothes shopping, Amazon, electronics, restaurants, pubs, takeaways, entertainment)
+
+Available Categories (ONLY choose one): 'food', 'transport', 'housing', 'shopping', 'entertainment', 'utilities', 'health', 'other'
+
+Notification Text:
+"""
+${notificationText}
+"""
+
+Return ONLY a valid JSON object with the following keys, no markdown, no explanation:
+{
+  "amount": number (extracted numerical amount, e.g. 1.35),
+  "merchant": string (clean merchant name without location/city/country, e.g. "Tesco Express"),
+  "target_pocket": string (must be exactly "Daily Essentials 🍔" or "Fun 🛍️"),
+  "category": string (one of the allowed categories)
+}`
+                const result = await geminiModel.generateContent(prompt)
+                const text = result.response.text().trim()
+                const cleaned = text.replace(/```json?/g, '').replace(/```/g, '').trim()
+                const parsed = JSON.parse(cleaned)
+
+                if (parsed.amount) amount = typeof parsed.amount === 'string' ? parseFloat(parsed.amount.replace(/[^0-9.]/g, '')) : parsed.amount
+                if (parsed.merchant) merchant = parsed.merchant
+                if (parsed.target_pocket) parsedPocketName = parsed.target_pocket
+                if (parsed.category) parsedCategory = parsed.category.toLowerCase()
+
+            } catch (aiError) {
+                console.error('Webhook AI Parsing Error:', aiError)
+                // Fallback extraction if AI fails
+                const match = notificationText.match(/£([0-9.,]+)/)
+                if (match) amount = amount || parseFloat(match[1].replace(',', ''))
+                merchant = merchant || notificationText.split('\n')[1] || 'Unknown Merchant'
             }
         }
 
-        // Fallback to mock data if fields are missing (e.g. from pressing 'Play' in Shortcuts)
-        const finalAmount = amount !== undefined ? amount : 1.00
+        // Fallback to mock data if fields are missing
+        const finalAmount = amount !== undefined && !isNaN(parseFloat(amount)) ? parseFloat(amount) : 1.00
         const finalMerchant = merchant || 'Test Transaction (Shortcut Play Button)'
 
-        // Mock the pocket specifically requested by the user for testing
-        if (!parsedPocketName && !notificationText) {
+        // Fallback pocket specifically requested by the user for testing
+        if (!parsedPocketName) {
             parsedPocketName = 'Daily Essentials 🍔'
         }
 
@@ -96,6 +124,7 @@ export async function POST(request: Request) {
         // We map 'merchant' -> 'description'
         // 'amount' -> 'amount'
         // 'type' -> 'spend'
+        // 'category' -> parsedCategory
         // 'pocket_id' -> resolved ID or null
         // 'profile' -> 'personal'
         const transactionData = {
@@ -103,6 +132,7 @@ export async function POST(request: Request) {
             description: finalMerchant,
             date: transDate.toISOString(),
             type: 'spend',
+            category: parsedCategory,
             pocket_id: resolvedPocketId,
             profile: 'personal',
         }
