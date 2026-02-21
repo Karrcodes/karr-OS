@@ -598,7 +598,7 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
                                         </div>
 
                                         <div className="flex flex-col md:flex-row gap-3">
-                                            <div className="flex-1">
+                                            <div className="flex-1 min-w-0">
                                                 <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">Frequency</label>
                                                 <select value={libFreq} onChange={(e) => setLibFreq(e.target.value as any)}
                                                     className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-3 text-[14px] text-black outline-none focus:border-black/40 appearance-none">
@@ -608,10 +608,10 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
                                                     <option value="yearly">Yearly</option>
                                                 </select>
                                             </div>
-                                            <div className="flex-[1.5]">
+                                            <div className="flex-[1.5] min-w-0">
                                                 <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">Next Payment</label>
                                                 <input type="date" value={libDate} onChange={(e) => setLibDate(e.target.value)}
-                                                    className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-3 text-[14px] text-black outline-none focus:border-black/40 transition-colors" />
+                                                    className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-3 text-[14px] text-black outline-none focus:border-black/40 transition-colors box-border" />
                                             </div>
                                         </div>
 
@@ -629,10 +629,10 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
                                                         className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-3 text-[14px] text-black outline-none focus:border-black/40 transition-colors" />
                                                 </div>
                                             ) : (
-                                                <div className={selectedLenderId === 'currys' ? '' : 'opacity-50 grayscale hover:opacity-100 hover:grayscale-0 focus-within:opacity-100 focus-within:grayscale-0 transition-all'}>
+                                                <div className={`min-w-0 ${selectedLenderId === 'currys' ? '' : 'opacity-50 grayscale hover:opacity-100 hover:grayscale-0 focus-within:opacity-100 focus-within:grayscale-0 transition-all'}`}>
                                                     <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">End Date (Optional)</label>
                                                     <input type="date" value={libEndDate} onChange={(e) => setLibEndDate(e.target.value)}
-                                                        className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-3 text-[14px] text-black outline-none focus:border-black/40 transition-colors" />
+                                                        className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-3 text-[14px] text-black outline-none focus:border-black/40 transition-colors box-border" />
                                                 </div>
                                             )}
                                         </div>
@@ -641,7 +641,7 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
 
                                 {activeTab !== 'liability' && (
                                     <div className={`flex flex-col md:flex-row ${activeTab === 'income' ? 'gap-3' : ''}`}>
-                                        <div className="flex-1">
+                                        <div className="flex-1 min-w-0">
                                             <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">
                                                 {activeTab === 'income' ? 'Source' : 'Note (optional)'}
                                             </label>
@@ -651,10 +651,10 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
                                         </div>
 
                                         {activeTab === 'income' && (
-                                            <div className="w-full md:w-[150px] shrink-0">
+                                            <div className="w-full md:w-[150px] shrink-0 min-w-0">
                                                 <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">Date</label>
                                                 <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
-                                                    className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-3 text-[14px] font-medium text-black outline-none focus:border-black/40 transition-colors" />
+                                                    className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-3 text-[14px] font-medium text-black outline-none focus:border-black/40 transition-colors box-border" />
                                             </div>
                                         )}
                                     </div>
