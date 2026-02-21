@@ -14,9 +14,19 @@ export async function POST(request: Request) {
 
     console.log('Webhook: Received request. Auth presence:', !!authHeader)
 
-    if (!secret || authHeader !== `Bearer ${secret}`) {
-        console.error('Webhook: Unauthorized access attempt')
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Lenient auth check (handles 'bearer' or 'Bearer' and trims secret)
+    const isAuthorized = secret && authHeader &&
+        authHeader.toLowerCase() === `bearer ${secret.trim().toLowerCase()}`
+
+    if (!isAuthorized) {
+        console.error('Webhook: Unauthorized access attempt. Secret configured:', !!secret)
+        return NextResponse.json({
+            error: 'Unauthorized',
+            debug: {
+                authReceived: !!authHeader,
+                secretConfigured: !!secret
+            }
+        }, { status: 401 })
     }
 
     try {
@@ -35,10 +45,15 @@ export async function POST(request: Request) {
 Extract the transaction details and determine the correct budget pocket and spending category.
 
 Available Pockets (ONLY choose one of these two):
-1. "Daily Essentials 🍔" (for groceries, ALL food and drinks, coffee shops (e.g. Lavazza, Starbucks), convenience stores, taxis, ride booking apps, pharmacies)
-2. "Fun 🛍️" (for clothes shopping, Amazon, electronics, expressly sit-down restaurants, pubs, takeaways, entertainment)
+1. "Daily Essentials 🍔" (for groceries, ALL food and drinks, coffee shops, convenience stores, taxis, ride booking apps, pharmacies, charities like ShareTheMeal)
+2. "Fun 🛍️" (for clothes shopping, Amazon, electronics, expressly sit-down restaurants, pubs, takeaways, entertainment, online subscriptions)
 
 Available Categories (ONLY choose one): 'food', 'transport', 'housing', 'shopping', 'entertainment', 'utilities', 'health', 'other'
+
+Notification Text Format (multi-line):
+Line 1: Bank/App Name (e.g. Revolut)
+Line 2: Merchant Name (e.g. ShareTheMeal, Tesco, Apple.com/bill)
+Line 3: Amount (e.g. £0.65, .65, 65p)
 
 Notification Text:
 """
@@ -47,8 +62,8 @@ ${notificationText}
 
 Return ONLY a valid JSON object with the following keys, no markdown, no explanation:
 {
-  "amount": number (extracted numerical amount, e.g. 1.35),
-  "merchant": string (clean merchant name without location/city/country, e.g. "Tesco Express"),
+  "amount": number (extracted numerical amount, e.g. 0.65),
+  "merchant": string (clean merchant name from Line 2, e.g. "ShareTheMeal"),
   "target_pocket": string (must be exactly "Daily Essentials 🍔" or "Fun 🛍️"),
   "category": string (one of the allowed categories)
 }`
