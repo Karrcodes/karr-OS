@@ -23,9 +23,9 @@ export async function POST(request: Request) {
         const body = await request.json()
         const { amount, merchant, date } = body
 
-        if (amount === undefined || !merchant) {
-            return NextResponse.json({ error: 'Missing required payload fields: amount, merchant' }, { status: 400 })
-        }
+        // Fallback to mock data if fields are missing (e.g. from pressing 'Play' in Shortcuts)
+        const finalAmount = amount !== undefined ? amount : 1.00
+        const finalMerchant = merchant || 'Test Transaction (Shortcut Play Button)'
 
         // Parse date properly (fallback to now if invalid or missing)
         let transDate = new Date()
@@ -45,8 +45,8 @@ export async function POST(request: Request) {
         // 'type' -> 'expense'
         // 'from_pocket' -> 'Main Buffer'
         const transactionData = {
-            amount: Number(amount),
-            description: merchant,
+            amount: Number(finalAmount),
+            description: finalMerchant,
             date: transDate.toISOString(),
             type: 'expense',
             from_pocket: 'Main Buffer',
