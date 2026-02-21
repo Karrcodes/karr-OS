@@ -77,13 +77,13 @@ export function CommandCenter() {
     return (
         <div className="flex flex-col h-full bg-white">
             {/* Page Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between px-6 py-5 border-b border-black/[0.06] bg-white flex-shrink-0 shadow-sm z-10 gap-4 md:gap-0">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between px-6 py-5 border-b border-black/[0.06] bg-white flex-shrink-0 shadow-sm z-10 gap-4 lg:gap-0">
                 <div>
                     <h1 className="text-[22px] font-bold text-black tracking-tight">Finance Dashboard</h1>
                     <p className="text-[12px] text-black/35 mt-0.5">Finance Module · {activeProfile === 'personal' ? 'Personal' : 'Studio Karrtesian'}</p>
                 </div>
-                <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
-                    <div className="flex items-center gap-2 order-1 md:order-2">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                    <div className="flex items-center gap-2 order-1 sm:order-2">
                         {loading && (
                             <div className="flex items-center gap-1.5 text-black/30">
                                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -94,7 +94,7 @@ export function CommandCenter() {
                             {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
                         </div>
                     </div>
-                    <div className="flex items-center gap-2 order-2 md:order-3">
+                    <div className="flex items-center gap-2 order-2 sm:order-3">
                         <button
                             onClick={togglePrivacy}
                             className={`p-2 rounded-xl border transition-all ${isPrivacyEnabled ? 'border-[#059669]/30 text-[#059669] bg-[#059669]/10 shadow-[0_2px_10px_rgba(5,150,105,0.1)]' : 'bg-white border-black/[0.06] text-black/40 hover:text-black/60 hover:border-black/[0.15] shadow-sm'}`}
@@ -103,7 +103,7 @@ export function CommandCenter() {
                             {isPrivacyEnabled ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                     </div>
-                    <div className="flex bg-black/[0.04] p-1 rounded-xl border border-black/[0.06] items-center order-3 md:order-1 w-fit">
+                    <div className="flex bg-black/[0.04] p-1 rounded-xl border border-black/[0.06] items-center order-3 sm:order-1 w-fit">
                         <button
                             onClick={() => setProfile('personal')}
                             className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeProfile === 'personal' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
@@ -238,7 +238,9 @@ function SummaryCard({ label, value, icon, color, sub, tooltip }: { label: strin
             </div>
             <div className="mt-auto pt-2">
                 <p className="text-2xl font-bold text-black tracking-tight privacy-blur">{value}</p>
-                {sub && <p className="text-[11px] text-black/35 mt-1">{sub}</p>}
+                <div className="h-[28px] mt-1 flex items-start">
+                    {sub && <p className="text-[11px] text-black/35 leading-tight">{sub}</p>}
+                </div>
             </div>
         </div>
     )
