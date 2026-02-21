@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { useTransactions } from '../hooks/useTransactions'
 import { ArrowUpRight, ArrowDownLeft, RefreshCw, Layers } from 'lucide-react'
 import { useBank } from '../hooks/useBank'
-import { RevolutImportModal } from './RevolutImportModal'
 import { usePockets } from '../hooks/usePockets'
 import { TransactionDetailsModal } from './TransactionDetailsModal'
 import type { Transaction } from '../types/finance.types'
@@ -13,7 +12,6 @@ export function TransactionLedger() {
     const { transactions, loading, refetch, clearTransactions } = useTransactions()
     const { pockets, loading: pocketsLoading } = usePockets()
     const { loading: bankSyncLoading } = useBank()
-    const [isModalOpen, setIsModalOpen] = useState(false)
     const [selectedTx, setSelectedTx] = useState<Transaction | null>(null)
 
     const handleSyncSuccess = (count: number) => {
@@ -42,17 +40,6 @@ export function TransactionLedger() {
                 <p className="text-[13px] font-medium text-black/40">No transactions recorded yet.</p>
                 <div className="flex flex-col gap-2 mt-4 items-center">
                     <p className="text-[11px] text-black/25">Use the quick action button below to log a spend.</p>
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="text-[11px] font-bold text-black flex items-center gap-1.5 hover:underline"
-                    >
-                        Connect Bank Sync
-                    </button>
-                    <RevolutImportModal
-                        isOpen={isModalOpen}
-                        onClose={() => setIsModalOpen(false)}
-                        onSuccess={handleSyncSuccess}
-                    />
                 </div>
             </div>
         )
@@ -60,30 +47,12 @@ export function TransactionLedger() {
 
     return (
         <div className="space-y-4">
-            <div className="flex flex-wrap gap-y-2 items-center justify-between">
-                <div className="flex items-baseline gap-2">
-                    <h3 className="text-[11px] uppercase tracking-wider font-bold text-black/30">Recent Ledger</h3>
-                    <a href="/finances/transactions" className="text-[10px] font-bold text-black hover:underline">See All</a>
-                    <button
-                        onClick={() => { if (confirm('Clear all transactions in this profile?')) clearTransactions() }}
-                        className="text-[10px] font-bold text-red-400/60 hover:text-red-500 transition-colors ml-2"
-                    >
-                        Clear Ledger
-                    </button>
+            <div className="flex gap-y-2 items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <h3 className="text-[11px] uppercase tracking-wider font-bold text-black/40">Recent Transactions</h3>
+                    <span className="w-1 h-1 rounded-full bg-black/10" />
+                    <a href="/finances/transactions" className="text-[10px] font-bold text-black/40 hover:text-black hover:underline transition-colors">See All</a>
                 </div>
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    disabled={bankSyncLoading}
-                    className="flex items-center gap-1.5 text-[11px] font-bold text-black bg-black/10 px-2 py-1 rounded-lg hover:bg-black/20 transition-colors disabled:opacity-50"
-                >
-                    <RefreshCw className={`w-3 h-3 ${bankSyncLoading ? 'animate-spin' : ''}`} />
-                    {bankSyncLoading ? 'Syncing...' : 'Sync Bank'}
-                </button>
-                <RevolutImportModal
-                    isOpen={isModalOpen}
-                    onClose={() => setIsModalOpen(false)}
-                    onSuccess={handleSyncSuccess}
-                />
             </div>
 
             <div className="space-y-2">

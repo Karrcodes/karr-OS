@@ -1,23 +1,32 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowLeft, ArrowUpRight, ArrowDownLeft, FileText, Search, Filter } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, ArrowDownLeft, FileText, Search, Filter, RefreshCw, Trash2 } from 'lucide-react'
 import { useTransactions } from '@/features/finance/hooks/useTransactions'
 import { usePockets } from '@/features/finance/hooks/usePockets'
 import { useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
 import { KarrFooter } from '@/components/KarrFooter'
 import { TransactionDetailsModal } from '@/features/finance/components/TransactionDetailsModal'
 import { getCategoryById, FINANCE_CATEGORIES } from '@/features/finance/constants/categories'
+import { useBank } from '@/features/finance/hooks/useBank'
+import { RevolutImportModal } from '@/features/finance/components/RevolutImportModal'
 import type { Transaction } from '@/features/finance/types/finance.types'
 
 export default function TransactionsPage() {
-    const { transactions, loading } = useTransactions()
+    const { transactions, loading, refetch, clearTransactions } = useTransactions()
     const { pockets } = usePockets()
+    const { loading: bankSyncLoading } = useBank()
     const { activeProfile, setProfile: setActiveProfile } = useFinanceProfile()
     const [search, setSearch] = useState('')
     const [selectedCategory, setSelectedCategory] = useState<string>('all')
     const [selectedPocket, setSelectedPocket] = useState<string>('all')
     const [selectedTx, setSelectedTx] = useState<Transaction | null>(null)
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false)
+
+    const handleSyncSuccess = (count: number) => {
+        alert(`Successfully synced ${count} new transactions!`)
+        refetch()
+    }
 
     const filtered = transactions.filter(t => {
         const matchesSearch = t.description?.toLowerCase().includes(search.toLowerCase()) ||
@@ -40,24 +49,47 @@ export default function TransactionsPage() {
                             <ArrowLeft className="w-5 h-5 text-black/40" />
                         </a>
                         <div>
-                            <h1 className="text-[20px] font-bold text-black tracking-tight">Full Ledger</h1>
-                            <p className="text-[12px] text-black/35 mt-0.5">{activeProfile === 'personal' ? 'Personal' : 'Business'} · {transactions.length} total transactions</p>
+                            <h1 className="text-[20px] font-bold text-black tracking-tight">Transactions</h1>
+                            <p className="text-[12px] text-black/35 mt-0.5">{activeProfile === 'personal' ? 'Personal' : 'Business'} · {transactions.length} total</p>
                         </div>
                     </div>
 
-                    <div className="flex bg-black/[0.03] p-1 rounded-xl">
-                        <button
-                            onClick={() => setActiveProfile('personal')}
-                            className={`px-4 py-1.5 rounded-lg text-[12px] font-bold transition-all ${activeProfile === 'personal' ? 'bg-white text-black shadow-sm' : 'text-black/30 hover:text-black/50'}`}
-                        >
-                            Personal
-                        </button>
-                        <button
-                            onClick={() => setActiveProfile('business')}
-                            className={`px-4 py-1.5 rounded-lg text-[12px] font-bold transition-all ${activeProfile === 'business' ? 'bg-white text-black shadow-sm' : 'text-black/30 hover:text-black/50'}`}
-                        >
-                            Business
-                        </button>
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center bg-black/[0.03] p-1 rounded-xl">
+                            <button
+                                onClick={() => setActiveProfile('personal')}
+                                className={`px-4 py-1.5 rounded-lg text-[12px] font-bold transition-all ${activeProfile === 'personal' ? 'bg-white text-black shadow-sm' : 'text-black/30 hover:text-black/50'}`}
+                            >
+                                Personal
+                            </button>
+                            <button
+                                onClick={() => setActiveProfile('business')}
+                                className={`px-4 py-1.5 rounded-lg text-[12px] font-bold transition-all ${activeProfile === 'business' ? 'bg-white text-black shadow-sm' : 'text-black/30 hover:text-black/50'}`}
+                            >
+                                Business
+                            </button>
+                        </div>
+
+                        <div className="h-6 w-[1px] bg-black/[0.06]" />
+
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setIsImportModalOpen(true)}
+                                disabled={bankSyncLoading}
+                                className="flex items-center gap-1.5 text-[12px] font-bold text-black bg-black/5 px-3 py-1.5 rounded-xl hover:bg-black/10 transition-colors disabled:opacity-50"
+                            >
+                                <RefreshCw className={`w-3.5 h-3.5 ${bankSyncLoading ? 'animate-spin' : ''}`} />
+                                {bankSyncLoading ? 'Syncing...' : 'Sync CSV'}
+                            </button>
+
+                            <button
+                                onClick={() => { if (confirm('Clear all transactions in this profile?')) clearTransactions() }}
+                                className="flex items-center gap-1.5 text-[12px] font-bold text-red-500 bg-red-50 px-3 py-1.5 rounded-xl hover:bg-red-100 transition-colors"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                Clear All
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -166,6 +198,12 @@ export default function TransactionsPage() {
                     pockets={pockets}
                     isOpen={!!selectedTx}
                     onClose={() => setSelectedTx(null)}
+                />
+
+                <RevolutImportModal
+                    isOpen={isImportModalOpen}
+                    onClose={() => setIsImportModalOpen(false)}
+                    onSuccess={handleSyncSuccess}
                 />
 
                 <KarrFooter />

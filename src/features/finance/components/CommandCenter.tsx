@@ -188,7 +188,7 @@ export function CommandCenter() {
                         {/* Bottom Row: Recent Ledger & AI Chat */}
                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
                             <div className="col-span-1 h-full min-h-[500px]">
-                                <SectionBlock title="Recent Ledger" desc="Latest transactions">
+                                <SectionBlock title="Recent Transactions" desc="Latest transactions">
                                     <TransactionLedger />
                                 </SectionBlock>
                             </div>
