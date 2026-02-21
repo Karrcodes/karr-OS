@@ -2,12 +2,9 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { geminiModel } from '@/lib/gemini'
 
-// We need to initialize the admin client (service role) to bypass RLS 
-// if the webhook is coming in anonymously from iOS shortcuts.
-// For now, we'll try the anon key. If RLS blocks it, we would need the service role key.
-// Assuming RLS allows anon inserts based on previous task context, or we just use anon key here.
+// Use SERVICE_ROLE_KEY if available to bypass RLS for the webhook
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 export async function POST(request: Request) {
@@ -15,7 +12,10 @@ export async function POST(request: Request) {
     const authHeader = request.headers.get('authorization')
     const secret = process.env.WEBHOOK_SECRET
 
+    console.log('Webhook: Received request. Auth presence:', !!authHeader)
+
     if (!secret || authHeader !== `Bearer ${secret}`) {
+        console.error('Webhook: Unauthorized access attempt')
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -74,11 +74,21 @@ Return ONLY a valid JSON object with the following keys, no markdown, no explana
             } catch (aiError) {
                 console.error('Webhook AI Parsing Error:', aiError)
                 // Fallback: try to extract a currency amount from the notification text
-                // Look for £/$ OR just a number with a decimal point at the ending
-                const match = notificationText.match(/[£$€]?\s*([0-9]+[.,][0-9]{2})/) || notificationText.match(/([0-9]+[.,][0-9]{2})/)
+                // Look for £/. OR just a number with a decimal point OR 'p' for pence
+                // match[1] = standard decimal (0.65 or .65), match[2] = pence (65p)
+                const match = notificationText.match(/[£$€]?\s*([0-9]*[.,][0-9]{2})/) ||
+                    notificationText.match(/([0-9]+)\s*p/i)
+
                 if (match) {
-                    const extracted = parseFloat(match[1].replace(',', '.'))
-                    if (!isNaN(extracted) && extracted > 0) aiAmount = extracted
+                    if (match[1]) {
+                        // Decimal format
+                        const extracted = parseFloat(match[1].replace(',', '.'))
+                        if (!isNaN(extracted) && extracted > 0) aiAmount = extracted
+                    } else if (match[2]) {
+                        // Pence format (e.g. 65p -> 0.65)
+                        const pence = parseInt(match[2])
+                        if (!isNaN(pence) && pence > 0) aiAmount = pence / 100
+                    }
                     console.log('Webhook: Regex fallback extracted amount:', aiAmount)
                 }
                 merchant = merchant || notificationText.split('\n')[1] || 'Unknown Merchant'
