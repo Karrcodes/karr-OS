@@ -185,7 +185,7 @@ export default function TransactionsPage() {
                                                     <span className="text-[9px] font-bold text-black bg-black/5 px-1.5 py-0.5 rounded border border-black/10 tracking-widest uppercase shrink-0">Sync</span>
                                                 )}
                                             </div>
-                                            <p className={`text-[15px] font-bold shrink-0 ${t.type === 'spend' ? 'text-black' : 'text-[#059669]'}`}>
+                                            <p className={`text-[15px] font-bold shrink-0 privacy-blur ${t.type === 'spend' ? 'text-black' : 'text-[#059669]'}`}>
                                                 {t.type === 'spend' ? '-' : '+'}£{t.amount.toFixed(2)}
                                             </p>
                                         </div>
