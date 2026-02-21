@@ -44,18 +44,18 @@ export default function FinanceAnalyticsPage() {
             <div className="bg-white border-b border-black/[0.06] px-6 py-5 z-20 shadow-sm flex-shrink-0">
                 <div className="max-w-5xl mx-auto space-y-4">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="flex items-center gap-4">
-                            <a href="/finances" className="w-10 h-10 rounded-xl bg-black/[0.03] flex items-center justify-center hover:bg-black/[0.06] transition-colors shrink-0">
+                        <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0">
+                            <a href="/finances" className="w-10 h-10 rounded-xl bg-black/[0.03] flex items-center justify-center hover:bg-black/[0.06] transition-colors shrink-0 mt-0.5 sm:mt-0">
                                 <ArrowLeft className="w-5 h-5 text-black/40" />
                             </a>
-                            <div>
-                                <h1 className="text-[20px] font-bold text-black tracking-tight">Personal Analytics</h1>
-                                <p className="text-[12px] text-black/35 mt-0.5">Comprehensive insights & salary breakdowns</p>
+                            <div className="min-w-0 flex-1">
+                                <h1 className="text-[18px] sm:text-[20px] font-bold text-black tracking-tight truncate">Personal Analytics</h1>
+                                <p className="text-[11px] sm:text-[12px] text-black/35 mt-0.5 truncate sm:whitespace-normal">Comprehensive insights & salary breakdowns</p>
                             </div>
                         </div>
 
                         {/* Tab Switcher */}
-                        <div className="flex bg-black/[0.03] p-1 rounded-xl w-fit">
+                        <div className="flex bg-black/[0.03] p-1 rounded-xl w-[max-content] max-w-full overflow-x-auto no-scrollbar self-start sm:self-auto shrink-0">
                             <button
                                 onClick={() => setActiveTab('salary')}
                                 className={cn(
