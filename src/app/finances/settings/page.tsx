@@ -92,15 +92,15 @@ function PocketsSettings() {
     const { pockets, loading, createPocket, updatePocket, deletePocket, updatePocketsOrder } = usePockets()
     const [adding, setAdding] = useState(false)
     const [editId, setEditId] = useState<string | null>(null)
-    const [form, setForm] = useState<Partial<Pocket>>({ type: 'general', target_budget: 0, current_balance: 0 })
+    const [form, setForm] = useState<Partial<Pocket>>({ type: 'general', target_budget: 0, current_balance: 0, balance: 0 })
     const [saving, setSaving] = useState(false)
 
     const handleAdd = async () => {
         if (!form.name) return
         setSaving(true)
         try {
-            await createPocket({ name: form.name!, target_budget: form.target_budget ?? 0, current_balance: form.current_balance ?? 0, balance: 0, sort_order: pockets.length, type: (form.type as Pocket['type']) ?? 'general' })
-            setForm({ type: 'general', target_budget: 0, current_balance: 0 })
+            await createPocket({ name: form.name!, target_budget: form.target_budget ?? 0, current_balance: form.current_balance ?? 0, balance: form.balance ?? 0, sort_order: pockets.length, type: (form.type as Pocket['type']) ?? 'general' })
+            setForm({ type: 'general', target_budget: 0, current_balance: 0, balance: 0 })
             setAdding(false)
         } catch (e: any) {
             alert(`Failed to create pocket: ${e.message || 'Unknown error'}`)
@@ -134,7 +134,7 @@ function PocketsSettings() {
     const handleUpdate = async (id: string) => {
         setSaving(true)
         try {
-            await updatePocket(id, { name: form.name, target_budget: form.target_budget, type: form.type as Pocket['type'] })
+            await updatePocket(id, { name: form.name, target_budget: form.target_budget, type: form.type as Pocket['type'], balance: form.balance })
             setEditId(null)
         } catch (e: any) {
             alert(`Failed to update pocket: ${e.message || 'Unknown error'}`)
@@ -145,7 +145,7 @@ function PocketsSettings() {
 
     const startEdit = (p: Pocket) => {
         setEditId(p.id)
-        setForm({ name: p.name, target_budget: p.target_budget, type: p.type })
+        setForm({ name: p.name, target_budget: p.target_budget, type: p.type, balance: p.balance })
     }
 
     return (
@@ -157,7 +157,8 @@ function PocketsSettings() {
                             {editId === p.id ? (
                                 <>
                                     <input className="input-field flex-1" value={form.name ?? ''} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-                                    <input className="input-field w-32" type="number" value={form.target_budget ?? 0} onChange={(e) => setForm({ ...form, target_budget: parseFloat(e.target.value) })} placeholder="Weekly alloc £" />
+                                    <input className="input-field w-24 text-blue-600 font-medium" type="number" value={form.balance ?? 0} onChange={(e) => setForm({ ...form, balance: parseFloat(e.target.value) })} title="Live Balance" />
+                                    <input className="input-field w-28" type="number" value={form.target_budget ?? 0} onChange={(e) => setForm({ ...form, target_budget: parseFloat(e.target.value) })} title="Weekly Target" />
                                     <select className="input-field w-28" value={form.type ?? 'general'} onChange={(e) => setForm({ ...form, type: e.target.value as Pocket['type'] })}>
                                         <option value="general">General</option>
                                         <option value="buffer">Buffer</option>
@@ -172,7 +173,7 @@ function PocketsSettings() {
                                         <button onClick={() => movePocket(i, 'up')} disabled={i === 0 || saving} className="text-black/20 hover:text-black/60 disabled:opacity-30"><ArrowUp className="w-3 h-3" /></button>
                                         <button onClick={() => movePocket(i, 'down')} disabled={i === pockets.length - 1 || saving} className="text-black/20 hover:text-black/60 disabled:opacity-30"><ArrowDown className="w-3 h-3" /></button>
                                     </div>
-                                    <span className="flex-1 text-[13px] text-black/80 font-medium">{p.name}</span>
+                                    <span className="flex-1 text-[13px] text-black/80 font-medium">{p.name} <span className="text-[11px] text-black/40 font-normal ml-1">£{(p.balance || 0).toFixed(2)}</span></span>
                                     <span className="text-[11px] text-black/35 capitalize">{p.type}</span>
                                     <span className="text-[12px] text-black/45 w-32 text-right">Weekly alloc: £{p.target_budget.toFixed(2)}</span>
                                     <button onClick={() => startEdit(p)} className="icon-btn text-black/25 hover:text-black/60"><Pencil className="w-3.5 h-3.5" /></button>
@@ -185,7 +186,8 @@ function PocketsSettings() {
                     {adding ? (
                         <div className="flex items-center gap-3 rounded-xl border border-black/20 bg-black/5 p-3">
                             <input className="input-field flex-1" placeholder="Pocket name" value={form.name ?? ''} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-                            <input className="input-field w-32" type="number" placeholder="Weekly alloc £" value={form.target_budget ?? ''} onChange={(e) => setForm({ ...form, target_budget: parseFloat(e.target.value) })} />
+                            <input className="input-field w-24 text-blue-600 font-medium" type="number" placeholder="Start £" value={form.balance ?? ''} onChange={(e) => setForm({ ...form, balance: parseFloat(e.target.value) })} title="Starting Balance" />
+                            <input className="input-field w-28" type="number" placeholder="Weekly £" value={form.target_budget ?? ''} onChange={(e) => setForm({ ...form, target_budget: parseFloat(e.target.value) })} title="Weekly Target" />
                             <select className="input-field w-28" value={form.type ?? 'general'} onChange={(e) => setForm({ ...form, type: e.target.value as Pocket['type'] })}>
                                 <option value="general">General</option>
                                 <option value="buffer">Buffer</option>
