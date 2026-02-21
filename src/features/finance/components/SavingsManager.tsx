@@ -52,9 +52,9 @@ export function SavingsManager() {
                                 {editId === g.id ? (
                                     <div className="flex flex-wrap items-center gap-3">
                                         <input className="input-field flex-1 min-w-[120px]" value={form.name ?? ''} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-                                        <input className="input-field w-28" type="number" placeholder="Total target £" value={form.target_amount ?? 0} onChange={(e) => setForm({ ...form, target_amount: parseFloat(e.target.value) })} />
-                                        <input className="input-field w-28" type="number" placeholder="Already saved £" value={form.current_amount ?? 0} onChange={(e) => setForm({ ...form, current_amount: parseFloat(e.target.value) })} />
-                                        <input className="input-field w-32" type="date" value={form.deadline ?? ''} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
+                                        <input className="input-field w-full sm:w-28" type="number" placeholder="Total target £" value={form.target_amount ?? 0} onChange={(e) => setForm({ ...form, target_amount: parseFloat(e.target.value) })} />
+                                        <input className="input-field w-full sm:w-28" type="number" placeholder="Already saved £" value={form.current_amount ?? 0} onChange={(e) => setForm({ ...form, current_amount: parseFloat(e.target.value) })} />
+                                        <input className="input-field w-full sm:w-32" type="date" value={form.deadline ?? ''} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
                                         <label className="flex items-center gap-2 cursor-pointer flex-shrink-0 bg-black/[0.03] p-1.5 rounded-lg border border-black/[0.05]">
                                             <input type="checkbox" checked={form.is_recurring || false} onChange={e => setForm({ ...form, is_recurring: e.target.checked })} className="accent-black w-3 h-3 cursor-pointer" />
                                             <span className="text-[10px] font-bold text-black/60 uppercase tracking-widest">Recurring</span>
@@ -97,11 +97,11 @@ export function SavingsManager() {
                     })}
 
                     {adding ? (
-                        <div className="grid grid-cols-2 gap-4 rounded-2xl border border-black/[0.08] bg-white p-6 shadow-sm">
-                            <h3 className="text-[14px] font-bold text-black border-b border-black/[0.06] pb-3 col-span-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-2xl border border-black/[0.08] bg-white p-6 shadow-sm">
+                            <h3 className="text-[14px] font-bold text-black border-b border-black/[0.06] pb-3 sm:col-span-2">
                                 Add New Goal
                             </h3>
-                            <div className="col-span-2">
+                            <div className="sm:col-span-2">
                                 <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-2 block">Goal Name</label>
                                 <input className="input-field w-full bg-white" placeholder="e.g. UK GTV Visa" value={form.name ?? ''} onChange={(e) => setForm({ ...form, name: e.target.value })} />
                             </div>
@@ -113,12 +113,12 @@ export function SavingsManager() {
                                 <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-2 block">Already Saved (£)</label>
                                 <input className="input-field w-full bg-white" type="number" placeholder="Amount already saved £" value={form.current_amount ?? ''} onChange={(e) => setForm({ ...form, current_amount: parseFloat(e.target.value) })} />
                             </div>
-                            <div className="col-span-2">
+                            <div className="sm:col-span-2">
                                 <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-2 block">Target Deadline (Optional)</label>
                                 <input className="input-field w-full bg-white" type="date" value={form.deadline ?? ''} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
                             </div>
 
-                            <div className="col-span-2 flex items-center mt-2">
+                            <div className="sm:col-span-2 flex items-center mt-2">
                                 <label className="flex items-center gap-3 cursor-pointer bg-white border border-black/[0.08] p-4 rounded-xl hover:border-black/30 hover:bg-black/5 transition-all w-full">
                                     <input type="checkbox" checked={form.is_recurring || false} onChange={e => setForm({ ...form, is_recurring: e.target.checked })} className="w-5 h-5 accent-black cursor-pointer" />
                                     <div>
@@ -128,7 +128,7 @@ export function SavingsManager() {
                                 </label>
                             </div>
 
-                            <div className="col-span-2 flex gap-3 pt-4 border-t border-black/[0.06] mt-4">
+                            <div className="sm:col-span-2 flex gap-3 pt-4 border-t border-black/[0.06] mt-4">
                                 <button onClick={handleAdd} disabled={saving} className="btn-primary flex-1 h-12 text-[14px]">
                                     {saving ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Create Goal'}
                                 </button>

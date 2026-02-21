@@ -72,7 +72,7 @@ export function PocketsGrid({ pockets }: PocketsGridProps) {
                         </div>
 
                         <div className="mb-3">
-                            <p className="text-2xl font-bold text-black tracking-tight privacy-blur">
+                            <p className="text-xl sm:text-2xl font-bold text-black tracking-tight privacy-blur">
                                 £{(pocket.balance ?? 0).toFixed(2)}
                             </p>
                             {pocket.target_budget > 0 && (

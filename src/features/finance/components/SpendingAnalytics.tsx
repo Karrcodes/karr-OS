@@ -101,8 +101,8 @@ export function SpendingAnalytics({ transactions }: SpendingAnalyticsProps) {
                             <p className="text-[12px] text-black/40 font-medium">{category.transactions.length} transactions · {category.percentage.toFixed(1)}% of total spending</p>
                         </div>
                         <div className="ml-auto text-right">
-                            <div className="text-[28px] font-bold text-black flex items-baseline gap-1 privacy-blur">
-                                <span className="text-[20px] opacity-30">£</span>
+                            <div className="text-[24px] sm:text-[28px] font-bold text-black flex items-baseline gap-1 privacy-blur">
+                                <span className="text-[16px] sm:text-[20px] opacity-30">£</span>
                                 {category.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                             </div>
                             <p className="text-[11px] text-black/30 font-medium">Total spent</p>
@@ -148,8 +148,8 @@ export function SpendingAnalytics({ transactions }: SpendingAnalyticsProps) {
                         <div className="flex items-center gap-2 text-[11px] font-bold text-black/30 uppercase tracking-widest mb-4">
                             <PieChart className="w-3.5 h-3.5" /> Total Spending Analytics
                         </div>
-                        <div className="text-[32px] font-bold text-black flex items-baseline gap-1.5 privacy-blur">
-                            <span className="text-[20px] opacity-30">£</span>
+                        <div className="text-[28px] sm:text-[32px] font-bold text-black flex items-baseline gap-1.5 privacy-blur">
+                            <span className="text-[18px] sm:text-[20px] opacity-30">£</span>
                             {stats.totalSpend.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </div>
                         <p className="text-[12px] text-black/40 mt-1 font-medium italic">Across {transactions.filter(t => t.type === 'spend').length} recorded spends.</p>

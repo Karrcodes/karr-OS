@@ -132,8 +132,8 @@ export function LiabilitiesManager() {
                                             {o.end_date && <span className="text-black/30 text-[11px]">• Ends: {new Date(o.end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}</span>}
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-4 sm:ml-auto bg-black/[0.02] p-2 rounded-xl border border-black/[0.04]">
-                                        <div className="flex flex-col items-end mr-2">
+                                    <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto sm:ml-auto bg-black/[0.02] p-2 rounded-xl border border-black/[0.04]">
+                                        <div className="flex flex-col items-start sm:items-end sm:mr-2">
                                             <span className="text-[15px] text-red-600 font-bold tracking-tight privacy-blur">£{o.amount.toFixed(2)}</span>
                                             <span className="text-[10px] text-black/40 font-bold uppercase tracking-widest">{o.frequency}</span>
                                         </div>

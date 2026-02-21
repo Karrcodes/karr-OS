@@ -255,12 +255,12 @@ export function ProjectionsAnalytics() {
     return (
         <div className="space-y-6 max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500">
             {/* Quick Actions & Status Row */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
                 <a
                     href="https://universe.staffline.co.uk/"
                     target="_blank"
                     rel="noreferrer"
-                    className="md:col-span-1 bg-gradient-to-br from-[#1d4ed8] to-[#1e3a8a] p-5 rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col justify-between group overflow-hidden relative"
+                    className="lg:col-span-1 bg-gradient-to-br from-[#1d4ed8] to-[#1e3a8a] p-5 rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col justify-between group overflow-hidden relative"
                 >
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none group-hover:bg-white/20 transition-all duration-500"></div>
                     <div className="flex items-center justify-between z-10">
@@ -275,13 +275,13 @@ export function ProjectionsAnalytics() {
                     </div>
                 </a>
 
-                <div className="md:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     <div className="bg-white p-5 rounded-2xl border border-black/[0.06] shadow-sm flex flex-col justify-center">
                         <div className="flex items-center gap-2 text-[11px] font-bold text-black/40 uppercase tracking-widest mb-1">
                             <DollarSign className="w-4 h-4 text-emerald-500" /> Pay Cycle
                         </div>
-                        <div className="text-[28px] font-black text-black">
-                            {paydaysThisMonth} <span className="text-[14px] text-black/40 font-semibold ml-1">Fridays</span>
+                        <div className="text-[24px] sm:text-[28px] font-black text-black">
+                            {paydaysThisMonth} <span className="text-[12px] sm:text-[14px] text-black/40 font-semibold ml-1">Fridays</span>
                         </div>
                         <p className="text-[11px] text-black/40 mt-1">You will be paid {paydaysThisMonth} times in {monthName}.</p>
                     </div>
@@ -289,8 +289,8 @@ export function ProjectionsAnalytics() {
                         <div className="flex items-center gap-2 text-[11px] font-bold text-black/40 uppercase tracking-widest mb-1">
                             <CalendarIcon className="w-4 h-4 text-blue-500" /> Rota Projection
                         </div>
-                        <div className="text-[28px] font-black text-black">
-                            {shiftsThisMonth} <span className="text-[14px] text-black/40 font-semibold ml-1">Shifts</span>
+                        <div className="text-[24px] sm:text-[28px] font-black text-black">
+                            {shiftsThisMonth} <span className="text-[12px] sm:text-[14px] text-black/40 font-semibold ml-1">Shifts</span>
                         </div>
                         <p className="text-[11px] text-black/40 mt-1">Calculated 3-on / 3-off schedule.</p>
                     </div>
@@ -299,8 +299,8 @@ export function ProjectionsAnalytics() {
                         <div className="flex items-center gap-2 text-[11px] font-bold text-emerald-100 uppercase tracking-widest mb-1 relative z-10">
                             Net Income
                         </div>
-                        <div className="text-[28px] font-black relative z-10 flex items-baseline gap-1 privacy-blur">
-                            <span className="text-[18px] opacity-70">£</span>
+                        <div className="text-[24px] sm:text-[28px] font-black relative z-10 flex items-baseline gap-1 privacy-blur">
+                            <span className="text-[16px] sm:text-[18px] opacity-70">£</span>
                             {projectedNet.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
                         <p className="text-[11px] text-emerald-100 mt-1 relative z-10">Based on {shiftsThisMonth - absencesThisMonth} worked + {holidaysThisMonth} hol + {otThisMonth} OT. (~18.8% Ded.)</p>
@@ -418,24 +418,24 @@ export function ProjectionsAnalytics() {
                                         <div className="flex flex-col gap-1 items-start">
                                             <span className={`text-[12px] sm:text-[14px] font-bold ${textClass}`}>{day}</span>
                                             {isOvertime && (
-                                                <div className="flex items-center gap-1">
-                                                    <span className={`text-[8px] sm:text-[9px] bg-orange-500 text-white px-1 py-0.5 rounded font-bold tracking-widest uppercase shadow-sm ${!isBooked && 'opacity-50'}`}>OT</span>
-                                                    {isBooked && <Check className="w-2.5 h-2.5 text-orange-600" />}
+                                                <div className="flex items-center gap-0.5 sm:gap-1">
+                                                    <span className={`text-[7px] sm:text-[9px] bg-orange-500 text-white px-1 py-0.5 rounded font-bold tracking-widest uppercase shadow-sm ${!isBooked && 'opacity-50'}`}>OT</span>
+                                                    {isBooked && <Check className="hidden sm:block w-2.5 h-2.5 text-orange-600" />}
                                                 </div>
                                             )}
                                             {isAbsence && (
-                                                <div className="flex items-center gap-1">
-                                                    <span className={`text-[8px] sm:text-[9px] bg-red-500 text-white px-1 py-0.5 rounded font-bold tracking-widest uppercase shadow-sm ${!isBooked && 'opacity-50'}`}>ABS</span>
-                                                    {isBooked && <Check className="w-2.5 h-2.5 text-red-600" />}
+                                                <div className="flex items-center gap-0.5 sm:gap-1">
+                                                    <span className={`text-[7px] sm:text-[9px] bg-red-500 text-white px-1 py-0.5 rounded font-bold tracking-widest uppercase shadow-sm ${!isBooked && 'opacity-50'}`}>ABS</span>
+                                                    {isBooked && <Check className="hidden sm:block w-2.5 h-2.5 text-red-600" />}
                                                 </div>
                                             )}
                                             {isHoliday && (
-                                                <div className="flex items-center gap-1">
-                                                    <span className={`text-[8px] sm:text-[9px] bg-purple-500 text-white px-1 py-0.5 rounded font-bold tracking-widest uppercase shadow-sm ${!isBooked && 'opacity-50'}`}>HOL</span>
+                                                <div className="flex items-center gap-0.5 sm:gap-1">
+                                                    <span className={`text-[7px] sm:text-[9px] bg-purple-500 text-white px-1 py-0.5 rounded font-bold tracking-widest uppercase shadow-sm ${!isBooked && 'opacity-50'}`}>HOL</span>
                                                     {isBooked && (
                                                         d.status === 'approved'
-                                                            ? <Check className="w-2.5 h-2.5 text-purple-600" />
-                                                            : <Clock className="w-2.5 h-2.5 text-purple-600 animate-pulse" />
+                                                            ? <Check className="hidden sm:block w-2.5 h-2.5 text-purple-600" />
+                                                            : <Clock className="hidden sm:block w-2.5 h-2.5 text-purple-600 animate-pulse" />
                                                     )}
                                                 </div>
                                             )}

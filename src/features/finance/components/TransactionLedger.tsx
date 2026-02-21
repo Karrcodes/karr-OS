@@ -57,7 +57,7 @@ export function TransactionLedger() {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-y-2 items-center justify-between">
                 <div className="flex items-baseline gap-2">
                     <h3 className="text-[11px] uppercase tracking-wider font-bold text-black/30">Recent Ledger</h3>
                     <a href="/finances/transactions" className="text-[10px] font-bold text-black hover:underline">See All</a>
@@ -96,10 +96,10 @@ export function TransactionLedger() {
 
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
                                         <p className="text-[13px] font-bold text-black truncate">{t.description || 'Transaction'}</p>
                                         {t.provider === 'enable_banking' && (
-                                            <span className="text-[9px] font-bold text-black bg-black/5 px-1 py-0.5 rounded border border-black/10">BANK</span>
+                                            <span className="text-[9px] font-bold text-black bg-black/5 px-1 py-0.5 rounded border border-black/10 flex-shrink-0">BANK</span>
                                         )}
                                     </div>
                                     <p className={`text-[13px] font-bold ${t.type === 'spend' ? 'text-black' : 'text-[#059669]'} privacy-blur`}>
