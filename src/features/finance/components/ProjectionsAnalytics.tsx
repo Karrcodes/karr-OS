@@ -35,7 +35,8 @@ export function ProjectionsAnalytics() {
     const activeOverrides = useMemo(() => {
         const abs = Object.keys(dayOverrides).filter(k => dayOverrides[k] === 'absence').sort()
         const hol = Object.keys(dayOverrides).filter(k => dayOverrides[k] === 'holiday').sort()
-        return { abs, hol }
+        const ot = Object.keys(dayOverrides).filter(k => dayOverrides[k] === 'overtime').sort()
+        return { abs, hol, ot }
     }, [dayOverrides])
 
     const handleOpenBooking = () => {
@@ -378,15 +379,17 @@ export function ProjectionsAnalytics() {
                         })}
                     </div>
 
-                    {(activeOverrides.abs.length > 0 || activeOverrides.hol.length > 0) && (
+                    {(activeOverrides.abs.length > 0 || activeOverrides.hol.length > 0 || activeOverrides.ot.length > 0) && (
                         <div className="mt-5 p-4 rounded-xl border border-black/[0.08] bg-black/[0.02] flex items-center justify-between">
-                            <div className="text-[13px] font-semibold text-black/70">
+                            <div className="text-[13px] font-semibold text-black/70 flex flex-wrap gap-2 items-center">
                                 Unsaved Overrides
-                                <span className="ml-2 px-2 py-0.5 rounded-full bg-black/10 text-[10px] uppercase font-bold text-black/60">
-                                    {activeOverrides.abs.length} ABS, {activeOverrides.hol.length} HOL
-                                </span>
+                                <div className="flex gap-1">
+                                    {activeOverrides.abs.length > 0 && <span className="px-2 py-0.5 rounded-full bg-red-100 text-[10px] uppercase font-bold text-red-700">{activeOverrides.abs.length} ABS</span>}
+                                    {activeOverrides.hol.length > 0 && <span className="px-2 py-0.5 rounded-full bg-purple-100 text-[10px] uppercase font-bold text-purple-700">{activeOverrides.hol.length} HOL</span>}
+                                    {activeOverrides.ot.length > 0 && <span className="px-2 py-0.5 rounded-full bg-orange-100 text-[10px] uppercase font-bold text-orange-700">{activeOverrides.ot.length} OT</span>}
+                                </div>
                             </div>
-                            <div className="flex items-center gap-2 block sm:hidden md:flex">
+                            <div className="flex flex-wrap items-center gap-2 block sm:hidden md:flex">
                                 {activeOverrides.abs.length > 0 && (
                                     <button
                                         onClick={() => {
@@ -403,6 +406,16 @@ export function ProjectionsAnalytics() {
                                         className="px-3 py-1.5 rounded-lg border border-purple-200 bg-purple-50 text-purple-700 text-[12px] font-bold hover:bg-purple-100 transition-colors"
                                     >
                                         Book Holiday
+                                    </button>
+                                )}
+                                {activeOverrides.ot.length > 0 && (
+                                    <button
+                                        onClick={() => {
+                                            alert("Overtime logged locally for Projections.")
+                                        }}
+                                        className="px-3 py-1.5 rounded-lg border border-orange-200 bg-orange-50 text-orange-700 text-[12px] font-bold hover:bg-orange-100 transition-colors"
+                                    >
+                                        Confirm Overtime
                                     </button>
                                 )}
                             </div>
@@ -452,19 +465,19 @@ export function ProjectionsAnalytics() {
                             </p>
 
                             <div className="space-y-4 pt-2">
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
+                                <div className="flex flex-wrap gap-3">
+                                    <div className="flex-1 min-w-[130px]">
                                         <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">First Date</label>
                                         <input type="date" value={bookFirst} onChange={e => setBookFirst(e.target.value)} className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-2 text-[13px] outline-none focus:border-purple-500" />
                                     </div>
-                                    <div>
+                                    <div className="flex-1 min-w-[130px]">
                                         <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">Last Date</label>
                                         <input type="date" value={bookLast} onChange={e => setBookLast(e.target.value)} className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-2 text-[13px] outline-none focus:border-purple-500" />
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
+                                <div className="flex flex-wrap gap-3">
+                                    <div className="flex-1 min-w-[130px]">
                                         <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">Total Days</label>
                                         <input type="number" value={bookDays} onChange={e => {
                                             const newDays = e.target.value
@@ -483,7 +496,7 @@ export function ProjectionsAnalytics() {
                                             }
                                         }} className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-2 text-[13px] outline-none focus:border-purple-500" />
                                     </div>
-                                    <div>
+                                    <div className="flex-1 min-w-[130px]">
                                         <label className="text-[11px] uppercase tracking-wider text-black/40 font-bold mb-1.5 block">Return Date</label>
                                         <input type="date" value={bookReturn} onChange={e => setBookReturn(e.target.value)} className="w-full bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-2 text-[13px] outline-none focus:border-purple-500" />
                                     </div>

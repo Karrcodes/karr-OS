@@ -586,7 +586,7 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
                                             )}
                                         </div>
 
-                                        <div className="flex gap-3">
+                                        <div className="flex flex-col sm:flex-row gap-3">
                                             <div className="flex-1">
                                                 <label className="text-[11px] uppercase tracking-wider text-black/40 font-semibold mb-1.5 block">Frequency</label>
                                                 <select value={libFreq} onChange={(e) => setLibFreq(e.target.value as any)}
