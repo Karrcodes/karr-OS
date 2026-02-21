@@ -204,5 +204,3 @@ function PocketsSettings() {
         </Section>
     )
 }
-
-
