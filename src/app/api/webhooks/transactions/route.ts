@@ -130,13 +130,15 @@ Return ONLY a valid JSON object with the following keys, no markdown, no explana
                     const extracted = parseFloat(matchedStr)
                     if (!isNaN(extracted) && extracted > 0) {
                         // If it matched the 'p' regex, divide by 100
-                        aiAmount = notificationText.match(/(\d+)\s*p/i) && match[0].toLowerCase().includes('p')
+                        aiAmount = (notificationText.match(/(\d+)\s*p/i) && match[0].toLowerCase().includes('p'))
                             ? extracted / 100
                             : extracted
                     }
                     console.log('Webhook: Regex fallback extracted amount:', aiAmount)
                 }
-                merchant = merchant || notificationText.split('\n')[1] || 'Unknown Merchant'
+                // Merchant fallback: look for "at [Merchant]" in "You spent £X at [Merchant]"
+                const merchantMatch = notificationText.match(/at\s+([^,.]+)/i)
+                merchant = merchant || merchantMatch?.[1] || notificationText.split('\n')[1] || 'Unknown Merchant'
             }
         }
 
