@@ -53,12 +53,12 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
         if (a.is_completed !== b.is_completed) {
             return a.is_completed ? 1 : -1
         }
-        if (!a.is_completed && !b.is_completed && category === 'todo') {
+        if (!a.is_completed && !b.is_completed) {
             const aPriority = a.priority || 'low'
             const bPriority = b.priority || 'low'
             const aSort = PRIORITY_CONFIG[aPriority]?.sort ?? 3
             const bSort = PRIORITY_CONFIG[bPriority]?.sort ?? 3
-            return aSort - bSort
+            if (aSort !== bSort) return aSort - bSort
         }
         // Default to newest first
         return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
@@ -114,25 +114,23 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
                 </div>
                 {(newTask.trim().length > 0 || dueDate) && (
                     <div className="flex flex-wrap items-center gap-2 mt-1 animate-in slide-in-from-top-1 fade-in duration-200">
-                        {category === 'todo' && (
-                            <div className="flex gap-1.5 p-1 bg-black/[0.03] rounded-xl border border-black/5">
-                                {(['super', 'high', 'mid', 'low'] as const).map(p => (
-                                    <button
-                                        key={p}
-                                        type="button"
-                                        onClick={() => setPriority(p)}
-                                        className={cn(
-                                            "px-2.5 py-1.5 text-[10px] font-bold rounded-lg border transition-all uppercase tracking-tight",
-                                            priority === p
-                                                ? PRIORITY_CONFIG[p].color + " shadow-sm scale-105"
-                                                : "bg-transparent text-black/30 border-transparent hover:text-black/50 hover:bg-black/5"
-                                        )}
-                                    >
-                                        {PRIORITY_CONFIG[p].label}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
+                        <div className="flex gap-1.5 p-1 bg-black/[0.03] rounded-xl border border-black/5">
+                            {(['super', 'high', 'mid', 'low'] as const).map(p => (
+                                <button
+                                    key={p}
+                                    type="button"
+                                    onClick={() => setPriority(p)}
+                                    className={cn(
+                                        "px-2.5 py-1.5 text-[10px] font-bold rounded-lg border transition-all uppercase tracking-tight",
+                                        priority === p
+                                            ? PRIORITY_CONFIG[p].color + " shadow-sm scale-105"
+                                            : "bg-transparent text-black/30 border-transparent hover:text-black/50 hover:bg-black/5"
+                                    )}
+                                >
+                                    {PRIORITY_CONFIG[p].label}
+                                </button>
+                            ))}
+                        </div>
                         <div className="flex items-center gap-2 bg-black/[0.03] border border-black/5 rounded-xl px-3 py-1.5">
                             <Calendar className="w-3.5 h-3.5 text-black/30" />
                             <input
@@ -219,7 +217,7 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
                     )}>
                         {task.title}
                     </span>
-                    {category === 'todo' && !task.is_completed && task.priority && task.priority !== 'low' && PRIORITY_CONFIG[task.priority] && (
+                    {!task.is_completed && task.priority && task.priority !== 'low' && PRIORITY_CONFIG[task.priority] && (
                         <span className={cn(
                             "text-[10px] w-fit px-1.5 py-0.5 rounded uppercase font-bold tracking-wider mt-1 border",
                             PRIORITY_CONFIG[task.priority].color
