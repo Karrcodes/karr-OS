@@ -4,14 +4,22 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { RotaOverride } from '../types/finance.types'
 import { useFinanceProfile } from '../contexts/FinanceProfileContext'
+import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
+import { MOCK_ROTA } from '@/lib/demoData'
 
 export function useRota() {
     const [overrides, setOverrides] = useState<RotaOverride[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const { activeProfile, refreshTrigger } = useFinanceProfile()
+    const { settings } = useSystemSettings()
 
     const fetchOverrides = useCallback(async () => {
+        if (settings.is_demo_mode) {
+            setOverrides([]) // No specific overrides needed for mock data yet
+            setLoading(false)
+            return
+        }
         setLoading(true)
         const { data, error } = await supabase
             .from('fin_rota_overrides')
@@ -22,7 +30,7 @@ export function useRota() {
         if (error) setError(error.message)
         else setOverrides(data ?? [])
         setLoading(false)
-    }, [activeProfile, refreshTrigger])
+    }, [activeProfile, refreshTrigger, settings.is_demo_mode])
 
     const saveOverrides = async (items: Omit<RotaOverride, 'id' | 'created_at' | 'profile'>[]) => {
         if (items.length === 0) return

@@ -31,10 +31,11 @@ export function CashflowAnalytics({ monthlyObligations }: { monthlyObligations: 
         let total = 0
         const groups: { [monthStr: string]: { amount: number, sortKey: string } } = {}
 
-        // Only count salary transfers ("Payment from U U K") as true income
+        // Only count salary transfers ("Payment from U U K" or demo label) as true income
         const salaryTransactions = transactions.filter(t =>
             t.type === 'income' &&
-            t.description?.toLowerCase().includes('payment from u u k')
+            (t.description?.toLowerCase().includes('payment from u u k') ||
+                t.description === 'Work Portal Payment')
         )
 
         salaryTransactions.forEach(i => {

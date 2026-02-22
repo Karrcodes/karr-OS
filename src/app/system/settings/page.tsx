@@ -15,7 +15,7 @@ import { Upload, X as CloseIcon } from 'lucide-react'
 export default function SettingsPage() {
     const router = useRouter()
     const { settings, updateSetting, loading: contextLoading, refreshSettings } = useSystemSettings()
-    const { isPrivacyEnabled, togglePrivacy } = useFinanceProfile()
+    const { isPrivacyEnabled, togglePrivacy, globalRefresh } = useFinanceProfile()
     const [isSaving, setIsSaving] = useState(false)
     const [isUploading, setIsUploading] = useState(false)
     const [saveSuccess, setSaveSuccess] = useState(false)
@@ -173,6 +173,16 @@ export default function SettingsPage() {
         }
     }
 
+    const toggleDemoMode = async () => {
+        const next = !settings.is_demo_mode
+        try {
+            await updateSetting('is_demo_mode', next)
+            globalRefresh() // Refresh all data hooks
+        } catch (error) {
+            console.error('Failed to toggle demo mode:', error)
+        }
+    }
+
     if (contextLoading) {
         return (
             <div className="h-screen flex items-center justify-center bg-[#fafafa]">
@@ -201,6 +211,26 @@ export default function SettingsPage() {
             {/* Main Content */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col items-center">
                 <div className="w-full max-w-4xl space-y-6">
+
+                    {settings.is_demo_mode && (
+                        <div className="bg-orange-500/10 border border-orange-500/20 rounded-2xl p-4 flex items-center justify-between animate-in fade-in slide-in-from-top-2 duration-300">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center shrink-0">
+                                    <Smartphone className="w-5 h-5 text-orange-600" />
+                                </div>
+                                <div>
+                                    <p className="text-[14px] font-bold text-orange-700">Demo Mode Active</p>
+                                    <p className="text-[11px] text-orange-700/60 font-medium">Real data is hidden. Showing hardcoded UK male profile (£45k).</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={toggleDemoMode}
+                                className="px-4 py-2 bg-orange-500 text-white text-[11px] font-bold rounded-lg hover:bg-orange-600 transition-colors"
+                            >
+                                Disable
+                            </button>
+                        </div>
+                    )}
 
                     {/* Profile Section */}
                     <section className="bg-white rounded-3xl border border-black/[0.06] shadow-sm overflow-hidden">
@@ -503,6 +533,18 @@ export default function SettingsPage() {
                                     className={`w-11 h-6 rounded-full transition-all duration-300 relative shrink-0 ${isPrivacyEnabled ? 'bg-emerald-500' : 'bg-black/10'}`}
                                 >
                                     <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all shadow-sm ${isPrivacyEnabled ? 'left-6' : 'left-1'}`} />
+                                </button>
+                            </div>
+                            <div className="p-6 flex items-center justify-between bg-orange-50/30">
+                                <div className="min-w-0 pr-4">
+                                    <p className="text-[14px] font-bold text-orange-700">Demo Mode</p>
+                                    <p className="text-[11px] text-orange-700/50 font-medium">Replace all data with mock info for public demonstrations.</p>
+                                </div>
+                                <button
+                                    onClick={toggleDemoMode}
+                                    className={`w-11 h-6 rounded-full transition-all duration-300 relative shrink-0 ${settings.is_demo_mode ? 'bg-orange-500' : 'bg-black/10'}`}
+                                >
+                                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all shadow-sm ${settings.is_demo_mode ? 'left-6' : 'left-1'}`} />
                                 </button>
                             </div>
                             <div className="p-6">

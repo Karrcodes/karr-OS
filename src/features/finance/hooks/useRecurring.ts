@@ -4,14 +4,30 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { RecurringObligation } from '../types/finance.types'
 import { useFinanceProfile } from '../contexts/FinanceProfileContext'
+import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
+import { MOCK_FINANCE } from '@/lib/demoData'
 
 export function useRecurring() {
     const [obligations, setObligations] = useState<RecurringObligation[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const { activeProfile, refreshTrigger, globalRefresh } = useFinanceProfile()
+    const { settings } = useSystemSettings()
 
     const fetchObligations = useCallback(async () => {
+        if (settings.is_demo_mode) {
+            setObligations(MOCK_FINANCE.obligations.map(o => ({
+                ...o,
+                id: o.id,
+                created_at: new Date().toISOString(),
+                profile: activeProfile,
+                next_due_date: new Date(new Date().getFullYear(), new Date().getMonth(), o.due_day).toISOString().split('T')[0],
+                frequency: 'monthly',
+                is_active: true
+            })) as any)
+            setLoading(false)
+            return
+        }
         setLoading(true)
         const { data, error } = await supabase
             .from('fin_recurring')
@@ -22,7 +38,7 @@ export function useRecurring() {
         if (error) setError(error.message)
         else setObligations(data ?? [])
         setLoading(false)
-    }, [activeProfile, refreshTrigger])
+    }, [activeProfile, refreshTrigger, settings.is_demo_mode])
 
     const createObligation = async (obligation: Omit<RecurringObligation, 'id' | 'created_at' | 'profile'>) => {
         const { error } = await supabase.from('fin_recurring').insert({ ...obligation, profile: activeProfile })

@@ -4,14 +4,22 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Task } from '../types/tasks.types'
 import { useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
+import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
+import { MOCK_TASKS } from '@/lib/demoData'
 
 export function useTasks(category: 'todo' | 'grocery' | 'reminder') {
     const [tasks, setTasks] = useState<Task[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const { activeProfile } = useFinanceProfile()
+    const { settings } = useSystemSettings()
 
     const fetchTasks = useCallback(async () => {
+        if (settings.is_demo_mode) {
+            setTasks(MOCK_TASKS[category] as any)
+            setLoading(false)
+            return
+        }
         setLoading(true)
         const { data, error } = await supabase
             .from('fin_tasks')
@@ -23,7 +31,7 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder') {
         if (error) setError(error.message)
         else setTasks(data ?? [])
         setLoading(false)
-    }, [activeProfile, category])
+    }, [activeProfile, category, settings.is_demo_mode])
 
     const createTask = async (title: string, priority: 'super' | 'high' | 'mid' | 'low' = 'low', due_date?: string) => {
         const { error } = await supabase.from('fin_tasks').insert({

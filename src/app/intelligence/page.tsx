@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Brain, Terminal, Send, RefreshCw, Sparkles, Database, Shield, Zap } from 'lucide-react'
+import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
 import { KarrFooter } from '@/components/KarrFooter'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -23,6 +24,7 @@ export default function IntelligencePage() {
     const [input, setInput] = useState('')
     const [isTyping, setIsTyping] = useState(false)
     const [isSynced, setIsSynced] = useState(false)
+    const { settings } = useSystemSettings()
     const scrollRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
@@ -63,7 +65,10 @@ export default function IntelligencePage() {
             const res = await fetch('/api/ai/intelligence', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: newMessages })
+                body: JSON.stringify({
+                    messages: newMessages,
+                    isDemoMode: settings.is_demo_mode
+                })
             })
 
             const data = await res.json()
@@ -131,7 +136,7 @@ export default function IntelligencePage() {
             </div>
 
             {/* Chat Viewport */}
-            <div className="flex-1 overflow-hidden flex flex-col p-3 sm:p-4 md:p-6 relative">
+            <div className="flex-1 overflow-hidden flex flex-col relative">
                 <div
                     ref={scrollRef}
                     className="flex-1 overflow-y-auto space-y-6 max-w-3xl mx-auto w-full pb-8 pt-4 custom-scrollbar"
@@ -206,6 +211,10 @@ export default function IntelligencePage() {
                         <button onClick={() => setInput('/scan-finances')} className="text-[10px] font-bold text-black/30 uppercase tracking-widest hover:text-black transition-colors">Scan Finances</button>
                         <button onClick={() => setInput('/tasks')} className="text-[10px] font-bold text-black/30 uppercase tracking-widest hover:text-black transition-colors">Task Audit</button>
                         <button onClick={() => setInput('/help')} className="text-[10px] font-bold text-black/30 uppercase tracking-widest hover:text-black transition-colors">Help</button>
+                    </div>
+
+                    <div className="mt-8 border-t border-black/[0.04] pt-4 px-4 pb-4">
+                        <KarrFooter />
                     </div>
                 </div>
 

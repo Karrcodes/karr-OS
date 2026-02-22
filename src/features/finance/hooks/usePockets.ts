@@ -4,14 +4,22 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Pocket } from '../types/finance.types'
 import { useFinanceProfile } from '../contexts/FinanceProfileContext'
+import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
+import { MOCK_FINANCE } from '@/lib/demoData'
 
 export function usePockets() {
     const [pockets, setPockets] = useState<Pocket[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const { activeProfile, refreshTrigger, globalRefresh } = useFinanceProfile()
+    const { settings } = useSystemSettings()
 
     const fetchPockets = async () => {
+        if (settings.is_demo_mode) {
+            setPockets(MOCK_FINANCE.pockets as any)
+            setLoading(false)
+            return
+        }
         setLoading(true)
         const { data, error } = await supabase
             .from('fin_pockets')
@@ -51,7 +59,7 @@ export function usePockets() {
         globalRefresh()
     }
 
-    useEffect(() => { fetchPockets() }, [activeProfile, refreshTrigger])
+    useEffect(() => { fetchPockets() }, [activeProfile, refreshTrigger, settings.is_demo_mode])
 
     return { pockets, loading, error, createPocket, updatePocket, deletePocket, updatePocketsOrder, refetch: fetchPockets }
 }

@@ -60,6 +60,34 @@ AI Personal Directive: You are Karr Intelligence, the proactive and helpful kern
 `.trim()
 }
 
+async function buildDemoContext(): Promise<string> {
+    const now = new Date()
+    return `
+# KarrOS SYSTEM STATE [MOCK_DEMO_DATA] [${now.toISOString()}]
+
+## USER PROFILE (DEMO)
+- Name: Karr (Demo Persona)
+- Occupation: Software Engineer
+- Earnings: £45,000 / year (Gross)
+- Location: United Kingdom
+
+## FINANCIALS (DEMO)
+- Total Liquid Cash: £2,450.00
+- Monthly Fixed Obligations: £1,850.00
+- Pockets: Bills (£1,200), Groceries (£400), Transport (£150), Personal (£700)
+- Recent Income: £2,850.00 (Monthly Salary)
+
+## TASKS (DEMO)
+- [TODO] [high] Complete Project Alpha documentation
+- [TODO] [mid] Schedule car service
+- [GROCERY] Milk, Eggs, Bread, Coffee
+- [REMINDER] Call Landlord regarding tap leak
+
+---
+AI Personal Directive: You are in DEMO MODE. The data shown above is mock data for presentation purposes. Do not mention that it is mock data unless specifically asked. Act as the proactive companion for this persona.
+`.trim()
+}
+
 const tools = [
     {
         functionDeclarations: [
@@ -131,13 +159,13 @@ async function getGoogleDriveClient() {
 
 export async function POST(req: NextRequest) {
     try {
-        const { messages } = await req.json()
+        const { messages, isDemoMode } = await req.json()
 
         if (!messages || !Array.isArray(messages)) {
             return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
         }
 
-        const context = await buildIntelligenceContext()
+        const context = isDemoMode ? await buildDemoContext() : await buildIntelligenceContext()
 
         const systemPrompt = `
 You are Karr Intelligence — the highly intelligent, conversational, and proactive core of KarrOS. 

@@ -17,6 +17,7 @@ interface SystemSettings {
     shift_on_days: number
     shift_off_days: number
     shift_start_date: string
+    is_demo_mode: boolean
     [key: string]: any
 }
 
@@ -41,6 +42,7 @@ const defaultSettings: SystemSettings = {
     shift_on_days: 3,
     shift_off_days: 3,
     shift_start_date: '',
+    is_demo_mode: false,
 }
 
 const SystemSettingsContext = createContext<SystemSettingsContextType | undefined>(undefined)
@@ -106,8 +108,25 @@ export function SystemSettingsProvider({ children }: { children: ReactNode }) {
         fetchSettings()
     }, [fetchSettings])
 
+    // Demo Mode Overrides
+    const effectiveSettings = settings.is_demo_mode ? {
+        ...settings,
+        user_name: 'Demo User',
+        user_email: 'demo@example.com',
+        profile_picture_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&q=80',
+        schedule_type: 'shift' as const,
+        shift_on_days: 3,
+        shift_off_days: 3,
+        shift_start_date: '2026-02-23'
+    } : settings
+
     return (
-        <SystemSettingsContext.Provider value={{ settings, loading, updateSetting, refreshSettings: fetchSettings }}>
+        <SystemSettingsContext.Provider value={{
+            settings: effectiveSettings,
+            loading,
+            updateSetting,
+            refreshSettings: fetchSettings
+        }}>
             {children}
         </SystemSettingsContext.Provider>
     )
