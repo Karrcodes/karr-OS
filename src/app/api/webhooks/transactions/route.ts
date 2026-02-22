@@ -74,10 +74,10 @@ export async function POST(request: Request) {
         }
 
         // If the user sends the raw iOS notification text, parse it automatically via AI
-        // Example: "Revolut\nTesco Express, Cardiff Wales\n£1.35"
         if (notificationText && notificationText.trim().length > 0) {
             try {
-                const prompt = `You are a financial parsing assistant. The user has provided an Apple Pay / Revolut transaction notification text.
+                const prompt = `You are a financial parsing assistant. The user has provided a transaction notification text from a bank or payment app (e.g. Revolut/Apple Pay).
+The text might be multi-line or a single sentence.
 Extract the transaction details and determine the correct budget pocket and spending category.
 
 Available Pockets (ONLY choose one of these two):
@@ -86,11 +86,6 @@ Available Pockets (ONLY choose one of these two):
 
 Available Categories (ONLY choose one): 'food', 'transport', 'housing', 'shopping', 'entertainment', 'utilities', 'health', 'other'
 
-Notification Text Format (multi-line):
-Line 1: Bank/App Name (e.g. Revolut)
-Line 2: Merchant Name (e.g. ShareTheMeal, Tesco, Apple.com/bill)
-Line 3: Amount (e.g. £0.65, .65, 65p)
-
 Notification Text:
 """
 ${notificationText}
@@ -98,8 +93,8 @@ ${notificationText}
 
 Return ONLY a valid JSON object with the following keys, no markdown, no explanation:
 {
-  "amount": number (extracted numerical amount, e.g. 0.65),
-  "merchant": string (clean merchant name from Line 2, e.g. "ShareTheMeal"),
+  "amount": number (extracted numerical amount, e.g. 0.65 or 10.00),
+  "merchant": string (clean merchant name),
   "target_pocket": string (must be exactly "Daily Essentials 🍔" or "Fun 🛍️"),
   "category": string (one of the allowed categories)
 }`
@@ -125,20 +120,19 @@ Return ONLY a valid JSON object with the following keys, no markdown, no explana
             } catch (aiError) {
                 console.error('Webhook AI Parsing Error:', aiError)
                 // Fallback: try to extract a currency amount from the notification text
-                // Look for £/. OR just a number with a decimal point OR 'p' for pence
-                // match[1] = standard decimal (0.65 or .65), match[2] = pence (65p)
-                const match = notificationText.match(/[£$€]?\s*([0-9]*[.,][0-9]{2})/) ||
-                    notificationText.match(/([0-9]+)\s*p/i)
+                // Handle £10.00, 10.00, 10, £10, 65p, etc.
+                const match = notificationText.match(/[£$€]\s*(\d+[.,]?\d*)/) ||
+                    notificationText.match(/(\d+[.,]\d{2})/) ||
+                    notificationText.match(/(\d+)\s*p/i)
 
                 if (match) {
-                    if (match[1]) {
-                        // Decimal format
-                        const extracted = parseFloat(match[1].replace(',', '.'))
-                        if (!isNaN(extracted) && extracted > 0) aiAmount = extracted
-                    } else if (match[2]) {
-                        // Pence format (e.g. 65p -> 0.65)
-                        const pence = parseInt(match[2])
-                        if (!isNaN(pence) && pence > 0) aiAmount = pence / 100
+                    const matchedStr = match[1].replace(',', '.')
+                    const extracted = parseFloat(matchedStr)
+                    if (!isNaN(extracted) && extracted > 0) {
+                        // If it matched the 'p' regex, divide by 100
+                        aiAmount = notificationText.match(/(\d+)\s*p/i) && match[0].toLowerCase().includes('p')
+                            ? extracted / 100
+                            : extracted
                     }
                     console.log('Webhook: Regex fallback extracted amount:', aiAmount)
                 }
@@ -147,7 +141,6 @@ Return ONLY a valid JSON object with the following keys, no markdown, no explana
         }
 
         // AI amount always wins over body amount. Body amount is only used if AI completely failed.
-        const finalAmount = aiAmount ?? (amount !== undefined && !isNaN(parseFloat(amount)) && parseFloat(amount) > 0 ? parseFloat(amount) : null)
         const resolvedAmount = aiAmount || (amount !== undefined && !isNaN(parseFloat(amount)) && parseFloat(amount) > 0 ? parseFloat(amount) : 0.01)
 
         if (resolvedAmount === 0.01) {
