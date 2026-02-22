@@ -10,7 +10,7 @@ import {
     Shield, ChevronDown, Check,
     TrendingUp, Calendar, CreditCard, PiggyBank,
     Moon, Sun, Laptop, Target, Briefcase, Heart, Gift,
-    LayoutDashboard, EyeOff, Receipt, Lock, ClipboardIcon, Key
+    LayoutDashboard, EyeOff, Receipt, Lock, ClipboardIcon, Key, Brain
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Reorder } from 'framer-motion'
@@ -20,6 +20,7 @@ import { useSystemSettings } from '@/features/system/contexts/SystemSettingsCont
 
 const navItems = [
     { label: 'Control Centre', href: '/system/control-centre', icon: LayoutDashboard },
+    { label: 'Intelligence', href: '/intelligence', icon: Brain },
     {
         label: 'Tasks',
         href: '/tasks',

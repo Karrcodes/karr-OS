@@ -1,0 +1,45 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { google } from 'googleapis'
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+const supabase = createClient(supabaseUrl!, supabaseServiceKey!)
+
+const oauth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/google/callback` : 'https://karr-os.vercel.app/api/auth/google/callback'
+)
+
+export async function GET(req: NextRequest) {
+    const searchParams = req.nextUrl.searchParams
+    const code = searchParams.get('code')
+
+    if (!code) {
+        return NextResponse.json({ error: 'No code provided' }, { status: 400 })
+    }
+
+    try {
+        const { tokens } = await oauth2Client.getToken(code)
+
+        // Store tokens securely in Supabase
+        const { error } = await supabase.from('sys_auth_tokens').upsert({
+            user_id: 'karr',
+            access_token: tokens.access_token,
+            refresh_token: tokens.refresh_token,
+            expiry_date: tokens.expiry_date,
+            token_type: tokens.token_type,
+            scope: tokens.scope,
+            updated_at: new Date().toISOString()
+        })
+
+        if (error) throw error
+
+        return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'https://karr-os.vercel.app'}/intelligence?sync=success`)
+    } catch (err: any) {
+        console.error('[Google Auth Callback Error]', err)
+        return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'https://karr-os.vercel.app'}/intelligence?sync=error`)
+    }
+}
