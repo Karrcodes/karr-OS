@@ -179,7 +179,7 @@ export default function IntelligencePage() {
                 </div>
 
                 {/* Input Area */}
-                <div className="shrink-0 max-w-3xl mx-auto w-full pb-2 sm:pb-4 px-4 sm:px-6">
+                <div className="shrink-0 max-w-3xl mx-auto w-full pb-1 sm:pb-2 px-4 sm:px-6">
                     <form
                         onSubmit={handleSend}
                         className="relative group bg-white border border-black/[0.1] rounded-2xl p-1 shadow-lg transition-all focus-within:border-black focus-within:ring-1 focus-within:ring-black"
@@ -207,13 +207,13 @@ export default function IntelligencePage() {
                             </button>
                         </div>
                     </form>
-                    <div className="mt-3 flex items-center justify-center gap-6">
+                    <div className="mt-2 flex items-center justify-center gap-6">
                         <button onClick={() => setInput('/scan-finances')} className="text-[10px] font-bold text-black/30 uppercase tracking-widest hover:text-black transition-colors">Scan Finances</button>
                         <button onClick={() => setInput('/tasks')} className="text-[10px] font-bold text-black/30 uppercase tracking-widest hover:text-black transition-colors">Task Audit</button>
                         <button onClick={() => setInput('/help')} className="text-[10px] font-bold text-black/30 uppercase tracking-widest hover:text-black transition-colors">Help</button>
                     </div>
 
-                    <div className="mt-4 pt-4 pb-2">
+                    <div className="mt-2 pt-2 pb-2">
                         <KarrFooter />
                     </div>
                 </div>
