@@ -252,7 +252,7 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
     }
 
     if (!isMounted) return null
-    if (isUnlocked) return <>{children}</>
+    if (isUnlocked && isAuthorized !== false) return <>{children}</>
 
     const showUnauthorized = isAuthorized === false
 

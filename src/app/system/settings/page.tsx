@@ -84,11 +84,27 @@ export default function SettingsPage() {
     const handleSaveProfile = async () => {
         setIsSaving(true)
         try {
-            // Update all settings in parallel for speed
             await Promise.all([
                 updateSetting('user_name', userName),
                 updateSetting('user_email', userEmail),
-                updateSetting('profile_picture_url', profilePic),
+                updateSetting('profile_picture_url', profilePic)
+            ])
+
+            await refreshSettings()
+            setSaveSuccess(true)
+            setTimeout(() => setSaveSuccess(false), 2000)
+        } catch (error) {
+            console.error('Failed to save profile:', error)
+            alert('Failed to save profile. Please check RLS policies.')
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
+    const handleSaveSchedule = async () => {
+        setIsSaving(true)
+        try {
+            await Promise.all([
                 updateSetting('off_days', offDays),
                 updateSetting('schedule_type', scheduleType),
                 updateSetting('shift_on_days', shiftOn),
@@ -100,8 +116,8 @@ export default function SettingsPage() {
             setSaveSuccess(true)
             setTimeout(() => setSaveSuccess(false), 2000)
         } catch (error) {
-            console.error('Failed to save settings:', error)
-            alert('Failed to save settings. Please check your connection or RLS policies.')
+            console.error('Failed to save schedule:', error)
+            alert('Failed to save schedule settings.')
         } finally {
             setIsSaving(false)
         }
@@ -428,12 +444,23 @@ export default function SettingsPage() {
                                             type="date"
                                             value={shiftStart}
                                             onChange={(e) => setShiftStart(e.target.value)}
-                                            className="w-full bg-black/[0.03] border border-black/[0.06] rounded-xl px-4 py-2 text-[13px] outline-none focus:border-black/30 transition-colors [color-scheme:light]"
+                                            className="w-full min-w-0 appearance-none flex flex-row items-center bg-black/[0.03] border border-black/[0.06] rounded-xl px-4 py-2 text-[13px] outline-none focus:border-black/30 transition-colors [color-scheme:light]"
                                         />
                                         <p className="text-[10px] text-black/35 mt-1 px-1 italic">We'll remind you on the first "OFF" day in every cycle.</p>
                                     </div>
                                 </div>
                             )}
+
+                            <div className="flex justify-end pt-2">
+                                <button
+                                    onClick={handleSaveSchedule}
+                                    disabled={isSaving}
+                                    className="bg-black text-white px-6 py-2 rounded-xl text-[13px] font-bold hover:bg-black/80 transition-all flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-black/10 active:scale-95"
+                                >
+                                    {saveSuccess ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                                    {saveSuccess ? 'Saved!' : (isSaving ? 'Saving...' : 'Save Schedule')}
+                                </button>
+                            </div>
                         </div>
                     </section>
 

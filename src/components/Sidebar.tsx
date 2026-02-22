@@ -138,9 +138,7 @@ function ProfileMenu() {
 export function Sidebar() {
     const pathname = usePathname()
     const [mobileOpen, setMobileOpen] = useState(false)
-    const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({
-        '/finances': true // Open by default
-    })
+    const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({})
     const { isPrivacyEnabled } = useFinanceProfile()
 
     const [orderedTabs, setOrderedTabs] = useState(navItems.map(item => item.label))
