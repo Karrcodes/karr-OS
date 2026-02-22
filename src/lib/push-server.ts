@@ -7,14 +7,22 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-webpush.setVapidDetails(
-    'mailto:karr@studiokarrtesian.com',
-    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-    process.env.VAPID_PRIVATE_KEY!
-)
-
 export async function sendPushNotification(title: string, body: string, url: string = '/') {
     try {
+        const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+        const privateKey = process.env.VAPID_PRIVATE_KEY;
+
+        if (!publicKey || !privateKey) {
+            console.error('VAPID keys missing - skipping push notification');
+            return { success: false, error: 'VAPID keys missing' };
+        }
+
+        webpush.setVapidDetails(
+            'mailto:karr@studiokarrtesian.com',
+            publicKey,
+            privateKey
+        )
+
         // Fetch all subscriptions for 'karr'
         const { data: subs, error } = await supabase
             .from('sys_push_subscriptions')
