@@ -59,11 +59,17 @@ Notification:
         }
 
         // 3. Insert the transaction into the database
+        // 3. Insert the transaction into the main fin_transactions table so it shows up in the app
         const { data, error } = await supabase
-            .from('revolut_transactions')
+            .from('fin_transactions')
             .insert([{
-                merchant: merchant,
-                amount: parseFloat(amount)
+                description: merchant,
+                amount: parseFloat(amount),
+                date: new Date().toISOString(),
+                type: 'spend',
+                category: 'other',
+                profile: 'personal',
+                provider: 'apple_pay'
             }])
             .select();
 
@@ -74,7 +80,7 @@ Notification:
 
         return NextResponse.json({
             success: true,
-            message: 'Transaction logged securely.',
+            message: 'Transaction logged to main ledger.',
             data: data?.[0]
         });
 
