@@ -11,6 +11,7 @@ interface FinanceProfileContextType {
     togglePrivacy: () => void
     refreshTrigger: number
     lastRefresh: Date
+    globalRefresh: () => void
 }
 
 const FinanceProfileContext = createContext<FinanceProfileContextType | undefined>(undefined)
@@ -71,7 +72,11 @@ export function FinanceProfileProvider({ children }: { children: React.ReactNode
             isPrivacyEnabled,
             togglePrivacy,
             refreshTrigger,
-            lastRefresh
+            lastRefresh,
+            globalRefresh: () => {
+                setRefreshTrigger(prev => prev + 1)
+                setLastRefresh(new Date())
+            }
         }}>
             <div className={`${mounted ? "" : "hidden"} ${isPrivacyEnabled ? 'privacy-enabled' : ''}`}>
                 {children}

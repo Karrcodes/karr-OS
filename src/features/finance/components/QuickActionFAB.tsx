@@ -40,7 +40,7 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
     const [toPocket, setToPocket] = useState('')
     const [selectedCategory, setSelectedCategory] = useState('other')
     const [description, setDescription] = useState('')
-    const { activeProfile } = useFinanceProfile()
+    const { activeProfile, globalRefresh } = useFinanceProfile()
     const router = useRouter()
 
     useEffect(() => {
@@ -231,7 +231,7 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
                     payments_left: parsedPaymentsLeft
                 })
             }
-            onSuccess(); handleClose()
+            globalRefresh(); onSuccess(); handleClose()
         } catch (e: unknown) {
             setError(e instanceof Error ? e.message : 'Unknown error')
         } finally { setLoading(false) }
@@ -366,7 +366,7 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
             }
 
             await Promise.all([...transactionPromises, ...pocketUpdatePromises])
-            onSuccess(); handleClose()
+            globalRefresh(); onSuccess(); handleClose()
         } catch (e: unknown) {
             setError(e instanceof Error ? e.message : 'Failed to save allocations.')
         } finally { setLoading(false) }
@@ -387,7 +387,7 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
                     pension_contributions: pension ? parseFloat(pension) : null, student_loan: studentLoan ? parseFloat(studentLoan) : null
                 })
             ])
-            onSuccess(); handleClose()
+            globalRefresh(); onSuccess(); handleClose()
         } catch (e: unknown) { setError(e instanceof Error ? e.message : 'Failed to save income.') } finally { setLoading(false) }
     }
 

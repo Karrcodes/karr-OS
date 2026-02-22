@@ -9,7 +9,7 @@ export function useTransactions() {
     const [transactions, setTransactions] = useState<Transaction[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-    const { activeProfile, refreshTrigger } = useFinanceProfile()
+    const { activeProfile, refreshTrigger, globalRefresh } = useFinanceProfile()
 
     const fetchTransactions = async () => {
         setLoading(true)
@@ -33,7 +33,10 @@ export function useTransactions() {
             .eq('profile', activeProfile)
 
         if (error) setError(error.message)
-        else setTransactions([])
+        else {
+            setTransactions([])
+            globalRefresh()
+        }
         setLoading(false)
     }
 
@@ -44,7 +47,7 @@ export function useTransactions() {
             .eq('id', id)
 
         if (error) setError(error.message)
-        else await fetchTransactions()
+        else globalRefresh()
     }
 
     const deleteTransaction = async (id: string) => {
@@ -54,7 +57,7 @@ export function useTransactions() {
             .eq('id', id)
 
         if (error) setError(error.message)
-        else await fetchTransactions()
+        else globalRefresh()
     }
 
     useEffect(() => { fetchTransactions() }, [activeProfile, refreshTrigger])

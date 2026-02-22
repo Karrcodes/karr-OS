@@ -9,7 +9,7 @@ export function usePockets() {
     const [pockets, setPockets] = useState<Pocket[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-    const { activeProfile, refreshTrigger } = useFinanceProfile()
+    const { activeProfile, refreshTrigger, globalRefresh } = useFinanceProfile()
 
     const fetchPockets = async () => {
         setLoading(true)
@@ -28,19 +28,19 @@ export function usePockets() {
     const createPocket = async (pocket: Omit<Pocket, 'id' | 'created_at' | 'profile'>) => {
         const { error } = await supabase.from('fin_pockets').insert({ ...pocket, profile: activeProfile })
         if (error) throw error
-        await fetchPockets()
+        globalRefresh()
     }
 
     const updatePocket = async (id: string, updates: Partial<Pocket>) => {
         const { error } = await supabase.from('fin_pockets').update(updates).eq('id', id)
         if (error) throw error
-        await fetchPockets()
+        globalRefresh()
     }
 
     const deletePocket = async (id: string) => {
         const { error } = await supabase.from('fin_pockets').delete().eq('id', id)
         if (error) throw error
-        await fetchPockets()
+        globalRefresh()
     }
 
     const updatePocketsOrder = async (updates: { id: string; sort_order: number }[]) => {
@@ -48,7 +48,7 @@ export function usePockets() {
         for (const update of updates) {
             await supabase.from('fin_pockets').update({ sort_order: update.sort_order }).eq('id', update.id)
         }
-        await fetchPockets()
+        globalRefresh()
     }
 
     useEffect(() => { fetchPockets() }, [activeProfile, refreshTrigger])

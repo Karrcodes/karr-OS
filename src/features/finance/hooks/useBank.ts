@@ -5,7 +5,7 @@ import { useFinanceProfile } from '../contexts/FinanceProfileContext'
 
 export function useBank() {
     const [loading, setLoading] = useState(false)
-    const { activeProfile, refreshTrigger } = useFinanceProfile()
+    const { activeProfile, refreshTrigger, globalRefresh } = useFinanceProfile()
 
     const startConnection = async () => {
         setLoading(true)
@@ -39,6 +39,7 @@ export function useBank() {
             })
             const data = await response.json()
             if (data.success) {
+                globalRefresh()
                 return data.count
             } else {
                 throw new Error(data.error || 'Sync failed')

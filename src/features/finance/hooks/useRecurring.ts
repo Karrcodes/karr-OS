@@ -9,7 +9,7 @@ export function useRecurring() {
     const [obligations, setObligations] = useState<RecurringObligation[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-    const { activeProfile, refreshTrigger } = useFinanceProfile()
+    const { activeProfile, refreshTrigger, globalRefresh } = useFinanceProfile()
 
     const fetchObligations = useCallback(async () => {
         setLoading(true)
@@ -27,19 +27,19 @@ export function useRecurring() {
     const createObligation = async (obligation: Omit<RecurringObligation, 'id' | 'created_at' | 'profile'>) => {
         const { error } = await supabase.from('fin_recurring').insert({ ...obligation, profile: activeProfile })
         if (error) throw error
-        await fetchObligations()
+        globalRefresh()
     }
 
     const updateObligation = async (id: string, updates: Partial<RecurringObligation>) => {
         const { error } = await supabase.from('fin_recurring').update(updates).eq('id', id)
         if (error) throw error
-        await fetchObligations()
+        globalRefresh()
     }
 
     const deleteObligation = async (id: string) => {
         const { error } = await supabase.from('fin_recurring').delete().eq('id', id)
         if (error) throw error
-        await fetchObligations()
+        globalRefresh()
     }
 
     const markObligationAsPaid = async (obligation: RecurringObligation) => {

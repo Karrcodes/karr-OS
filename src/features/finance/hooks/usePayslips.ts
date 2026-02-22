@@ -9,7 +9,7 @@ export function usePayslips() {
     const [payslips, setPayslips] = useState<Payslip[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-    const { activeProfile } = useFinanceProfile()
+    const { activeProfile, refreshTrigger, globalRefresh } = useFinanceProfile()
 
     const fetchPayslips = async () => {
         setLoading(true)
@@ -27,16 +27,16 @@ export function usePayslips() {
     const logPayslip = async (payload: Omit<Payslip, 'id' | 'created_at' | 'profile'>) => {
         const { error } = await supabase.from('fin_payslips').insert({ ...payload, profile: activeProfile })
         if (error) throw error
-        await fetchPayslips()
+        globalRefresh()
     }
 
     const deletePayslip = async (id: string) => {
         const { error } = await supabase.from('fin_payslips').delete().eq('id', id)
         if (error) throw error
-        await fetchPayslips()
+        globalRefresh()
     }
 
-    useEffect(() => { fetchPayslips() }, [activeProfile])
+    useEffect(() => { fetchPayslips() }, [activeProfile, refreshTrigger])
 
     return { payslips, loading, error, logPayslip, deletePayslip, refetch: fetchPayslips }
 }

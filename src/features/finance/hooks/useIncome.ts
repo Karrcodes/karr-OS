@@ -9,7 +9,7 @@ export function useIncome() {
     const [income, setIncome] = useState<Income[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-    const { activeProfile, refreshTrigger } = useFinanceProfile()
+    const { activeProfile, refreshTrigger, globalRefresh } = useFinanceProfile()
 
     const fetchIncome = async () => {
         setLoading(true)
@@ -27,7 +27,7 @@ export function useIncome() {
     const logIncome = async (payload: Omit<Income, 'id' | 'created_at' | 'profile'>) => {
         const { error } = await supabase.from('fin_income').insert({ ...payload, profile: activeProfile })
         if (error) throw error
-        await fetchIncome()
+        globalRefresh()
     }
 
     useEffect(() => { fetchIncome() }, [activeProfile, refreshTrigger])
