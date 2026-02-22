@@ -6,6 +6,7 @@ import { ArrowUpRight, ArrowDownLeft, RefreshCw, Layers } from 'lucide-react'
 import { useBank } from '../hooks/useBank'
 import { usePockets } from '../hooks/usePockets'
 import { TransactionDetailsModal } from './TransactionDetailsModal'
+import { getCategoryById } from '../constants/categories'
 import type { Transaction } from '../types/finance.types'
 
 export function TransactionLedger() {
@@ -87,8 +88,8 @@ export function TransactionLedger() {
                             className="w-full text-left flex items-center gap-3 p-3 rounded-xl border border-black/[0.04] bg-white hover:bg-black/[0.01] transition-colors group"
                         >
                             <div className="w-10 h-10 rounded-xl bg-black/[0.03] border border-black/[0.05] flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform overflow-hidden px-1">
-                                <span className="text-lg leading-none" title={pocketName}>
-                                    {pocketName !== 'General' ? Array.from(pocketName).pop() : (t.emoji || '💸')}
+                                <span className="text-lg leading-none" title={t.category || 'Other'}>
+                                    {t.category ? getCategoryById(t.category).emoji : (t.emoji || '💸')}
                                 </span>
                             </div>
 
