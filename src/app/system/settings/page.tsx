@@ -183,8 +183,8 @@ export default function SettingsPage() {
                                 </div>
                                 <button
                                     onClick={async () => {
-                                        const success = await subscribeToPushNotifications()
-                                        if (success) {
+                                        const result = await subscribeToPushNotifications()
+                                        if (result.success) {
                                             alert('Device subscribed successfully!')
                                             // Trigger a test notification
                                             fetch('/api/notifications/test', {
@@ -197,7 +197,7 @@ export default function SettingsPage() {
                                                 })
                                             })
                                         } else {
-                                            alert('Failed to subscribe. Make sure you are using the PWA and have granted permission.')
+                                            alert(`Failed to subscribe: ${result.error || 'Unknown error'}. \n\nChecklist: \n1. Added to Home Screen (iOS)?\n2. Granted permission?\n3. Using HTTPS?`)
                                         }
                                     }}
                                     className="bg-black text-white px-5 py-2 rounded-xl text-[12px] font-bold hover:bg-black/80 transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap"

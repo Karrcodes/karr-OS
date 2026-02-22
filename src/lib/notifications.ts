@@ -18,27 +18,56 @@ export async function registerServiceWorker() {
 
 export async function subscribeToPushNotifications() {
     try {
-        const registration = await registerServiceWorker()
-        if (!registration) throw new Error('Service Worker not registered')
+        console.log('Starting push subscription flow...')
 
+        // 1. Check if VAPID key is presence
+        if (!VAPID_PUBLIC_KEY) {
+            console.error('NEXT_PUBLIC_VAPID_PUBLIC_KEY is missing in environment')
+            throw new Error('Server configuration error: VAPID key missing')
+        }
+
+        // 2. Register/Get Service Worker
+        const registration = await registerServiceWorker()
+        if (!registration) {
+            console.error('Service Worker registration failed or not supported')
+            throw new Error('Service Worker not supported or registration failed')
+        }
+
+        // 3. Request permission explicitly (required by some browsers)
+        console.log('Requesting notification permission...')
+        const permission = await Notification.requestPermission()
+        if (permission !== 'granted') {
+            console.error('Notification permission denied')
+            throw new Error('Permission not granted for notifications')
+        }
+
+        // 4. Subscribe
+        console.log('Subscribing to PushManager...')
         const subscription = await registration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
         })
 
-        // Save to Supabase
+        console.log('Push subscription successful, saving to server...')
+
+        // 5. Save to Supabase
         const response = await fetch('/api/notifications/subscribe', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(subscription)
         })
 
-        if (!response.ok) throw new Error('Failed to save subscription')
+        if (!response.ok) {
+            const errorText = await response.text()
+            console.error('Server failed to save subscription:', errorText)
+            throw new Error('Failed to save subscription on server')
+        }
 
-        return true
-    } catch (error) {
-        console.error('Push subscription failed:', error)
-        return false
+        console.log('Subscription saved successfully!')
+        return { success: true }
+    } catch (error: any) {
+        console.error('Push subscription error details:', error)
+        return { success: false, error: error.message }
     }
 }
 
