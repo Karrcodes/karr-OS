@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 import type { RotaOverride } from '../types/finance.types'
 import { useFinanceProfile } from '../contexts/FinanceProfileContext'
 import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
-import { MOCK_ROTA } from '@/lib/demoData'
+import { MOCK_SCHEDULE } from '@/lib/demoData'
 
 export function useRota() {
     const [overrides, setOverrides] = useState<RotaOverride[]>([])
