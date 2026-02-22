@@ -16,7 +16,8 @@ export interface ScheduleItem {
 }
 
 export function useSchedule(days: number = 14) {
-    const { tasks, loading: tasksLoading } = useTasks('todo')
+    const { tasks: todoTasks, loading: todoLoading } = useTasks('todo')
+    const { tasks: reminderTasks, loading: reminderLoading } = useTasks('reminder')
     const { overrides, loading: rotaLoading } = useRota()
     const { settings } = useSystemSettings()
 
@@ -27,8 +28,10 @@ export function useSchedule(days: number = 14) {
         const end = new Date(start)
         end.setDate(start.getDate() + days)
 
+        const allTasks = [...todoTasks, ...reminderTasks]
+
         // Add Tasks
-        tasks.forEach(task => {
+        allTasks.forEach(task => {
             if (task.due_date) {
                 const date = new Date(task.due_date)
                 if (date >= start && date <= end) {
@@ -73,10 +76,10 @@ export function useSchedule(days: number = 14) {
         }
 
         return items.sort((a, b) => a.date.getTime() - b.date.getTime())
-    }, [tasks, overrides, days, settings.is_demo_mode])
+    }, [todoTasks, reminderTasks, overrides, days, settings.is_demo_mode])
 
     return {
         schedule,
-        loading: tasksLoading || rotaLoading
+        loading: todoLoading || reminderLoading || rotaLoading
     }
 }
