@@ -13,6 +13,10 @@ interface SystemSettings {
     notification_goal_milestone: boolean
     off_days: string[]
     last_reminder_sent: string
+    schedule_type: 'mon-fri' | 'shift'
+    shift_on_days: number
+    shift_off_days: number
+    shift_start_date: string
     [key: string]: any
 }
 
@@ -33,6 +37,10 @@ const defaultSettings: SystemSettings = {
     notification_goal_milestone: true,
     off_days: [],
     last_reminder_sent: '',
+    schedule_type: 'mon-fri',
+    shift_on_days: 3,
+    shift_off_days: 3,
+    shift_start_date: '',
 }
 
 const SystemSettingsContext = createContext<SystemSettingsContextType | undefined>(undefined)

@@ -9,6 +9,7 @@ const supabase = createClient(
 
 export async function sendPushNotification(title: string, body: string, url: string = '/') {
     try {
+        console.log('Sending push notification:', { title, body, url });
         const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
         const privateKey = process.env.VAPID_PRIVATE_KEY;
 

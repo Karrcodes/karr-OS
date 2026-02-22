@@ -21,33 +21,66 @@ export async function GET(req: Request) {
         const { data: settingsData, error: fetchError } = await supabase
             .from('sys_settings')
             .select('*')
-            .in('key', ['off_days', 'last_reminder_sent'])
+            .in('key', [
+                'off_days',
+                'last_reminder_sent',
+                'schedule_type',
+                'shift_on_days',
+                'shift_off_days',
+                'shift_start_date'
+            ])
 
         if (fetchError) throw fetchError
 
         const settings: Record<string, string> = {}
         settingsData?.forEach(item => settings[item.key] = item.value)
 
+        const scheduleType = settings.schedule_type || 'mon-fri'
         const offDays = JSON.parse(settings.off_days || '[]')
         const lastSent = settings.last_reminder_sent || ''
+
+        // Pattern settings
+        const shiftOn = parseInt(settings.shift_on_days || '3')
+        const shiftOff = parseInt(settings.shift_off_days || '3')
+        const shiftStart = settings.shift_start_date || ''
 
         // Get today's name (e.g., "Monday")
         const todayName = new Date().toLocaleDateString('en-US', { weekday: 'long' })
         const todayDate = new Date().toISOString().split('T')[0]
 
-        console.log(`Cron checking: Today is ${todayName}. Off-days:`, offDays)
+        console.log(`Cron checking: Today is ${todayName}. Mode: ${scheduleType}`)
 
         // 2. Determine if we should send a reminder
-        // Rule: If today is the FIRST day in the off_days array, it's the start of the weekend.
-        const isFirstOffDay = offDays.length > 0 && offDays[0] === todayName
+        let shouldSend = false
+
+        if (scheduleType === 'mon-fri') {
+            // Rule: If today is the FIRST day in the off_days array, it's the start of the weekend.
+            shouldSend = offDays.length > 0 && offDays[0] === todayName
+        } else if (scheduleType === 'shift' && shiftStart) {
+            // Shift Pattern logic:
+            // Calculate days elapsed since anchor
+            const start = new Date(shiftStart)
+            const today = new Date(todayDate)
+            const diffTime = today.getTime() - start.getTime()
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+
+            if (diffDays >= 0) {
+                const cycleLength = shiftOn + shiftOff
+                const dayInCycle = diffDays % cycleLength
+                // Reminder on the FIRST day of "OFF" (which is index equal to shiftOn)
+                shouldSend = dayInCycle === shiftOn
+                console.log(`Shift calculation: Day ${diffDays} since anchor. Day ${dayInCycle} in ${cycleLength}-day cycle. Target: ${shiftOn}`)
+            }
+        }
+
         const alreadySentToday = lastSent === todayDate
 
-        if (isFirstOffDay && !alreadySentToday) {
+        if (shouldSend && !alreadySentToday) {
             console.log('Target hit! Sending finance review reminder...')
 
             const { success, error } = await sendPushNotification(
                 '🏝️ Weekend Hub',
-                'Ready for your check-in? It\'s the first day of your off-days. Time to review your fiances!',
+                "Ready for your check-in? It's the first day of your off-days. Time to review your finances!",
                 '/finances'
             )
 
@@ -72,7 +105,7 @@ export async function GET(req: Request) {
 
         return NextResponse.json({
             success: true,
-            message: isFirstOffDay ? 'Already sent today' : 'Not a reminder day'
+            message: shouldSend ? 'Already sent today' : 'Not a reminder day'
         })
 
     } catch (error: any) {

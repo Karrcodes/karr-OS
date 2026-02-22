@@ -71,6 +71,43 @@ export async function subscribeToPushNotifications() {
     }
 }
 
+export async function checkPushSubscription() {
+    if (!('serviceWorker' in navigator && 'PushManager' in window)) return false
+
+    try {
+        const registration = await navigator.serviceWorker.ready
+        const subscription = await registration.pushManager.getSubscription()
+        return !!subscription
+    } catch (error) {
+        console.error('Error checking subscription:', error)
+        return false
+    }
+}
+
+export async function unsubscribeFromPushNotifications() {
+    try {
+        const registration = await navigator.serviceWorker.ready
+        const subscription = await registration.pushManager.getSubscription()
+
+        if (subscription) {
+            // 1. Delete from Server
+            await fetch('/api/notifications/subscribe', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ endpoint: subscription.endpoint })
+            })
+
+            // 2. Unsubscribe from Browser
+            await subscription.unsubscribe()
+        }
+
+        return { success: true }
+    } catch (error: any) {
+        console.error('Error unsubscribing:', error)
+        return { success: false, error: error.message }
+    }
+}
+
 function urlBase64ToUint8Array(base64String: string) {
     const padding = '='.repeat((4 - base64String.length % 4) % 4)
     const base64 = (base64String + padding)

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { ArrowLeft, Rocket, Sparkles, Clock, Plus, Trash2, History, Check } from 'lucide-react'
 import { useRoadmap } from '@/features/system/hooks/useRoadmap'
 import { cn } from '@/lib/utils'
+import { KarrFooter } from '@/components/KarrFooter'
 
 export default function SystemRoadmapPage() {
     const { items, loading, addRoadmapItem, toggleRoadmapItem, deleteRoadmapItem } = useRoadmap()
@@ -167,6 +168,7 @@ export default function SystemRoadmapPage() {
                         </div>
                     </section>
 
+                    <KarrFooter />
                 </div>
             </div>
         </div>

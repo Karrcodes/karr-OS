@@ -6,19 +6,25 @@ import { cn } from '@/lib/utils'
 import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
 import { useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
 import { KarrFooter } from '@/components/KarrFooter'
-import { subscribeToPushNotifications } from '@/lib/notifications'
+import { subscribeToPushNotifications, checkPushSubscription, unsubscribeFromPushNotifications } from '@/lib/notifications'
 
 export default function SettingsPage() {
     const { settings, updateSetting, loading: contextLoading } = useSystemSettings()
     const { isPrivacyEnabled, togglePrivacy } = useFinanceProfile()
     const [isSaving, setIsSaving] = useState(false)
     const [saveSuccess, setSaveSuccess] = useState(false)
+    const [isSubscribed, setIsSubscribed] = useState(false)
+    const [checkingSubscription, setCheckingSubscription] = useState(true)
 
     // Local state for form fields
     const [userName, setUserName] = useState(settings.user_name || '')
     const [userEmail, setUserEmail] = useState(settings.user_email || '')
     const [profilePic, setProfilePic] = useState(settings.profile_picture_url || '')
     const [offDays, setOffDays] = useState<string[]>(settings.off_days || [])
+    const [scheduleType, setScheduleType] = useState<'mon-fri' | 'shift'>(settings.schedule_type || 'mon-fri')
+    const [shiftOn, setShiftOn] = useState(settings.shift_on_days || 3)
+    const [shiftOff, setShiftOff] = useState(settings.shift_off_days || 3)
+    const [shiftStart, setShiftStart] = useState(settings.shift_start_date || '')
 
     const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -28,6 +34,18 @@ export default function SettingsPage() {
         setUserEmail(settings.user_email || '')
         setProfilePic(settings.profile_picture_url || '')
         setOffDays(settings.off_days || [])
+        setScheduleType(settings.schedule_type || 'mon-fri')
+        setShiftOn(settings.shift_on_days || 3)
+        setShiftOff(settings.shift_off_days || 3)
+        setShiftStart(settings.shift_start_date || '')
+
+        // CHECK PUSH STATUS
+        const checkPush = async () => {
+            const subscribed = await checkPushSubscription()
+            setIsSubscribed(subscribed)
+            setCheckingSubscription(false)
+        }
+        checkPush()
     }, [settings])
 
     const handleSaveProfile = async () => {
@@ -37,6 +55,10 @@ export default function SettingsPage() {
             await updateSetting('user_email', userEmail)
             await updateSetting('profile_picture_url', profilePic)
             await updateSetting('off_days', offDays)
+            await updateSetting('schedule_type', scheduleType)
+            await updateSetting('shift_on_days', shiftOn)
+            await updateSetting('shift_off_days', shiftOff)
+            await updateSetting('shift_start_date', shiftStart)
             setSaveSuccess(true)
             setTimeout(() => setSaveSuccess(false), 2000)
         } catch (error) {
@@ -192,32 +214,52 @@ export default function SettingsPage() {
                                     </div>
                                     <div>
                                         <p className="text-[13px] font-bold text-black">iOS / PWA Notifications</p>
-                                        <p className="text-[11px] text-black/35">Subscribe this device to receive real-time alerts.</p>
+                                        <p className="text-[11px] text-black/35 font-medium">Receive real-time alerts on this device.</p>
                                     </div>
                                 </div>
-                                <button
-                                    onClick={async () => {
-                                        const result = await subscribeToPushNotifications()
-                                        if (result.success) {
-                                            alert('Device subscribed successfully!')
-                                            // Trigger a test notification
-                                            fetch('/api/notifications/test', {
-                                                method: 'POST',
-                                                headers: { 'Content-Type': 'application/json' },
-                                                body: JSON.stringify({
-                                                    title: 'KarrOS',
-                                                    body: '🎉 Notifications enabled on this device!',
-                                                    url: '/system/settings'
-                                                })
-                                            })
-                                        } else {
-                                            alert(`Failed to subscribe: ${result.error || 'Unknown error'}. \n\nChecklist: \n1. Added to Home Screen (iOS)?\n2. Granted permission?\n3. Using HTTPS?`)
-                                        }
-                                    }}
-                                    className="bg-black text-white px-5 py-2 rounded-xl text-[12px] font-bold hover:bg-black/80 transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap"
-                                >
-                                    Enable on this Device
-                                </button>
+                                <div className="flex items-center gap-3">
+                                    {checkingSubscription ? (
+                                        <RefreshCw className="w-4 h-4 text-black/20 animate-spin" />
+                                    ) : (
+                                        <button
+                                            onClick={async () => {
+                                                if (isSubscribed) {
+                                                    const res = await unsubscribeFromPushNotifications()
+                                                    if (res.success) setIsSubscribed(false)
+                                                } else {
+                                                    const res = await subscribeToPushNotifications()
+                                                    if (res.success) {
+                                                        setIsSubscribed(true)
+                                                        // Trigger a test notification
+                                                        fetch('/api/notifications/test', {
+                                                            method: 'POST',
+                                                            headers: { 'Content-Type': 'application/json' },
+                                                            body: JSON.stringify({
+                                                                title: 'KarrOS',
+                                                                body: '🎉 Notifications enabled on this device!',
+                                                                url: '/system/settings'
+                                                            })
+                                                        })
+                                                    } else {
+                                                        alert(`Failed: ${res.error}`)
+                                                    }
+                                                }
+                                            }}
+                                            className={cn(
+                                                "w-11 h-6 rounded-full transition-all duration-300 relative shrink-0",
+                                                isSubscribed ? 'bg-emerald-500' : 'bg-black/10'
+                                            )}
+                                        >
+                                            <div className={cn(
+                                                "absolute top-1 w-4 h-4 rounded-full bg-white transition-all shadow-sm",
+                                                isSubscribed ? 'left-6' : 'left-1'
+                                            )} />
+                                        </button>
+                                    )}
+                                    <span className="text-[11px] font-bold text-black/40 uppercase tracking-wider w-12">
+                                        {isSubscribed ? 'Active' : 'Off'}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -229,29 +271,88 @@ export default function SettingsPage() {
                             <h2 className="text-[13px] font-bold text-black uppercase tracking-wider">Schedule & Reminders</h2>
                         </div>
                         <div className="p-6 space-y-4">
-                            <div>
-                                <p className="text-[14px] font-bold text-black">Off-Day Schedule</p>
-                                <p className="text-[11px] text-black/35 font-medium mb-3">We'll remind you to do your finances on the first day of your weekend.</p>
-                                <div className="flex flex-wrap gap-2">
-                                    {daysOfWeek.map(day => {
-                                        const isActive = offDays.includes(day)
-                                        return (
-                                            <button
-                                                key={day}
-                                                onClick={() => toggleOffDay(day)}
-                                                className={cn(
-                                                    "px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all border",
-                                                    isActive
-                                                        ? "bg-black text-white border-black"
-                                                        : "bg-black/[0.02] text-black/40 border-black/[0.06] hover:bg-black/[0.05]"
-                                                )}
-                                            >
-                                                {day.slice(0, 3)}
-                                            </button>
-                                        )
-                                    })}
+                            <div className="flex items-center justify-between mb-2">
+                                <p className="text-[14px] font-bold text-black">Schedule Type</p>
+                                <div className="flex bg-black/[0.03] p-1 rounded-xl border border-black/[0.06]">
+                                    <button
+                                        onClick={() => setScheduleType('mon-fri')}
+                                        className={cn(
+                                            "px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all",
+                                            scheduleType === 'mon-fri' ? "bg-white text-black shadow-sm" : "text-black/40 hover:text-black/60"
+                                        )}
+                                    >
+                                        Fixed
+                                    </button>
+                                    <button
+                                        onClick={() => setScheduleType('shift')}
+                                        className={cn(
+                                            "px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all",
+                                            scheduleType === 'shift' ? "bg-white text-black shadow-sm" : "text-black/40 hover:text-black/60"
+                                        )}
+                                    >
+                                        Rotating Shift
+                                    </button>
                                 </div>
                             </div>
+
+                            {scheduleType === 'mon-fri' ? (
+                                <div>
+                                    <p className="text-[14px] font-bold text-black mb-1">Off-Day Selection</p>
+                                    <p className="text-[11px] text-black/35 font-medium mb-3">Pick your standard weekends for reminders.</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {daysOfWeek.map(day => {
+                                            const isActive = offDays.includes(day)
+                                            return (
+                                                <button
+                                                    key={day}
+                                                    onClick={() => toggleOffDay(day)}
+                                                    className={cn(
+                                                        "px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all border",
+                                                        isActive
+                                                            ? "bg-black text-white border-black"
+                                                            : "bg-black/[0.02] text-black/40 border-black/[0.06] hover:bg-black/[0.05]"
+                                                    )}
+                                                >
+                                                    {day.slice(0, 3)}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="space-y-4 pt-2">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[11px] font-bold text-black/40 ml-1">Days ON</label>
+                                            <input
+                                                type="number"
+                                                value={shiftOn}
+                                                onChange={(e) => setShiftOn(parseInt(e.target.value) || 0)}
+                                                className="w-full bg-black/[0.03] border border-black/[0.06] rounded-xl px-4 py-2 text-[13px] outline-none focus:border-black/30 transition-colors"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[11px] font-bold text-black/40 ml-1">Days OFF</label>
+                                            <input
+                                                type="number"
+                                                value={shiftOff}
+                                                onChange={(e) => setShiftOff(parseInt(e.target.value) || 0)}
+                                                className="w-full bg-black/[0.03] border border-black/[0.06] rounded-xl px-4 py-2 text-[13px] outline-none focus:border-black/30 transition-colors"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[11px] font-bold text-black/40 ml-1">Pattern Anchor (Start of an ON block)</label>
+                                        <input
+                                            type="date"
+                                            value={shiftStart}
+                                            onChange={(e) => setShiftStart(e.target.value)}
+                                            className="w-full bg-black/[0.03] border border-black/[0.06] rounded-xl px-4 py-2 text-[13px] outline-none focus:border-black/30 transition-colors [color-scheme:light]"
+                                        />
+                                        <p className="text-[10px] text-black/35 mt-1 px-1 italic">We'll remind you on the first "OFF" day in every cycle.</p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </section>
 

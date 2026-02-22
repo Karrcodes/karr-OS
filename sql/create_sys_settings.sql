@@ -16,5 +16,9 @@ VALUES
     ('notification_bank_sync', 'true'),
     ('notification_goal_milestone', 'true'),
     ('off_days', '[]'),
-    ('last_reminder_sent', '')
+    ('last_reminder_sent', ''),
+    ('schedule_type', 'mon-fri'),
+    ('shift_on_days', '3'),
+    ('shift_off_days', '3'),
+    ('shift_start_date', '')
 ON CONFLICT (key) DO NOTHING;
