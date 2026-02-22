@@ -54,6 +54,31 @@ function CapBadge({ cap }: { cap: 'P' | 'B' }) {
     )
 }
 
+function SidebarFooter({ pathname }: { pathname: string }) {
+    return (
+        <div className="px-5 py-3 border-t border-black/[0.03] space-y-3">
+            <Link
+                href="/system/settings"
+                className={cn(
+                    "flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-all text-[13px] font-medium",
+                    pathname === '/system/settings' ? 'bg-black/10 text-black' : 'text-black/50 hover:text-black/80 hover:bg-black/[0.04]'
+                )}
+            >
+                <SlidersHorizontal className={cn("w-4 h-4", pathname === '/system/settings' ? 'text-black' : 'text-black/35')} />
+                Settings
+            </Link>
+
+            <Link
+                href="/system/roadmap"
+                className="flex items-center gap-2 text-[10px] font-bold text-black/20 hover:text-black/40 transition-colors group px-2.5"
+            >
+                <span className="w-1.5 h-1.5 rounded-full bg-black/10 group-hover:bg-black/20" />
+                v1.2.0
+            </Link>
+        </div>
+    )
+}
+
 function ProfileMenu() {
     const [isOpen, setIsOpen] = useState(false)
     const menuRef = useRef<HTMLDivElement>(null)
@@ -426,29 +451,7 @@ export function Sidebar() {
                     </Link>
                 </div>
                 {renderNav(false)}
-
-                {/* Version Indicator & Settings */}
-                <div className="px-5 py-3 border-t border-black/[0.03] space-y-3">
-                    <Link
-                        href="/system/settings"
-                        className={cn(
-                            "flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-all text-[13px] font-medium",
-                            pathname === '/system/settings' ? 'bg-black/10 text-black' : 'text-black/50 hover:text-black/80 hover:bg-black/[0.04]'
-                        )}
-                    >
-                        <SlidersHorizontal className={cn("w-4 h-4", pathname === '/system/settings' ? 'text-black' : 'text-black/35')} />
-                        Settings
-                    </Link>
-
-                    <Link
-                        href="/system/roadmap"
-                        className="flex items-center gap-2 text-[10px] font-bold text-black/20 hover:text-black/40 transition-colors group px-2.5"
-                    >
-                        <span className="w-1.5 h-1.5 rounded-full bg-black/10 group-hover:bg-black/20" />
-                        v1.2.0
-                    </Link>
-                </div>
-
+                <SidebarFooter pathname={pathname} />
                 <ProfileMenu />
             </aside>
 
@@ -501,6 +504,7 @@ export function Sidebar() {
                             </button>
                         </div>
                         {renderNav(true)}
+                        <SidebarFooter pathname={pathname} />
                         <ProfileMenu />
                     </aside>
                 </div>

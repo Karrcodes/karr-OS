@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ArrowLeft, User, Bell, Monitor, Shield, Save, Check, RefreshCw, Sun, Moon, Smartphone } from 'lucide-react'
+import { ArrowLeft, User, Bell, Monitor, Shield, Save, Check, RefreshCw, Sun, Moon, Smartphone, Calendar } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
 import { useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
 import { KarrFooter } from '@/components/KarrFooter'
@@ -14,15 +15,19 @@ export default function SettingsPage() {
     const [saveSuccess, setSaveSuccess] = useState(false)
 
     // Local state for form fields
-    const [userName, setUserName] = useState(settings.user_name)
-    const [userEmail, setUserEmail] = useState(settings.user_email)
-    const [profilePic, setProfilePic] = useState(settings.profile_picture_url)
+    const [userName, setUserName] = useState(settings.user_name || '')
+    const [userEmail, setUserEmail] = useState(settings.user_email || '')
+    const [profilePic, setProfilePic] = useState(settings.profile_picture_url || '')
+    const [offDays, setOffDays] = useState<string[]>(settings.off_days || [])
+
+    const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
     // Sync local state when context settings load
     useEffect(() => {
-        setUserName(settings.user_name)
-        setUserEmail(settings.user_email)
-        setProfilePic(settings.profile_picture_url)
+        setUserName(settings.user_name || '')
+        setUserEmail(settings.user_email || '')
+        setProfilePic(settings.profile_picture_url || '')
+        setOffDays(settings.off_days || [])
     }, [settings])
 
     const handleSaveProfile = async () => {
@@ -31,13 +36,22 @@ export default function SettingsPage() {
             await updateSetting('user_name', userName)
             await updateSetting('user_email', userEmail)
             await updateSetting('profile_picture_url', profilePic)
+            await updateSetting('off_days', offDays)
             setSaveSuccess(true)
             setTimeout(() => setSaveSuccess(false), 2000)
         } catch (error) {
-            console.error('Failed to save profile:', error)
+            console.error('Failed to save settings:', error)
         } finally {
             setIsSaving(false)
         }
+    }
+
+    const toggleOffDay = (day: string) => {
+        setOffDays(prev =>
+            prev.includes(day)
+                ? prev.filter(d => d !== day)
+                : [...prev, day]
+        )
     }
 
     const toggleNotification = async (key: string, current: boolean) => {
@@ -204,6 +218,39 @@ export default function SettingsPage() {
                                 >
                                     Enable on this Device
                                 </button>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Schedule & Reminders */}
+                    <section className="bg-white rounded-3xl border border-black/[0.06] shadow-sm overflow-hidden">
+                        <div className="px-6 py-4 border-b border-black/[0.04] bg-black/[0.01] flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-black/40" />
+                            <h2 className="text-[13px] font-bold text-black uppercase tracking-wider">Schedule & Reminders</h2>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div>
+                                <p className="text-[14px] font-bold text-black">Off-Day Schedule</p>
+                                <p className="text-[11px] text-black/35 font-medium mb-3">We'll remind you to do your finances on the first day of your weekend.</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {daysOfWeek.map(day => {
+                                        const isActive = offDays.includes(day)
+                                        return (
+                                            <button
+                                                key={day}
+                                                onClick={() => toggleOffDay(day)}
+                                                className={cn(
+                                                    "px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all border",
+                                                    isActive
+                                                        ? "bg-black text-white border-black"
+                                                        : "bg-black/[0.02] text-black/40 border-black/[0.06] hover:bg-black/[0.05]"
+                                                )}
+                                            >
+                                                {day.slice(0, 3)}
+                                            </button>
+                                        )
+                                    })}
+                                </div>
                             </div>
                         </div>
                     </section>

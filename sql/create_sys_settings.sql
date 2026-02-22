@@ -14,5 +14,7 @@ VALUES
     ('notification_low_balance', 'true'),
     ('notification_large_transaction', 'true'),
     ('notification_bank_sync', 'true'),
-    ('notification_goal_milestone', 'true')
+    ('notification_goal_milestone', 'true'),
+    ('off_days', '[]'),
+    ('last_reminder_sent', '')
 ON CONFLICT (key) DO NOTHING;

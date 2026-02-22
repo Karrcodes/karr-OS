@@ -11,6 +11,8 @@ interface SystemSettings {
     notification_large_transaction: boolean
     notification_bank_sync: boolean
     notification_goal_milestone: boolean
+    off_days: string[]
+    last_reminder_sent: string
     [key: string]: any
 }
 
@@ -29,6 +31,8 @@ const defaultSettings: SystemSettings = {
     notification_large_transaction: true,
     notification_bank_sync: true,
     notification_goal_milestone: true,
+    off_days: [],
+    last_reminder_sent: '',
 }
 
 const SystemSettingsContext = createContext<SystemSettingsContextType | undefined>(undefined)
@@ -56,6 +60,16 @@ export function SystemSettingsProvider({ children }: { children: ReactNode }) {
                     if (value === 'true') value = true
                     else if (value === 'false') value = false
                     else if (!isNaN(Number(value)) && value !== '') value = Number(value)
+                    else {
+                        // Try parsing as JSON for arrays/objects
+                        try {
+                            if (value.startsWith('[') || value.startsWith('{')) {
+                                value = JSON.parse(value)
+                            }
+                        } catch (e) {
+                            // Leave as string if not valid JSON
+                        }
+                    }
 
                     newSettings[item.key as keyof SystemSettings] = value
                 })
@@ -67,7 +81,7 @@ export function SystemSettingsProvider({ children }: { children: ReactNode }) {
     }, [])
 
     const updateSetting = async (key: keyof SystemSettings, value: any) => {
-        const stringValue = String(value)
+        const stringValue = typeof value === 'object' ? JSON.stringify(value) : String(value)
         const { error } = await supabase
             .from('sys_settings')
             .upsert({ key, value: stringValue, updated_at: new Date().toISOString() })

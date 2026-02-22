@@ -43,7 +43,8 @@ Rules:
 Return ONLY a valid JSON object:
 {
   "amount": number,
-  "merchant": string
+  "merchant": string,
+  "is_online": boolean
 }
 
 Notification:
@@ -56,7 +57,8 @@ Notification:
 
                 if (parsed.amount) amount = parsed.amount;
                 if (parsed.merchant) merchant = parsed.merchant;
-                console.log('AI Parsed:', { merchant, amount });
+                (body as any).is_online = parsed.is_online || false;
+                console.log('AI Parsed:', { merchant, amount, is_online: (body as any).is_online });
             } catch (aiError) {
                 console.error('AI Parsing Error:', aiError);
             }
@@ -89,11 +91,14 @@ Notification:
         // 4. Trigger Push Notification
         try {
             const { sendPushNotification } = await import('@/lib/push-server');
-            await sendPushNotification(
-                'New Transaction',
-                `£${parseFloat(amount).toFixed(2)} at ${merchant}`,
-                '/finances/transactions'
-            );
+
+            const isOnline = (body as any).is_online || false;
+            const title = isOnline ? '💳 Online Spend' : 'New Transaction';
+            const bodyText = isOnline
+                ? `You spent £${parseFloat(amount).toFixed(2)} at ${merchant}. Tap to verify.`
+                : `£${parseFloat(amount).toFixed(2)} at ${merchant}`;
+
+            await sendPushNotification(title, bodyText, '/finances/transactions');
         } catch (pushError) {
             console.error('Failed to send push notification:', pushError);
             // Don't fail the webhook if push fails
