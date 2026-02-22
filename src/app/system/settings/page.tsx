@@ -7,11 +7,14 @@ import { useSystemSettings } from '@/features/system/contexts/SystemSettingsCont
 import { useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
 import { KarrFooter } from '@/components/KarrFooter'
 import { subscribeToPushNotifications, checkPushSubscription, unsubscribeFromPushNotifications } from '@/lib/notifications'
+import { supabase } from '@/lib/supabase'
+import { Upload, X as CloseIcon } from 'lucide-react'
 
 export default function SettingsPage() {
-    const { settings, updateSetting, loading: contextLoading } = useSystemSettings()
+    const { settings, updateSetting, loading: contextLoading, refreshSettings } = useSystemSettings()
     const { isPrivacyEnabled, togglePrivacy } = useFinanceProfile()
     const [isSaving, setIsSaving] = useState(false)
+    const [isUploading, setIsUploading] = useState(false)
     const [saveSuccess, setSaveSuccess] = useState(false)
     const [isSubscribed, setIsSubscribed] = useState(false)
     const [checkingSubscription, setCheckingSubscription] = useState(true)
@@ -25,6 +28,8 @@ export default function SettingsPage() {
     const [shiftOn, setShiftOn] = useState(settings.shift_on_days || 3)
     const [shiftOff, setShiftOff] = useState(settings.shift_off_days || 3)
     const [shiftStart, setShiftStart] = useState(settings.shift_start_date || '')
+    const [authorizedDevices, setAuthorizedDevices] = useState<any[]>([])
+    const [fetchingDevices, setFetchingDevices] = useState(false)
 
     const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -46,25 +51,90 @@ export default function SettingsPage() {
             setCheckingSubscription(false)
         }
         checkPush()
+        fetchDevices()
     }, [settings])
+
+    const fetchDevices = async () => {
+        setFetchingDevices(true)
+        const { data } = await supabase
+            .from('fin_authorized_devices')
+            .select('*')
+            .order('last_used_at', { ascending: false })
+        if (data) setAuthorizedDevices(data)
+        setFetchingDevices(false)
+    }
+
+    const revokeDevice = async (deviceId: string) => {
+        const { error } = await supabase
+            .from('fin_authorized_devices')
+            .delete()
+            .eq('device_id', deviceId)
+
+        if (!error) {
+            setAuthorizedDevices(prev => prev.filter(d => d.device_id !== deviceId))
+            // If current device, force reload
+            if (typeof window !== 'undefined' && localStorage.getItem('karrOS_shield_id') === deviceId) {
+                localStorage.removeItem('karrOS_unlocked')
+                localStorage.removeItem('karrOS_shield_id')
+                window.location.reload()
+            }
+        }
+    }
 
     const handleSaveProfile = async () => {
         setIsSaving(true)
         try {
-            await updateSetting('user_name', userName)
-            await updateSetting('user_email', userEmail)
-            await updateSetting('profile_picture_url', profilePic)
-            await updateSetting('off_days', offDays)
-            await updateSetting('schedule_type', scheduleType)
-            await updateSetting('shift_on_days', shiftOn)
-            await updateSetting('shift_off_days', shiftOff)
-            await updateSetting('shift_start_date', shiftStart)
+            // Update all settings in parallel for speed
+            await Promise.all([
+                updateSetting('user_name', userName),
+                updateSetting('user_email', userEmail),
+                updateSetting('profile_picture_url', profilePic),
+                updateSetting('off_days', offDays),
+                updateSetting('schedule_type', scheduleType),
+                updateSetting('shift_on_days', shiftOn),
+                updateSetting('shift_off_days', shiftOff),
+                updateSetting('shift_start_date', shiftStart)
+            ])
+
+            await refreshSettings()
             setSaveSuccess(true)
             setTimeout(() => setSaveSuccess(false), 2000)
         } catch (error) {
             console.error('Failed to save settings:', error)
+            alert('Failed to save settings. Please check your connection or RLS policies.')
         } finally {
             setIsSaving(false)
+        }
+    }
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        setIsUploading(true)
+        try {
+            const fileExt = file.name.split('.').pop()
+            const fileName = `avatar-${Date.now()}.${fileExt}`
+            const filePath = `avatars/${fileName}`
+
+            const { error: uploadError } = await supabase.storage
+                .from('system')
+                .upload(filePath, file)
+
+            if (uploadError) throw uploadError
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('system')
+                .getPublicUrl(filePath)
+
+            setProfilePic(publicUrl)
+            // Auto-save the new picture URL
+            await updateSetting('profile_picture_url', publicUrl)
+        } catch (error: any) {
+            console.error('Upload error:', error)
+            alert(`Upload failed: ${error.message}`)
+        } finally {
+            setIsUploading(false)
         }
     }
 
@@ -123,9 +193,21 @@ export default function SettingsPage() {
                             <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
                                 <div className="w-20 h-20 rounded-3xl bg-black/5 border border-black/10 flex items-center justify-center shrink-0 overflow-hidden relative group">
                                     {profilePic ? (
-                                        <img src={profilePic} alt="Avatar" className="w-full h-full object-cover" />
+                                        <>
+                                            <img src={profilePic} alt="Avatar" className="w-full h-full object-cover" />
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                <label className="cursor-pointer p-2">
+                                                    <Upload className="w-5 h-5 text-white" />
+                                                    <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} disabled={isUploading} />
+                                                </label>
+                                            </div>
+                                        </>
                                     ) : (
-                                        <User className="w-8 h-8 text-black/20" />
+                                        <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-black/10 transition-colors">
+                                            {isUploading ? <RefreshCw className="w-6 h-6 text-black/20 animate-spin" /> : <Upload className="w-6 h-6 text-black/20" />}
+                                            <span className="text-[10px] text-black/20 font-bold mt-1">{isUploading ? 'Uploading...' : 'Upload'}</span>
+                                            <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} disabled={isUploading} />
+                                        </label>
                                     )}
                                 </div>
                                 <div className="flex-1 space-y-4 w-full">
@@ -149,14 +231,13 @@ export default function SettingsPage() {
                                             />
                                         </div>
                                     </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[11px] font-bold text-black/40 ml-1">Profile Picture URL</label>
+                                    <div className="space-y-1.5 opacity-50 grayscale pointer-events-none">
+                                        <label className="text-[11px] font-bold text-black/40 ml-1">Profile Picture URL (Stored in Cloud)</label>
                                         <input
                                             type="text"
                                             value={profilePic}
-                                            onChange={(e) => setProfilePic(e.target.value)}
-                                            placeholder="Paste image URL here..."
-                                            className="w-full bg-black/[0.03] border border-black/[0.06] rounded-xl px-4 py-2 text-[13px] outline-none focus:border-black/30 transition-colors"
+                                            readOnly
+                                            className="w-full bg-black/[0.03] border border-black/[0.06] rounded-xl px-4 py-2 text-[13px] outline-none"
                                         />
                                     </div>
                                     <div className="flex justify-end">
@@ -390,14 +471,76 @@ export default function SettingsPage() {
                     <section className="bg-white rounded-3xl border border-black/[0.06] shadow-sm overflow-hidden">
                         <div className="px-6 py-4 border-b border-black/[0.04] bg-black/[0.01] flex items-center gap-2">
                             <Shield className="w-4 h-4 text-black/40" />
-                            <h2 className="text-[13px] font-bold text-black uppercase tracking-wider">Security & Access</h2>
+                            <h2 className="text-[13px] font-bold text-black uppercase tracking-wider">Security & Authorized Devices</h2>
                         </div>
-                        <div className="p-6 flex items-center justify-between group cursor-pointer hover:bg-black/[0.01] transition-colors">
-                            <div>
-                                <p className="text-[14px] font-bold text-black">Passcode Lock</p>
-                                <p className="text-[11px] text-black/35 font-medium">Currently active for all system modules</p>
+                        <div className="p-6 space-y-6">
+                            {/* Device List */}
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <p className="text-[14px] font-bold text-black">Linked Devices</p>
+                                    <button
+                                        onClick={fetchDevices}
+                                        className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-black/5 text-black/20 hover:text-black transition-colors"
+                                    >
+                                        <RefreshCw className={cn("w-3.5 h-3.5", fetchingDevices && "animate-spin")} />
+                                    </button>
+                                </div>
+                                <div className="space-y-2">
+                                    {authorizedDevices.map(device => {
+                                        const isThisDevice = typeof window !== 'undefined' && localStorage.getItem('karrOS_shield_id') === device.device_id
+                                        return (
+                                            <div key={device.id} className="flex items-center justify-between p-3 rounded-2xl bg-black/[0.02] border border-black/[0.04] transition-all hover:border-black/[0.08]">
+                                                <div className="min-w-0 pr-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="text-[12px] font-bold text-black truncate">{device.device_name}</p>
+                                                        {isThisDevice && (
+                                                            <span className="px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 text-[8px] font-bold uppercase tracking-wider">This Device</span>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-[10px] text-black/30 font-medium mt-0.5">Last used: {new Date(device.last_used_at).toLocaleDateString()}</p>
+                                                </div>
+                                                <button
+                                                    onClick={() => {
+                                                        if (confirm(`Revoke access for ${device.device_name}?`)) {
+                                                            revokeDevice(device.device_id)
+                                                        }
+                                                    }}
+                                                    className="p-2 rounded-xl hover:bg-red-50 text-black/20 hover:text-red-500 transition-all"
+                                                >
+                                                    <CloseIcon className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        )
+                                    })}
+                                    {authorizedDevices.length === 0 && !fetchingDevices && (
+                                        <div className="text-center py-6 bg-black/[0.01] rounded-2xl border border-dashed border-black/[0.06]">
+                                            <p className="text-[11px] text-black/30 font-medium italic">No devices authorized yet.</p>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                            <div className="px-3 py-1 bg-black/5 rounded-lg text-[10px] font-bold text-black/40 uppercase tracking-widest">Active</div>
+
+                            <div className="h-px bg-black/[0.04]" />
+
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div className="min-w-0">
+                                    <p className="text-[14px] font-bold text-black">System Lockdown</p>
+                                    <p className="text-[11px] text-black/35 font-medium pr-4">Clear local session data and force a full system relock. Use if you're experiencing sync issues.</p>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        if (confirm('This will log you out of KarrOS on this device. Your PIN will be required to get back in. Continue?')) {
+                                            localStorage.removeItem('karrOS_unlocked')
+                                            localStorage.removeItem('karrOS_shield_id')
+                                            localStorage.removeItem('karrOS_biometric_id')
+                                            window.location.reload()
+                                        }
+                                    }}
+                                    className="whitespace-nowrap px-4 py-2.5 rounded-xl bg-red-50 text-red-600 text-[11px] font-bold hover:bg-red-600 hover:text-white transition-all shadow-sm shadow-red-500/5 active:scale-95 border border-red-100"
+                                >
+                                    Log Out & Reset Session
+                                </button>
+                            </div>
                         </div>
                     </section>
 

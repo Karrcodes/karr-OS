@@ -211,19 +211,19 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
     return (
         <div className="rounded-2xl border border-black/[0.08] bg-white overflow-hidden shadow-sm">
             {/* Header */}
-            <div className="p-4 border-b border-black/[0.06] flex items-start sm:items-center justify-between bg-black/[0.01] gap-3">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-2">
-                    <h2 className="text-[14px] font-bold text-black flex items-center gap-2">
-                        <CalendarIcon className="w-4 h-4 text-black" />
-                        {view === 'calendar' ? 'Payment Calendar' : 'Obligation Breakdown'}
+            <div className="p-3 sm:p-4 border-b border-black/[0.06] flex flex-col sm:flex-row sm:items-center justify-between bg-black/[0.01] gap-3">
+                <div className="flex flex-col xs:flex-row xs:items-center gap-3 sm:gap-2">
+                    <h2 className="text-[13px] sm:text-[14px] font-bold text-black flex items-center gap-2 whitespace-nowrap">
+                        <CalendarIcon className="w-3.5 h-3.5 sm:w-4 h-4 text-black" />
+                        {view === 'calendar' ? 'Payment Calendar' : 'Obligations'}
                     </h2>
                     {/* Filter pills */}
-                    <div className="flex p-0.5 bg-black/[0.04] rounded-lg sm:ml-1 w-fit">
+                    <div className="flex p-0.5 bg-black/[0.04] rounded-lg w-fit">
                         {(['all', 'debt', 'subscription'] as FilterMode[]).map(f => (
                             <button
                                 key={f}
                                 onClick={() => setFilter(f)}
-                                className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${filter === f ? 'bg-white shadow-sm text-black' : 'text-black/40 hover:text-black/60'}`}
+                                className={`px-2 py-1 rounded-md text-[9px] sm:text-[10px] font-bold uppercase tracking-wider transition-all ${filter === f ? 'bg-white shadow-sm text-black' : 'text-black/40 hover:text-black/60'}`}
                             >
                                 {f}
                             </button>
@@ -231,17 +231,17 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2 ml-auto">
+                <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto mt-1 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-0 border-black/[0.04]">
                     {/* View toggle */}
                     <div className="flex p-0.5 bg-black/[0.04] rounded-lg">
                         <button onClick={() => setView('calendar')} className={`p-1.5 rounded-md transition-all ${view === 'calendar' ? 'bg-white shadow-sm text-black' : 'text-black/40 hover:text-black/60'}`}><LayoutGrid className="w-3.5 h-3.5" /></button>
                         <button onClick={() => setView('list')} className={`p-1.5 rounded-md transition-all ${view === 'list' ? 'bg-white shadow-sm text-black' : 'text-black/40 hover:text-black/60'}`}><List className="w-3.5 h-3.5" /></button>
                     </div>
-                    <div className="text-right">
-                        <div className="text-[16px] font-extrabold text-black privacy-blur">
+                    <div className="text-right flex-shrink-0">
+                        <div className="text-[14px] sm:text-[16px] font-extrabold text-black privacy-blur leading-none">
                             £{view === 'calendar' ? calendarData.totalMonth.toFixed(2) : total30Days.toFixed(2)}
                         </div>
-                        <p className="text-[9px] uppercase tracking-wider font-bold text-black/30">{view === 'calendar' ? 'This Month' : 'Next 30d'}</p>
+                        <p className="text-[8px] sm:text-[9px] uppercase tracking-wider font-bold text-black/30 mt-0.5">{view === 'calendar' ? 'This Month' : 'Next 30d'}</p>
                     </div>
                 </div>
             </div>
@@ -295,12 +295,12 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                                 return (
                                     <div
                                         key={day}
-                                        className={`bg-white min-h-[52px] p-1.5 flex flex-col gap-1 transition-colors
+                                        className={`bg-white min-h-[44px] sm:min-h-[52px] p-1 sm:p-1.5 flex flex-col gap-0.5 sm:gap-1 transition-colors
                                             ${isToday ? 'bg-black' : ''}
                                             ${isPast && !isToday ? 'opacity-40' : ''}
                                         `}
                                     >
-                                        <span className={`text-[11px] font-bold w-5 h-5 flex items-center justify-center rounded-full
+                                        <span className={`text-[9px] sm:text-[11px] font-bold w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center rounded-full
                                             ${isToday ? 'bg-black text-white' : 'text-black/40'}
                                         `}>
                                             {day}

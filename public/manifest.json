@@ -2,7 +2,7 @@
     "name": "KarrOS",
     "short_name": "KarrOS",
     "description": "Personal Finance Operating System — Studio Karrtesian",
-    "start_url": "/finances",
+    "start_url": "/system/control-centre",
     "scope": "/",
     "display": "standalone",
     "orientation": "portrait",
