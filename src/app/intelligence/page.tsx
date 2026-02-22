@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Brain, Terminal, Send, RefreshCw, Sparkles, Database, Shield, Zap } from 'lucide-react'
 import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
-import { KarrFooter } from '@/components/KarrFooter'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -95,7 +94,7 @@ export default function IntelligencePage() {
     }
 
     return (
-        <div className="fixed md:left-[220px] top-14 md:top-0 bottom-0 right-0 bg-[#fafafa] flex flex-col overflow-hidden">
+        <div className="fixed md:left-[220px] top-14 md:top-0 h-[calc(100vh-3.5rem)] md:h-screen lg:h-screen bottom-0 right-0 bg-[#fafafa] flex flex-col overflow-hidden">
             {/* Header */}
             <div className="bg-white border-b border-black/[0.06] px-6 py-4 z-20 shadow-sm shrink-0">
                 <div className="max-w-4xl mx-auto flex items-center justify-between">
@@ -179,7 +178,7 @@ export default function IntelligencePage() {
                 </div>
 
                 {/* Input Area */}
-                <div className="shrink-0 max-w-3xl mx-auto w-full pb-1 sm:pb-2 px-4 sm:px-6">
+                <div className="shrink-0 max-w-3xl mx-auto w-full pb-6 sm:pb-8 px-4 sm:px-6">
                     <form
                         onSubmit={handleSend}
                         className="relative group bg-white border border-black/[0.1] rounded-2xl p-1 shadow-lg transition-all focus-within:border-black focus-within:ring-1 focus-within:ring-black"
@@ -207,14 +206,10 @@ export default function IntelligencePage() {
                             </button>
                         </div>
                     </form>
-                    <div className="mt-2 flex items-center justify-center gap-6">
+                    <div className="mt-3 flex items-center justify-center gap-6">
                         <button onClick={() => setInput('/scan-finances')} className="text-[10px] font-bold text-black/30 uppercase tracking-widest hover:text-black transition-colors">Scan Finances</button>
                         <button onClick={() => setInput('/tasks')} className="text-[10px] font-bold text-black/30 uppercase tracking-widest hover:text-black transition-colors">Task Audit</button>
                         <button onClick={() => setInput('/help')} className="text-[10px] font-bold text-black/30 uppercase tracking-widest hover:text-black transition-colors">Help</button>
-                    </div>
-
-                    <div className="mt-2 pt-2 pb-2">
-                        <KarrFooter />
                     </div>
                 </div>
 

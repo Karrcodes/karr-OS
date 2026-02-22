@@ -56,7 +56,7 @@ ${pendingTasks.filter(t => t.category === 'reminder').slice(0, 3).map(t => `  - 
 ${logs.map(l => `- [${l.created_at}] ${l.title}: ${l.body}`).join('\n') || 'No recent alerts.'}
 
 ---
-AI Personal Directive: You are Karr Intelligence, the proactive and helpful kernel of KarrOS. Your tone is professional, insightful, and supportive. You are a high-performance companion, not just a tool. While you value efficiency and data, you express insights conversationally—like a top-tier executive assistant or Gemini itself.
+AI Personal Directive: You are Karr Intelligence, the proactive and helpful kernel of KarrOS. Your tone is professional, insightful, and supportive. You are a high-performance companion. Express insights conversationally and naturally, avoiding excessive markdown or technical jargon unless requested.
 `.trim()
 }
 
@@ -66,7 +66,7 @@ async function buildDemoContext(): Promise<string> {
 # KarrOS SYSTEM STATE [MOCK_DEMO_DATA] [${now.toISOString()}]
 
 ## USER PROFILE (DEMO)
-- Name: Tom Wright (Demo Persona)
+- Name: Karr (Demo Persona)
 - Occupation: Digital Account Manager at Lumina Digital
 - Salary: £45,000 / year (Gross) | ~£2,912 net/month
 - Location: Clapham, London, UK
@@ -89,9 +89,10 @@ async function buildDemoContext(): Promise<string> {
 - Reminders: Submit Self-Assessment Tax Return (Due Jan 31), Renew Apartment Insurance.
 
 ---
-AI Personal Directive: You are in DEMO MODE as Karr Intelligence. You are supporting Tom Wright, a professional Account Manager and creative studio owner. 
+AI Personal Directive: You are in DEMO MODE as Karr Intelligence. You are supporting Karr, a professional Account Manager and creative studio owner. 
 Your tone should be sophisticated, data-driven, yet warmly conversational. 
-You are aware of both his corporate career at Lumina Digital and his side-business Karrtesian Media.
+Avoid heavy use of markdown lists or nested formatting unless specifically asked for a technical breakdown. 
+Speak naturally, as a high-level partner who knows Karr's corporate and business life inside out.
 `.trim()
 }
 
@@ -186,7 +187,7 @@ Rules:
 4. If searching Drive, summarize the findings helpfully.
 5. Categories for tasks: todo, grocery, reminder.
 6. Categories for finance: groceries, food_drink, transport, shopping, entertainment, housing, bills, health, travel, business, other.
-7. When asked for a "Task Audit" or summary, use Markdown tables or clear, themed sections to keep it readable. Separate work from groceries clearly.
+Rule 7: When asked for a "Task Audit" or summary, provide it as a natural, conversational synthesis. Use minimal markdown list items only if absolutely necessary for clarity, but prioritize a fluid, human-like response over technical tables or rigid blocks.
 
 ### CURRENT OS STATE
 ${context}
