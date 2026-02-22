@@ -26,6 +26,7 @@ export async function POST(request: Request) {
 
         // 2. Parse the JSON payload sent by the iOS Shortcut
         const body = await request.json();
+        console.log('Webhook Received Body:', JSON.stringify(body, null, 2));
         let { merchant, amount, notificationText } = body;
 
         // AI Parsing Fallback: If raw notification text is provided, use AI to extract merchant/amount
@@ -51,21 +52,32 @@ Notification:
 "${notificationText}"`;
 
                 const result = await geminiModel.generateContent(prompt);
-                const text = result.response.text().trim();
-                const cleaned = text.replace(/```json?/g, '').replace(/```/g, '').trim();
+                const aiResponseText = result.response.text().trim();
+                console.log('AI Raw Response:', aiResponseText);
+
+                const cleaned = aiResponseText.replace(/```json?/g, '').replace(/```/g, '').trim();
                 const parsed = JSON.parse(cleaned);
 
-                if (parsed.amount) amount = parsed.amount;
+                if (parsed.amount !== undefined && parsed.amount !== null) amount = parsed.amount;
                 if (parsed.merchant) merchant = parsed.merchant;
                 (body as any).is_online = parsed.is_online || false;
-                console.log('AI Parsed:', { merchant, amount, is_online: (body as any).is_online });
+                console.log('Final Parsed Values:', { merchant, amount, is_online: (body as any).is_online });
             } catch (aiError) {
                 console.error('AI Parsing Error:', aiError);
             }
         }
 
-        if (!merchant || amount === undefined) {
-            return NextResponse.json({ error: 'Missing merchant or amount' }, { status: 400 });
+        if (amount === undefined || amount === null) {
+            console.error('Final Check: Missing amount after AI parse attempt.');
+            return NextResponse.json({
+                error: 'Missing amount',
+                received: body,
+                ai_parsed: { merchant, amount }
+            }, { status: 400 });
+        }
+
+        if (!merchant) {
+            return NextResponse.json({ error: 'Missing merchant' }, { status: 400 });
         }
 
         // 3. Insert the transaction into the database
