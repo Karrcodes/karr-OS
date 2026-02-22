@@ -90,7 +90,7 @@ export default function IntelligencePage() {
     }
 
     return (
-        <div className="fixed inset-0 bg-[#fafafa] flex flex-col overflow-hidden">
+        <div className="fixed md:left-[220px] top-14 md:top-0 bottom-0 right-0 bg-[#fafafa] flex flex-col overflow-hidden">
             {/* Header */}
             <div className="bg-white border-b border-black/[0.06] px-6 py-4 z-20 shadow-sm shrink-0">
                 <div className="max-w-4xl mx-auto flex items-center justify-between">
@@ -103,7 +103,7 @@ export default function IntelligencePage() {
                                 Karr Intelligence
                                 <span className="bg-emerald-500/10 text-emerald-600 text-[9px] px-1.5 py-0.5 rounded font-mono uppercase tracking-widest border border-emerald-500/20">Active</span>
                             </h1>
-                            <p className="text-[11px] text-black/35 font-medium mt-0.5 hidden sm:block">Your Proactive OS Companion</p>
+                            <p className="text-[11px] text-black/35 font-medium mt-0.5 hidden lg:block">Your Proactive OS Companion</p>
                         </div>
                     </div>
 

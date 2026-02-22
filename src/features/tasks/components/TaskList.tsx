@@ -112,18 +112,20 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
                         <Plus className="w-5 h-5" />
                     </button>
                 </div>
-                {newTask.trim().length > 0 && (
-                    <div className="flex flex-wrap items-center gap-2 animate-in slide-in-from-top-1 fade-in duration-200">
+                {(newTask.trim().length > 0 || dueDate) && (
+                    <div className="flex flex-wrap items-center gap-2 mt-1 animate-in slide-in-from-top-1 fade-in duration-200">
                         {category === 'todo' && (
-                            <div className="flex gap-1.5">
+                            <div className="flex gap-1.5 p-1 bg-black/[0.03] rounded-xl border border-black/5">
                                 {(['super', 'high', 'mid', 'low'] as const).map(p => (
                                     <button
                                         key={p}
                                         type="button"
                                         onClick={() => setPriority(p)}
                                         className={cn(
-                                            "px-2.5 py-1 text-[11px] font-medium rounded-lg border transition-colors",
-                                            priority === p ? PRIORITY_CONFIG[p].color : "bg-transparent text-black/40 border-black/10 hover:bg-black/5"
+                                            "px-2.5 py-1.5 text-[10px] font-bold rounded-lg border transition-all uppercase tracking-tight",
+                                            priority === p
+                                                ? PRIORITY_CONFIG[p].color + " shadow-sm scale-105"
+                                                : "bg-transparent text-black/30 border-transparent hover:text-black/50 hover:bg-black/5"
                                         )}
                                     >
                                         {PRIORITY_CONFIG[p].label}
@@ -131,12 +133,15 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
                                 ))}
                             </div>
                         )}
-                        <input
-                            type="date"
-                            value={dueDate}
-                            onChange={(e) => setDueDate(e.target.value)}
-                            className="bg-transparent border border-black/10 rounded-lg px-2 py-1 text-[11px] font-medium text-black/60 outline-none focus:border-black/40"
-                        />
+                        <div className="flex items-center gap-2 bg-black/[0.03] border border-black/5 rounded-xl px-3 py-1.5">
+                            <Calendar className="w-3.5 h-3.5 text-black/30" />
+                            <input
+                                type="date"
+                                value={dueDate}
+                                onChange={(e) => setDueDate(e.target.value)}
+                                className="bg-transparent text-[11px] font-bold text-black/60 outline-none uppercase tracking-tight"
+                            />
+                        </div>
                     </div>
                 )}
             </form>

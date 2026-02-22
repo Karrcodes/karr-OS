@@ -4,6 +4,8 @@ import { useState, useMemo } from 'react'
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, CheckCircle, Clock, Briefcase } from 'lucide-react'
 import { useSchedule, ScheduleItem } from '@/hooks/useSchedule'
 import { cn } from '@/lib/utils'
+import { useTasks } from '../hooks/useTasks'
+import { Plus, X as CloseIcon } from 'lucide-react'
 
 export function TasksCalendar() {
     const [calMonth, setCalMonth] = useState(() => {
@@ -12,6 +14,9 @@ export function TasksCalendar() {
         d.setHours(0, 0, 0, 0)
         return d
     })
+    const [selectedQuickAdd, setSelectedQuickAdd] = useState<{ day: number, date: Date } | null>(null)
+    const [quickAddTitle, setQuickAddTitle] = useState('')
+    const { createTask } = useTasks('todo')
 
     const { schedule, loading } = useSchedule(60) // Fetch 60 days to cover month views
     const today = new Date()
@@ -40,6 +45,19 @@ export function TasksCalendar() {
             startDow: firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1 // Monday = 0
         }
     }, [calMonth, schedule])
+
+    const handleQuickAdd = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!quickAddTitle.trim() || !selectedQuickAdd) return
+
+        try {
+            await createTask(quickAddTitle.trim(), 'low', selectedQuickAdd.date.toISOString().split('T')[0])
+            setQuickAddTitle('')
+            setSelectedQuickAdd(null)
+        } catch (err) {
+            console.error(err)
+        }
+    }
 
     const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -94,8 +112,12 @@ export function TasksCalendar() {
                         return (
                             <div
                                 key={day}
+                                onClick={() => {
+                                    const d = new Date(calMonth.getFullYear(), calMonth.getMonth(), day)
+                                    setSelectedQuickAdd({ day, date: d })
+                                }}
                                 className={cn(
-                                    "bg-white min-h-[80px] sm:min-h-[110px] p-1.5 flex flex-col gap-1 transition-colors relative",
+                                    "bg-white min-h-[80px] sm:min-h-[110px] p-1.5 flex flex-col gap-1 transition-all relative cursor-pointer hover:bg-black/[0.02]",
                                     isPast && !isToday && "bg-black/[0.01] opacity-60"
                                 )}
                             >
@@ -131,6 +153,41 @@ export function TasksCalendar() {
                         <div key={`empty-end-${i}`} className="bg-white min-h-[80px] sm:min-h-[110px]" />
                     ))}
                 </div>
+
+                {/* Quick Add Overlay */}
+                {selectedQuickAdd && (
+                    <div className="absolute inset-0 z-30 flex items-center justify-center p-4 bg-white/60 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="bg-white border border-black/10 rounded-2xl shadow-2xl p-6 w-full max-w-sm animate-in zoom-in-95 duration-200">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-[14px] font-bold text-black uppercase tracking-tight">
+                                    Map task to {selectedQuickAdd.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                                </h3>
+                                <button onClick={() => setSelectedQuickAdd(null)} className="p-1 hover:bg-black/5 rounded-lg text-black/40">
+                                    <CloseIcon className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <form onSubmit={handleQuickAdd} className="space-y-4">
+                                <input
+                                    autoFocus
+                                    type="text"
+                                    value={quickAddTitle}
+                                    onChange={(e) => setQuickAddTitle(e.target.value)}
+                                    placeholder="Task title..."
+                                    className="w-full bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] font-medium outline-none focus:border-black/20 focus:bg-white transition-all transition-colors"
+                                />
+                                <div className="flex gap-2">
+                                    <button
+                                        type="submit"
+                                        disabled={!quickAddTitle.trim()}
+                                        className="flex-1 bg-black text-white rounded-xl py-3 text-[12px] font-bold uppercase tracking-widest hover:bg-black/80 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                    >
+                                        Add to Schedule
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
 
                 <div className="mt-6 flex flex-wrap items-center gap-6 p-4 bg-black/[0.02] rounded-xl border border-black/[0.04]">
                     <LegendItem color="bg-black" label="Tasks" />
