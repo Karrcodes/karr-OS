@@ -9,7 +9,7 @@ export function useGoals() {
     const [goals, setGoals] = useState<Goal[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-    const { activeProfile } = useFinanceProfile()
+    const { activeProfile, refreshTrigger } = useFinanceProfile()
 
     const fetchGoals = async () => {
         setLoading(true)
@@ -42,7 +42,7 @@ export function useGoals() {
         await fetchGoals()
     }
 
-    useEffect(() => { fetchGoals() }, [activeProfile])
+    useEffect(() => { fetchGoals() }, [activeProfile, refreshTrigger])
 
     return { goals, loading, error, createGoal, updateGoal, deleteGoal, refetch: fetchGoals }
 }

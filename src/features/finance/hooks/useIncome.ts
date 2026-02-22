@@ -9,7 +9,7 @@ export function useIncome() {
     const [income, setIncome] = useState<Income[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-    const { activeProfile } = useFinanceProfile()
+    const { activeProfile, refreshTrigger } = useFinanceProfile()
 
     const fetchIncome = async () => {
         setLoading(true)
@@ -30,7 +30,7 @@ export function useIncome() {
         await fetchIncome()
     }
 
-    useEffect(() => { fetchIncome() }, [activeProfile])
+    useEffect(() => { fetchIncome() }, [activeProfile, refreshTrigger])
 
     return { income, loading, error, logIncome, refetch: fetchIncome }
 }

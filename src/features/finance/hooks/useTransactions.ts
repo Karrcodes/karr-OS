@@ -9,7 +9,7 @@ export function useTransactions() {
     const [transactions, setTransactions] = useState<Transaction[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-    const { activeProfile } = useFinanceProfile()
+    const { activeProfile, refreshTrigger } = useFinanceProfile()
 
     const fetchTransactions = async () => {
         setLoading(true)
@@ -37,7 +37,7 @@ export function useTransactions() {
         setLoading(false)
     }
 
-    useEffect(() => { fetchTransactions() }, [activeProfile])
+    useEffect(() => { fetchTransactions() }, [activeProfile, refreshTrigger])
 
     return { transactions, loading, error, refetch: fetchTransactions, clearTransactions }
 }

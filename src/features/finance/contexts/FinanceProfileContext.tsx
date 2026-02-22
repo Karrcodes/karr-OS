@@ -9,6 +9,8 @@ interface FinanceProfileContextType {
     setProfile: (profile: ProfileType) => void
     isPrivacyEnabled: boolean
     togglePrivacy: () => void
+    refreshTrigger: number
+    lastRefresh: Date
 }
 
 const FinanceProfileContext = createContext<FinanceProfileContextType | undefined>(undefined)
@@ -17,6 +19,8 @@ export function FinanceProfileProvider({ children }: { children: React.ReactNode
     const [activeProfile, setActiveProfile] = useState<ProfileType>('personal')
     const [isPrivacyEnabled, setIsPrivacyEnabled] = useState(false)
     const [mounted, setMounted] = useState(false)
+    const [refreshTrigger, setRefreshTrigger] = useState(0)
+    const [lastRefresh, setLastRefresh] = useState(new Date())
 
     useEffect(() => {
         const saved = localStorage.getItem('karrOS_finance_profile') as ProfileType
@@ -28,11 +32,24 @@ export function FinanceProfileProvider({ children }: { children: React.ReactNode
             setIsPrivacyEnabled(true)
         }
         setMounted(true)
+
+        // Global Auto-Refresh: Increment trigger every 3 minutes (180,000 ms)
+        const interval = setInterval(() => {
+            setRefreshTrigger(prev => prev + 1)
+            setLastRefresh(new Date())
+            console.log('KarrOS: Global financial data auto-refresh triggered.')
+        }, 180000)
+
+        return () => clearInterval(interval)
     }, [])
 
     const handleSetProfile = (profile: ProfileType) => {
         setActiveProfile(profile)
         localStorage.setItem('karrOS_finance_profile', profile)
+        // Manual profile switch also triggers a fresh fetch implicitly by hook dependencies,
+        // but let's increment refresh just in case.
+        setRefreshTrigger(prev => prev + 1)
+        setLastRefresh(new Date())
     }
 
     const togglePrivacy = () => {
@@ -48,7 +65,14 @@ export function FinanceProfileProvider({ children }: { children: React.ReactNode
     // For seamless UX, we render children immediately but with default 'personal' state,
     // which quickly hydrates from localStorage.
     return (
-        <FinanceProfileContext.Provider value={{ activeProfile, setProfile: handleSetProfile, isPrivacyEnabled, togglePrivacy }}>
+        <FinanceProfileContext.Provider value={{
+            activeProfile,
+            setProfile: handleSetProfile,
+            isPrivacyEnabled,
+            togglePrivacy,
+            refreshTrigger,
+            lastRefresh
+        }}>
             <div className={`${mounted ? "" : "hidden"} ${isPrivacyEnabled ? 'privacy-enabled' : ''}`}>
                 {children}
             </div>

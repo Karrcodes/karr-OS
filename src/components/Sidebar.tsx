@@ -36,7 +36,7 @@ const navItems = [
         ],
     },
     { label: 'Health & Wellbeing', href: '/health', icon: Heart, disabled: true },
-    { label: 'Security Vault', href: '/vault', icon: Shield, disabled: true },
+    { label: 'Vault', href: '/vault', icon: Shield },
     { label: 'Wishlist', href: '/wishlist', icon: Gift, disabled: true },
 ]
 

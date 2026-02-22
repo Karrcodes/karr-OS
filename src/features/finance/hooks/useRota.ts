@@ -9,7 +9,7 @@ export function useRota() {
     const [overrides, setOverrides] = useState<RotaOverride[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-    const { activeProfile } = useFinanceProfile()
+    const { activeProfile, refreshTrigger } = useFinanceProfile()
 
     const fetchOverrides = useCallback(async () => {
         setLoading(true)
@@ -22,7 +22,7 @@ export function useRota() {
         if (error) setError(error.message)
         else setOverrides(data ?? [])
         setLoading(false)
-    }, [activeProfile])
+    }, [activeProfile, refreshTrigger])
 
     const saveOverrides = async (items: Omit<RotaOverride, 'id' | 'created_at' | 'profile'>[]) => {
         if (items.length === 0) return

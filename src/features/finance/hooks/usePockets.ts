@@ -9,7 +9,7 @@ export function usePockets() {
     const [pockets, setPockets] = useState<Pocket[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-    const { activeProfile } = useFinanceProfile()
+    const { activeProfile, refreshTrigger } = useFinanceProfile()
 
     const fetchPockets = async () => {
         setLoading(true)
@@ -51,7 +51,7 @@ export function usePockets() {
         await fetchPockets()
     }
 
-    useEffect(() => { fetchPockets() }, [activeProfile])
+    useEffect(() => { fetchPockets() }, [activeProfile, refreshTrigger])
 
     return { pockets, loading, error, createPocket, updatePocket, deletePocket, updatePocketsOrder, refetch: fetchPockets }
 }

@@ -9,7 +9,7 @@ export function useRecurring() {
     const [obligations, setObligations] = useState<RecurringObligation[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-    const { activeProfile } = useFinanceProfile()
+    const { activeProfile, refreshTrigger } = useFinanceProfile()
 
     const fetchObligations = useCallback(async () => {
         setLoading(true)
@@ -22,7 +22,7 @@ export function useRecurring() {
         if (error) setError(error.message)
         else setObligations(data ?? [])
         setLoading(false)
-    }, [activeProfile])
+    }, [activeProfile, refreshTrigger])
 
     const createObligation = async (obligation: Omit<RecurringObligation, 'id' | 'created_at' | 'profile'>) => {
         const { error } = await supabase.from('fin_recurring').insert({ ...obligation, profile: activeProfile })
@@ -78,7 +78,7 @@ export function useRecurring() {
 
     useEffect(() => {
         fetchObligations()
-    }, [fetchObligations, activeProfile])
+    }, [fetchObligations, activeProfile, refreshTrigger])
 
     return {
         obligations,
