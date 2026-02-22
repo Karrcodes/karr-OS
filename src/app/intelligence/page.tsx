@@ -16,7 +16,7 @@ export default function IntelligencePage() {
     const [messages, setMessages] = useState<Message[]>([
         {
             role: 'assistant',
-            content: "Karr Intelligence Node Active. OS Data synchronised. How shall we optimise your trajectory today?",
+            content: "Hello! I'm Karr Intelligence. I've indexed your OS data and I'm ready to help you optimize your performance. What's on your mind today?",
             timestamp: new Date()
         }
     ])
@@ -36,8 +36,6 @@ export default function IntelligencePage() {
             }])
         }
     }, [])
-
-    // ... handleSend (unchanged logic, just add streaming effect on return) ...
 
     // Auto-scroll on new messages
     useEffect(() => {
@@ -91,41 +89,40 @@ export default function IntelligencePage() {
         }
     }
 
-
     return (
         <div className="min-h-screen bg-[#fafafa] flex flex-col h-screen overflow-hidden">
             {/* Header */}
             <div className="bg-white border-b border-black/[0.06] px-6 py-4 z-20 shadow-sm shrink-0">
                 <div className="max-w-4xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-black flex items-center justify-center shadow-lg">
-                            <Brain className="w-6 h-6 text-white" />
+                        <div className="w-10 h-10 rounded-xl bg-black flex items-center justify-center shadow-sm">
+                            <Sparkles className="w-6 h-6 text-white" />
                         </div>
                         <div>
                             <h1 className="text-[18px] font-bold text-black tracking-tight flex items-center gap-2">
                                 Karr Intelligence
-                                <span className="bg-emerald-500/10 text-emerald-600 text-[9px] px-1.5 py-0.5 rounded font-mono uppercase tracking-widest border border-emerald-500/20">Core v1.0</span>
+                                <span className="bg-emerald-500/10 text-emerald-600 text-[9px] px-1.5 py-0.5 rounded font-mono uppercase tracking-widest border border-emerald-500/20">Active</span>
                             </h1>
-                            <p className="text-[11px] text-black/35 font-mono uppercase tracking-wider mt-0.5">Secure Neural Link Established</p>
+                            <p className="text-[11px] text-black/35 font-medium mt-0.5 hidden sm:block">Your Proactive OS Companion</p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-4 text-[10px] font-mono uppercase tracking-widest">
+                    <div className="flex items-center gap-2 sm:gap-4 text-[10px] font-mono uppercase tracking-widest">
                         <div className="flex items-center gap-1.5 text-emerald-600">
                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            OS Sync: 100%
+                            <span className="hidden xs:inline">System Sync: 100%</span>
                         </div>
                         <div className="flex items-center gap-1.5 text-black/30">
                             {isSynced ? (
                                 <div className="flex items-center gap-1.5 text-blue-500">
-                                    <Database className="w-3 h-3" /> Drive Online
+                                    <Database className="w-3 h-3" /> <span className="hidden sm:inline">Drive Online</span>
                                 </div>
                             ) : (
                                 <button
                                     onClick={() => window.location.href = '/api/auth/google'}
                                     className="flex items-center gap-1.5 hover:text-black transition-colors"
                                 >
-                                    <Database className="w-3 h-3" /> Sync Drive
+                                    <Database className="w-3 h-3" /> <span className="hidden sm:inline">Sync Drive</span>
                                 </button>
                             )}
                         </div>
@@ -133,15 +130,11 @@ export default function IntelligencePage() {
                 </div>
             </div>
 
-            {/* Terminal Viewport */}
-            <div className="flex-1 overflow-hidden flex flex-col p-4 md:p-6 bg-black relative">
-                {/* Background Grid Pattern */}
-                <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
-                    style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
-
+            {/* Chat Viewport */}
+            <div className="flex-1 overflow-hidden flex flex-col p-4 md:p-6 relative">
                 <div
                     ref={scrollRef}
-                    className="flex-1 overflow-y-auto space-y-6 max-w-4xl mx-auto w-full pb-8 pt-4 custom-scrollbar"
+                    className="flex-1 overflow-y-auto space-y-6 max-w-3xl mx-auto w-full pb-8 pt-4 custom-scrollbar"
                 >
                     <AnimatePresence mode="popLayout">
                         {messages.map((msg, i) => (
@@ -154,34 +147,16 @@ export default function IntelligencePage() {
                                     msg.role === 'user' ? "ml-auto items-end" : "items-start"
                                 )}
                             >
-                                <div className="flex items-center gap-2 mb-1">
-                                    {msg.role === 'assistant' ? (
-                                        <>
-                                            <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center border border-white/5">
-                                                <Terminal className="w-3 h-3 text-emerald-500" />
-                                            </div>
-                                            <span className="text-[9px] font-mono uppercase tracking-widest text-white/30">Karr_Intelligence_Node</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <span className="text-[9px] font-mono uppercase tracking-widest text-white/30">Admin_Terminal</span>
-                                            <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/20">
-                                                <Zap className="w-3 h-3 text-emerald-400" />
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
                                 <div className={cn(
-                                    "p-4 rounded-2xl text-[14px] md:text-[15px] font-mono leading-relaxed border shadow-2xl transition-all",
+                                    "p-4 rounded-2xl text-[15px] leading-relaxed shadow-sm border transition-all",
                                     msg.role === 'assistant'
-                                        ? "bg-[#0a0a0a] text-white border-white/10"
-                                        : "bg-emerald-500 text-black border-emerald-400 font-bold"
+                                        ? "bg-white text-black border-black/[0.06]"
+                                        : "bg-black text-white border-black font-medium"
                                 )}>
-                                    {msg.role === 'assistant' && <span className="text-emerald-500 mr-2">$</span>}
                                     {msg.content}
                                 </div>
-                                <span className="text-[9px] font-mono text-white/20 mt-1 uppercase">
-                                    [{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}]
+                                <span className="text-[9px] font-medium text-black/20 mt-1 uppercase">
+                                    {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                             </motion.div>
                         ))}
@@ -189,38 +164,29 @@ export default function IntelligencePage() {
 
                     {isTyping && (
                         <div className="flex flex-col gap-2 items-start max-w-[85%]">
-                            <div className="flex items-center gap-2 mb-1">
-                                <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center border border-white/5">
-                                    <Terminal className="w-3 h-3 text-emerald-500" />
-                                </div>
-                                <span className="text-[9px] font-mono uppercase tracking-widest text-white/30">Processing...</span>
-                            </div>
-                            <div className="bg-[#0a0a0a] border border-white/10 p-4 rounded-2xl flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce" />
+                            <div className="bg-white border border-black/[0.06] p-4 rounded-2xl flex items-center gap-1.5 shadow-sm">
+                                <span className="w-1.5 h-1.5 bg-black/20 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                                <span className="w-1.5 h-1.5 bg-black/20 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                                <span className="w-1.5 h-1.5 bg-black/20 rounded-full animate-bounce" />
                             </div>
                         </div>
                     )}
                 </div>
 
                 {/* Input Area */}
-                <div className="shrink-0 max-w-4xl mx-auto w-full pb-4 px-2">
+                <div className="shrink-0 max-w-3xl mx-auto w-full pb-6 px-2">
                     <form
                         onSubmit={handleSend}
-                        className="relative group bg-[#0a0a0a] border-2 border-white/10 rounded-2xl p-1 shadow-2xl transition-all focus-within:border-emerald-500/50"
+                        className="relative group bg-white border border-black/[0.1] rounded-2xl p-1 shadow-lg transition-all focus-within:border-black focus-within:ring-1 focus-within:ring-black"
                     >
                         <div className="flex items-center">
-                            <div className="pl-4 pr-3 text-emerald-500 font-mono font-bold select-none cursor-default">
-                                λ
-                            </div>
                             <input
                                 autoFocus
                                 type="text"
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
-                                placeholder="Execute KarrOS directive..."
-                                className="w-full bg-transparent border-none focus:ring-0 text-white font-mono text-[15px] py-4 placeholder:text-white/20"
+                                placeholder="Message Karr Intelligence..."
+                                className="w-full bg-transparent border-none focus:ring-0 text-black font-medium text-[15px] py-4 px-4 placeholder:text-black/30"
                             />
                             <button
                                 type="submit"
@@ -228,42 +194,37 @@ export default function IntelligencePage() {
                                 className={cn(
                                     "mr-2 w-10 h-10 rounded-xl flex items-center justify-center transition-all",
                                     input.trim() && !isTyping
-                                        ? "bg-emerald-500 text-black hover:scale-105 active:scale-95"
-                                        : "bg-white/5 text-white/20 cursor-not-allowed"
+                                        ? "bg-black text-white hover:scale-105 active:scale-95 shadow-md"
+                                        : "bg-black/[0.02] text-black/20 cursor-not-allowed"
                                 )}
                             >
                                 <Send className="w-5 h-5" />
                             </button>
                         </div>
                     </form>
-                    <div className="mt-3 flex items-center justify-between px-2">
-                        <div className="flex gap-4">
-                            <span className="text-[9px] font-mono text-white/20 uppercase cursor-help hover:text-white/40">/help</span>
-                            <span className="text-[9px] font-mono text-white/20 uppercase cursor-help hover:text-white/40">/scan-finances</span>
-                            <span className="text-[9px] font-mono text-white/20 uppercase cursor-help hover:text-white/40">/sync-drive</span>
-                        </div>
-                        <p className="text-[9px] font-mono text-white/10 uppercase tracking-widest">Auth_Level: Elevated</p>
+                    <div className="mt-3 flex items-center justify-center gap-6">
+                        <button onClick={() => setInput('/scan-finances')} className="text-[10px] font-bold text-black/30 uppercase tracking-widest hover:text-black transition-colors">Scan Finances</button>
+                        <button onClick={() => setInput('/tasks')} className="text-[10px] font-bold text-black/30 uppercase tracking-widest hover:text-black transition-colors">Task Audit</button>
+                        <button onClick={() => setInput('/help')} className="text-[10px] font-bold text-black/30 uppercase tracking-widest hover:text-black transition-colors">Help</button>
                     </div>
                 </div>
+
+                <style jsx global>{`
+                    .custom-scrollbar::-webkit-scrollbar {
+                        width: 4px;
+                    }
+                    .custom-scrollbar::-webkit-scrollbar-track {
+                        background: transparent;
+                    }
+                    .custom-scrollbar::-webkit-scrollbar-thumb {
+                        background: rgba(0, 0, 0, 0.05);
+                        border-radius: 20px;
+                    }
+                    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                        background: rgba(0, 0, 0, 0.1);
+                    }
+                `}</style>
             </div>
-
-            <KarrFooter dark />
-
-            <style jsx global>{`
-                .custom-scrollbar::-webkit-scrollbar {
-                    width: 4px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-track {
-                    background: rgba(0, 0, 0, 0.1);
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: rgba(255, 255, 255, 0.05);
-                    border-radius: 20px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: rgba(255, 255, 255, 0.1);
-                }
-            `}</style>
         </div>
     )
 }

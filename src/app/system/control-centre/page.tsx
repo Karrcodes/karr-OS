@@ -30,7 +30,6 @@ export default function ControlCentrePage() {
 
     // Data Aggregation
     const stats = useMemo(() => {
-        // 1. Task Completion (This week)
         const now = new Date()
         const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
         const weeklyTasks = tasks.filter(t => new Date(t.created_at) >= oneWeekAgo)
@@ -38,7 +37,6 @@ export default function ControlCentrePage() {
             ? (weeklyTasks.filter(t => t.is_completed).length / weeklyTasks.length) * 100
             : 0
 
-        // 2. Budget Adherence (Simplified 30d inflow vs outflow)
         const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
         const monthlyInflow = transactions
             .filter(t => t.type === 'income' && new Date(t.date) >= thirtyDaysAgo)
@@ -51,20 +49,18 @@ export default function ControlCentrePage() {
             ? Math.max(0, 100 - (monthlyOutflow / monthlyInflow) * 100)
             : 0
 
-        // 3. Overall Productivity Score
         const score = Math.round((taskCompletion * 0.5) + (budgetScore * 0.5))
 
-        // 4. Next Action Logic
-        let nextAction = "No urgent items detected. Review roadmap."
+        let nextAction = "System optimal. No high-priority items."
         const highPriorityTask = tasks.find(t => !t.is_completed && (t.priority === 'super' || t.priority === 'high'))
 
         if (highPriorityTask) {
-            nextAction = `Execute: ${highPriorityTask.title}`
+            nextAction = `High Priority: ${highPriorityTask.title}`
         } else if (monthlyOutflow > monthlyInflow && monthlyInflow > 0) {
-            nextAction = "Optimize: Outflow exceeding inflow. Review transactions."
+            nextAction = "Spending exceeds income — Review budget."
         } else {
             const nextPending = tasks.find(t => !t.is_completed)
-            if (nextPending) nextAction = `Next task: ${nextPending.title}`
+            if (nextPending) nextAction = `Next Up: ${nextPending.title}`
         }
 
         return { score, nextAction, taskCompletion, budgetScore }
@@ -73,129 +69,160 @@ export default function ControlCentrePage() {
     const loading = tasksLoading || financeLoading
 
     return (
-        <div className="min-h-screen bg-[#fafafa] flex flex-col">
-            <div className="bg-white border-b border-black/[0.06] px-6 py-5 z-20 shadow-sm shrink-0">
-                <div className="max-w-5xl mx-auto flex items-center gap-4">
-                    <div>
-                        <h1 className="text-[20px] font-bold text-black tracking-tight flex items-center gap-2">
-                            <LayoutDashboard className="w-5 h-5 text-black" />
-                            Command Centre
-                        </h1>
-                        <p className="text-[12px] text-black/35 mt-0.5">Efficiency & Discipline Engine</p>
+        <div className="min-h-screen bg-white flex flex-col">
+            {/* Page Header */}
+            <div className="flex items-center justify-between px-6 py-5 border-b border-black/[0.06] bg-white flex-shrink-0 shadow-sm z-10">
+                <div>
+                    <h1 className="text-[22px] font-bold text-black tracking-tight">Control Centre</h1>
+                    <p className="text-[12px] text-black/35 mt-0.5">System Hub · Efficiency Dashboard</p>
+                </div>
+                <div className="flex items-center gap-3">
+                    {loading && (
+                        <div className="flex items-center gap-1.5 text-black/30">
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                            <span className="text-[11px]">Scanning</span>
+                        </div>
+                    )}
+                    <div className="text-[11px] text-black/25 uppercase tracking-wider font-medium">
+                        {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
                     </div>
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 flex flex-col">
-                <div className="max-w-5xl mx-auto w-full flex-1 mb-12 space-y-6">
+            <div className="flex-1 overflow-y-auto bg-[#fafafa] flex flex-col p-6">
+                <div className="max-w-5xl mx-auto w-full space-y-8 pb-12">
 
-                    {/* A. Next Action Engine */}
-                    <div className="bg-white border-2 border-black rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                            <Target className="w-24 h-24 text-black" />
-                        </div>
-                        <div className="relative z-10">
-                            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-black/40 mb-2">Efficiency HUD</p>
-                            <h2 className="text-[24px] font-black text-black leading-tight tracking-tight">
-                                {loading ? (
-                                    <span className="flex items-center gap-2">Scanning Engine <RefreshCw className="w-5 h-5 animate-spin" /></span>
-                                ) : stats.nextAction}
-                            </h2>
-                        </div>
+                    {/* Summary Row */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <SummaryCard
+                            label="Next Objective"
+                            value={loading ? "INDEXING..." : stats.nextAction}
+                            icon={<Target className="w-5 h-5" />}
+                            color="#3b82f6"
+                            sub="Action Engine Recommendation"
+                        />
+                        <SummaryCard
+                            label="Karrtesian Score"
+                            value={`${stats.score}/100`}
+                            icon={<TrendingUp className="w-5 h-5" />}
+                            color="#059669"
+                            sub="Discipline & Budget Index"
+                        />
+                        <SummaryCard
+                            label="Pending Items"
+                            value={tasks.filter(t => !t.is_completed).length.toString()}
+                            icon={<CheckSquare className="w-5 h-5" />}
+                            color="#f59e0b"
+                            sub="Tasks requiring attention"
+                        />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Efficiency Matrix */}
+                        <div className="lg:col-span-2 space-y-6">
+                            <SectionBlock title="Efficiency Analysis" desc="Performance metrics">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-2">
+                                    <div className="flex flex-col items-center justify-center py-6">
+                                        <div className="relative w-32 h-32">
+                                            <svg className="w-full h-full transform -rotate-90">
+                                                <circle cx="64" cy="64" r="56" fill="transparent" stroke="currentColor" strokeWidth="10" className="text-black/[0.05]" />
+                                                <circle cx="64" cy="64" r="56" fill="transparent" stroke="currentColor" strokeWidth="10" strokeDasharray={352} strokeDashoffset={352 - (352 * stats.score) / 100} strokeLinecap="round" className="text-black transition-all duration-1000 ease-in-out" />
+                                            </svg>
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                <span className="text-2xl font-black">{stats.score}</span>
+                                            </div>
+                                        </div>
+                                        <p className="text-[11px] font-bold text-black/40 uppercase tracking-widest mt-4">Karrtesian Index</p>
+                                    </div>
 
-                        {/* B. Karrtesian Productivity Score */}
-                        <div className="bg-white border border-black/[0.08] rounded-2xl p-6 shadow-sm flex flex-col items-center justify-center text-center">
-                            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-black/40 mb-6">Productivity Score</p>
-                            <div className="relative w-40 h-40">
-                                <svg className="w-full h-full transform -rotate-90">
-                                    <circle
-                                        cx="80"
-                                        cy="80"
-                                        r="70"
-                                        fill="transparent"
-                                        stroke="currentColor"
-                                        strokeWidth="12"
-                                        className="text-black/[0.05]"
-                                    />
-                                    <circle
-                                        cx="80"
-                                        cy="80"
-                                        r="70"
-                                        fill="transparent"
-                                        stroke="currentColor"
-                                        strokeWidth="12"
-                                        strokeDasharray={440}
-                                        strokeDashoffset={440 - (440 * stats.score) / 100}
-                                        strokeLinecap="round"
-                                        className="text-black transition-all duration-1000 ease-in-out"
-                                    />
-                                </svg>
-                                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                    <span className="text-[32px] font-black text-black leading-none">{stats.score}</span>
-                                    <span className="text-[10px] font-bold text-black/30 tracking-widest mt-1 uppercase text-center px-4">Karrtesian Index</span>
+                                    <div className="space-y-6 flex flex-col justify-center">
+                                        <div>
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-[12px] font-bold text-black/60">Task Completion</span>
+                                                <span className="text-[12px] font-mono">{Math.round(stats.taskCompletion)}%</span>
+                                            </div>
+                                            <div className="h-2 w-full bg-black/[0.04] rounded-full overflow-hidden">
+                                                <div className="h-full bg-black transition-all duration-700" style={{ width: `${stats.taskCompletion}%` }} />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-[12px] font-bold text-black/60">Budget Adherence</span>
+                                                <span className="text-[12px] font-mono">{Math.round(stats.budgetScore)}%</span>
+                                            </div>
+                                            <div className="h-2 w-full bg-black/[0.04] rounded-full overflow-hidden">
+                                                <div className="h-full bg-black transition-all duration-700" style={{ width: `${stats.budgetScore}%` }} />
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="grid grid-cols-2 w-full mt-6 pt-6 border-t border-black/[0.04]">
-                                <div className="text-center">
-                                    <p className="text-[18px] font-bold text-black">{Math.round(stats.taskCompletion)}%</p>
-                                    <p className="text-[9px] font-bold text-black/30 uppercase tracking-widest">Tasks</p>
+                            </SectionBlock>
+
+                            {/* Philosophy Engine */}
+                            <div className="bg-black text-white rounded-2xl p-8 shadow-sm relative overflow-hidden flex flex-col justify-center">
+                                <div className="absolute top-0 right-0 p-6 opacity-[0.05]">
+                                    <Terminal className="w-32 h-32" />
                                 </div>
-                                <div className="text-center border-l border-black/[0.04]">
-                                    <p className="text-[18px] font-bold text-black">{Math.round(stats.budgetScore)}%</p>
-                                    <p className="text-[9px] font-bold text-black/30 uppercase tracking-widest">Budget</p>
+                                <div className="flex items-center gap-2 mb-6">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    <p className="text-[9px] font-mono tracking-widest uppercase text-white/40">Philosophy Engine // Synchronised</p>
+                                </div>
+                                <div className="min-h-[80px] flex flex-col justify-center">
+                                    <p className="text-[17px] font-medium leading-relaxed font-mono" key={quoteIndex}>
+                                        "{MOTIVATION_QUOTES[quoteIndex].text}"
+                                    </p>
+                                    <p className="text-[10px] font-mono text-white/25 uppercase tracking-widest mt-4">— {MOTIVATION_QUOTES[quoteIndex].tag}</p>
                                 </div>
                             </div>
                         </div>
 
-                        {/* C. Fitness & Consistency Tracker (Placeholder) */}
-                        <div className="bg-white border border-black/[0.08] rounded-2xl p-6 shadow-sm flex flex-col relative group overflow-hidden">
-                            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-black/40 mb-4">Fitness & Consistency</p>
-
-                            <div className="space-y-4 filter blur-[2px] opacity-20 pointer-events-none select-none">
-                                <div className="flex gap-2">
-                                    {[...Array(7)].map((_, i) => (
-                                        <div key={i} className="flex-1 h-12 rounded-lg bg-black/10 border border-black/5" />
-                                    ))}
+                        {/* Health Placeholder */}
+                        <div className="lg:col-span-1">
+                            <SectionBlock title="Bio-Metrics" desc="Health & Routine">
+                                <div className="flex flex-col items-center justify-center py-12 text-center">
+                                    <div className="w-12 h-12 rounded-full bg-black/5 flex items-center justify-center mb-4">
+                                        <Lock className="w-5 h-5 text-black/20" />
+                                    </div>
+                                    <p className="text-[13px] font-bold text-black/60">Module Locked</p>
+                                    <p className="text-[11px] text-black/30 mt-1 uppercase tracking-widest leading-relaxed px-4">
+                                        Waiting for Apple Health / External Integration
+                                    </p>
                                 </div>
-                                <div className="h-24 w-full rounded-xl bg-black/10 border border-black/5" />
-                            </div>
-
-                            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center p-6 text-center">
-                                <div className="bg-black text-white px-4 py-2 rotate-[-2deg] shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)]">
-                                    <p className="text-[14px] font-black tracking-tighter uppercase">System Offline</p>
-                                </div>
-                                <p className="text-[10px] font-bold text-black/40 mt-4 max-w-[200px] leading-relaxed uppercase tracking-widest">
-                                    Awaiting Health & Well-being Module Integration
-                                </p>
-                            </div>
-                        </div>
-
-                    </div>
-
-                    {/* D. The "Callused Mind" Motivation Matrix */}
-                    <div className="bg-black text-white rounded-2xl p-8 shadow-xl relative overflow-hidden min-h-[220px] flex flex-col justify-center border-4 border-black group">
-                        <div className="absolute -top-10 -right-10 opacity-[0.03] group-hover:opacity-[0.05] transition-opacity">
-                            <Terminal className="w-64 h-64" />
-                        </div>
-                        <div className="flex items-center gap-2 mb-6">
-                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                            <p className="text-[10px] font-mono tracking-[0.3em] uppercase text-white/40">Philosophy Engine 2.0 // Node Active</p>
-                        </div>
-                        <div className="space-y-4">
-                            <p className="text-[18px] md:text-[22px] font-medium leading-relaxed font-mono animate-in fade-in slide-in-from-left-2 duration-700" key={quoteIndex}>
-                                <span className="text-emerald-500 mr-2">$</span>
-                                {MOTIVATION_QUOTES[quoteIndex].text}
-                            </p>
-                            <p className="text-[11px] font-mono text-white/30 uppercase tracking-[0.2em]">Source: [{MOTIVATION_QUOTES[quoteIndex].tag}]</p>
+                            </SectionBlock>
                         </div>
                     </div>
-
                 </div>
                 <KarrFooter />
             </div>
+        </div>
+    )
+}
+
+function SummaryCard({ label, value, icon, color, sub }: { label: string; value: string; icon: React.ReactNode; color: string; sub?: string }) {
+    return (
+        <div className="rounded-xl border border-black/[0.07] bg-white p-4 hover:bg-black/[0.01] transition-colors shadow-sm flex flex-col h-full">
+            <div className="flex flex-col gap-2 mb-3">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: color }}>
+                    {icon}
+                </div>
+                <p className="text-[11px] uppercase tracking-wider text-black/40 font-semibold">{label}</p>
+            </div>
+            <div className="mt-auto">
+                <p className="text-lg font-bold text-black tracking-tight line-clamp-2">{value}</p>
+                {sub && <p className="text-[11px] text-black/35 mt-1">{sub}</p>}
+            </div>
+        </div>
+    )
+}
+
+function SectionBlock({ title, desc, children }: { title: string; desc: string; children: React.ReactNode }) {
+    return (
+        <div className="rounded-2xl border border-black/[0.08] bg-white p-5 shadow-sm">
+            <div className="flex items-baseline gap-2 mb-6">
+                <h2 className="text-[15px] font-bold text-black">{title}</h2>
+                <span className="text-[11px] text-black/35 font-medium">{desc}</span>
+            </div>
+            {children}
         </div>
     )
 }
