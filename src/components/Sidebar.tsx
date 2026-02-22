@@ -10,7 +10,7 @@ import {
     Shield, ChevronDown, Check,
     TrendingUp, Calendar, CreditCard, PiggyBank,
     Moon, Sun, Laptop, Target, Briefcase, Heart, Gift,
-    LayoutDashboard, EyeOff, Receipt, Lock, ClipboardIcon, Key, Brain
+    LayoutDashboard, EyeOff, Receipt, Lock, ClipboardIcon, Key, Brain, Sparkles
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Reorder } from 'framer-motion'
@@ -53,7 +53,7 @@ const navItems = [
             { label: 'Settings', href: '/finances/settings', icon: SlidersHorizontal, caps: ['P', 'B'] }
         ],
     },
-    { label: 'Career', href: '/career', icon: Briefcase, disabled: true },
+    { label: 'Create', href: '/create', icon: Sparkles, disabled: true },
     { label: 'Goals', href: '/goals', icon: Target, disabled: true },
     { label: 'Health & Wellbeing', href: '/health', icon: Heart, disabled: true },
     { label: 'Wishlist', href: '/wishlist', icon: Gift, disabled: true },

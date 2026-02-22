@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { Calendar as CalendarIcon, ExternalLink, Briefcase, DollarSign, ChevronLeft, ChevronRight, Info, Check, X, Trash2, Clock } from 'lucide-react'
 import { useRota } from '../hooks/useRota'
+import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
 import { KarrFooter } from '@/components/KarrFooter'
 
 // Hardcoded anchor: User states next shift starts on "Monday". 
@@ -18,14 +19,14 @@ function getFirstDayOfMonth(year: number, month: number) {
     return day === 0 ? 6 : day - 1 // Convert Sunday=0 to Monday=0
 }
 
-const HOURS_PER_SHIFT = 11.5
-const BASE_RATE = 15.26
-const OT_RATE = 20.35
-const DEDUCTION_RATE = 0.1877 // ~18.77% deduced from payslip
+const HOURS_PER_SHIFT = 8
+const BASE_RATE = 21.63 // Approx for £45k
+const DEDUCTION_RATE = 0.223 // ~22.3% deduced for £45k net
 
 export function ProjectionsAnalytics() {
     const [currentDate, setCurrentDate] = useState(new Date())
     const [dayOverrides, setDayOverrides] = useState<Record<string, 'overtime' | 'absence' | 'holiday'>>({})
+    const { settings } = useSystemSettings()
 
     // Persistent overrides from DB
     const { overrides: bookedOverrides, saveOverrides, deleteOverrideByDate, updateOverrideStatus } = useRota()
@@ -113,32 +114,41 @@ export function ProjectionsAnalytics() {
 
         let curr = new Date(calculationStart)
         while (curr <= calculationEnd) {
-            const dateUTC = Date.UTC(curr.getFullYear(), curr.getMonth(), curr.getDate())
-            const diffDays = Math.round((dateUTC - ROTA_ANCHOR_UTC) / 86400000)
-            const cycleDay = ((diffDays % 6) + 6) % 6
-            const isShift = cycleDay < 3
-
             const dateStr = curr.toISOString().split('T')[0]
-            const override = allOverrides[dateStr]
 
+            let isShift = false
+            if (settings.is_demo_mode) {
+                // Mon-Thu Office Schedule
+                const day = curr.getDay()
+                isShift = day >= 1 && day <= 4
+            } else {
+                const dateUTC = Date.UTC(curr.getFullYear(), curr.getMonth(), curr.getDate())
+                const diffDays = Math.round((dateUTC - ROTA_ANCHOR_UTC) / 86400000)
+                const cycleDay = ((diffDays % 6) + 6) % 6
+                isShift = cycleDay < 3
+            }
+
+            const override = allOverrides[dateStr]
             let isWorked = isShift && override !== 'absence'
             let isOT = override === 'overtime'
             let isHol = isShift && override === 'holiday'
 
             let gross = 0
             if (isWorked || isHol) gross += HOURS_PER_SHIFT * BASE_RATE
-            if (isOT) gross += HOURS_PER_SHIFT * OT_RATE
+            // OT rate for demo is same as base for simplicity or +25%
+            if (isOT) gross += HOURS_PER_SHIFT * (BASE_RATE * 1.25)
 
             dailyEarnings[dateStr] = gross * (1 - DEDUCTION_RATE)
 
+            // Adjust pay cycle for demo: Monthly on last Friday? Or weekly? 
+            // Persona says £2,912 net/month. Let's stick to weekly if it was weekly, 
+            // or switch to monthly if demo. Projections currently assumes weekly Fridays.
+            // Let's keep weekly Fridays but adjust rate.
             const dayOfWeek = curr.getDay()
-            const daysUntilSaturday = 6 - dayOfWeek
+            const daysUntilFriday = (5 - dayOfWeek + 7) % 7
 
-            const accountingSat = new Date(curr)
-            accountingSat.setDate(curr.getDate() + daysUntilSaturday)
-
-            const paydayFri = new Date(accountingSat)
-            paydayFri.setDate(accountingSat.getDate() + 6)
+            const paydayFri = new Date(curr)
+            paydayFri.setDate(curr.getDate() + daysUntilFriday)
 
             const paydayStr = paydayFri.toISOString().split('T')[0]
             weeklyPayMap[paydayStr] = (weeklyPayMap[paydayStr] || 0) + dailyEarnings[dateStr]
@@ -163,10 +173,16 @@ export function ProjectionsAnalytics() {
             date.setHours(0, 0, 0, 0)
             const dateStr = date.toISOString().split('T')[0]
 
-            const dateUTC = Date.UTC(year, monthIndex, day)
-            const diffDays = Math.round((dateUTC - ROTA_ANCHOR_UTC) / 86400000)
-            const cycleDay = ((diffDays % 6) + 6) % 6
-            const isShift = cycleDay < 3
+            let isShift = false
+            if (settings.is_demo_mode) {
+                const dw = date.getDay()
+                isShift = dw >= 1 && dw <= 4
+            } else {
+                const dateUTC = Date.UTC(year, monthIndex, day)
+                const diffDays = Math.round((dateUTC - ROTA_ANCHOR_UTC) / 86400000)
+                const cycleDay = ((diffDays % 6) + 6) % 6
+                isShift = cycleDay < 3
+            }
 
             const isPayday = date.getDay() === 5
             const overrideRecord = bookedOverrides.find(o => o.date === dateStr)
@@ -258,8 +274,8 @@ export function ProjectionsAnalytics() {
             {/* Quick Actions & Status Row */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
                 <a
-                    href="https://universe.staffline.co.uk/"
-                    target="_blank"
+                    href={settings.is_demo_mode ? "#" : "https://universe.staffline.co.uk/"}
+                    target={settings.is_demo_mode ? "_self" : "_blank"}
                     rel="noreferrer"
                     className="lg:col-span-1 bg-gradient-to-br from-[#1d4ed8] to-[#1e3a8a] p-5 rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col justify-between group overflow-hidden relative"
                 >
@@ -271,8 +287,8 @@ export function ProjectionsAnalytics() {
                         <ExternalLink className="w-5 h-5 text-white/50 group-hover:text-white transition-colors" />
                     </div>
                     <div className="mt-6 z-10">
-                        <h3 className="text-[16px] font-bold text-white">Staffline Universe</h3>
-                        <p className="text-[12px] text-blue-200 mt-1">Access your official payslips and portal</p>
+                        <h3 className="text-[16px] font-bold text-white">{settings.is_demo_mode ? 'Work Portal' : 'Staffline Universe'}</h3>
+                        <p className="text-[12px] text-blue-200 mt-1">{settings.is_demo_mode ? 'Access your corporate profile' : 'Access your official payslips and portal'}</p>
                     </div>
                 </a>
 
@@ -288,12 +304,12 @@ export function ProjectionsAnalytics() {
                     </div>
                     <div className="bg-white p-5 rounded-2xl border border-black/[0.06] shadow-sm flex flex-col justify-center">
                         <div className="flex items-center gap-2 text-[11px] font-bold text-black/40 uppercase tracking-widest mb-1">
-                            <CalendarIcon className="w-4 h-4 text-blue-500" /> Rota Projection
+                            <CalendarIcon className="w-4 h-4 text-blue-500" /> {settings.is_demo_mode ? 'Work Schedule' : 'Rota Projection'}
                         </div>
                         <div className="text-[24px] sm:text-[28px] font-black text-black">
-                            {shiftsThisMonth} <span className="text-[12px] sm:text-[14px] text-black/40 font-semibold ml-1">Shifts</span>
+                            {shiftsThisMonth} <span className="text-[12px] sm:text-[14px] text-black/40 font-semibold ml-1">Days</span>
                         </div>
-                        <p className="text-[11px] text-black/40 mt-1">Calculated 3-on / 3-off schedule.</p>
+                        <p className="text-[11px] text-black/40 mt-1">{settings.is_demo_mode ? 'Standard Mon-Thu office hours.' : 'Calculated 3-on / 3-off schedule.'}</p>
                     </div>
                     <div className="bg-gradient-to-br from-emerald-500 to-emerald-700 p-5 rounded-2xl shadow-sm flex flex-col justify-center text-white relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
@@ -314,7 +330,7 @@ export function ProjectionsAnalytics() {
                 <div className="p-5 border-b border-black/[0.04] flex items-center justify-between bg-black/[0.01]">
                     <div>
                         <h2 className="text-[16px] font-bold text-black flex items-center gap-2">
-                            Rota & Pay Calendar
+                            {settings.is_demo_mode ? 'Work & Pay Calendar' : 'Rota & Pay Calendar'}
                             <span className="text-[10px] bg-black/5 text-black/40 px-2 py-0.5 rounded font-bold uppercase tracking-wider">{monthName} {year}</span>
                         </h2>
                     </div>
@@ -502,7 +518,7 @@ export function ProjectionsAnalytics() {
 
                     <div className="mt-6 flex flex-wrap items-center gap-4 text-[11px] text-black/40 font-medium border-t border-black/[0.04] pt-4 select-none">
                         <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded bg-[#dbeafe] border border-[#bfdbfe]" /> Shift Day
+                            <div className="w-3 h-3 rounded bg-[#dbeafe] border border-[#bfdbfe]" /> {settings.is_demo_mode ? 'Office Day' : 'Shift Day'}
                         </div>
                         <div className="flex items-center gap-2">
                             <div className="w-3 h-3 rounded bg-orange-100 border border-orange-200" /> Booked Overtime

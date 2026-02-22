@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react'
 import { Plus, Copy, Trash2, Check, ExternalLink } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
+import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
+import { MOCK_VAULT } from '@/lib/demoData'
 
 interface Clip {
     id: string
@@ -17,8 +19,15 @@ export function Clipboard() {
     const [loading, setLoading] = useState(true)
     const [adding, setAdding] = useState(false)
     const [copiedId, setCopiedId] = useState<string | null>(null)
+    const { settings } = useSystemSettings()
 
     const fetchClips = async () => {
+        if (settings.is_demo_mode) {
+            setClips(MOCK_VAULT.clips)
+            setLoading(false)
+            return
+        }
+        setLoading(true)
         const { data, error } = await supabase
             .from('sys_clipboard')
             .select('*')
@@ -33,10 +42,13 @@ export function Clipboard() {
 
     useEffect(() => {
         fetchClips()
-        // Poll every 30 seconds for new clips from other devices
-        const interval = setInterval(fetchClips, 30000)
-        return () => clearInterval(interval)
-    }, [])
+        // Poll every 30 seconds for new clips from other devices (only if not in demo mode)
+        let interval: any
+        if (!settings.is_demo_mode) {
+            interval = setInterval(fetchClips, 30000)
+        }
+        return () => { if (interval) clearInterval(interval) }
+    }, [settings.is_demo_mode])
 
     const handleAdd = async (e?: React.FormEvent) => {
         if (e) e.preventDefault()

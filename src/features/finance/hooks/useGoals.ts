@@ -4,14 +4,22 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Goal } from '../types/finance.types'
 import { useFinanceProfile } from '../contexts/FinanceProfileContext'
+import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
+import { MOCK_FINANCE } from '@/lib/demoData'
 
 export function useGoals() {
     const [goals, setGoals] = useState<Goal[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const { activeProfile, refreshTrigger } = useFinanceProfile()
+    const { settings } = useSystemSettings()
 
     const fetchGoals = async () => {
+        if (settings.is_demo_mode) {
+            setGoals(MOCK_FINANCE.goals as any)
+            setLoading(false)
+            return
+        }
         setLoading(true)
         const { data, error } = await supabase
             .from('fin_goals')
@@ -42,7 +50,7 @@ export function useGoals() {
         await fetchGoals()
     }
 
-    useEffect(() => { fetchGoals() }, [activeProfile, refreshTrigger])
+    useEffect(() => { fetchGoals() }, [activeProfile, refreshTrigger, settings.is_demo_mode])
 
     return { goals, loading, error, createGoal, updateGoal, deleteGoal, refetch: fetchGoals }
 }

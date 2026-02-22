@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 import type { RecurringObligation } from '../types/finance.types'
 import { useFinanceProfile } from '../contexts/FinanceProfileContext'
 import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
-import { MOCK_FINANCE } from '@/lib/demoData'
+import { MOCK_FINANCE, MOCK_BUSINESS } from '@/lib/demoData'
 
 export function useRecurring() {
     const [obligations, setObligations] = useState<RecurringObligation[]>([])
@@ -16,7 +16,8 @@ export function useRecurring() {
 
     const fetchObligations = useCallback(async () => {
         if (settings.is_demo_mode) {
-            setObligations(MOCK_FINANCE.obligations.map(o => ({
+            const mockData = activeProfile === 'business' ? MOCK_BUSINESS.obligations : MOCK_FINANCE.obligations
+            setObligations(mockData.map(o => ({
                 ...o,
                 id: o.id,
                 created_at: new Date().toISOString(),

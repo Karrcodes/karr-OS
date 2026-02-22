@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Eye, EyeOff, Copy, Trash2, Plus, Key, User, Globe, FileText, Loader2, Check } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
+import { MOCK_VAULT } from '@/lib/demoData'
 
 interface Secret {
     id: string
@@ -19,6 +21,7 @@ export function SecretsManager() {
     const [adding, setAdding] = useState(false)
     const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({})
     const [copiedId, setCopiedId] = useState<string | null>(null)
+    const { settings } = useSystemSettings()
 
     // Form state
     const [newSecret, setNewSecret] = useState({
@@ -29,6 +32,11 @@ export function SecretsManager() {
     })
 
     const fetchSecrets = useCallback(async () => {
+        if (settings.is_demo_mode) {
+            setSecrets(MOCK_VAULT.secrets as any)
+            setLoading(false)
+            return
+        }
         setLoading(true)
         const { data, error } = await supabase
             .from('sys_secrets')
@@ -39,7 +47,7 @@ export function SecretsManager() {
             setSecrets(data)
         }
         setLoading(false)
-    }, [])
+    }, [settings.is_demo_mode])
 
     useEffect(() => {
         fetchSecrets()

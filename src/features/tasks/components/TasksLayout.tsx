@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils'
 
 const TABS = [
     { title: 'Action Items', href: '/tasks/todo', icon: CheckSquare },
-    { title: 'Calendar', href: '/tasks/calendar', icon: Calendar },
     { title: 'Groceries', href: '/tasks/groceries', icon: ShoppingCart },
     { title: 'Reminders', href: '/tasks/reminders', icon: Bell },
 ]
@@ -19,9 +18,23 @@ export function TasksLayout({ children }: { children: React.ReactNode }) {
     return (
         <div className="flex flex-col h-full bg-[#fafafa]">
             <div className="flex flex-col px-6 pt-5 pb-0 border-b border-black/[0.06] bg-white flex-shrink-0 z-10">
-                <div>
-                    <h1 className="text-[22px] font-bold text-black tracking-tight">Focus & Execution</h1>
-                    <p className="text-[12px] text-black/40 mt-0.5">Manage tasks, groceries, and reminders sync'd across your devices.</p>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-[22px] font-bold text-black tracking-tight">Focus & Execution</h1>
+                        <p className="text-[12px] text-black/40 mt-0.5">Manage tasks, groceries, and reminders sync'd across your devices.</p>
+                    </div>
+                    <Link
+                        href="/tasks/calendar"
+                        className={cn(
+                            "flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border",
+                            pathname === '/tasks/calendar'
+                                ? "bg-black text-white border-black"
+                                : "bg-white text-black/60 border-black/[0.08] hover:border-black/20"
+                        )}
+                    >
+                        <Calendar className="w-3.5 h-3.5" />
+                        <span>Calendar</span>
+                    </Link>
                 </div>
 
                 {/* Mobile/Tablet Tabs */}

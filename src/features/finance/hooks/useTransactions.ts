@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 import type { Transaction } from '../types/finance.types'
 import { useFinanceProfile } from '../contexts/FinanceProfileContext'
 import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
-import { MOCK_FINANCE } from '@/lib/demoData'
+import { MOCK_FINANCE, MOCK_BUSINESS } from '@/lib/demoData'
 
 export function useTransactions() {
     const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -16,34 +16,13 @@ export function useTransactions() {
 
     const fetchTransactions = async () => {
         if (settings.is_demo_mode) {
-            const now = new Date()
-            const midMonth = new Date(now.getFullYear(), now.getMonth(), 15).toISOString().split('T')[0]
-            setTransactions([
-                {
-                    id: 'd-t-sync-1',
-                    amount: MOCK_FINANCE.income.net,
-                    type: 'income',
-                    description: MOCK_FINANCE.income.label,
-                    date: midMonth,
-                    pocket_id: null,
-                    category: 'Salary',
-                    emoji: '💰',
-                    profile: activeProfile,
-                    created_at: new Date().toISOString()
-                },
-                {
-                    id: 'd-t-sync-2',
-                    amount: 45.00,
-                    type: 'spend',
-                    description: 'Tesco Superstore',
-                    date: new Date().toISOString().split('T')[0],
-                    pocket_id: 'd-p-2',
-                    category: 'Groceries',
-                    emoji: '🛒',
-                    profile: activeProfile,
-                    created_at: new Date().toISOString()
-                }
-            ] as any)
+            const mockData = activeProfile === 'business' ? MOCK_BUSINESS.transactions : MOCK_FINANCE.transactions
+            setTransactions(mockData.map(t => ({
+                ...t,
+                profile: activeProfile,
+                created_at: new Date().toISOString(),
+                pocket_id: t.id.startsWith('d-tx-1') ? 'd-p-2' : null // Just a mock mapping
+            })) as any)
             setLoading(false)
             return
         }

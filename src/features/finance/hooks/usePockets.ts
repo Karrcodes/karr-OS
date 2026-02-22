@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 import type { Pocket } from '../types/finance.types'
 import { useFinanceProfile } from '../contexts/FinanceProfileContext'
 import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
-import { MOCK_FINANCE } from '@/lib/demoData'
+import { MOCK_FINANCE, MOCK_BUSINESS } from '@/lib/demoData'
 
 export function usePockets() {
     const [pockets, setPockets] = useState<Pocket[]>([])
@@ -16,7 +16,8 @@ export function usePockets() {
 
     const fetchPockets = async () => {
         if (settings.is_demo_mode) {
-            setPockets(MOCK_FINANCE.pockets as any)
+            const mockData = activeProfile === 'business' ? MOCK_BUSINESS.pockets : MOCK_FINANCE.pockets
+            setPockets(mockData as any)
             setLoading(false)
             return
         }

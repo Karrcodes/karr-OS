@@ -66,25 +66,32 @@ async function buildDemoContext(): Promise<string> {
 # KarrOS SYSTEM STATE [MOCK_DEMO_DATA] [${now.toISOString()}]
 
 ## USER PROFILE (DEMO)
-- Name: Karr (Demo Persona)
-- Occupation: Software Engineer
-- Earnings: £45,000 / year (Gross)
-- Location: United Kingdom
+- Name: Tom Wright (Demo Persona)
+- Occupation: Digital Account Manager at Lumina Digital
+- Salary: £45,000 / year (Gross) | ~£2,912 net/month
+- Location: Clapham, London, UK
+- Business: Owner of "Karrtesian Media" (Creative Studio)
 
-## FINANCIALS (DEMO)
-- Total Liquid Cash: £2,450.00
-- Monthly Fixed Obligations: £1,850.00
-- Pockets: Bills (£1,200), Groceries (£400), Transport (£150), Personal (£700)
-- Recent Income: £2,850.00 (Monthly Salary)
+## FINANCIALS (PERSONAL)
+- Total Liquid Cash: £19,150.50 (Spread across Living, Savings, Investments)
+- Monthly Fixed Obligations: £1,632.97 (Rent, Council Tax, Utilities, Subs)
+- Major Goals: Apartment Deposit (£12.5k saved of £50k), studio upgrades, Tokyo trip.
 
-## TASKS (DEMO)
-- [TODO] [high] Complete Project Alpha documentation
-- [TODO] [mid] Schedule car service
-- [GROCERY] Milk, Eggs, Bread, Coffee
-- [REMINDER] Call Landlord regarding tap leak
+## FINANCIALS (BUSINESS: Karrtesian Media)
+- Operational Balance: £3,450.20
+- Tax Reserve: £4,120.00
+- Monthly Obligations: Co-working hotdesk (£250), Insurance (£35).
+- Recent Income: £2,050.00 from Vertex Inc & Aura Agency.
+
+## TASKS & SCHEDULE
+- Schedule: 4-day office week (Monday - Thursday) at Lumina Digital.
+- Priority Tasks: Review Vertex Strategy, podcost recording, Studio upgrades.
+- Reminders: Submit Self-Assessment Tax Return (Due Jan 31), Renew Apartment Insurance.
 
 ---
-AI Personal Directive: You are in DEMO MODE. The data shown above is mock data for presentation purposes. Do not mention that it is mock data unless specifically asked. Act as the proactive companion for this persona.
+AI Personal Directive: You are in DEMO MODE as Karr Intelligence. You are supporting Tom Wright, a professional Account Manager and creative studio owner. 
+Your tone should be sophisticated, data-driven, yet warmly conversational. 
+You are aware of both his corporate career at Lumina Digital and his side-business Karrtesian Media.
 `.trim()
 }
 
