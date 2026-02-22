@@ -81,13 +81,22 @@ Notification:
         }
 
         // 3. Insert the transaction into the database
-        // 3. Insert the transaction into the main fin_transactions table so it shows up in the app
+        // Clean the amount in case it's a string with currency symbols
+        const cleanAmount = typeof amount === 'string'
+            ? parseFloat(amount.replace(/[^\d.-]/g, ''))
+            : parseFloat(amount as any);
+
+        if (isNaN(cleanAmount)) {
+            console.error('Final Check: Amount after parsing is NaN.', { amount });
+            return NextResponse.json({ error: 'Invalid amount format' }, { status: 400 });
+        }
+
         const { data, error } = await supabase
             .from('fin_transactions')
             .insert([{
                 description: merchant,
-                amount: parseFloat(amount),
-                date: new Date().toISOString(), // This now includes full time: YYYY-MM-DDTHH:mm:ss.sssZ
+                amount: cleanAmount,
+                date: new Date().toISOString(),
                 type: 'spend',
                 category: 'other',
                 profile: 'personal',

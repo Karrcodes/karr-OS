@@ -169,6 +169,7 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
     const [editValue, setEditValue] = useState(task.title)
     const [editAmount, setEditAmount] = useState(task.amount || '')
     const [editPriority, setEditPriority] = useState(task.priority)
+    const [editDueDate, setEditDueDate] = useState(task.due_date ? task.due_date.split('T')[0] : '')
 
     const handleSave = () => {
         const updates: Partial<Task> = {}
@@ -179,6 +180,9 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
             updates.amount = val
         }
         if (editPriority !== task.priority) updates.priority = editPriority
+        if (editDueDate !== (task.due_date ? task.due_date.split('T')[0] : '')) {
+            updates.due_date = editDueDate || undefined
+        }
 
         if (Object.keys(updates).length > 0) {
             editTask(task.id, updates)
@@ -224,6 +228,15 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
                                 {PRIORITY_CONFIG[p].label}
                             </button>
                         ))}
+                    </div>
+                    <div className="flex items-center gap-2 bg-black/[0.03] border border-black/5 rounded-lg px-2.5 py-1">
+                        <Calendar className="w-3 h-3 text-black/30" />
+                        <input
+                            type="date"
+                            value={editDueDate}
+                            onChange={(e) => setEditDueDate(e.target.value)}
+                            className="bg-transparent text-[10px] font-bold text-black/60 outline-none uppercase tracking-tight"
+                        />
                     </div>
                     <div className="flex gap-2">
                         <button onClick={() => setIsEditing(false)} className="px-3 py-1.5 text-black/40 hover:text-black text-[12px] font-bold transition-colors">
