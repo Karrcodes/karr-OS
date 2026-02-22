@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { ArrowLeft, User, Bell, Monitor, Shield, Save, Check, RefreshCw, Sun, Moon, Smartphone, Calendar } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
@@ -12,6 +13,7 @@ import { supabase } from '@/lib/supabase'
 import { Upload, X as CloseIcon } from 'lucide-react'
 
 export default function SettingsPage() {
+    const router = useRouter()
     const { settings, updateSetting, loading: contextLoading, refreshSettings } = useSystemSettings()
     const { isPrivacyEnabled, togglePrivacy } = useFinanceProfile()
     const [isSaving, setIsSaving] = useState(false)
@@ -185,9 +187,9 @@ export default function SettingsPage() {
             <div className="bg-white border-b border-black/[0.06] px-4 py-4 z-20 shadow-sm flex-shrink-0">
                 <div className="max-w-4xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <a href="/system/control-centre" className="w-9 h-9 rounded-xl bg-black/[0.03] flex items-center justify-center hover:bg-black/[0.06] transition-colors">
+                        <button onClick={() => router.back()} className="w-9 h-9 rounded-xl bg-black/[0.03] flex items-center justify-center hover:bg-black/[0.06] transition-colors">
                             <ArrowLeft className="w-4 h-4 text-black/40" />
-                        </a>
+                        </button>
                         <div>
                             <h1 className="text-[18px] font-bold text-black tracking-tight">System Settings</h1>
                             <p className="text-[11px] text-black/35 mt-0.5">Manage your KarrOS preferences</p>

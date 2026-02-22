@@ -48,10 +48,12 @@ export function TasksLayout({ children }: { children: React.ReactNode }) {
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 pb-32 flex flex-col">
-                <div className="max-w-3xl mx-auto w-full flex-1 flex flex-col">
+                <div className="max-w-3xl mx-auto w-full flex-1 flex flex-col mb-8">
                     {children}
                 </div>
-                <KarrFooter />
+                <div className="mt-auto w-full">
+                    <KarrFooter />
+                </div>
             </div>
         </div>
     )

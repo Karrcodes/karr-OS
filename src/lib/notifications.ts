@@ -75,7 +75,9 @@ export async function checkPushSubscription() {
     if (!('serviceWorker' in navigator && 'PushManager' in window)) return false
 
     try {
-        const registration = await navigator.serviceWorker.ready
+        const registration = await navigator.serviceWorker.getRegistration()
+        if (!registration) return false
+
         const subscription = await registration.pushManager.getSubscription()
         return !!subscription
     } catch (error) {

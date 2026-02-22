@@ -118,53 +118,96 @@ export function Clipboard() {
                     </div>
                 ) : (
                     clips.map((clip) => (
-                        <div
+                        <ClipItem
                             key={clip.id}
-                            className="bg-white border border-black/[0.06] rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 transition-colors overflow-hidden"
-                        >
-                            <div className="flex-1 min-w-0 w-full">
-                                <p className={cn(
-                                    "text-[14px] leading-relaxed text-black/70 break-words",
-                                    isUrl(clip.content) && "text-blue-600 font-medium underline underline-offset-4 decoration-blue-200 break-all"
-                                )}>
-                                    {clip.content}
-                                </p>
-                                <p className="text-[10px] text-black/30 mt-1 font-medium">
-                                    {new Date(clip.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} •
-                                    {new Date(clip.created_at).toLocaleDateString([], { day: '2-digit', month: 'short' })}
-                                </p>
-                            </div>
-
-                            <div className="flex items-center gap-1 transition-all shrink-0 self-end sm:self-center">
-                                {isUrl(clip.content) && (
-                                    <a
-                                        href={clip.content}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
-                                    >
-                                        <ExternalLink className="w-4 h-4" />
-                                    </a>
-                                )}
-                                <button
-                                    onClick={() => handleCopy(clip.id, clip.content)}
-                                    className={cn(
-                                        "p-2 rounded-lg transition-all",
-                                        copiedId === clip.id ? "text-emerald-500 bg-emerald-50" : "text-black/40 hover:bg-black/5"
-                                    )}
-                                >
-                                    {copiedId === clip.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                                </button>
-                                <button
-                                    onClick={() => handleDelete(clip.id)}
-                                    className="p-2 text-black/20 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
-                            </div>
-                        </div>
+                            clip={clip}
+                            copiedId={copiedId}
+                            handleCopy={handleCopy}
+                            handleDelete={handleDelete}
+                            isUrl={isUrl}
+                        />
                     ))
                 )}
+            </div>
+        </div>
+    )
+}
+
+function ClipItem({ clip, copiedId, handleCopy, handleDelete, isUrl }: {
+    clip: Clip,
+    copiedId: string | null,
+    handleCopy: (id: string, content: string) => void,
+    handleDelete: (id: string) => void,
+    isUrl: (str: string) => boolean
+}) {
+    const [isExpanded, setIsExpanded] = useState(false)
+    const [isTruncatable, setIsTruncatable] = useState(false)
+    const contentRef = React.useRef<HTMLParagraphElement>(null)
+
+    useEffect(() => {
+        if (contentRef.current) {
+            // Check if content overflows its container's 3-line limit (approx 3 * lineHeight)
+            // A more reliable way is comparing scrollHeight to offsetHeight
+            const element = contentRef.current
+            setIsTruncatable(element.scrollHeight > element.offsetHeight)
+        }
+    }, [clip.content])
+
+    return (
+        <div className="bg-white border border-black/[0.06] rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 transition-colors overflow-hidden">
+            <div className="flex-1 min-w-0 w-full">
+                <div className="relative">
+                    <p
+                        ref={contentRef}
+                        className={cn(
+                            "text-[14px] leading-relaxed text-black/70 break-words",
+                            !isExpanded && "line-clamp-3",
+                            isUrl(clip.content) && "text-blue-600 font-medium underline underline-offset-4 decoration-blue-200 break-all"
+                        )}
+                    >
+                        {clip.content}
+                    </p>
+                    {isTruncatable && (
+                        <button
+                            onClick={() => setIsExpanded(!isExpanded)}
+                            className="text-[11px] font-bold text-black/40 hover:text-black mt-2 transition-colors uppercase tracking-wider"
+                        >
+                            {isExpanded ? 'Show less' : 'Show more'}
+                        </button>
+                    )}
+                </div>
+                <p className="text-[10px] text-black/30 mt-2 font-medium">
+                    {new Date(clip.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} •
+                    {new Date(clip.created_at).toLocaleDateString([], { day: '2-digit', month: 'short' })}
+                </p>
+            </div>
+
+            <div className="flex items-center gap-1 transition-all shrink-0 self-end sm:self-center">
+                {isUrl(clip.content) && (
+                    <a
+                        href={clip.content}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                    >
+                        <ExternalLink className="w-4 h-4" />
+                    </a>
+                )}
+                <button
+                    onClick={() => handleCopy(clip.id, clip.content)}
+                    className={cn(
+                        "p-2 rounded-lg transition-all",
+                        copiedId === clip.id ? "text-emerald-500 bg-emerald-50" : "text-black/40 hover:bg-black/5"
+                    )}
+                >
+                    {copiedId === clip.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                </button>
+                <button
+                    onClick={() => handleDelete(clip.id)}
+                    className="p-2 text-black/20 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                >
+                    <Trash2 className="w-4 h-4" />
+                </button>
             </div>
         </div>
     )

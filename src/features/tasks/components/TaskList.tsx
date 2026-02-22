@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { CheckSquare, ShoppingCart, Bell, Plus, Trash2, RefreshCw } from 'lucide-react'
+import { CheckSquare, ShoppingCart, Bell, Plus, Trash2, RefreshCw, Edit2 } from 'lucide-react'
 import { useTasks } from '../hooks/useTasks'
 import { cn } from '@/lib/utils'
 import type { Task } from '../types/tasks.types'
@@ -14,8 +14,9 @@ const PRIORITY_CONFIG = {
 } as const
 
 export function TaskList({ category, title, icon: Icon }: { category: 'todo' | 'grocery' | 'reminder', title: string, icon: any }) {
-    const { tasks, loading, createTask, toggleTask, deleteTask, clearAllTasks } = useTasks(category)
+    const { tasks, loading, createTask, toggleTask, deleteTask, clearAllTasks, editTask } = useTasks(category)
     const [newTask, setNewTask] = useState('')
+    const [amount, setAmount] = useState('1')
     const [priority, setPriority] = useState<'super' | 'high' | 'mid' | 'low'>('low')
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -23,8 +24,15 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
         if (!newTask.trim()) return
 
         try {
-            await createTask(newTask.trim(), priority)
+            let finalTitle = newTask.trim()
+            if (category === 'grocery' && amount.trim() && amount.trim() !== '1') {
+                const prefix = amount.trim().startsWith('x') ? amount.trim() : `x${amount.trim()}`
+                finalTitle = `${prefix} ${finalTitle}`
+            }
+
+            await createTask(finalTitle, priority)
             setNewTask('')
+            setAmount('1')
             setPriority('low')
         } catch (err: any) {
             console.error('Task creation failed:', err)
@@ -78,6 +86,15 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
 
             <form onSubmit={handleSubmit} className="mb-5 flex flex-col gap-2">
                 <div className="flex gap-2">
+                    {category === 'grocery' && (
+                        <input
+                            type="text"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            placeholder="x1"
+                            className="w-16 bg-black/[0.03] border border-black/[0.08] rounded-xl px-2 py-2.5 text-[13px] text-center text-black placeholder-black/30 outline-none focus:border-black/40 transition-colors shrink-0"
+                        />
+                    )}
                     <input
                         type="text"
                         value={newTask}
@@ -124,7 +141,7 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
                     </div>
                 ) : (
                     sortedTasks.map((task) => (
-                        <TaskRow key={task.id} task={task} toggleTask={toggleTask} deleteTask={deleteTask} category={category} />
+                        <TaskRow key={task.id} task={task} toggleTask={toggleTask} deleteTask={deleteTask} editTask={editTask} category={category} />
                     ))
                 )}
             </div>
@@ -132,7 +149,36 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
     )
 }
 
-function TaskRow({ task, toggleTask, deleteTask, category }: { task: Task, toggleTask: any, deleteTask: any, category: string }) {
+function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: Task, toggleTask: any, deleteTask: any, editTask: any, category: string }) {
+    const [isEditing, setIsEditing] = useState(false)
+    const [editValue, setEditValue] = useState(task.title)
+
+    const handleSave = () => {
+        if (editValue.trim() && editValue !== task.title) {
+            editTask(task.id, editValue.trim())
+        }
+        setIsEditing(false)
+    }
+
+    if (isEditing) {
+        return (
+            <div className="flex items-center gap-2 p-2 rounded-xl border bg-white border-black/[0.15] shadow-sm">
+                <input
+                    type="text"
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onBlur={handleSave}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+                    autoFocus
+                    className="flex-1 bg-transparent px-2 py-1.5 text-[14px] text-black outline-none"
+                />
+                <button onClick={handleSave} className="px-3 py-1.5 bg-black text-white text-[12px] font-bold rounded-lg hover:bg-black/80 transition-colors">
+                    Save
+                </button>
+            </div>
+        )
+    }
+
     return (
         <div className={cn(
             "group flex items-center gap-3 p-3 rounded-xl border transition-all relative overflow-hidden",
@@ -167,13 +213,22 @@ function TaskRow({ task, toggleTask, deleteTask, category }: { task: Task, toggl
                 </div>
             </label>
 
-            <button
-                onClick={() => deleteTask(task.id)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg text-black/10 hover:text-red-500 hover:bg-red-50 transition-all shrink-0 md:opacity-0 group-hover:opacity-100 focus:opacity-100"
-                aria-label="Delete task"
-            >
-                <Trash2 className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1 shrink-0">
+                <button
+                    onClick={() => setIsEditing(true)}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg text-black/40 hover:text-black hover:bg-black/5 transition-all"
+                    aria-label="Edit task"
+                >
+                    <Edit2 className="w-4 h-4" />
+                </button>
+                <button
+                    onClick={() => deleteTask(task.id)}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg text-black/40 hover:text-red-500 hover:bg-red-50 transition-all"
+                    aria-label="Delete task"
+                >
+                    <Trash2 className="w-4 h-4" />
+                </button>
+            </div>
         </div>
     )
 }

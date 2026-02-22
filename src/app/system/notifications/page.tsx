@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { KarrFooter } from '@/components/KarrFooter'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
+import { useRouter } from 'next/navigation'
 
 interface NotificationLog {
     id: string
@@ -16,6 +17,7 @@ interface NotificationLog {
 }
 
 export default function NotificationsLogPage() {
+    const router = useRouter()
     const [logs, setLogs] = useState<NotificationLog[]>([])
     const [loading, setLoading] = useState(true)
 
@@ -48,12 +50,12 @@ export default function NotificationsLogPage() {
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-black/[0.06] bg-white flex-shrink-0 z-10 sticky top-0">
                 <div className="flex items-center gap-4">
-                    <Link
-                        href="/system/control-centre"
+                    <button
+                        onClick={() => router.back()}
                         className="w-10 h-10 rounded-full bg-black/[0.03] flex items-center justify-center text-black hover:bg-black/[0.08] transition-colors"
                     >
                         <ArrowLeft className="w-5 h-5" />
-                    </Link>
+                    </button>
                     <div>
                         <h1 className="text-[22px] font-bold text-black tracking-tight">Notification History</h1>
                         <p className="text-[12px] text-black/40 mt-0.5">Logs of recent alerts sent to your devices</p>

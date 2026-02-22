@@ -42,6 +42,12 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder') {
         await fetchTasks()
     }
 
+    const editTask = async (id: string, newTitle: string) => {
+        const { error } = await supabase.from('fin_tasks').update({ title: newTitle }).eq('id', id)
+        if (error) throw error
+        await fetchTasks()
+    }
+
     const deleteTask = async (id: string) => {
         const { error } = await supabase.from('fin_tasks').delete().eq('id', id)
         if (error) throw error
@@ -69,6 +75,7 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder') {
         toggleTask,
         deleteTask,
         clearAllTasks,
+        editTask,
         refetch: fetchTasks
     }
 }
