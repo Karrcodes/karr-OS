@@ -79,7 +79,7 @@ export function SpendingAnalytics({ transactions, pockets }: SpendingAnalyticsPr
                         if (pocket) {
                             name = pocket.id
                             label = pocket.name
-                            emoji = pocket.name.split(' ').pop() || '💰'
+                            emoji = '💰'
                         } else {
                             label = 'Unknown Pocket'
                             emoji = '❓'
@@ -159,7 +159,7 @@ export function SpendingAnalytics({ transactions, pockets }: SpendingAnalyticsPr
                         {category.transactions.map((t) => (
                             <div key={t.id} className="flex items-center gap-3 p-4 hover:bg-black/[0.01] transition-colors">
                                 <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0 bg-black/[0.02] border border-black/[0.04]">
-                                    {t.emoji || '💸'}
+                                    {t.category ? getCategoryById(t.category).emoji : (t.emoji || '💸')}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-[13px] font-bold text-black truncate">{t.description || 'Transaction'}</p>

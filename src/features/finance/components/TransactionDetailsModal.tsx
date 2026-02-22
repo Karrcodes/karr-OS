@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { X, Layers, Tag, Calendar, Hash, ArrowUpRight, ArrowDownLeft, Edit2, Check, Trash2 } from 'lucide-react'
 import type { Transaction, Pocket } from '../types/finance.types'
 import { useTransactions } from '../hooks/useTransactions'
-import { FINANCE_CATEGORIES } from '../constants/categories'
+import { FINANCE_CATEGORIES, getCategoryById } from '../constants/categories'
 
 interface TransactionDetailsModalProps {
     transaction: Transaction | null
@@ -92,7 +92,7 @@ export function TransactionDetailsModal({ transaction, pockets, isOpen, onClose 
                 <div className="pr-10 mb-6">
                     <div className="flex items-center gap-3 mb-2">
                         <div className="w-12 h-12 rounded-2xl bg-black/[0.03] border border-black/[0.05] flex items-center justify-center text-2xl shrink-0 shadow-sm">
-                            {pocketName !== 'General' ? Array.from(pocketName).pop() : (transaction.emoji || '💸')}
+                            {transaction.category ? getCategoryById(transaction.category).emoji : (transaction.emoji || '💸')}
                         </div>
                         <div className="flex-1 min-w-0">
                             {isEditing ? (

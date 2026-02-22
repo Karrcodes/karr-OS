@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils'
 import { Reorder } from 'framer-motion'
 import { useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
 import { useSettings } from '@/features/finance/hooks/useSettings'
+import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
 
 const navItems = [
     { label: 'Control Centre', href: '/system/control-centre', icon: LayoutDashboard },
@@ -67,13 +68,15 @@ function ProfileMenu() {
         return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [isOpen])
 
+    const { settings } = useSystemSettings()
+
     return (
         <div className="relative px-5 py-4 border-t border-black/[0.06]" ref={menuRef}>
             {isOpen && (
                 <div className="absolute bottom-full left-4 mb-2 w-52 bg-white border border-black/[0.08] rounded-xl shadow-xl overflow-hidden animate-in slide-in-from-bottom-2 duration-200 z-[60]">
                     <div className="p-3">
-                        <p className="text-[12px] font-bold text-black">Karr OS Admin</p>
-                        <p className="text-[10px] text-black/40">karr@studiokarrtesian.com</p>
+                        <p className="text-[12px] font-bold text-black">{settings.user_name || 'Karr OS Admin'}</p>
+                        <p className="text-[10px] text-black/40">{settings.user_email || 'karr@studiokarrtesian.com'}</p>
                     </div>
                 </div>
             )}
@@ -83,11 +86,15 @@ function ProfileMenu() {
                     onClick={() => setIsOpen(!isOpen)}
                     className="flex items-center gap-2.5 p-1 -ml-1 rounded-xl hover:bg-black/5 transition-colors text-left"
                 >
-                    <div className="w-8 h-8 rounded-full bg-black/10 border border-black/20 flex items-center justify-center shrink-0">
-                        <span className="text-[12px] text-black font-bold">K</span>
+                    <div className="w-8 h-8 rounded-full bg-black/10 border border-black/20 flex items-center justify-center shrink-0 overflow-hidden">
+                        {settings.profile_picture_url ? (
+                            <img src={settings.profile_picture_url} alt="Profile" className="w-full h-full object-cover" />
+                        ) : (
+                            <span className="text-[12px] text-black font-bold">{(settings.user_name?.[0] || 'K').toUpperCase()}</span>
+                        )}
                     </div>
                     <div>
-                        <p className="text-[13px] text-black font-bold tracking-tight">Karr</p>
+                        <p className="text-[13px] text-black font-bold tracking-tight">{settings.user_name || 'Karr'}</p>
                         <p className="text-[11px] text-black/40 font-medium">Personal OS</p>
                     </div>
                 </button>
@@ -420,11 +427,22 @@ export function Sidebar() {
                 </div>
                 {renderNav(false)}
 
-                {/* Version Indicator */}
-                <div className="px-5 py-3 border-t border-black/[0.03]">
+                {/* Version Indicator & Settings */}
+                <div className="px-5 py-3 border-t border-black/[0.03] space-y-3">
+                    <Link
+                        href="/system/settings"
+                        className={cn(
+                            "flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-all text-[13px] font-medium",
+                            pathname === '/system/settings' ? 'bg-black/10 text-black' : 'text-black/50 hover:text-black/80 hover:bg-black/[0.04]'
+                        )}
+                    >
+                        <SlidersHorizontal className={cn("w-4 h-4", pathname === '/system/settings' ? 'text-black' : 'text-black/35')} />
+                        Settings
+                    </Link>
+
                     <Link
                         href="/system/roadmap"
-                        className="flex items-center gap-2 text-[10px] font-bold text-black/20 hover:text-black/40 transition-colors group"
+                        className="flex items-center gap-2 text-[10px] font-bold text-black/20 hover:text-black/40 transition-colors group px-2.5"
                     >
                         <span className="w-1.5 h-1.5 rounded-full bg-black/10 group-hover:bg-black/20" />
                         v1.2.0

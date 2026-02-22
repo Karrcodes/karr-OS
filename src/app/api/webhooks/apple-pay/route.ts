@@ -86,6 +86,19 @@ Notification:
             throw error;
         }
 
+        // 4. Trigger Push Notification
+        try {
+            const { sendPushNotification } = await import('@/lib/push-server');
+            await sendPushNotification(
+                'New Transaction',
+                `£${parseFloat(amount).toFixed(2)} at ${merchant}`,
+                '/finances/transactions'
+            );
+        } catch (pushError) {
+            console.error('Failed to send push notification:', pushError);
+            // Don't fail the webhook if push fails
+        }
+
         return NextResponse.json({
             success: true,
             message: 'Transaction logged to main ledger.',

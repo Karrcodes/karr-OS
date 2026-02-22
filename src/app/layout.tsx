@@ -30,6 +30,7 @@ export const viewport: Viewport = {
 
 
 import { FinanceProfileProvider } from '@/features/finance/contexts/FinanceProfileContext'
+import { SystemSettingsProvider } from '@/features/system/contexts/SystemSettingsContext'
 import { SecurityLock } from '@/components/SecurityLock'
 
 export default function RootLayout({
@@ -45,15 +46,17 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="KarrOS" />
       </head>
       <body className={`${inter.className} bg-white text-[#0a0a0a] antialiased`}>
-        <FinanceProfileProvider>
-          <SecurityLock>
-            <Sidebar />
-            {/* md:ml-[220px] — full width on mobile (sidebar is a drawer), shifted on desktop */}
-            <main className="md:ml-[220px] min-h-screen bg-white">
-              {children}
-            </main>
-          </SecurityLock>
-        </FinanceProfileProvider>
+        <SystemSettingsProvider>
+          <FinanceProfileProvider>
+            <SecurityLock>
+              <Sidebar />
+              {/* md:ml-[220px] — full width on mobile (sidebar is a drawer), shifted on desktop */}
+              <main className="md:ml-[220px] min-h-screen bg-white">
+                {children}
+              </main>
+            </SecurityLock>
+          </FinanceProfileProvider>
+        </SystemSettingsProvider>
       </body>
     </html>
   )
