@@ -7,7 +7,7 @@ import { KarrFooter } from '@/components/KarrFooter'
 
 export function VaultDashboard() {
     return (
-        <div className="min-h-screen bg-[#FDFDFD] flex flex-col">
+        <div className="min-h-screen bg-[#FDFDFD] flex flex-col w-full overflow-x-hidden">
             {/* Header */}
             <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-black/[0.06] px-6 py-4">
                 <div className="flex items-center gap-3 max-w-5xl mx-auto">
@@ -21,7 +21,7 @@ export function VaultDashboard() {
                 </div>
             </header>
 
-            <main className="max-w-5xl mx-auto px-6 pt-8 space-y-8">
+            <main className="w-full max-w-5xl mx-auto px-4 sm:px-6 pt-8 space-y-8 flex-1">
                 {/* Clipboard Section */}
                 <section>
                     <div className="mb-4">

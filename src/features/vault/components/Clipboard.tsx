@@ -120,12 +120,12 @@ export function Clipboard() {
                     clips.map((clip) => (
                         <div
                             key={clip.id}
-                            className="group bg-white border border-black/[0.06] rounded-2xl p-4 flex items-center gap-4 hover:border-black/10 transition-colors"
+                            className="bg-white border border-black/[0.06] rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 transition-colors overflow-hidden"
                         >
-                            <div className="flex-1 min-w-0">
+                            <div className="flex-1 min-w-0 w-full">
                                 <p className={cn(
-                                    "text-[14px] leading-relaxed text-black/70 break-words line-clamp-2 group-hover:line-clamp-none transition-all",
-                                    isUrl(clip.content) && "text-blue-600 font-medium underline underline-offset-4 decoration-blue-200"
+                                    "text-[14px] leading-relaxed text-black/70 break-words",
+                                    isUrl(clip.content) && "text-blue-600 font-medium underline underline-offset-4 decoration-blue-200 break-all"
                                 )}>
                                     {clip.content}
                                 </p>
@@ -135,7 +135,7 @@ export function Clipboard() {
                                 </p>
                             </div>
 
-                            <div className="flex items-center gap-1 transition-all">
+                            <div className="flex items-center gap-1 transition-all shrink-0 self-end sm:self-center">
                                 {isUrl(clip.content) && (
                                     <a
                                         href={clip.content}
