@@ -5,6 +5,7 @@ import { KarrFooter } from '@/components/KarrFooter'
 import { useState, useEffect, useMemo } from 'react'
 import { useTasks } from '@/features/tasks/hooks/useTasks'
 import { useTransactions } from '@/features/finance/hooks/useTransactions'
+import { ScheduleWidget } from '@/features/dashboard/components/ScheduleWidget'
 import { cn } from '@/lib/utils'
 
 const MOTIVATION_QUOTES = [
@@ -176,19 +177,9 @@ export default function ControlCentrePage() {
                             </div>
                         </div>
 
-                        {/* Health Placeholder */}
+                        {/* Schedule Widget */}
                         <div className="lg:col-span-1">
-                            <SectionBlock title="Bio-Metrics" desc="Health & Routine">
-                                <div className="flex flex-col items-center justify-center py-12 text-center">
-                                    <div className="w-12 h-12 rounded-full bg-black/5 flex items-center justify-center mb-4">
-                                        <Lock className="w-5 h-5 text-black/20" />
-                                    </div>
-                                    <p className="text-[13px] font-bold text-black/60">Module Locked</p>
-                                    <p className="text-[11px] text-black/30 mt-1 uppercase tracking-widest leading-relaxed px-4">
-                                        Waiting for Apple Health / External Integration
-                                    </p>
-                                </div>
-                            </SectionBlock>
+                            <ScheduleWidget />
                         </div>
                     </div>
                 </div>

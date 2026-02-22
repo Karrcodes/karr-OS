@@ -90,7 +90,7 @@ export default function IntelligencePage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#fafafa] flex flex-col h-screen overflow-hidden">
+        <div className="fixed inset-0 bg-[#fafafa] flex flex-col overflow-hidden">
             {/* Header */}
             <div className="bg-white border-b border-black/[0.06] px-6 py-4 z-20 shadow-sm shrink-0">
                 <div className="max-w-4xl mx-auto flex items-center justify-between">
@@ -131,7 +131,7 @@ export default function IntelligencePage() {
             </div>
 
             {/* Chat Viewport */}
-            <div className="flex-1 overflow-hidden flex flex-col p-4 md:p-6 relative">
+            <div className="flex-1 overflow-hidden flex flex-col p-3 sm:p-4 md:p-6 relative">
                 <div
                     ref={scrollRef}
                     className="flex-1 overflow-y-auto space-y-6 max-w-3xl mx-auto w-full pb-8 pt-4 custom-scrollbar"
@@ -174,7 +174,7 @@ export default function IntelligencePage() {
                 </div>
 
                 {/* Input Area */}
-                <div className="shrink-0 max-w-3xl mx-auto w-full pb-6 px-2">
+                <div className="shrink-0 max-w-3xl mx-auto w-full pb-4 sm:pb-6 px-1 sm:px-2">
                     <form
                         onSubmit={handleSend}
                         className="relative group bg-white border border-black/[0.1] rounded-2xl p-1 shadow-lg transition-all focus-within:border-black focus-within:ring-1 focus-within:ring-black"

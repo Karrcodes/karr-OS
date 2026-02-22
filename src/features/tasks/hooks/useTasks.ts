@@ -25,11 +25,12 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder') {
         setLoading(false)
     }, [activeProfile, category])
 
-    const createTask = async (title: string, priority: 'super' | 'high' | 'mid' | 'low' = 'low') => {
+    const createTask = async (title: string, priority: 'super' | 'high' | 'mid' | 'low' = 'low', due_date?: string) => {
         const { error } = await supabase.from('fin_tasks').insert({
             title,
             category,
             priority,
+            due_date,
             profile: activeProfile
         })
         if (error) throw error
@@ -42,8 +43,8 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder') {
         await fetchTasks()
     }
 
-    const editTask = async (id: string, newTitle: string) => {
-        const { error } = await supabase.from('fin_tasks').update({ title: newTitle }).eq('id', id)
+    const editTask = async (id: string, updates: Partial<Task>) => {
+        const { error } = await supabase.from('fin_tasks').update(updates).eq('id', id)
         if (error) throw error
         await fetchTasks()
     }

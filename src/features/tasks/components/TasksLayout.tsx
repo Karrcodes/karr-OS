@@ -3,11 +3,12 @@
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { KarrFooter } from '@/components/KarrFooter'
-import { CheckSquare, ShoppingCart, Bell } from 'lucide-react'
+import { CheckSquare, ShoppingCart, Bell, Calendar } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const TABS = [
     { title: 'Action Items', href: '/tasks/todo', icon: CheckSquare },
+    { title: 'Calendar', href: '/tasks/calendar', icon: Calendar },
     { title: 'Groceries', href: '/tasks/groceries', icon: ShoppingCart },
     { title: 'Reminders', href: '/tasks/reminders', icon: Bell },
 ]

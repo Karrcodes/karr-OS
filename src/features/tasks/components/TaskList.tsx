@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { CheckSquare, ShoppingCart, Bell, Plus, Trash2, RefreshCw, Edit2 } from 'lucide-react'
+import { CheckSquare, ShoppingCart, Bell, Plus, Trash2, RefreshCw, Edit2, Calendar } from 'lucide-react'
 import { useTasks } from '../hooks/useTasks'
 import { cn } from '@/lib/utils'
 import type { Task } from '../types/tasks.types'
@@ -18,6 +18,7 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
     const [newTask, setNewTask] = useState('')
     const [amount, setAmount] = useState('1')
     const [priority, setPriority] = useState<'super' | 'high' | 'mid' | 'low'>('low')
+    const [dueDate, setDueDate] = useState('')
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -30,10 +31,11 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
                 finalTitle = `${prefix} ${finalTitle}`
             }
 
-            await createTask(finalTitle, priority)
+            await createTask(finalTitle, priority, dueDate || undefined)
             setNewTask('')
             setAmount('1')
             setPriority('low')
+            setDueDate('')
         } catch (err: any) {
             console.error('Task creation failed:', err)
             alert(err.message || 'Failed to create task. Please check your connection.')
@@ -110,21 +112,31 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
                         <Plus className="w-5 h-5" />
                     </button>
                 </div>
-                {category === 'todo' && newTask.trim().length > 0 && (
-                    <div className="flex gap-1.5 animate-in slide-in-from-top-1 fade-in duration-200">
-                        {(['super', 'high', 'mid', 'low'] as const).map(p => (
-                            <button
-                                key={p}
-                                type="button"
-                                onClick={() => setPriority(p)}
-                                className={cn(
-                                    "px-2.5 py-1 text-[11px] font-medium rounded-lg border transition-colors",
-                                    priority === p ? PRIORITY_CONFIG[p].color : "bg-transparent text-black/40 border-black/10 hover:bg-black/5"
-                                )}
-                            >
-                                {PRIORITY_CONFIG[p].label}
-                            </button>
-                        ))}
+                {newTask.trim().length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2 animate-in slide-in-from-top-1 fade-in duration-200">
+                        {category === 'todo' && (
+                            <div className="flex gap-1.5">
+                                {(['super', 'high', 'mid', 'low'] as const).map(p => (
+                                    <button
+                                        key={p}
+                                        type="button"
+                                        onClick={() => setPriority(p)}
+                                        className={cn(
+                                            "px-2.5 py-1 text-[11px] font-medium rounded-lg border transition-colors",
+                                            priority === p ? PRIORITY_CONFIG[p].color : "bg-transparent text-black/40 border-black/10 hover:bg-black/5"
+                                        )}
+                                    >
+                                        {PRIORITY_CONFIG[p].label}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                        <input
+                            type="date"
+                            value={dueDate}
+                            onChange={(e) => setDueDate(e.target.value)}
+                            className="bg-transparent border border-black/10 rounded-lg px-2 py-1 text-[11px] font-medium text-black/60 outline-none focus:border-black/40"
+                        />
                     </div>
                 )}
             </form>
@@ -209,6 +221,12 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
                         )}>
                             {PRIORITY_CONFIG[task.priority].label} Priority
                         </span>
+                    )}
+                    {task.due_date && !task.is_completed && (
+                        <div className="flex items-center gap-1 text-[10px] text-black/30 font-bold uppercase tracking-wider mt-1">
+                            <Calendar className="w-2.5 h-2.5" />
+                            {new Date(task.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                        </div>
                     )}
                 </div>
             </label>

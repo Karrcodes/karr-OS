@@ -43,7 +43,9 @@ async function buildIntelligenceContext(): Promise<string> {
 - Total Pending: ${pendingTasks.length}
 - Overdue: ${overdueTasks.length}
 - Recent Priority Tasks:
-${pendingTasks.slice(0, 5).map(t => `  - [${t.priority}] ${t.title} (ID: ${t.id})`).join('\n')}
+${pendingTasks.filter(t => t.category === 'todo').slice(0, 5).map(t => `  - [TODO] [${t.priority}] ${t.title} ${t.due_date ? `(Due: ${t.due_date})` : ''} (ID: ${t.id})`).join('\n')}
+${pendingTasks.filter(t => t.category === 'grocery').slice(0, 3).map(t => `  - [GROCERY] ${t.title} (ID: ${t.id})`).join('\n')}
+${pendingTasks.filter(t => t.category === 'reminder').slice(0, 3).map(t => `  - [REMINDER] ${t.title} (ID: ${t.id})`).join('\n')}
 
 ## FINANCIALS
 - Total Liquid Cash: £${totalLiquid.toFixed(2)}
@@ -70,8 +72,9 @@ const tools = [
                         action: { type: "STRING", enum: ["create", "update", "delete"] },
                         id: { type: "STRING", description: "Task UUID (required for update/delete)" },
                         title: { type: "STRING", description: "Task title" },
-                        priority: { type: "STRING", enum: ["low", "medium", "high", "super"] },
+                        priority: { type: "STRING", enum: ["low", "mid", "high", "super"] },
                         category: { type: "STRING", enum: ["todo", "grocery", "reminder"] },
+                        due_date: { type: "STRING", description: "ISO date string (YYYY-MM-DD)" },
                         is_completed: { type: "BOOLEAN" }
                     },
                     required: ["action"]
@@ -148,6 +151,7 @@ Rules:
 4. If searching Drive, summarize the findings helpfully.
 5. Categories for tasks: todo, grocery, reminder.
 6. Categories for finance: groceries, food_drink, transport, shopping, entertainment, housing, bills, health, travel, business, other.
+7. When asked for a "Task Audit" or summary, use Markdown tables or clear, themed sections to keep it readable. Separate work from groceries clearly.
 
 ### CURRENT OS STATE
 ${context}
