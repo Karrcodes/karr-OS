@@ -107,7 +107,7 @@ export default function IntelligencePage() {
                                 Karr Intelligence
                                 <span className="bg-emerald-500/10 text-emerald-600 text-[9px] px-1.5 py-0.5 rounded font-mono uppercase tracking-widest border border-emerald-500/20">Active</span>
                             </h1>
-                            <p className="text-[11px] text-black/35 font-medium mt-0.5 hidden lg:block">Your Proactive OS Companion</p>
+                            <p className="text-[12px] text-black/35 mt-0.5">System Hub</p>
                         </div>
                     </div>
 
@@ -178,7 +178,7 @@ export default function IntelligencePage() {
                 </div>
 
                 {/* Input Area */}
-                <div className="shrink-0 max-w-3xl mx-auto w-full pb-6 sm:pb-8 px-4 sm:px-6">
+                <div className="shrink-0 max-w-3xl mx-auto w-full pb-10 sm:pb-12 px-4 sm:px-6">
                     <form
                         onSubmit={handleSend}
                         className="relative group bg-white border border-black/[0.1] rounded-2xl p-1 shadow-lg transition-all focus-within:border-black focus-within:ring-1 focus-within:ring-black"
