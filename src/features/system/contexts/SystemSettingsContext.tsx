@@ -111,12 +111,12 @@ export function SystemSettingsProvider({ children }: { children: ReactNode }) {
     // Demo Mode Overrides
     const effectiveSettings = settings.is_demo_mode ? {
         ...settings,
-        user_name: 'Demo User',
-        user_email: 'demo@example.com',
-        profile_picture_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&q=80',
-        schedule_type: 'shift' as const,
-        shift_on_days: 3,
-        shift_off_days: 3,
+        user_name: 'Karr',
+        user_email: 'karr@karrtesian.com',
+        // Preserve real profile picture if it exists, otherwise use a high-quality placeholder
+        profile_picture_url: settings.profile_picture_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&q=80',
+        schedule_type: 'mon-fri' as const,
+        off_days: ['Friday', 'Saturday', 'Sunday'], // 4-day week
         shift_start_date: '2026-02-23'
     } : settings
 

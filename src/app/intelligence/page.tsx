@@ -139,7 +139,7 @@ export default function IntelligencePage() {
             <div className="flex-1 overflow-hidden flex flex-col relative">
                 <div
                     ref={scrollRef}
-                    className="flex-1 overflow-y-auto space-y-6 max-w-3xl mx-auto w-full pb-8 pt-4 custom-scrollbar"
+                    className="flex-1 overflow-y-auto space-y-6 max-w-3xl mx-auto w-full pb-8 pt-4 px-4 sm:px-6 custom-scrollbar"
                 >
                     <AnimatePresence mode="popLayout">
                         {messages.map((msg, i) => (
@@ -179,7 +179,7 @@ export default function IntelligencePage() {
                 </div>
 
                 {/* Input Area */}
-                <div className="shrink-0 max-w-3xl mx-auto w-full pb-4 sm:pb-6 px-1 sm:px-2">
+                <div className="shrink-0 max-w-3xl mx-auto w-full pb-2 sm:pb-4 px-4 sm:px-6">
                     <form
                         onSubmit={handleSend}
                         className="relative group bg-white border border-black/[0.1] rounded-2xl p-1 shadow-lg transition-all focus-within:border-black focus-within:ring-1 focus-within:ring-black"
@@ -213,7 +213,7 @@ export default function IntelligencePage() {
                         <button onClick={() => setInput('/help')} className="text-[10px] font-bold text-black/30 uppercase tracking-widest hover:text-black transition-colors">Help</button>
                     </div>
 
-                    <div className="mt-8 border-t border-black/[0.04] pt-4 px-4 pb-4">
+                    <div className="mt-4 pt-4 pb-2">
                         <KarrFooter />
                     </div>
                 </div>

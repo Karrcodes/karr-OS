@@ -7,10 +7,13 @@ import { useTasks } from '@/features/tasks/hooks/useTasks'
 import { useTransactions } from '@/features/finance/hooks/useTransactions'
 import { ScheduleWidget } from '@/features/dashboard/components/ScheduleWidget'
 import { cn } from '@/lib/utils'
+import { isShiftDay } from '@/features/finance/utils/rotaUtils'
+import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
+import { useRota } from '@/features/finance/hooks/useRota'
 
 const MOTIVATION_QUOTES = [
     { text: "The mind is the battlefield. Control what you can, let the rest burn.", tag: "Stoic" },
-    { text: "Adapt like water to the 12-hour shift, but carry the boats when you return to the Studio.", tag: "Taoist/Goggins" },
+    { text: "Adapt like water to the 9-to-5 work, but carry the boats when you return to the Studio.", tag: "Taoist/Goggins" },
     { text: "You have to build calluses on your brain. Suffer through the friction of the process to unlock the Exceptional Promise.", tag: "Goggins" },
     { text: "Do not outsource your discipline to your feelings. The obstacle is the way. Act.", tag: "Stoic" },
     { text: "Nature does not hurry, yet everything is accomplished. Stay relentless, but stay fluid.", tag: "Taoist" }
@@ -19,6 +22,8 @@ const MOTIVATION_QUOTES = [
 export default function ControlCentrePage() {
     const { tasks, loading: tasksLoading } = useTasks('todo')
     const { transactions, loading: financeLoading } = useTransactions()
+    const { overrides, loading: rotaLoading } = useRota() // Added useRota hook
+    const { settings } = useSystemSettings() // Added useSystemSettings hook
     const [quoteIndex, setQuoteIndex] = useState(0)
 
     // Motivation Rotation
@@ -67,7 +72,7 @@ export default function ControlCentrePage() {
         return { score, nextAction, taskCompletion, budgetScore }
     }, [tasks, transactions])
 
-    const loading = tasksLoading || financeLoading
+    const loading = tasksLoading || financeLoading || rotaLoading // Added rotaLoading to overall loading state
 
     return (
         <div className="min-h-screen bg-white flex flex-col">

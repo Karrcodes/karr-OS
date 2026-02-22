@@ -220,7 +220,7 @@ export default function SettingsPage() {
                                 </div>
                                 <div>
                                     <p className="text-[14px] font-bold text-orange-700">Demo Mode Active</p>
-                                    <p className="text-[11px] text-orange-700/60 font-medium">Real data is hidden. Showing hardcoded UK male profile (£45k).</p>
+                                    <p className="text-[11px] text-orange-700/60 font-medium">Real data is hidden. Showing professional persona for {settings.user_name}.</p>
                                 </div>
                             </div>
                             <button
@@ -439,7 +439,7 @@ export default function SettingsPage() {
                                             scheduleType === 'shift' ? "bg-white text-black shadow-sm" : "text-black/40 hover:text-black/60"
                                         )}
                                     >
-                                        Rotating Shift
+                                        {settings.is_demo_mode ? 'Work Schedule' : 'Rotating Shift'}
                                     </button>
                                 </div>
                             </div>

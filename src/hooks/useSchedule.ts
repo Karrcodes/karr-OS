@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { useTasks } from '@/features/tasks/hooks/useTasks'
 import { useRota } from '@/features/finance/hooks/useRota'
 import { isShiftDay } from '@/features/finance/utils/rotaUtils'
+import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
 
 export interface ScheduleItem {
     id: string
@@ -17,6 +18,7 @@ export interface ScheduleItem {
 export function useSchedule(days: number = 14) {
     const { tasks, loading: tasksLoading } = useTasks('todo')
     const { overrides, loading: rotaLoading } = useRota()
+    const { settings } = useSystemSettings()
 
     const schedule = useMemo(() => {
         const items: ScheduleItem[] = []
@@ -62,7 +64,7 @@ export function useSchedule(days: number = 14) {
             } else if (isShiftDay(curr)) {
                 items.push({
                     id: `shift-${dateStr}`,
-                    title: 'Work Shift',
+                    title: settings.is_demo_mode ? 'Work' : 'Work Shift',
                     date: new Date(curr),
                     type: 'shift'
                 })
@@ -71,7 +73,7 @@ export function useSchedule(days: number = 14) {
         }
 
         return items.sort((a, b) => a.date.getTime() - b.date.getTime())
-    }, [tasks, overrides, days])
+    }, [tasks, overrides, days, settings.is_demo_mode])
 
     return {
         schedule,

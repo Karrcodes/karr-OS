@@ -101,16 +101,16 @@ export const MOCK_VAULT = {
         { id: 'd-c-4', content: 'Client Meeting Notes: Lumina Digital wants highly conversational AI prompts.', created_at: new Date().toISOString() },
     ],
     secrets: [
-        { id: 'd-s-1', service: 'Lumina Digital Portal', username: 'tom.wright@lumina.com', password: 'demo-password-123', notes: 'Corporate access' },
-        { id: 'd-s-2', service: 'Adobe Creative Cloud', username: 'tom@karrtesian.media', password: 'creative-vault-pass', notes: 'Business account' },
-        { id: 'd-s-3', service: 'LinkedIn', username: 'tom-wright-account-mgr', password: 'professional-network-2026', notes: 'Personal' },
-        { id: 'd-s-4', service: 'Wealthfront', username: 'tom.wright.invest', password: 'money-growth-99', notes: 'Investment account' },
+        { id: 'd-s-1', service: 'Lumina Digital Portal', username: 'karr@karrtesian.com', password: 'demo-password-123', notes: 'Corporate access' },
+        { id: 'd-s-2', service: 'Adobe Creative Cloud', username: 'karr@karrtesian.com', password: 'creative-vault-pass', notes: 'Business account' },
+        { id: 'd-s-3', service: 'LinkedIn', username: 'karr@karrtesian.com', password: 'professional-network-2026', notes: 'Personal' },
+        { id: 'd-s-4', service: 'Wealthfront', username: 'karr@karrtesian.com', password: 'money-growth-99', notes: 'Investment account' },
     ]
 }
 
 export const MOCK_SCHEDULE = {
     anchor: '2026-02-23', // A Monday
-    type: 'office',
+    type: 'work',
     daysPerWeek: 4, // Mon-Thu
-    label: 'Lumina Digital Office'
+    label: 'Lumina Digital Work'
 }

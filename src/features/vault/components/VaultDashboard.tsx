@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import { usePathname } from 'next/navigation'
+import Link from 'next/link'
 import { Shield, Clipboard as ClipboardIcon, Key, Lock } from 'lucide-react'
 import { Clipboard } from './Clipboard'
 import { SecretsManager } from './SecretsManager'
@@ -6,8 +7,9 @@ import { KarrFooter } from '@/components/KarrFooter'
 
 type VaultTab = 'clipboard' | 'secrets'
 
-export function VaultDashboard() {
-    const [activeTab, setActiveTab] = useState<VaultTab>('clipboard')
+export function VaultDashboard({ defaultTab }: { defaultTab?: VaultTab }) {
+    const pathname = usePathname()
+    const activeTab = pathname.includes('/secrets') ? 'secrets' : 'clipboard'
 
     return (
         <div className="min-h-screen bg-[#FDFDFD] flex flex-col w-full overflow-x-hidden">
@@ -26,8 +28,8 @@ export function VaultDashboard() {
 
                     {/* Sub-navigation Tabs */}
                     <div className="flex bg-black/[0.03] p-1 rounded-xl border border-black/[0.05] items-center w-full sm:w-auto">
-                        <button
-                            onClick={() => setActiveTab('clipboard')}
+                        <Link
+                            href="/vault/clipboard"
                             className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[12px] sm:text-[13px] font-bold transition-all ${activeTab === 'clipboard'
                                 ? 'bg-white text-black shadow-sm ring-1 ring-black/[0.02]'
                                 : 'text-black/40 hover:text-black/60 hover:bg-black/[0.02]'
@@ -35,9 +37,9 @@ export function VaultDashboard() {
                         >
                             <ClipboardIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             <span>Clipboard</span>
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('secrets')}
+                        </Link>
+                        <Link
+                            href="/vault/secrets"
                             className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[12px] sm:text-[13px] font-bold transition-all ${activeTab === 'secrets'
                                 ? 'bg-white text-black shadow-sm ring-1 ring-black/[0.02]'
                                 : 'text-black/40 hover:text-black/60 hover:bg-black/[0.02]'
@@ -45,7 +47,7 @@ export function VaultDashboard() {
                         >
                             <Key className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             <span>Secrets</span>
-                        </button>
+                        </Link>
                     </div>
                 </div>
             </header>

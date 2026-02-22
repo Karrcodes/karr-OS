@@ -5,8 +5,11 @@ import { useSchedule, ScheduleItem } from '@/hooks/useSchedule'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 
+import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
+
 export function ScheduleWidget() {
     const { schedule, loading } = useSchedule(7) // Next 7 days
+    const { settings } = useSystemSettings()
     const today = new Date().toISOString().split('T')[0]
 
     return (
@@ -79,7 +82,9 @@ export function ScheduleWidget() {
             <div className="mt-4 pt-4 border-t border-black/[0.04] flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-blue-500" />
-                    <span className="text-[10px] font-bold text-black/30 uppercase">Shift Cycle Sync'd</span>
+                    <span className="text-[10px] font-bold text-black/30 uppercase">
+                        {settings.is_demo_mode ? 'Work Cycle Sync\'d' : 'Shift Cycle Sync\'d'}
+                    </span>
                 </div>
                 <div className="text-[10px] font-mono text-black/20">v1.2.0</div>
             </div>
