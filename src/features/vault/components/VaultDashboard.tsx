@@ -3,10 +3,11 @@
 import React from 'react'
 import { Shield } from 'lucide-react'
 import { Clipboard } from './Clipboard'
+import { KarrFooter } from '@/components/KarrFooter'
 
 export function VaultDashboard() {
     return (
-        <div className="min-h-screen bg-[#FDFDFD] pb-24">
+        <div className="min-h-screen bg-[#FDFDFD] flex flex-col">
             {/* Header */}
             <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-black/[0.06] px-6 py-4">
                 <div className="flex items-center gap-3 max-w-5xl mx-auto">
@@ -40,6 +41,8 @@ export function VaultDashboard() {
                     </p>
                 </div>
             </main>
+
+            <KarrFooter />
         </div>
     )
 }
