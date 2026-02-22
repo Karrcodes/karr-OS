@@ -10,7 +10,7 @@ import {
     Shield, ChevronDown, Check,
     TrendingUp, Calendar, CreditCard, PiggyBank,
     Moon, Sun, Laptop, Target, Briefcase, Heart, Gift,
-    LayoutDashboard, EyeOff, Receipt
+    LayoutDashboard, EyeOff, Receipt, Lock, ClipboardIcon, Key
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Reorder } from 'framer-motion'
@@ -30,8 +30,15 @@ const navItems = [
             { label: 'Reminders', href: '/tasks/reminders', icon: Bell }
         ]
     },
-    { label: 'Goals', href: '/goals', icon: Target, disabled: true },
-    { label: 'Career', href: '/career', icon: Briefcase, disabled: true },
+    {
+        label: 'Vault',
+        href: '/vault',
+        icon: Shield,
+        sub: [
+            { label: 'Clipboard', href: '/vault/clipboard', icon: ClipboardIcon },
+            { label: 'Secrets Manager', href: '/vault/secrets', icon: Key }
+        ]
+    },
     {
         label: 'Finances',
         href: '/finances',
@@ -45,8 +52,9 @@ const navItems = [
             { label: 'Settings', href: '/finances/settings', icon: SlidersHorizontal, caps: ['P', 'B'] }
         ],
     },
+    { label: 'Career', href: '/career', icon: Briefcase, disabled: true },
+    { label: 'Goals', href: '/goals', icon: Target, disabled: true },
     { label: 'Health & Wellbeing', href: '/health', icon: Heart, disabled: true },
-    { label: 'Vault', href: '/vault', icon: Shield },
     { label: 'Wishlist', href: '/wishlist', icon: Gift, disabled: true },
 ]
 
@@ -282,12 +290,12 @@ export function Sidebar() {
 
             if ('disabled' in item && item.disabled) {
                 content = (
-                    <div className="flex items-center justify-between gap-3 px-2.5 py-2 rounded-lg cursor-not-allowed opacity-25 select-none hover:bg-black/5 transition-colors">
+                    <div className="flex items-center justify-between gap-3 px-2.5 py-2 rounded-lg cursor-not-allowed opacity-30 select-none grayscale bg-black/[0.02] border border-transparent hover:border-black/[0.05] transition-all">
                         <div className="flex items-center gap-2.5">
-                            <Icon className="w-4 h-4 text-black/50" />
-                            <span className="text-[13px] text-black/60 font-medium">{item.label}</span>
+                            <Icon className="w-4 h-4 text-black/40" />
+                            <span className="text-[13px] text-black/50 font-medium tracking-tight">{item.label}</span>
                         </div>
-                        <span className="text-[9px] tracking-widest text-black/40 uppercase font-semibold bg-black/5 px-1.5 py-0.5 rounded">Soon</span>
+                        <Lock className="w-3 h-3 text-black/20" />
                     </div>
                 )
             } else {

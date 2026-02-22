@@ -40,13 +40,6 @@ export async function sendPushNotification(title: string, body: string, url: str
                     JSON.stringify({ title, body, url })
                 )
 
-                // Log the notification
-                await supabase.from('sys_notification_logs').insert({
-                    title,
-                    body,
-                    url
-                })
-
                 return { success: true }
             } catch (e: any) {
                 console.error('Error sending push:', e.statusCode, e.endpoint)
@@ -60,6 +53,13 @@ export async function sendPushNotification(title: string, body: string, url: str
                 return { success: false, error: e.message }
             }
         }))
+
+        // Log the notification once for the history
+        await supabase.from('sys_notification_logs').insert({
+            title,
+            body,
+            url
+        })
 
         return { success: true, results }
     } catch (error: any) {
