@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 import type { Task } from '../types/tasks.types'
 import { useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
 
-export function useTasks(category: 'todo' | 'grocery') {
+export function useTasks(category: 'todo' | 'grocery' | 'reminder') {
     const [tasks, setTasks] = useState<Task[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)

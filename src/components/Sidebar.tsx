@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 import {
-    BarChart3, CheckSquare,
+    BarChart3, CheckSquare, ShoppingCart, Bell,
     SlidersHorizontal, Menu, X, RefreshCw,
     Shield, ChevronDown, Check,
     TrendingUp, Calendar, CreditCard, PiggyBank,
@@ -20,7 +20,16 @@ import { useSystemSettings } from '@/features/system/contexts/SystemSettingsCont
 
 const navItems = [
     { label: 'Control Centre', href: '/system/control-centre', icon: LayoutDashboard },
-    { label: 'Tasks', href: '/tasks', icon: CheckSquare },
+    {
+        label: 'Tasks',
+        href: '/tasks',
+        icon: CheckSquare,
+        sub: [
+            { label: 'Action Items', href: '/tasks/todo', icon: CheckSquare },
+            { label: 'Groceries', href: '/tasks/groceries', icon: ShoppingCart },
+            { label: 'Reminders', href: '/tasks/reminders', icon: Bell }
+        ]
+    },
     { label: 'Goals', href: '/goals', icon: Target, disabled: true },
     { label: 'Career', href: '/career', icon: Briefcase, disabled: true },
     {

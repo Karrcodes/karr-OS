@@ -1,7 +1,7 @@
 'use client'
 
-import { TasksDashboard } from '@/features/tasks/components/TasksDashboard'
+import { redirect } from 'next/navigation'
 
 export default function TasksPage() {
-    return <TasksDashboard />
+    redirect('/tasks/todo')
 }

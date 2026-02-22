@@ -1,6 +1,5 @@
-'use client'
-
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { ArrowLeft, User, Bell, Monitor, Shield, Save, Check, RefreshCw, Sun, Moon, Smartphone, Calendar } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
@@ -357,6 +356,25 @@ export default function SettingsPage() {
                                         {isSubscribed ? 'Active' : 'Off'}
                                     </span>
                                 </div>
+                            </div>
+                            <div className="mt-4 pt-4 border-t border-black/[0.04]">
+                                <Link
+                                    href="/system/notifications"
+                                    className="flex items-center justify-between p-3 rounded-xl bg-black/[0.03] hover:bg-black/[0.06] transition-colors group"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-black/5 flex items-center justify-center">
+                                            <Bell className="w-4 h-4 text-black/60" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[13px] font-bold text-black group-hover:underline">View Notification History</p>
+                                            <p className="text-[11px] text-black/40">Review past system alerts</p>
+                                        </div>
+                                    </div>
+                                    <div className="w-6 h-6 rounded-full flex items-center justify-center bg-black/5 group-hover:bg-black/10">
+                                        <ArrowLeft className="w-3 h-3 rotate-180" />
+                                    </div>
+                                </Link>
                             </div>
                         </div>
                     </section>

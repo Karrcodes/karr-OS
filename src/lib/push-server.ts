@@ -39,6 +39,14 @@ export async function sendPushNotification(title: string, body: string, url: str
                     s.subscription as any,
                     JSON.stringify({ title, body, url })
                 )
+
+                // Log the notification
+                await supabase.from('sys_notification_logs').insert({
+                    title,
+                    body,
+                    url
+                })
+
                 return { success: true }
             } catch (e: any) {
                 console.error('Error sending push:', e.statusCode, e.endpoint)
