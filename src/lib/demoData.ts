@@ -83,12 +83,12 @@ export const MOCK_TASKS = {
         { id: 'd-t-7', title: 'Refactor Intelligence context builders', priority: 'super', is_completed: false },
     ],
     grocery: [
-        { id: 'd-g-1', title: 'Oat Milk (Barista Edition)', priority: 'mid', is_completed: false },
-        { id: 'd-g-2', title: 'Organic Avocados', priority: 'low', is_completed: false },
-        { id: 'd-g-3', title: 'Specialty Coffee Beans (Ethiopian)', priority: 'high', is_completed: false },
-        { id: 'd-g-4', title: 'Sourdough Bread', priority: 'low', is_completed: true },
-        { id: 'd-g-5', title: 'Fresh Pasta', priority: 'mid', is_completed: false },
-        { id: 'd-g-6', title: 'Sea Salt Dark Chocolate', priority: 'low', is_completed: false },
+        { id: 'd-g-1', title: 'Oat Milk (Barista Edition)', amount: 'x2', priority: 'mid', is_completed: false },
+        { id: 'd-g-2', title: 'Organic Avocados', amount: 'x4', priority: 'low', is_completed: false },
+        { id: 'd-g-3', title: 'Specialty Coffee Beans (Ethiopian)', amount: 'x1', priority: 'high', is_completed: false },
+        { id: 'd-g-4', title: 'Sourdough Bread', amount: 'x1', priority: 'low', is_completed: true },
+        { id: 'd-g-5', title: 'Fresh Pasta', amount: 'x2', priority: 'mid', is_completed: false },
+        { id: 'd-g-6', title: 'Sea Salt Dark Chocolate', amount: 'x1', priority: 'low', is_completed: false },
     ],
     reminder: [
         { id: 'd-r-1', title: 'Submit Self-Assessment Tax Return', priority: 'super', is_completed: false, due_date: '2026-01-31' },

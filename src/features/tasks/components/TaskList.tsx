@@ -26,12 +26,12 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
 
         try {
             let finalTitle = newTask.trim()
-            if (category === 'grocery' && amount.trim() && amount.trim() !== '1') {
-                const prefix = amount.trim().startsWith('x') ? amount.trim() : `x${amount.trim()}`
-                finalTitle = `${prefix} ${finalTitle}`
+            let finalAmount = amount.trim()
+            if (category === 'grocery' && finalAmount && !finalAmount.startsWith('x')) {
+                finalAmount = `x${finalAmount}`
             }
 
-            await createTask(finalTitle, priority, dueDate || undefined)
+            await createTask(finalTitle, priority, dueDate || undefined, category === 'grocery' ? finalAmount : undefined)
             setNewTask('')
             setAmount('1')
             setPriority('low')
@@ -167,29 +167,73 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
 function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: Task, toggleTask: any, deleteTask: any, editTask: any, category: string }) {
     const [isEditing, setIsEditing] = useState(false)
     const [editValue, setEditValue] = useState(task.title)
+    const [editAmount, setEditAmount] = useState(task.amount || '')
+    const [editPriority, setEditPriority] = useState(task.priority)
 
     const handleSave = () => {
-        if (editValue.trim() && editValue !== task.title) {
-            editTask(task.id, editValue.trim())
+        const updates: Partial<Task> = {}
+        if (editValue.trim() !== task.title) updates.title = editValue.trim()
+        if (editAmount.trim() !== (task.amount || '')) {
+            let val = editAmount.trim()
+            if (category === 'grocery' && val && !val.startsWith('x')) val = `x${val}`
+            updates.amount = val
+        }
+        if (editPriority !== task.priority) updates.priority = editPriority
+
+        if (Object.keys(updates).length > 0) {
+            editTask(task.id, updates)
         }
         setIsEditing(false)
     }
 
     if (isEditing) {
         return (
-            <div className="flex items-center gap-2 p-2 rounded-xl border bg-white border-black/[0.15] shadow-sm">
-                <input
-                    type="text"
-                    value={editValue}
-                    onChange={(e) => setEditValue(e.target.value)}
-                    onBlur={handleSave}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-                    autoFocus
-                    className="flex-1 bg-transparent px-2 py-1.5 text-[14px] text-black outline-none"
-                />
-                <button onClick={handleSave} className="px-3 py-1.5 bg-black text-white text-[12px] font-bold rounded-lg hover:bg-black/80 transition-colors">
-                    Save
-                </button>
+            <div className="flex flex-col gap-3 p-3 rounded-xl border bg-white border-black/[0.15] shadow-lg animate-in fade-in zoom-in-95 duration-200">
+                <div className="flex gap-2">
+                    {category === 'grocery' && (
+                        <input
+                            type="text"
+                            value={editAmount}
+                            onChange={(e) => setEditAmount(e.target.value)}
+                            placeholder="x1"
+                            className="w-16 bg-black/[0.03] border border-black/[0.08] rounded-lg px-2 py-1.5 text-[13px] text-center text-black font-bold outline-none focus:border-black/30"
+                        />
+                    )}
+                    <input
+                        type="text"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        className="flex-1 bg-black/[0.03] border border-black/[0.08] rounded-lg px-3 py-1.5 text-[14px] text-black outline-none focus:border-black/30"
+                        autoFocus
+                    />
+                </div>
+                <div className="flex items-center justify-between">
+                    <div className="flex gap-1 p-1 bg-black/[0.03] rounded-lg border border-black/5">
+                        {(['super', 'high', 'mid', 'low'] as const).map(p => (
+                            <button
+                                key={p}
+                                type="button"
+                                onClick={() => setEditPriority(p)}
+                                className={cn(
+                                    "px-2 py-1 text-[9px] font-bold rounded-md border transition-all uppercase tracking-tight",
+                                    editPriority === p
+                                        ? PRIORITY_CONFIG[p].color + " shadow-sm"
+                                        : "bg-transparent text-black/30 border-transparent hover:text-black/50"
+                                )}
+                            >
+                                {PRIORITY_CONFIG[p].label}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="flex gap-2">
+                        <button onClick={() => setIsEditing(false)} className="px-3 py-1.5 text-black/40 hover:text-black text-[12px] font-bold transition-colors">
+                            Cancel
+                        </button>
+                        <button onClick={handleSave} className="px-4 py-1.5 bg-black text-white text-[12px] font-bold rounded-lg hover:bg-neutral-800 transition-colors shadow-sm">
+                            Save
+                        </button>
+                    </div>
+                </div>
             </div>
         )
     }
@@ -209,14 +253,19 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
                     className="w-5 h-5 accent-black cursor-pointer shrink-0"
                 />
                 <div className="flex flex-col flex-1 min-w-0">
-                    <span className={cn(
-                        "text-[14px] transition-all truncate",
-                        task.is_completed
-                            ? "text-black/30 line-through"
-                            : "text-black/90 font-medium"
-                    )}>
-                        {task.title}
-                    </span>
+                    <div className="flex items-center gap-2">
+                        {category === 'grocery' && task.amount && (
+                            <span className="text-[12px] font-bold text-black/40 shrink-0">{task.amount}</span>
+                        )}
+                        <span className={cn(
+                            "text-[14px] transition-all truncate",
+                            task.is_completed
+                                ? "text-black/30 line-through"
+                                : "text-black/90 font-medium"
+                        )}>
+                            {task.title}
+                        </span>
+                    </div>
                     {!task.is_completed && task.priority && task.priority !== 'low' && PRIORITY_CONFIG[task.priority] && (
                         <span className={cn(
                             "text-[10px] w-fit px-1.5 py-0.5 rounded uppercase font-bold tracking-wider mt-1 border",

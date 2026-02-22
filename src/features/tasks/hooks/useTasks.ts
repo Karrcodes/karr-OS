@@ -16,7 +16,10 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder') {
 
     const fetchTasks = useCallback(async () => {
         if (settings.is_demo_mode) {
-            setTasks(MOCK_TASKS[category] as any)
+            setTasks((MOCK_TASKS[category] as any).map((t: any) => ({
+                ...t,
+                amount: t.amount || null
+            })))
             setLoading(false)
             return
         }
@@ -33,12 +36,13 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder') {
         setLoading(false)
     }, [activeProfile, category, settings.is_demo_mode])
 
-    const createTask = async (title: string, priority: 'super' | 'high' | 'mid' | 'low' = 'low', due_date?: string) => {
+    const createTask = async (title: string, priority: 'super' | 'high' | 'mid' | 'low' = 'low', due_date?: string, amount?: string) => {
         const { error } = await supabase.from('fin_tasks').insert({
             title,
             category,
             priority,
             due_date,
+            amount,
             profile: activeProfile
         })
         if (error) throw error
