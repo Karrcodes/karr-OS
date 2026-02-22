@@ -30,9 +30,17 @@ export async function POST(request: Request) {
 
         // AI Parsing Fallback: If raw notification text is provided, use AI to extract merchant/amount
         if (notificationText && (!merchant || amount === undefined)) {
+            console.log('Attempting AI parse for text:', notificationText);
             try {
-                const prompt = `Extract transaction details from the following notification text.
-Return ONLY a valid JSON object with the following keys, no markdown:
+                const prompt = `You are a financial transaction parser. Extract the transaction amount and merchant from the payment notification below.
+        
+Rules:
+- The "amount" should be the actual amount SPENT or CHARGED (the principal value).
+- Ignore secondary numbers like balances, store codes, or timestamps (even if they look like amounts).
+- If the text says "spent £1.35", the amount is 1.35.
+- "merchant" should be the name of the store or service.
+
+Return ONLY a valid JSON object:
 {
   "amount": number,
   "merchant": string
@@ -65,7 +73,7 @@ Notification:
             .insert([{
                 description: merchant,
                 amount: parseFloat(amount),
-                date: new Date().toISOString(),
+                date: new Date().toISOString(), // This now includes full time: YYYY-MM-DDTHH:mm:ss.sssZ
                 type: 'spend',
                 category: 'other',
                 profile: 'personal',

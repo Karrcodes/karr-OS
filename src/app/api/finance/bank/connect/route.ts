@@ -1,39 +1,39 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { ebRequest } from '@/lib/enable-banking'
+import { NextResponse } from 'next/server';
+import { createCustomer, createConnectSession } from '@/lib/saltedge';
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
     try {
-        const { institution_id = 'revolut_gb', profile = 'personal' } = await req.json()
+        const { profile } = await req.json();
 
-        // The URL Enable Banking will redirect back to
-        const redirectUrl = `${new URL(req.url).origin}/finances/callback`
-        const state = `profile=${profile}_${Math.random().toString(36).substring(7)}`
-        const ninetyDaysFromNow = new Date(Date.now() + 86400000 * 90).toISOString()
+        // 1. Create a Salt Edge Customer if one doesn't exist for this profile
+        // In a real app, you'd store this in your DB. For now, we use a unique string.
+        const customerIdentifier = `karros_${profile || 'personal'}`;
 
-        const session = await ebRequest('/auth', {
-            method: 'POST',
-            body: JSON.stringify({
-                access: {
-                    valid_until: ninetyDaysFromNow,
-                    balances: true,
-                    transactions: true
-                },
-                aspsp: {
-                    name: institution_id, // 'revolut_gb'
-                    country: 'GB'
-                },
-                state: state,
-                redirect_url: redirectUrl,
-                psu_type: 'personal'
-            })
-        })
+        let customer;
+        try {
+            customer = await createCustomer(customerIdentifier);
+        } catch (e: any) {
+            // If customer already exists, just handle it (Salt Edge might return error if duplicate)
+            console.log('Customer might already exist, continuing...');
+        }
+
+        const customerId = customer?.data?.id || (customerIdentifier === 'karros_personal' ? 'placeholder_id' : 'placeholder_id');
+        // Note: In production, you MUST store and fetch the customer_id from Supabase
+
+        // 2. Create a Connect Session
+        // The relative URL for the callback
+        const host = req.headers.get('host');
+        const protocol = host?.includes('localhost') ? 'http' : 'https';
+        const returnUrl = `${protocol}://${host}/api/finance/bank/callback`;
+
+        const session = await createConnectSession(customerId, returnUrl);
 
         return NextResponse.json({
-            link: session.url,
-            session_id: session.session_id
-        })
+            url: session.data.connect_url
+        });
+
     } catch (error: any) {
-        console.error('EB Connect Error:', error)
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        console.error('Salt Edge Connect Error:', error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

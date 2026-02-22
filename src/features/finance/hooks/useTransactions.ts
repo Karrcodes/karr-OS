@@ -37,7 +37,27 @@ export function useTransactions() {
         setLoading(false)
     }
 
+    const updateTransaction = async (id: string, updates: Partial<Transaction>) => {
+        const { error } = await supabase
+            .from('fin_transactions')
+            .update(updates)
+            .eq('id', id)
+
+        if (error) setError(error.message)
+        else await fetchTransactions()
+    }
+
+    const deleteTransaction = async (id: string) => {
+        const { error } = await supabase
+            .from('fin_transactions')
+            .delete()
+            .eq('id', id)
+
+        if (error) setError(error.message)
+        else await fetchTransactions()
+    }
+
     useEffect(() => { fetchTransactions() }, [activeProfile, refreshTrigger])
 
-    return { transactions, loading, error, refetch: fetchTransactions, clearTransactions }
+    return { transactions, loading, error, refetch: fetchTransactions, updateTransaction, deleteTransaction, clearTransactions }
 }

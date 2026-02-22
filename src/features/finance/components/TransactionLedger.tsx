@@ -11,12 +11,17 @@ import type { Transaction } from '../types/finance.types'
 export function TransactionLedger() {
     const { transactions, loading, refetch, clearTransactions } = useTransactions()
     const { pockets, loading: pocketsLoading } = usePockets()
-    const { loading: bankSyncLoading } = useBank()
+    const { syncTransactions, startConnection, loading: bankSyncLoading } = useBank()
     const [selectedTx, setSelectedTx] = useState<Transaction | null>(null)
 
-    const handleSyncSuccess = (count: number) => {
-        alert(`Successfully synced ${count} new transactions!`)
-        refetch()
+    const handleSync = async () => {
+        const count = await syncTransactions()
+        if (count > 0) {
+            alert(`Successfully synced ${count} new transactions!`)
+            refetch()
+        } else if (count === 0) {
+            alert('No new transactions found.')
+        }
     }
 
     if (loading || pocketsLoading) {
@@ -52,6 +57,23 @@ export function TransactionLedger() {
                     <h3 className="text-[11px] uppercase tracking-wider font-bold text-black/40">Recent Transactions</h3>
                     <span className="w-1 h-1 rounded-full bg-black/10" />
                     <a href="/finances/transactions" className="text-[10px] font-bold text-black/40 hover:text-black hover:underline transition-colors">See All</a>
+                </div>
+
+                <div className="flex gap-2">
+                    <button
+                        onClick={startConnection}
+                        className="text-[10px] font-bold text-black/40 hover:text-black transition-colors bg-black/[0.03] px-2 py-1 rounded-lg border border-black/[0.05]"
+                    >
+                        Connect Bank
+                    </button>
+                    <button
+                        onClick={handleSync}
+                        disabled={bankSyncLoading}
+                        className="flex items-center gap-1.5 text-[10px] font-bold text-black/40 hover:text-black transition-colors bg-black/[0.03] px-2 py-1 rounded-lg border border-black/[0.05] disabled:opacity-50"
+                    >
+                        {bankSyncLoading ? <RefreshCw className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                        Sync
+                    </button>
                 </div>
             </div>
 
