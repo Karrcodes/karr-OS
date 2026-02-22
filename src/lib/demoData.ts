@@ -1,6 +1,6 @@
 export const MOCK_FINANCE = {
     pockets: [
-        { id: 'd-p-1', name: 'Living & Bills', target_budget: 1400, balance: 1450.50, type: 'general', sort_order: 1 },
+        { id: 'd-p-1', name: 'Living & Bills', target_budget: 1800, balance: 1850.50, type: 'general', sort_order: 1 },
         { id: 'd-p-2', name: 'Specialty Coffee', target_budget: 80, balance: 42.20, type: 'general', sort_order: 2 },
         { id: 'd-p-3', name: 'Commute (TfL)', target_budget: 180, balance: 122.00, type: 'general', sort_order: 3 },
         { id: 'd-p-4', name: 'Dining & Social', target_budget: 400, balance: 212.30, type: 'general', sort_order: 4 },
@@ -8,14 +8,17 @@ export const MOCK_FINANCE = {
         { id: 'd-p-6', name: 'Investment (Index)', target_budget: 5000, balance: 4200.00, type: 'savings', sort_order: 6 },
     ],
     obligations: [
-        { id: 'd-o-1', name: 'Clapham Apartment Rent', amount: 1150, frequency: 'monthly', due_day: 1 },
-        { id: 'd-o-2', name: 'Council Tax', amount: 165, frequency: 'monthly', due_day: 15 },
-        { id: 'd-o-3', name: 'Octopus Energy', amount: 120, frequency: 'monthly', due_day: 20 },
+        { id: 'd-o-1', name: 'Clapham Apartment Rent', amount: 1450, frequency: 'monthly', due_day: 1 },
+        { id: 'd-o-2', name: 'Council Tax (Lambeth)', amount: 165, frequency: 'monthly', due_day: 15 },
+        { id: 'd-o-3', name: 'Octopus Energy', amount: 140, frequency: 'monthly', due_day: 20 },
         { id: 'd-o-4', name: 'Hyperoptic Fiber', amount: 45, frequency: 'monthly', due_day: 12 },
-        { id: 'd-o-5', name: 'Gym Shark Membership', amount: 55, frequency: 'monthly', due_day: 5 },
-        { id: 'd-o-6', name: 'Netflix Premium', amount: 17.99, frequency: 'monthly', due_day: 10 },
-        { id: 'd-o-7', name: 'Spotify family', amount: 19.99, frequency: 'monthly', due_day: 18 },
-        { id: 'd-o-8', name: 'Adobe Creative Cloud', amount: 52.00, frequency: 'monthly', due_day: 22 },
+        { id: 'd-o-5', name: 'Equinox Gym Membership', amount: 220, frequency: 'monthly', due_day: 5 },
+        { id: 'd-o-6', name: 'Student Loan (Plan 2)', amount: 240, frequency: 'monthly', due_day: 28, payments_left: 108 },
+        { id: 'd-o-7', name: 'Car Finance (Audi A3)', amount: 325, frequency: 'monthly', due_day: 25, payments_left: 24 },
+        { id: 'd-o-8', name: 'Klarna: Studio Gear', amount: 85, frequency: 'monthly', due_day: 14, payments_left: 4 },
+        { id: 'd-o-9', name: 'Netflix Premium', amount: 17.99, frequency: 'monthly', due_day: 10 },
+        { id: 'd-o-10', name: 'Spotify Family', amount: 19.99, frequency: 'monthly', due_day: 18 },
+        { id: 'd-o-11', name: 'Adobe Creative Cloud', amount: 52.00, frequency: 'monthly', due_day: 22 },
     ],
     income: {
         raw: 3750.00, // Monthly gross (£45k)
@@ -65,6 +68,7 @@ export const MOCK_BUSINESS = {
     obligations: [
         { id: 'd-bo-1', name: 'Co-working Hotdesk', amount: 250, frequency: 'monthly', due_day: 5 },
         { id: 'd-bo-2', name: 'Professional Insurance', amount: 35, frequency: 'monthly', due_day: 10 },
+        { id: 'd-bo-3', name: 'MacBook Pro Finance', amount: 115, frequency: 'monthly', due_day: 15, payments_left: 14 },
     ]
 }
 

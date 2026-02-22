@@ -1,7 +1,8 @@
 'use client'
 
-import { LayoutDashboard, CheckSquare, TrendingUp, Heart, Terminal, Lock, Target, AlertCircle, RefreshCw } from 'lucide-react'
+import { LayoutDashboard, CheckSquare, TrendingUp, Heart, Terminal, Lock, Target, AlertCircle, RefreshCw, BarChart3, Brain, Shield, SlidersHorizontal, Sparkles } from 'lucide-react'
 import { KarrFooter } from '@/components/KarrFooter'
+import Link from 'next/link'
 import { useState, useEffect, useMemo } from 'react'
 import { useTasks } from '@/features/tasks/hooks/useTasks'
 import { useTransactions } from '@/features/finance/hooks/useTransactions'
@@ -97,6 +98,54 @@ export default function ControlCentrePage() {
 
             <div className="flex-1 overflow-y-auto bg-[#fafafa] flex flex-col p-6">
                 <div className="max-w-5xl mx-auto w-full space-y-8 pb-12">
+                    {/* Quick Actions */}
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                        <Link
+                            href="/finances"
+                            className="flex items-center gap-2 px-3 py-2 bg-white border border-black/[0.06] rounded-xl hover:border-black/20 hover:bg-black/[0.02] transition-all group"
+                        >
+                            <div className="w-6 h-6 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+                                <BarChart3 className="w-3.5 h-3.5" />
+                            </div>
+                            <span className="text-[12px] font-bold text-black/70 group-hover:text-black">Finances</span>
+                        </Link>
+                        <Link
+                            href="/tasks"
+                            className="flex items-center gap-2 px-3 py-2 bg-white border border-black/[0.06] rounded-xl hover:border-black/20 hover:bg-black/[0.02] transition-all group"
+                        >
+                            <div className="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
+                                <CheckSquare className="w-3.5 h-3.5" />
+                            </div>
+                            <span className="text-[12px] font-bold text-black/70 group-hover:text-black">Tasks</span>
+                        </Link>
+                        <Link
+                            href="/vault"
+                            className="flex items-center gap-2 px-3 py-2 bg-white border border-black/[0.06] rounded-xl hover:border-black/20 hover:bg-black/[0.02] transition-all group"
+                        >
+                            <div className="w-6 h-6 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-600 group-hover:scale-110 transition-transform">
+                                <Shield className="w-3.5 h-3.5" />
+                            </div>
+                            <span className="text-[12px] font-bold text-black/70 group-hover:text-black">Vault</span>
+                        </Link>
+                        <Link
+                            href="/intelligence"
+                            className="flex items-center gap-2 px-3 py-2 bg-white border border-black/[0.06] rounded-xl hover:border-black/20 hover:bg-black/[0.02] transition-all group"
+                        >
+                            <div className="w-6 h-6 rounded-lg bg-black/5 flex items-center justify-center text-black group-hover:scale-110 transition-transform">
+                                <Sparkles className="w-3.5 h-3.5" />
+                            </div>
+                            <span className="text-[12px] font-bold text-black/70 group-hover:text-black">Karr AI</span>
+                        </Link>
+                        <Link
+                            href="/system/settings"
+                            className="flex items-center gap-2 px-3 py-2 bg-white border border-black/[0.06] rounded-xl hover:border-black/20 hover:bg-black/[0.02] transition-all group"
+                        >
+                            <div className="w-6 h-6 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-600 group-hover:scale-110 transition-transform">
+                                <SlidersHorizontal className="w-3.5 h-3.5" />
+                            </div>
+                            <span className="text-[12px] font-bold text-black/70 group-hover:text-black">Settings</span>
+                        </Link>
+                    </div>
 
                     {/* Summary Row */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
