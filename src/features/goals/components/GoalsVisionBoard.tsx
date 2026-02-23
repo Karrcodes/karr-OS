@@ -66,6 +66,15 @@ function ViewCard({ goal, index, onClick }: { goal: Goal, index: number, onClick
                         <span className="px-2.5 py-1 bg-white border border-white/20 rounded-lg text-[10px] font-bold uppercase tracking-wider text-black shadow-lg">
                             {goal.category}
                         </span>
+                        <span className={cn(
+                            "px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider shadow-lg border",
+                            goal.priority === 'super' ? "bg-amber-500 text-white border-amber-400 animate-pulse" :
+                                goal.priority === 'high' ? "bg-rose-500 text-white border-rose-400" :
+                                    goal.priority === 'mid' ? "bg-blue-500 text-white border-blue-400" :
+                                        "bg-white/20 text-white border-white/20"
+                        )}>
+                            {goal.priority || 'mid'}
+                        </span>
                     </div>
                     <h4 className="text-[17px] font-bold text-white tracking-tight">{goal.title}</h4>
 

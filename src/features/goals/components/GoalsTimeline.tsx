@@ -125,12 +125,23 @@ export default function GoalsTimeline({ goals, onGoalClick }: GoalsTimelineProps
                                             )}>
                                                 {goal.category}
                                             </span>
-                                            {goal.target_date && (
-                                                <div className="flex items-center gap-1 text-[9px] font-bold text-black/20 uppercase">
-                                                    <Clock className="w-2.5 h-2.5" />
-                                                    {new Date(goal.target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                                            <div className="flex flex-col gap-1.5 items-end">
+                                                {goal.target_date && (
+                                                    <div className="flex items-center gap-1 text-[9px] font-bold text-black/20 uppercase">
+                                                        <Clock className="w-2.5 h-2.5" />
+                                                        {new Date(goal.target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                                                    </div>
+                                                )}
+                                                <div className={cn(
+                                                    "px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider",
+                                                    goal.priority === 'super' ? "bg-amber-500/10 text-amber-600 animate-pulse" :
+                                                        goal.priority === 'high' ? "bg-rose-500/10 text-rose-600" :
+                                                            goal.priority === 'mid' ? "bg-blue-500/10 text-blue-600" :
+                                                                "bg-black/[0.04] text-black/30"
+                                                )}>
+                                                    {goal.priority || 'mid'}
                                                 </div>
-                                            )}
+                                            </div>
                                         </div>
 
                                         <h4 className="text-[14px] font-bold text-black mb-3 group-hover:text-blue-600 transition-colors">

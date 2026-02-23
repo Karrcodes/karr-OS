@@ -20,17 +20,20 @@ export default function GoalsDashboard() {
     const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
+    const [selectedCategory, setSelectedCategory] = useState<GoalCategory | 'all'>('all')
 
     const selectedGoal = useMemo(() =>
         goals.find(g => g.id === selectedGoalId) || null,
         [goals, selectedGoalId])
 
     const filteredGoals = useMemo(() => {
-        return goals.filter(goal =>
-            goal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            goal.category.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-    }, [goals, searchQuery])
+        return goals.filter(goal => {
+            const matchesSearch = goal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                goal.category.toLowerCase().includes(searchQuery.toLowerCase())
+            const matchesCategory = selectedCategory === 'all' || goal.category === selectedCategory
+            return matchesSearch && matchesCategory
+        })
+    }, [goals, searchQuery, selectedCategory])
 
     const handleEditGoal = (goal: Goal) => {
         setEditingGoal(goal)
@@ -96,10 +99,27 @@ export default function GoalsDashboard() {
                                     <Filter className="w-3.5 h-3.5" />
                                     Filter
                                 </div>
-                                {['finance', 'career', 'health', 'personal'].map((cat) => (
+                                <button
+                                    onClick={() => setSelectedCategory('all')}
+                                    className={cn(
+                                        "whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border shrink-0",
+                                        selectedCategory === 'all'
+                                            ? "bg-black text-white border-black"
+                                            : "bg-black/[0.03] text-black/40 border-transparent hover:bg-black hover:text-white"
+                                    )}
+                                >
+                                    All
+                                </button>
+                                {(['finance', 'career', 'health', 'personal'] as const).map((cat) => (
                                     <button
                                         key={cat}
-                                        className="whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-black/[0.03] text-black/40 hover:bg-black hover:text-white transition-all border border-transparent hover:border-black/10 shrink-0"
+                                        onClick={() => setSelectedCategory(cat)}
+                                        className={cn(
+                                            "whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border shrink-0",
+                                            selectedCategory === cat
+                                                ? "bg-black text-white border-black"
+                                                : "bg-black/[0.03] text-black/40 border-transparent hover:bg-black hover:text-white"
+                                        )}
                                     >
                                         {cat}
                                     </button>

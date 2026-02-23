@@ -78,11 +78,19 @@ export default function GoalsMatrix({ goals, onGoalClick }: GoalsMatrixProps) {
     )
 }
 
+const PRIORITY_CONFIG: Record<string, { label: string, color: string, pulse?: boolean }> = {
+    super: { label: 'Super Priority', color: 'bg-amber-500/10 text-amber-600', pulse: true },
+    high: { label: 'High Priority', color: 'bg-rose-500/10 text-rose-600' },
+    mid: { label: 'Mid Priority', color: 'bg-blue-500/10 text-blue-600' },
+    low: { label: 'Low Priority', color: 'bg-black/[0.04] text-black/40' }
+}
+
 function GoalMatrixCard({ goal, index, onClick }: { goal: Goal, index: number, onClick: () => void }) {
     const totalMilestones = goal.milestones?.length || 0
     const completedMilestones = goal.milestones?.filter(m => m.is_completed).length || 0
     const progress = totalMilestones > 0 ? (completedMilestones / totalMilestones) * 100 : 0
     const config = CATEGORY_CONFIG[goal.category]
+    const priority = PRIORITY_CONFIG[goal.priority || 'mid']
 
     return (
         <motion.div
@@ -98,11 +106,13 @@ function GoalMatrixCard({ goal, index, onClick }: { goal: Goal, index: number, o
                     <div className={cn("p-2.5 rounded-xl flex items-center justify-center", config.color)}>
                         <config.icon className="w-4 h-4" />
                     </div>
-                    {goal.priority === 'super' && (
-                        <div className="px-2 py-0.5 bg-amber-500/10 text-amber-600 rounded-full text-[9px] font-bold uppercase tracking-wider animate-pulse">
-                            Super Priority
-                        </div>
-                    )}
+                    <div className={cn(
+                        "px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider",
+                        priority.color,
+                        priority.pulse && "animate-pulse"
+                    )}>
+                        {priority.label}
+                    </div>
                 </div>
 
                 <div>
