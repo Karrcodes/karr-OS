@@ -355,9 +355,11 @@ export function ProjectionsAnalytics() {
                         <button onClick={prevMonth} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/5 text-black/40 hover:text-black transition-colors">
                             <ChevronLeft className="w-4 h-4" />
                         </button>
-                        <button onClick={() => setCurrentDate(new Date())} className="text-[11px] font-bold text-black/40 hover:text-black px-2 transition-colors uppercase tracking-wider">
-                            Today
-                        </button>
+                        {(year !== new Date().getFullYear() || monthIndex !== new Date().getMonth()) && (
+                            <button onClick={() => setCurrentDate(new Date())} className="text-[11px] font-bold text-black/40 hover:text-black px-2 transition-colors uppercase tracking-wider">
+                                Today
+                            </button>
+                        )}
                         <button onClick={nextMonth} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/5 text-black/40 hover:text-black transition-colors">
                             <ChevronRight className="w-4 h-4" />
                         </button>
