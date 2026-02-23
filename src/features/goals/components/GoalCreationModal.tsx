@@ -160,7 +160,7 @@ export default function GoalCreationModal({ isOpen, onClose, onSave }: GoalCreat
                             {/* Configuration Grid */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 pt-6 border-t border-black/5">
                                 {/* Category & Timeframe */}
-                                <div className="space-y-6">
+                                <div className="space-y-6 min-w-0">
                                     <div className="space-y-3 md:space-y-4">
                                         <label className="text-[10px] md:text-[11px] font-bold text-black/40 uppercase tracking-widest ml-1">Module Alignment</label>
                                         <div className="grid grid-cols-2 gap-2">
@@ -208,7 +208,7 @@ export default function GoalCreationModal({ isOpen, onClose, onSave }: GoalCreat
                                 </div>
 
                                 {/* Priority & Date & Image */}
-                                <div className="space-y-6">
+                                <div className="space-y-6 min-w-0 overflow-hidden">
                                     <div className="space-y-3 md:space-y-4">
                                         <label className="text-[10px] md:text-[11px] font-bold text-black/40 uppercase tracking-widest ml-1">Tier Priority</label>
                                         <div className="flex items-center gap-1.5 p-1 bg-black/5 rounded-xl md:rounded-2xl">
@@ -234,7 +234,8 @@ export default function GoalCreationModal({ isOpen, onClose, onSave }: GoalCreat
                                             type="date"
                                             value={targetDate}
                                             onChange={e => setTargetDate(e.target.value)}
-                                            className="w-full py-3 md:py-3.5 px-4 rounded-xl md:rounded-2xl border border-black/5 text-[12px] md:text-sm font-bold focus:border-black/20 focus:bg-white bg-black/[0.02] transition-all outline-none"
+                                            style={{ boxSizing: 'border-box' }}
+                                            className="block w-full py-3 md:py-3.5 px-4 rounded-xl md:rounded-2xl border border-black/5 text-[12px] md:text-sm font-bold focus:border-black/20 focus:bg-white bg-black/[0.02] transition-all outline-none"
                                         />
                                     </div>
 
