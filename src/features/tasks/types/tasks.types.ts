@@ -20,6 +20,7 @@ export interface Task {
         constraint?: 'within_window'
     }
     created_at: string
+    position: number
 }
 
 export interface DayPlannerSettings {

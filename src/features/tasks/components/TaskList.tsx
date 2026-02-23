@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import { Activity, ShoppingCart, Bell, Plus, Trash2, RefreshCw, Edit2, Calendar, X } from 'lucide-react'
+import { Activity, ShoppingCart, Bell, Plus, Trash2, RefreshCw, Edit2, Calendar, X, GripVertical, User, Briefcase } from 'lucide-react'
 import { useTasks } from '../hooks/useTasks'
 import { cn } from '@/lib/utils'
+import { Reorder, useDragControls } from 'framer-motion'
 import type { Task } from '../types/tasks.types'
 import { getNextOffPeriod, isShiftDay } from '@/features/finance/utils/rotaUtils'
 
@@ -15,7 +16,7 @@ const PRIORITY_CONFIG = {
 } as const
 
 export function TaskList({ category, title, icon: Icon }: { category: 'todo' | 'grocery' | 'reminder', title: string, icon: any }) {
-    const { tasks, loading, createTask, toggleTask, deleteTask, clearAllTasks, clearCompletedTasks, editTask } = useTasks(category)
+    const { tasks, loading, createTask, toggleTask, deleteTask, clearAllTasks, clearCompletedTasks, editTask, updateTaskPositions } = useTasks(category)
     const [newTask, setNewTask] = useState('')
     const [amount, setAmount] = useState('1')
     const [priority, setPriority] = useState<'super' | 'high' | 'mid' | 'low'>('low')
@@ -212,20 +213,13 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
         }
     }
 
-    // Sort: Uncompleted first (sorted by priority), Completed last.
+    // Sort: Uncompleted first (sorted by manual position), Completed last (sorted by manual position).
     const sortedTasks = [...tasks].sort((a, b) => {
         if (a.is_completed !== b.is_completed) {
             return a.is_completed ? 1 : -1
         }
-        if (!a.is_completed && !b.is_completed) {
-            const aPriority = a.priority || 'low'
-            const bPriority = b.priority || 'low'
-            const aSort = PRIORITY_CONFIG[aPriority]?.sort ?? 3
-            const bSort = PRIORITY_CONFIG[bPriority]?.sort ?? 3
-            if (aSort !== bSort) return aSort - bSort
-        }
-        // Default to newest first
-        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+        // Use position DESC (higher position at the top)
+        return (b.position || 0) - (a.position || 0)
     })
 
     // Expand recurring "off-day" tasks: one virtual entry per off-day in the current off period
@@ -373,7 +367,7 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
                     <button
                         type="submit"
                         disabled={!newTask.trim() || loading}
-                        className="w-11 h-11 rounded-xl bg-black flex items-center justify-center text-white hover:bg-neutral-800 transition-colors shrink-0 disabled:opacity-50"
+                        className="w-11 h-11 rounded-xl bg-black flex items-center justify-center text-white hover:bg-neutral-800 transition-all shrink-0 disabled:opacity-50 shadow-sm"
                     >
                         <Plus className="w-5 h-5" />
                     </button>
@@ -608,7 +602,12 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
                 )}
             </form>
 
-            <div className="flex-1 pr-1 space-y-2">
+            <Reorder.Group
+                axis="y"
+                values={sortedTasks}
+                onReorder={updateTaskPositions}
+                className="flex-1 pr-1 space-y-2 no-scrollbar"
+            >
                 {loading && tasks.length === 0 ? (
                     <div className="flex items-center justify-center h-32">
                         <RefreshCw className="w-5 h-5 text-black/20 animate-spin" />
@@ -619,16 +618,24 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
                         <p className="text-[11px] text-black/30">Add something above to get started.</p>
                     </div>
                 ) : (
-                    expandedTasks.map((task) => (
-                        <TaskRow key={task.id} task={task} toggleTask={toggleTask} deleteTask={handleDeleteWithSafety} editTask={editTask} category={category} />
+                    sortedTasks.map((task) => (
+                        <TaskRow
+                            key={task.id}
+                            task={task}
+                            toggleTask={toggleTask}
+                            deleteTask={handleDeleteWithSafety}
+                            editTask={editTask}
+                            category={category}
+                        />
                     ))
                 )}
-            </div>
+            </Reorder.Group>
         </div>
     )
 }
 
 function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: Task, toggleTask: any, deleteTask: any, editTask: any, category: string }) {
+    const controls = useDragControls()
     const [isEditing, setIsEditing] = useState(false)
     const [editValue, setEditValue] = useState(task.title)
     const [editAmount, setEditAmount] = useState(task.amount || '')
@@ -640,6 +647,7 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
     const [editRecurringTime, setEditRecurringTime] = useState(task.recurrence_config?.time || '')
     const [editRecurringDuration, setEditRecurringDuration] = useState(task.recurrence_config?.duration_minutes?.toString() || '60')
     const [editRecurringDays, setEditRecurringDays] = useState<number[]>(task.recurrence_config?.days_of_week || [])
+    const [editProfile, setEditProfile] = useState(task.profile)
 
     // Reset edit states to DB truth whenever editing starts
     useEffect(() => {
@@ -654,6 +662,7 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
             setEditRecurringTime(task.recurrence_config?.time || '')
             setEditRecurringDuration(task.recurrence_config?.duration_minutes?.toString() || '60')
             setEditRecurringDays(task.recurrence_config?.days_of_week || [])
+            setEditProfile(task.profile)
         }
     }, [isEditing, task])
 
@@ -666,6 +675,7 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
             updates.amount = val
         }
         if (editPriority !== task.priority) updates.priority = editPriority
+        if (editProfile !== task.profile) updates.profile = editProfile as any
         if (editDueDate !== (task.due_date ? task.due_date.split('T')[0] : '')) {
             updates.due_date = editDueDate || undefined
             if (!editDueDate) updates.due_date_mode = 'on'
@@ -869,6 +879,28 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
                                 </button>
                             ))}
                         </div>
+                        {/* Profile Toggle */}
+                        <div className="flex gap-1 p-1 bg-black/[0.03] rounded-lg border border-black/5">
+                            {[
+                                { id: 'personal', label: 'Personal', icon: User },
+                                { id: 'business', label: 'Business', icon: Briefcase }
+                            ].map(p => (
+                                <button
+                                    key={p.id}
+                                    type="button"
+                                    onClick={() => setEditProfile(p.id)}
+                                    className={cn(
+                                        "px-2 py-1 text-[9px] font-bold rounded-md border transition-all uppercase tracking-tight whitespace-nowrap flex items-center gap-1",
+                                        editProfile === p.id
+                                            ? "bg-white text-black border-black/[0.08] shadow-sm"
+                                            : "bg-transparent text-black/30 border-transparent hover:text-black/50"
+                                    )}
+                                >
+                                    <p.icon className="w-2.5 h-2.5" />
+                                    {p.label}
+                                </button>
+                            ))}
+                        </div>
                         <div className="flex items-center gap-2 ml-auto">
                             <button onClick={() => setIsEditing(false)} className="px-3 py-1.5 text-black/40 hover:text-black text-[12px] font-bold transition-colors">
                                 Cancel
@@ -884,75 +916,92 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
     }
 
     return (
-        <div className={cn(
-            "group flex items-center gap-3 p-3 rounded-xl border transition-all relative overflow-hidden",
-            task.is_completed
-                ? "bg-black/[0.02] border-transparent opacity-60"
-                : "bg-white border-black/[0.06] hover:border-black/[0.15] shadow-sm"
-        )}>
-            <div className="flex items-center gap-3 flex-1 min-w-0">
-                <input
-                    type="checkbox"
-                    id={`task-${task.id}`}
-                    checked={task.is_completed}
-                    onChange={(e) => toggleTask(task.id, e.target.checked)}
-                    className="w-5 h-5 accent-black cursor-pointer shrink-0"
-                />
-                <div className="flex flex-col flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                        {category === 'grocery' && task.amount && (
-                            <span className="text-[12px] font-bold text-black/40 shrink-0">{task.amount}</span>
-                        )}
-                        <span className={cn(
-                            "text-[14px] transition-all truncate",
-                            task.is_completed
-                                ? "text-black/30 line-through"
-                                : "text-black/90 font-medium"
-                        )}>
-                            {task.title}
-                        </span>
+        <Reorder.Item
+            key={task.id}
+            value={task}
+            dragListener={false}
+            dragControls={controls}
+            className="touch-none"
+        >
+            <div className={cn(
+                "group flex items-center gap-3 p-3 rounded-xl border transition-all relative overflow-hidden",
+                task.is_completed
+                    ? "bg-black/[0.02] border-transparent opacity-60"
+                    : "bg-white border-black/[0.06] hover:border-black/[0.15] shadow-sm active:scale-[0.98] active:shadow-md"
+            )}>
+                {/* Drag Handle */}
+                {!task.is_completed && (
+                    <div
+                        onPointerDown={(e) => controls.start(e)}
+                        className="cursor-grab active:cursor-grabbing text-black/10 hover:text-black/30 transition-colors shrink-0 -ml-1 py-1"
+                    >
+                        <GripVertical className="w-4 h-4" />
                     </div>
-                    {!task.is_completed && task.priority && task.priority !== 'low' && PRIORITY_CONFIG[task.priority] && (
-                        <span className={cn(
-                            "text-[10px] w-fit px-1.5 py-0.5 rounded uppercase font-bold tracking-wider mt-1 border",
-                            PRIORITY_CONFIG[task.priority].color
-                        )}>
-                            {PRIORITY_CONFIG[task.priority].label} Priority
-                        </span>
-                    )}
-                    {task.due_date && !task.is_completed && (
-                        <div className="flex items-center gap-1.5 text-[10px] text-black/30 font-bold uppercase tracking-wider mt-1">
-                            <Calendar className="w-2.5 h-2.5" />
-                            {task.due_date_mode === 'before' && <span>On or Before </span>}
-                            {task.due_date_mode === 'range' && <span>Range </span>}
-                            <span>{new Date(task.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
-                            {task.due_date_mode === 'range' && task.end_date && (
-                                <>
-                                    <span className="opacity-40">→</span>
-                                    <span>{new Date(task.end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
-                                </>
+                )}
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <input
+                        type="checkbox"
+                        id={`task-${task.id}`}
+                        checked={task.is_completed}
+                        onChange={(e) => toggleTask(task.id, e.target.checked)}
+                        className="w-5 h-5 accent-black cursor-pointer shrink-0"
+                    />
+                    <div className="flex flex-col flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                            {category === 'grocery' && task.amount && (
+                                <span className="text-[12px] font-bold text-black/40 shrink-0">{task.amount}</span>
                             )}
+                            <span className={cn(
+                                "text-[14px] transition-all truncate",
+                                task.is_completed
+                                    ? "text-black/30 line-through"
+                                    : "text-black/90 font-medium"
+                            )}>
+                                {task.title}
+                            </span>
                         </div>
-                    )}
+                        {!task.is_completed && task.priority && task.priority !== 'low' && PRIORITY_CONFIG[task.priority] && (
+                            <span className={cn(
+                                "text-[10px] w-fit px-1.5 py-0.5 rounded uppercase font-bold tracking-wider mt-1 border",
+                                PRIORITY_CONFIG[task.priority].color
+                            )}>
+                                {PRIORITY_CONFIG[task.priority].label} Priority
+                            </span>
+                        )}
+                        {task.due_date && !task.is_completed && (
+                            <div className="flex items-center gap-1.5 text-[10px] text-black/30 font-bold uppercase tracking-wider mt-1">
+                                <Calendar className="w-2.5 h-2.5" />
+                                {task.due_date_mode === 'before' && <span>On or Before </span>}
+                                {task.due_date_mode === 'range' && <span>Range </span>}
+                                <span>{new Date(task.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
+                                {task.due_date_mode === 'range' && task.end_date && (
+                                    <>
+                                        <span className="opacity-40">→</span>
+                                        <span>{new Date(task.end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
+                                    </>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </div>
 
-            <div className="flex items-center gap-1 shrink-0">
-                <button
-                    onClick={() => setIsEditing(true)}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg text-black/40 hover:text-black hover:bg-black/5 transition-all"
-                    aria-label="Edit task"
-                >
-                    <Edit2 className="w-4 h-4" />
-                </button>
-                <button
-                    onClick={() => deleteTask(task)}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg text-black/40 hover:text-red-500 hover:bg-red-50 transition-all"
-                    aria-label="Delete task"
-                >
-                    <Trash2 className="w-4 h-4" />
-                </button>
-            </div>
-        </div >
+                <div className="flex items-center gap-1 shrink-0">
+                    <button
+                        onClick={() => setIsEditing(true)}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg text-black/40 hover:text-black hover:bg-black/5 transition-all"
+                        aria-label="Edit task"
+                    >
+                        <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                        onClick={() => deleteTask(task)}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg text-black/40 hover:text-red-500 hover:bg-red-50 transition-all"
+                        aria-label="Delete task"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                    </button>
+                </div>
+            </div >
+        </Reorder.Item>
     )
 }

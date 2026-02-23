@@ -63,7 +63,7 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder', profileOverr
             .select('*')
             .eq('profile', activeProfile)
             .eq('category', category)
-            .order('created_at', { ascending: false })
+            .order('position', { ascending: false })
 
         if (error) setError(error.message)
         else setTasks(data ?? [])
@@ -92,7 +92,8 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder', profileOverr
                 is_completed: false,
                 category,
                 profile: activeProfile as any,
-                created_at: new Date().toISOString()
+                created_at: new Date().toISOString(),
+                position: tasks.length > 0 ? Math.max(...tasks.map(t => t.position || 0)) + 1000 : Date.now()
             }
             const updated = [newTask, ...tasks]
             setTasks(updated)
@@ -109,10 +110,41 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder', profileOverr
             end_date,
             recurrence_config,
             amount,
-            profile: activeProfile
+            profile: activeProfile,
+            position: tasks.length > 0 ? Math.max(...tasks.map(t => t.position || 0)) + 1000 : Date.now()
         })
         if (error) throw error
         await fetchTasks()
+    }
+
+    const updateTaskPositions = async (orderedTasks: Task[]) => {
+        // Update local state immediately for snappy UI
+        setTasks(orderedTasks)
+
+        if (settings.is_demo_mode) {
+            saveSessionTasks(orderedTasks)
+            return
+        }
+
+        // Prepare batch update
+        // We only update tasks that actually changed position if we were being fancy, 
+        // but simple batch upsert/update is fine for small lists.
+        const updates = orderedTasks.map((t, idx) => ({
+            id: t.id,
+            position: (orderedTasks.length - idx) * 1000 // Ensure descending order (top a higher pos)
+        }))
+
+        // Supabase doesn't have a great "batch update different rows with different values" 
+        // without a custom RPC or multiple calls. 
+        // For KarrOS scale, we'll just loop for now or use upsert if we have all fields.
+        // Actually, let's use a simpler approach: update them one by one or expose a bulk API.
+        try {
+            for (const up of updates) {
+                await supabase.from('fin_tasks').update({ position: up.position }).eq('id', up.id)
+            }
+        } catch (err) {
+            console.error('Failed to persist task positions', err)
+        }
     }
 
     const toggleTask = async (id: string, is_completed: boolean) => {
@@ -195,6 +227,7 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder', profileOverr
         clearAllTasks,
         clearCompletedTasks,
         editTask,
+        updateTaskPositions,
         refetch: fetchTasks
     }
 }
