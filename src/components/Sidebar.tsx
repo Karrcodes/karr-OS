@@ -267,14 +267,17 @@ export function Sidebar() {
     }
 
     // Close drawer on route change and auto-collapse others
-    useEffect(() => { 
-        setMobileOpen(false) 
+    useEffect(() => {
+        setMobileOpen(false)
         // Find which module contains the current pathname and expand only that
-        const activeItemWithSub = navItems.find(item => 
+        const activeItemWithSub = navItems.find(item =>
             'sub' in item && item.sub?.some(sub => pathname.startsWith(sub.href))
         )
         if (activeItemWithSub) {
             setExpandedFolders({ [activeItemWithSub.href]: true })
+        } else {
+            // Close all folders when moving to a page like Operations root which has no sidebar subpages
+            setExpandedFolders({})
         }
     }, [pathname])
 
