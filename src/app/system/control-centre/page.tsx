@@ -185,64 +185,26 @@ export default function ControlCentrePage() {
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="lg:col-span-2 space-y-6">
-                            <ScheduleWidget />
-
-                            <div className="grid grid-cols-1 md:grid-cols-10 gap-6">
-                                {/* Philosophy Engine */}
-                                <div className="md:col-span-6 bg-black text-white rounded-2xl p-8 shadow-sm relative overflow-hidden flex flex-col justify-center min-h-[220px]">
-                                    <div className="absolute top-0 right-0 p-6 opacity-[0.05]">
-                                        <Terminal className="w-32 h-32" />
-                                    </div>
-                                    <div className="flex items-center gap-2 mb-6">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                        <p className="text-[9px] font-mono tracking-widest uppercase text-white/40">Philosophy Engine // Synchronised</p>
-                                    </div>
-                                    <div className="flex-1 flex flex-col justify-center">
-                                        <p className="text-[17px] font-medium leading-relaxed font-mono" key={quoteIndex}>
-                                            "{MOTIVATION_QUOTES[quoteIndex].text}"
-                                        </p>
-                                        <p className="text-[10px] font-mono text-white/25 uppercase tracking-widest mt-4">— {MOTIVATION_QUOTES[quoteIndex].tag}</p>
-                                    </div>
+                            {/* Philosophy Engine */}
+                            <div className="bg-black text-white rounded-2xl p-8 shadow-sm relative overflow-hidden flex flex-col justify-center min-h-[160px]">
+                                <div className="absolute top-0 right-0 p-6 opacity-[0.05]">
+                                    <Terminal className="w-32 h-32" />
                                 </div>
-
-                                {/* Condensed Efficiency Pulse */}
-                                <div className="md:col-span-4">
-                                    <SectionBlock title="Efficiency Pulse" desc="Real-time">
-                                        <div className="space-y-6">
-                                            <div className="flex items-center gap-4">
-                                                <div className="relative w-16 h-16 shrink-0">
-                                                    <svg className="w-full h-full transform -rotate-90">
-                                                        <circle cx="32" cy="32" r="28" fill="transparent" stroke="currentColor" strokeWidth="6" className="text-black/[0.05]" />
-                                                        <circle cx="32" cy="32" r="28" fill="transparent" stroke="currentColor" strokeWidth="6" strokeDasharray={176} strokeDashoffset={176 - (176 * stats.score) / 100} strokeLinecap="round" className="text-black transition-all duration-1000" />
-                                                    </svg>
-                                                    <div className="absolute inset-0 flex items-center justify-center">
-                                                        <span className="text-[13px] font-black">{stats.score}</span>
-                                                    </div>
-                                                </div>
-                                                <div className="flex-1 space-y-3">
-                                                    <div>
-                                                        <div className="flex items-center justify-between mb-1">
-                                                            <span className="text-[9px] font-bold text-black/40 uppercase tracking-wider">Ops</span>
-                                                            <span className="text-[9px] font-mono font-bold">{Math.round(stats.taskCompletion)}%</span>
-                                                        </div>
-                                                        <div className="h-1 w-full bg-black/[0.04] rounded-full overflow-hidden">
-                                                            <div className="h-full bg-black" style={{ width: `${stats.taskCompletion}%` }} />
-                                                        </div>
-                                                    </div>
-                                                    <div>
-                                                        <div className="flex items-center justify-between mb-1">
-                                                            <span className="text-[9px] font-bold text-black/40 uppercase tracking-wider">Budget</span>
-                                                            <span className="text-[9px] font-mono font-bold">{Math.round(stats.budgetScore)}%</span>
-                                                        </div>
-                                                        <div className="h-1 w-full bg-black/[0.04] rounded-full overflow-hidden">
-                                                            <div className="h-full bg-black" style={{ width: `${stats.budgetScore}%` }} />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </SectionBlock>
+                                <div className="flex items-center gap-2 mb-6">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    <p className="text-[9px] font-mono tracking-widest uppercase text-white/40">Philosophy Engine // Synchronised</p>
                                 </div>
+                                <div className="flex-1 flex flex-col justify-center">
+                                    <p className="text-[17px] font-medium leading-relaxed font-mono" key={quoteIndex}>
+                                        "{MOTIVATION_QUOTES[quoteIndex].text}"
+                                    </p>
+                                    <p className="text-[10px] font-mono text-white/25 uppercase tracking-widest mt-4">— {MOTIVATION_QUOTES[quoteIndex].tag}</p>
+                                </div>
+                            </div>
+
+                            {/* Shortened Schedule */}
+                            <div className="max-h-[360px] flex flex-col">
+                                <ScheduleWidget />
                             </div>
                         </div>
 
