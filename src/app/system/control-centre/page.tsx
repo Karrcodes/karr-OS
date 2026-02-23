@@ -6,11 +6,8 @@ import Link from 'next/link'
 import { useState, useEffect, useMemo } from 'react'
 import { useTasks } from '@/features/tasks/hooks/useTasks'
 import { useTransactions } from '@/features/finance/hooks/useTransactions'
-import { ScheduleWidget } from '@/features/dashboard/components/ScheduleWidget'
 import { cn } from '@/lib/utils'
-import { isShiftDay } from '@/features/finance/utils/rotaUtils'
 import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
-import { useRota } from '@/features/finance/hooks/useRota'
 import { useGoals } from '@/features/goals/hooks/useGoals'
 
 const MOTIVATION_QUOTES = [
@@ -24,7 +21,6 @@ const MOTIVATION_QUOTES = [
 export default function ControlCentrePage() {
     const { tasks, loading: tasksLoading } = useTasks('todo', 'all')
     const { transactions, loading: financeLoading } = useTransactions('all')
-    const { overrides, loading: rotaLoading } = useRota('all')
     const { goals, loading: goalsLoading } = useGoals()
     const { settings } = useSystemSettings()
     const [quoteIndex, setQuoteIndex] = useState(0)
@@ -75,7 +71,7 @@ export default function ControlCentrePage() {
         return { score, nextAction, taskCompletion, budgetScore }
     }, [tasks, transactions])
 
-    const loading = tasksLoading || financeLoading || rotaLoading // Added rotaLoading to overall loading state
+    const loading = tasksLoading || financeLoading
 
     return (
         <div className="min-h-screen bg-white flex flex-col">
@@ -185,7 +181,6 @@ export default function ControlCentrePage() {
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="lg:col-span-2 space-y-6">
-                            {/* Philosophy Engine */}
                             <div className="bg-black text-white rounded-2xl p-8 shadow-sm relative overflow-hidden flex flex-col justify-center min-h-[160px]">
                                 <div className="absolute top-0 right-0 p-6 opacity-[0.05]">
                                     <Terminal className="w-32 h-32" />
@@ -200,11 +195,6 @@ export default function ControlCentrePage() {
                                     </p>
                                     <p className="text-[10px] font-mono text-white/25 uppercase tracking-widest mt-4">— {MOTIVATION_QUOTES[quoteIndex].tag}</p>
                                 </div>
-                            </div>
-
-                            {/* Shortened Schedule */}
-                            <div className="max-h-[360px] flex flex-col">
-                                <ScheduleWidget />
                             </div>
                         </div>
 
