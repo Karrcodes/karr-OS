@@ -50,23 +50,24 @@ export default function GoalDetailSheet({ goal, isOpen, onClose, onToggleMilesto
 
                         <div className="max-w-3xl mx-auto px-6 pb-12">
                             <div className="flex items-start justify-between mb-8">
-                                <div className="space-y-2">
+                                <div className="space-y-3">
                                     <div className="flex items-center gap-2">
-                                        <span className="px-2 py-0.5 bg-black text-white rounded text-[10px] font-black uppercase tracking-widest">
+                                        <span className="px-2.5 py-1 bg-black text-white rounded-lg text-[10px] font-bold uppercase tracking-wider">
                                             {goal.category}
                                         </span>
-                                        <span className="px-2 py-0.5 bg-black/[0.03] text-black/40 rounded text-[10px] font-black uppercase tracking-widest">
-                                            {goal.timeframe}
+                                        <div className="w-1 h-1 rounded-full bg-black/10" />
+                                        <span className="px-2.5 py-1 bg-black/[0.04] text-black/50 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-black/5">
+                                            {goal.timeframe} Horizon
                                         </span>
                                     </div>
-                                    <h2 className="text-[28px] font-black text-black tracking-tight leading-none">{goal.title}</h2>
-                                    <p className="text-[14px] text-black/40 font-medium">{goal.description || 'Define your strategic path.'}</p>
+                                    <h2 className="text-[32px] font-bold text-black tracking-tight leading-[1.1]">{goal.title}</h2>
+                                    <p className="text-[15px] text-black/50 font-medium leading-relaxed max-w-xl">{goal.description || 'Define your strategic path.'}</p>
                                 </div>
                                 <button
                                     onClick={onClose}
-                                    className="p-3 bg-black/[0.03] hover:bg-black/[0.06] rounded-full transition-colors"
+                                    className="w-12 h-12 flex items-center justify-center bg-black/[0.03] hover:bg-black/[0.06] rounded-full transition-colors group"
                                 >
-                                    <X className="w-5 h-5 text-black/40" />
+                                    <X className="w-5 h-5 text-black/40 group-hover:text-black transition-colors" />
                                 </button>
                             </div>
 
@@ -91,25 +92,25 @@ export default function GoalDetailSheet({ goal, isOpen, onClose, onToggleMilesto
 
                                     <div className="p-6 bg-black/[0.02] rounded-2xl border border-black/5 space-y-4">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-black/30">Completion</span>
-                                            <span className="text-[12px] font-mono font-bold">{Math.round(progress)}%</span>
+                                            <span className="text-[10px] font-bold uppercase tracking-widest text-black/30">Completion</span>
+                                            <span className="text-[12px] font-mono font-bold text-black">{Math.round(progress)}%</span>
                                         </div>
-                                        <div className="h-2 w-full bg-black/[0.04] rounded-full overflow-hidden">
+                                        <div className="h-1.5 w-full bg-black/[0.04] rounded-full overflow-hidden">
                                             <motion.div
                                                 initial={{ width: 0 }}
                                                 animate={{ width: `${progress}%` }}
-                                                className="h-full bg-black"
+                                                className="h-full bg-black shadow-[0_0_10px_rgba(0,0,0,0.1)]"
                                             />
                                         </div>
                                         <div className="flex items-center gap-4 pt-2">
                                             <div className="flex flex-col">
                                                 <span className="text-[10px] font-bold text-black/20 uppercase tracking-tight">Milestones</span>
-                                                <span className="text-[14px] font-black">{completedMilestones}/{totalMilestones}</span>
+                                                <span className="text-[15px] font-bold text-black">{completedMilestones}/{totalMilestones}</span>
                                             </div>
                                             <div className="w-px h-8 bg-black/5" />
                                             <div className="flex flex-col">
                                                 <span className="text-[10px] font-bold text-black/20 uppercase tracking-tight">Status</span>
-                                                <span className="text-[14px] font-black uppercase tracking-tight">{goal.status}</span>
+                                                <span className="text-[15px] font-bold uppercase tracking-tight text-emerald-600">{goal.status}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -131,14 +132,14 @@ export default function GoalDetailSheet({ goal, isOpen, onClose, onToggleMilesto
                                 {/* Right Column: Milestones */}
                                 <div className="md:col-span-2 space-y-6">
                                     <div className="flex items-center justify-between">
-                                        <h3 className="text-[14px] font-black uppercase tracking-[0.2em] text-black">Tactical Milestones</h3>
-                                        <button className="flex items-center gap-1.5 text-blue-600 hover:text-blue-700 font-bold text-[12px] transition-all">
-                                            <Plus className="w-4 h-4" />
+                                        <h3 className="text-[12px] font-bold uppercase tracking-widest text-black/40">Tactical Milestones</h3>
+                                        <button className="flex items-center gap-1.5 text-blue-600 hover:text-blue-700 font-bold text-[12px] transition-all group">
+                                            <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform" />
                                             Add Milestone
                                         </button>
                                     </div>
 
-                                    <div className="space-y-3">
+                                    <div className="space-y-4">
                                         {goal.milestones?.map((m) => (
                                             <button
                                                 key={m.id}
@@ -169,26 +170,26 @@ export default function GoalDetailSheet({ goal, isOpen, onClose, onToggleMilesto
                                     </div>
 
                                     <div className="pt-8 space-y-4">
-                                        <h3 className="text-[14px] font-black uppercase tracking-[0.2em] text-black">Targeting</h3>
+                                        <h3 className="text-[12px] font-bold uppercase tracking-widest text-black/40">Targeting</h3>
                                         <div className="grid grid-cols-2 gap-4">
-                                            <div className="p-4 bg-black/[0.03] rounded-xl border border-black/5 space-y-1">
-                                                <div className="flex items-center gap-2 text-black/30 mb-1">
+                                            <div className="p-5 bg-[#fafafa] rounded-2xl border border-black/[0.06] space-y-1 shadow-sm">
+                                                <div className="flex items-center gap-2 text-black/30 mb-2">
                                                     <Calendar className="w-3.5 h-3.5" />
-                                                    <span className="text-[9px] font-black uppercase tracking-widest">Deadline</span>
+                                                    <span className="text-[10px] font-bold uppercase tracking-wider">Deadline</span>
                                                 </div>
-                                                <p className="text-[13px] font-bold">{goal.target_date ? new Date(goal.target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Set Deadline'}</p>
+                                                <p className="text-[14px] font-bold text-black">{goal.target_date ? new Date(goal.target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Set Deadline'}</p>
                                             </div>
-                                            <div className="p-4 bg-black/[0.03] rounded-xl border border-black/5 space-y-1">
-                                                <div className="flex items-center gap-2 text-black/30 mb-1">
+                                            <div className="p-5 bg-[#fafafa] rounded-2xl border border-black/[0.06] space-y-1 shadow-sm">
+                                                <div className="flex items-center gap-2 text-black/30 mb-2">
                                                     <Clock className="w-3.5 h-3.5" />
-                                                    <span className="text-[9px] font-black uppercase tracking-widest">Priority</span>
+                                                    <span className="text-[10px] font-bold uppercase tracking-wider">Priority</span>
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     <div className={cn(
                                                         "w-2 h-2 rounded-full",
-                                                        goal.priority === 'super' ? "bg-amber-500 animate-pulse" : "bg-black/20"
+                                                        goal.priority === 'super' ? "bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.5)]" : "bg-black/20"
                                                     )} />
-                                                    <p className="text-[13px] font-black uppercase tracking-tight">{goal.priority}</p>
+                                                    <p className="text-[14px] font-bold uppercase tracking-tight text-black">{goal.priority}</p>
                                                 </div>
                                             </div>
                                         </div>

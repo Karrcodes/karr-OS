@@ -41,14 +41,16 @@ export default function GoalsMatrix({ goals, onGoalClick }: GoalsMatrixProps) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
             {(['short', 'medium', 'long'] as GoalTimeframe[]).map((timeframe) => (
                 <div key={timeframe} className="space-y-6">
-                    <div className="flex flex-col gap-1 border-b border-black/[0.05] pb-4">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-[14px] font-black uppercase tracking-[0.15em] text-black">
-                                {TIMEFRAME_CONFIG[timeframe].label}
-                            </h3>
-                            <span className="text-[11px] font-mono text-black/20">{groupedGoals[timeframe].length} Objective{groupedGoals[timeframe].length !== 1 ? 's' : ''}</span>
+                    <div className="flex items-baseline gap-2 mb-4 px-1">
+                        <h3 className="text-[14px] font-bold text-black whitespace-nowrap">
+                            {TIMEFRAME_CONFIG[timeframe].label}
+                        </h3>
+                        <span className="text-[11px] text-black/35 font-medium">
+                            {TIMEFRAME_CONFIG[timeframe].desc}
+                        </span>
+                        <div className="ml-auto bg-black/[0.04] px-1.5 py-0.5 rounded text-[9px] font-black font-mono text-black/20">
+                            {groupedGoals[timeframe].length}
                         </div>
-                        <p className="text-[11px] text-black/35 font-medium italic">{TIMEFRAME_CONFIG[timeframe].desc}</p>
                     </div>
 
                     <div className="space-y-4">

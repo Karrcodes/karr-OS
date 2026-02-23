@@ -63,23 +63,23 @@ function ViewCard({ goal, index, onClick }: { goal: Goal, index: number, onClick
             <div className="absolute inset-0 p-6 flex flex-col justify-end">
                 <div className="space-y-3 transform translate-y-2 group-hover:translate-y-0 transition-transform">
                     <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 bg-white/10 backdrop-blur-md rounded text-[9px] font-black uppercase tracking-widest text-white border border-white/20">
+                        <span className="px-2.5 py-1 bg-white border border-white/20 rounded-lg text-[10px] font-bold uppercase tracking-wider text-black shadow-lg">
                             {goal.category}
                         </span>
                     </div>
-                    <h4 className="text-[17px] font-black text-white tracking-tight">{goal.title}</h4>
+                    <h4 className="text-[17px] font-bold text-white tracking-tight">{goal.title}</h4>
 
-                    <div className="space-y-1.5">
-                        <div className="flex items-center justify-between text-[10px] text-white/60 font-black tracking-widest uppercase">
-                            <span>OS MILESTONES</span>
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between text-[10px] text-white/50 font-bold tracking-wider uppercase">
+                            <span>Strategic Progress</span>
                             <span>{Math.round(progress)}%</span>
                         </div>
-                        <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden border border-white/5">
+                        <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden border border-white/5">
                             <motion.div
                                 initial={{ width: 0 }}
                                 animate={{ width: `${progress}%` }}
                                 transition={{ duration: 1, delay: 0.5 }}
-                                className="h-full bg-white"
+                                className="h-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.3)]"
                             />
                         </div>
                     </div>
