@@ -180,8 +180,8 @@ export default function ControlCentrePage() {
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div className="lg:col-span-2 space-y-6">
-                            <div className="bg-black text-white rounded-2xl p-8 shadow-sm relative overflow-hidden flex flex-col justify-center min-h-[160px]">
+                        <div className="lg:col-span-2 flex flex-col">
+                            <div className="bg-black text-white rounded-2xl p-8 shadow-sm relative overflow-hidden flex flex-col justify-center min-h-[160px] h-full">
                                 <div className="absolute top-0 right-0 p-6 opacity-[0.05]">
                                     <Terminal className="w-32 h-32" />
                                 </div>
@@ -199,9 +199,8 @@ export default function ControlCentrePage() {
                         </div>
 
                         {/* Right Column: Strategic Focus */}
-                        <div className="lg:col-span-1 space-y-6">
-
-                            <SectionBlock title="Strategic Focus" desc="Top Objectives">
+                        <div className="lg:col-span-1 flex flex-col">
+                            <SectionBlock title="Strategic Focus" desc="Top Objectives" className="h-full">
                                 <div className="space-y-4 p-1">
                                     {goals.slice(0, 3).map(goal => {
                                         const total = goal.milestones?.length || 0
@@ -258,9 +257,9 @@ function SummaryCard({ label, value, icon, color, sub }: { label: string; value:
     )
 }
 
-function SectionBlock({ title, desc, children }: { title: string; desc: string; children: React.ReactNode }) {
+function SectionBlock({ title, desc, children, className }: { title: string; desc: string; children: React.ReactNode; className?: string }) {
     return (
-        <div className="rounded-2xl border border-black/[0.08] bg-white p-5 shadow-sm">
+        <div className={cn("rounded-2xl border border-black/[0.08] bg-white p-5 shadow-sm", className)}>
             <div className="flex items-baseline gap-2 mb-6">
                 <h2 className="text-[15px] font-bold text-black">{title}</h2>
                 <span className="text-[11px] text-black/35 font-medium">{desc}</span>

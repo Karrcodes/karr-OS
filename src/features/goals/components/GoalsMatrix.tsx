@@ -38,7 +38,7 @@ export default function GoalsMatrix({ goals, onGoalClick }: GoalsMatrixProps) {
     }, [goals])
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-start">
             {(['short', 'medium', 'long'] as GoalTimeframe[]).map((timeframe) => (
                 <div key={timeframe} className="space-y-6">
                     <div className="flex flex-col px-1 mb-4">
@@ -123,7 +123,7 @@ function GoalMatrixCard({ goal, index, onClick }: { goal: Goal, index: number, o
                         <config.icon className="w-4 h-4" />
                     </div>
                     <div className={cn(
-                        "px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider",
+                        "px-1.5 xs:px-2 py-0.5 rounded-full text-[8px] xs:text-[9px] font-bold uppercase tracking-wider",
                         priority.color,
                         priority.pulse && "animate-pulse"
                     )}>
