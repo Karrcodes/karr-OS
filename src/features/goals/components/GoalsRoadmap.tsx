@@ -12,18 +12,19 @@ interface GoalsRoadmapProps {
 }
 
 interface MonthHeader {
-    name: string
-    offset: number
+    name: string       // e.g. "Feb"
+    isNewYear: boolean // marks a year boundary
+    yearLabel: string  // e.g. "2026"
+    offset: number     // percentage offset 0-100
 }
 
 export default function GoalsRoadmap({ goals, onGoalClick }: GoalsRoadmapProps) {
     const timelineRef = useRef<HTMLDivElement>(null)
 
-    // Calculate time range (e.g., 2 months back, 10 months forward)
     const roadmapRange = useMemo(() => {
         const today = new Date()
-        const start = new Date(today.getFullYear(), today.getMonth() - 2, 1) // 2 months back
-        const end = new Date(today.getFullYear(), today.getMonth() + 10, 0) // 10 months forward
+        const start = new Date(today.getFullYear(), today.getMonth() - 2, 1)
+        const end = new Date(today.getFullYear(), today.getMonth() + 10, 0)
 
         const days: Date[] = []
         let current = new Date(start)
@@ -36,23 +37,26 @@ export default function GoalsRoadmap({ goals, onGoalClick }: GoalsRoadmapProps) 
         const diffToday = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
         const todayOffset = (diffToday / totalDays) * 100
 
-        // Create month headers
         const months: MonthHeader[] = []
         let lastMonth = -1
+        let lastYear = -1
         days.forEach((date, idx) => {
             if (date.getMonth() !== lastMonth) {
+                const isNewYear = date.getFullYear() !== lastYear && lastYear !== -1
                 months.push({
-                    name: date.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }),
+                    name: date.toLocaleDateString('en-GB', { month: 'short' }),
+                    isNewYear,
+                    yearLabel: String(date.getFullYear()),
                     offset: (idx / totalDays) * 100
                 })
                 lastMonth = date.getMonth()
+                lastYear = date.getFullYear()
             }
         })
 
         return { start, end, totalDays, todayOffset, months }
     }, [])
 
-    // Scroll to today on mount
     useEffect(() => {
         if (timelineRef.current) {
             const container = timelineRef.current
@@ -71,32 +75,46 @@ export default function GoalsRoadmap({ goals, onGoalClick }: GoalsRoadmapProps) 
         const left = Math.max(0, (startDiff / roadmapRange.totalDays) * 100)
         const width = Math.min(100 - left, ((endDiff - startDiff) / roadmapRange.totalDays) * 100)
 
-        return { left: `${left}%`, width: `${width}%` }
+        return { left: `${left}%`, width: `${Math.max(width, 4)}%` }
     }
+
+    // Fixed px-per-month so portrait doesn't squish — min 120px per month
+    const MIN_PX_PER_MONTH = 120
+    const totalMonths = roadmapRange.months.length
+    const minTimelineWidth = Math.max(totalMonths * MIN_PX_PER_MONTH, 1400)
 
     return (
         <div className="flex flex-col h-full bg-white border border-black/[0.06] rounded-[24px] overflow-hidden shadow-sm">
-            {/* Roadmap Header */}
+            {/* Column Headers */}
             <div className="flex border-b border-black/[0.06] bg-black/[0.01]">
                 <div className="w-[180px] md:w-[280px] shrink-0 p-4 border-r border-black/[0.06]">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-black/30">Strategic Context</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-black/30">Mission</span>
                 </div>
                 <div className="flex-1 relative overflow-hidden h-12">
-                    <div className="absolute inset-0 flex">
-                        {roadmapRange.months.map((m: MonthHeader, idx: number) => (
-                            <div
-                                key={idx}
-                                className="absolute h-full border-l border-black/[0.03] flex items-center px-3"
-                                style={{ left: `${m.offset}%` }}
-                            >
-                                <span className="text-[10px] font-bold uppercase tracking-tighter text-black/40 whitespace-nowrap">{m.name}</span>
-                            </div>
-                        ))}
+                    {/* We mirror the timeline width for the header only */}
+                    <div className="absolute inset-0 overflow-hidden">
+                        <div
+                            className="h-full relative"
+                            style={{ minWidth: `${minTimelineWidth}px` }}
+                        >
+                            {roadmapRange.months.map((m: MonthHeader, idx: number) => (
+                                <div
+                                    key={idx}
+                                    className="absolute h-full border-l border-black/[0.04] flex flex-col justify-center px-2"
+                                    style={{ left: `${m.offset}%` }}
+                                >
+                                    {m.isNewYear && (
+                                        <span className="text-[8px] font-bold text-blue-400 uppercase tracking-wider leading-none mb-0.5">{m.yearLabel}</span>
+                                    )}
+                                    <span className="text-[10px] font-bold uppercase tracking-tighter text-black/50 whitespace-nowrap">{m.name}</span>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Roadmap Body */}
+            {/* Body */}
             <div className="flex-1 flex overflow-hidden">
                 {/* Fixed Sidebar */}
                 <div className="w-[180px] md:w-[280px] shrink-0 flex flex-col border-r border-black/[0.06] bg-white divide-y divide-black/[0.03] overflow-y-auto no-scrollbar">
@@ -104,9 +122,9 @@ export default function GoalsRoadmap({ goals, onGoalClick }: GoalsRoadmapProps) 
                         <button
                             key={goal.id}
                             onClick={() => onGoalClick(goal)}
-                            className="group h-[80px] w-full p-4 flex flex-col justify-center text-left hover:bg-black/[0.02] transition-colors overflow-hidden shrink-0"
+                            className="group h-[80px] w-full p-3 md:p-4 flex flex-col justify-center text-left hover:bg-black/[0.02] transition-colors overflow-hidden shrink-0"
                         >
-                            <h4 className="text-[13px] font-bold text-black truncate group-hover:text-blue-600 transition-colors uppercase tracking-tight">{goal.title}</h4>
+                            <h4 className="text-[12px] md:text-[13px] font-bold text-black truncate group-hover:text-blue-600 transition-colors uppercase tracking-tight">{goal.title}</h4>
                             <div className="flex items-center gap-2 mt-1.5">
                                 <span className={cn(
                                     "px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-widest",
@@ -117,17 +135,16 @@ export default function GoalsRoadmap({ goals, onGoalClick }: GoalsRoadmapProps) 
                                 )}>
                                     {goal.category}
                                 </span>
-                                <div className={cn(
-                                    "w-1.5 h-1.5 rounded-full",
-                                    goal.priority === 'super' ? "bg-amber-500 animate-pulse" : "bg-black/10"
-                                )} />
+                                {goal.priority === 'super' && (
+                                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                )}
                             </div>
                         </button>
                     ))}
                     {goals.length === 0 && (
-                        <div className="flex flex-col items-center justify-center h-full p-8 text-center text-black/20">
-                            <Target className="w-8 h-8 mb-2 opacity-20" />
-                            <p className="text-[10px] font-bold uppercase tracking-widest">No Active Missions</p>
+                        <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+                            <Target className="w-8 h-8 mb-2 text-black/10" />
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-black/15">No Active Missions</p>
                         </div>
                     )}
                 </div>
@@ -135,24 +152,27 @@ export default function GoalsRoadmap({ goals, onGoalClick }: GoalsRoadmapProps) 
                 {/* Scrollable Timeline */}
                 <div
                     ref={timelineRef}
-                    className="flex-1 relative overflow-x-auto no-scrollbar bg-black/[0.005] cursor-grab active:cursor-grabbing"
+                    className="flex-1 relative overflow-x-auto no-scrollbar bg-black/[0.005]"
                 >
-                    <div className="h-full min-w-[2000px] relative">
+                    <div className="h-full relative" style={{ minWidth: `${minTimelineWidth}px` }}>
                         {/* Grid Lines */}
                         {roadmapRange.months.map((m: MonthHeader, idx: number) => (
                             <div
                                 key={idx}
-                                className="absolute top-0 bottom-0 border-l border-black/[0.03]"
+                                className={cn(
+                                    "absolute top-0 bottom-0",
+                                    m.isNewYear ? "border-l-2 border-blue-200" : "border-l border-black/[0.04]"
+                                )}
                                 style={{ left: `${m.offset}%` }}
                             />
                         ))}
 
                         {/* Today Indicator */}
                         <div
-                            className="absolute top-0 bottom-0 w-px bg-blue-500 z-20 shadow-[0_0_10px_rgba(59,130,246,0.3)]"
+                            className="absolute top-0 bottom-0 w-px bg-blue-500 z-20 shadow-[0_0_12px_rgba(59,130,246,0.25)]"
                             style={{ left: `${roadmapRange.todayOffset}%` }}
                         >
-                            <div className="absolute top-0 left-1/2 -translate-x-1/2 px-1.5 py-0.5 bg-blue-500 text-white text-[8px] font-bold rounded-b uppercase tracking-tighter">
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 px-1.5 py-0.5 bg-blue-500 text-white text-[8px] font-bold rounded-b uppercase tracking-tight whitespace-nowrap">
                                 Today
                             </div>
                         </div>
@@ -162,51 +182,45 @@ export default function GoalsRoadmap({ goals, onGoalClick }: GoalsRoadmapProps) 
                             {goals.map(goal => {
                                 const pos = calculateGoalPos(goal)
                                 const milestones = goal.milestones || []
-                                const progress = milestones.length > 0 ? (milestones.filter(m => m.is_completed).length / milestones.length) * 100 : 0
+                                const completed = milestones.filter(m => m.is_completed).length
+                                const progress = milestones.length > 0 ? (completed / milestones.length) * 100 : 0
 
                                 return (
                                     <div key={goal.id} className="h-[80px] relative flex items-center shrink-0">
                                         <motion.div
                                             initial={{ opacity: 0, scaleX: 0 }}
                                             animate={{ opacity: 1, scaleX: 1 }}
-                                            className="absolute h-8 rounded-full border border-black/10 shadow-sm flex items-center px-4 overflow-hidden group/bar transition-shadow hover:shadow-lg hover:shadow-black/5"
+                                            transition={{ duration: 0.4, ease: 'easeOut' }}
+                                            className="absolute h-8 rounded-full border border-black/10 shadow-sm flex items-center px-3 overflow-hidden cursor-pointer hover:shadow-lg hover:shadow-black/5 transition-shadow"
                                             style={{
                                                 left: pos.left,
                                                 width: pos.width,
                                                 transformOrigin: 'left',
                                                 backgroundColor: goal.status === 'completed' ? '#f0fdf4' : 'white'
                                             }}
+                                            onClick={() => onGoalClick(goal)}
                                         >
                                             {/* Progress Fill */}
                                             <div
-                                                className={cn(
-                                                    "absolute inset-y-0 left-0 opacity-10 transition-all duration-1000",
-                                                    goal.status === 'completed' ? "bg-emerald-500 opacity-100" : "bg-black"
-                                                )}
+                                                className="absolute inset-y-0 left-0 bg-black opacity-[0.06] rounded-full"
                                                 style={{ width: `${progress}%` }}
                                             />
 
-                                            <div className="relative z-10 flex items-center justify-between w-full">
-                                                <span className={cn(
-                                                    "text-[10px] font-bold uppercase tracking-tight truncate",
-                                                    goal.status === 'completed' ? "text-emerald-700" : "text-black/60"
-                                                )}>
+                                            <div className="relative z-10 flex items-center justify-between w-full gap-2">
+                                                <span className="text-[10px] font-bold uppercase tracking-tight truncate text-black/60">
                                                     {goal.title}
                                                 </span>
-
-                                                {/* Milestone Markers */}
-                                                <div className="flex gap-1 ml-2">
-                                                    {milestones.slice(0, 5).map((m) => (
+                                                <div className="flex items-center gap-0.5 shrink-0">
+                                                    {milestones.slice(0, 4).map((m) => (
                                                         <div key={m.id} title={m.title}>
-                                                            {m.is_completed ? (
-                                                                <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                                                            ) : (
-                                                                <Circle className="w-3 h-3 text-black/10" />
-                                                            )}
+                                                            {m.is_completed
+                                                                ? <CheckCircle2 className="w-2.5 h-2.5 text-emerald-500" />
+                                                                : <Circle className="w-2.5 h-2.5 text-black/10" />
+                                                            }
                                                         </div>
                                                     ))}
-                                                    {milestones.length > 5 && (
-                                                        <span className="text-[8px] font-bold text-black/20">+{milestones.length - 5}</span>
+                                                    {milestones.length > 4 && (
+                                                        <span className="text-[8px] font-bold text-black/20 ml-0.5">+{milestones.length - 4}</span>
                                                     )}
                                                 </div>
                                             </div>
