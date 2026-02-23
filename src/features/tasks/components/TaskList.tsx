@@ -5,7 +5,7 @@ import { Activity, ShoppingCart, Bell, Plus, Trash2, RefreshCw, Edit2, Calendar 
 import { useTasks } from '../hooks/useTasks'
 import { cn } from '@/lib/utils'
 import type { Task } from '../types/tasks.types'
-import { getNextOffPeriod } from '@/features/finance/utils/rotaUtils'
+import { getNextOffPeriod, isShiftDay } from '@/features/finance/utils/rotaUtils'
 
 const PRIORITY_CONFIG = {
     super: { label: 'Super', color: 'bg-blue-50 text-blue-600 border-blue-200', sort: 0 },
@@ -78,6 +78,32 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
         }
         // Default to newest first
         return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+    })
+
+    // Expand recurring "off-day" tasks: one virtual entry per off-day in the current off period
+    const today = new Date(); today.setHours(0, 0, 0, 0)
+    const currentOffPeriod = getNextOffPeriod(today) // finds current block if today is off-day too
+    const offDays: Date[] = []
+    if (currentOffPeriod.start.getTime() !== currentOffPeriod.end.getTime() || !isShiftDay(currentOffPeriod.start)) {
+        let d = new Date(currentOffPeriod.start)
+        while (d <= currentOffPeriod.end) {
+            offDays.push(new Date(d))
+            d.setDate(d.getDate() + 1)
+        }
+    }
+
+    // For each recurring task, inject virtual copies for each off-day
+    const expandedTasks: (Task & { _recurringDate?: string })[] = []
+    sortedTasks.forEach(task => {
+        const isRecurring = task.recurrence_config?.type === 'shift_relative'
+        if (isRecurring && offDays.length > 0) {
+            offDays.forEach(d => {
+                const dateStr = d.toISOString().split('T')[0]
+                expandedTasks.push({ ...task, id: `${task.id}__${dateStr}`, _recurringDate: dateStr })
+            })
+        } else {
+            expandedTasks.push(task)
+        }
     })
 
     return (
@@ -228,7 +254,7 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
                         <p className="text-[11px] text-black/30">Add something above to get started.</p>
                     </div>
                 ) : (
-                    sortedTasks.map((task) => (
+                    expandedTasks.map((task) => (
                         <TaskRow key={task.id} task={task} toggleTask={toggleTask} deleteTask={deleteTask} editTask={editTask} category={category} />
                     ))
                 )}

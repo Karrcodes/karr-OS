@@ -407,11 +407,16 @@ export function Sidebar() {
                                             draggable={false}
                                             className={cn(
                                                 'flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] transition-colors',
-                                                subActive ? 'text-black bg-black/8' : 'text-black/35 hover:text-black/60'
+                                                subActive ? 'text-black bg-black/5 font-semibold' : 'text-black/35 hover:text-black/60'
                                             )}
                                         >
-                                            <SubIcon className="w-3 h-3" />
-                                            {subItem.label}
+                                            <SubIcon className="w-3 h-3 shrink-0" />
+                                            <span className="flex-1 truncate">{subItem.label}</span>
+                                            <div className="flex items-center gap-1">
+                                                {(subItem as any).caps?.map((c: string) => (
+                                                    <CapBadge key={c} cap={c as 'P' | 'B'} />
+                                                ))}
+                                            </div>
                                         </Link>
                                     )
                                 })}

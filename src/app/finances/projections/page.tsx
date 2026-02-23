@@ -16,8 +16,10 @@ export default function ProjectionsPage() {
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-6">
-                    <ProjectionsAnalytics />
+                <div className="flex-1 overflow-y-auto pb-8">
+                    <div className="p-6">
+                        <ProjectionsAnalytics />
+                    </div>
                 </div>
             </div>
         </FinanceProfileProvider>
