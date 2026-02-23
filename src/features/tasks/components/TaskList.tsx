@@ -21,7 +21,8 @@ import {
     Activity,
     ShoppingCart,
     Bell,
-    X
+    X,
+    RefreshCw
 } from 'lucide-react'
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion'
 import { useTasks } from '../hooks/useTasks'
