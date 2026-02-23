@@ -43,17 +43,18 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder', profileOverr
 
     const fetchTasks = useCallback(async () => {
         if (settings.is_demo_mode) {
-            const sessionTasks = getSessionTasks()
-            if (sessionTasks) {
-                setTasks(sessionTasks)
-            } else {
+            let allTasks = getSessionTasks()
+            if (!allTasks) {
                 const initial = (MOCK_TASKS[category] as any).map((t: any) => ({
                     ...t,
-                    amount: t.amount || null
+                    amount: t.amount || null,
+                    position: t.position || Date.now()
                 }))
-                setTasks(initial)
                 saveSessionTasks(initial)
+                allTasks = initial
             }
+            const filtered = allTasks.filter((t: Task) => t.profile === activeProfile)
+            setTasks(filtered)
             setLoading(false)
             return
         }
@@ -77,9 +78,11 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder', profileOverr
         amount?: string,
         due_date_mode: 'on' | 'before' | 'range' = 'on',
         end_date?: string,
-        recurrence_config: any = {}
+        recurrence_config: any = {},
+        notes?: any
     ) => {
         if (settings.is_demo_mode) {
+            const allTasks = getSessionTasks() || []
             const newTask: Task = {
                 id: `demo-${Date.now()}`,
                 title,
@@ -89,15 +92,16 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder', profileOverr
                 end_date,
                 recurrence_config,
                 amount,
+                notes,
                 is_completed: false,
                 category,
                 profile: activeProfile as any,
                 created_at: new Date().toISOString(),
-                position: tasks.length > 0 ? Math.max(...tasks.map(t => t.position || 0)) + 1000 : Date.now()
+                position: allTasks.length > 0 ? Math.max(...allTasks.map((t: Task) => t.position || 0)) + 1000 : Date.now()
             }
-            const updated = [newTask, ...tasks]
-            setTasks(updated)
+            const updated = [newTask, ...allTasks]
             saveSessionTasks(updated)
+            await fetchTasks()
             return
         }
 
@@ -110,8 +114,9 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder', profileOverr
             end_date,
             recurrence_config,
             amount,
+            notes,
             profile: activeProfile,
-            position: tasks.length > 0 ? Math.max(...tasks.map(t => t.position || 0)) + 1000 : Date.now()
+            position: tasks.length > 0 ? Math.max(...tasks.map((t: Task) => t.position || 0)) + 1000 : Date.now()
         })
         if (error) throw error
         await fetchTasks()
@@ -119,37 +124,41 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder', profileOverr
 
     const updateTaskPositions = async (orderedTasks: Task[]) => {
         // Calculate new positions: ensure descending order (higher position at index 0)
-        // We update the objects directly so the local sort in TaskList doesn't revert them
-        const updatedTasks = orderedTasks.map((t, idx) => ({
+        const updatedOrdered = orderedTasks.map((t, idx) => ({
             ...t,
             position: (orderedTasks.length - idx) * 1000
         }))
 
         // Update local state immediately for snappy UI
-        setTasks(updatedTasks)
+        setTasks(updatedOrdered)
 
         if (settings.is_demo_mode) {
-            saveSessionTasks(updatedTasks)
+            const allTasks = getSessionTasks() || []
+            // Merge updated ordered tasks back into the full list
+            const fullUpdated = allTasks.map((t: Task) => {
+                const found = updatedOrdered.find(o => o.id === t.id)
+                return found ? found : t
+            })
+            saveSessionTasks(fullUpdated)
             return
         }
 
         try {
-            // Batch update positions in background
-            for (const t of updatedTasks) {
+            for (const t of updatedOrdered) {
                 await supabase.from('fin_tasks').update({ position: t.position }).eq('id', t.id)
             }
         } catch (err) {
             console.error('Failed to persist task positions', err)
-            // Optional: refetch on error to revert to DB truth
             await fetchTasks()
         }
     }
 
     const toggleTask = async (id: string, is_completed: boolean) => {
         if (settings.is_demo_mode) {
-            const updated = tasks.map(t => t.id === id ? { ...t, is_completed } : t)
-            setTasks(updated)
+            const allTasks = getSessionTasks() || []
+            const updated = allTasks.map((t: Task) => t.id === id ? { ...t, is_completed } : t)
             saveSessionTasks(updated)
+            await fetchTasks()
             return
         }
         const { error } = await supabase.from('fin_tasks').update({ is_completed }).eq('id', id)
@@ -159,9 +168,10 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder', profileOverr
 
     const editTask = async (id: string, updates: Partial<Task>) => {
         if (settings.is_demo_mode) {
-            const updated = tasks.map(t => t.id === id ? { ...t, ...updates } : t)
-            setTasks(updated)
+            const allTasks = getSessionTasks() || []
+            const updated = allTasks.map((t: Task) => t.id === id ? { ...t, ...updates } : t)
             saveSessionTasks(updated)
+            await fetchTasks()
             return
         }
         const { error } = await supabase.from('fin_tasks').update(updates).eq('id', id)
@@ -171,9 +181,10 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder', profileOverr
 
     const deleteTask = async (id: string) => {
         if (settings.is_demo_mode) {
-            const updated = tasks.filter(t => t.id !== id)
-            setTasks(updated)
+            const allTasks = getSessionTasks() || []
+            const updated = allTasks.filter((t: Task) => t.id !== id)
             saveSessionTasks(updated)
+            await fetchTasks()
             return
         }
         const { error } = await supabase.from('fin_tasks').delete().eq('id', id)
@@ -183,8 +194,10 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder', profileOverr
 
     const clearAllTasks = async () => {
         if (settings.is_demo_mode) {
-            setTasks([])
-            saveSessionTasks([])
+            const allTasks = getSessionTasks() || []
+            const remaining = allTasks.filter((t: Task) => t.profile !== activeProfile)
+            saveSessionTasks(remaining)
+            await fetchTasks()
             return
         }
         const { error } = await supabase.from('fin_tasks')
@@ -197,9 +210,10 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder', profileOverr
 
     const clearCompletedTasks = async () => {
         if (settings.is_demo_mode) {
-            const updated = tasks.filter(t => !t.is_completed)
-            setTasks(updated)
+            const allTasks = getSessionTasks() || []
+            const updated = allTasks.filter((t: Task) => !(t.profile === activeProfile && t.is_completed))
             saveSessionTasks(updated)
+            await fetchTasks()
             return
         }
         const { error } = await supabase.from('fin_tasks')

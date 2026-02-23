@@ -29,6 +29,10 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
     const [recurringDays, setRecurringDays] = useState<number[]>([])
     const [lastDeletedTask, setLastDeletedTask] = useState<Task | null>(null)
     const [showUndo, setShowUndo] = useState(false)
+    const [showCreateNotes, setShowCreateNotes] = useState(false)
+    const [createNotesType, setCreateNotesType] = useState<'text' | 'bullets' | 'checklist'>('text')
+    const [createNotesContent, setCreateNotesContent] = useState<any>('')
+    const [newCreateChecklistItem, setNewCreateChecklistItem] = useState('')
 
     // Confirmation Modal States
     const [confirmModal, setConfirmModal] = useState<{
@@ -131,7 +135,8 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
                 category === 'grocery' ? finalAmount : undefined,
                 dueDateMode !== 'none' && dueDateMode !== 'recurring' ? (dueDateMode as 'on' | 'before' | 'range') : undefined,
                 endDate || undefined,
-                dueDateMode === 'recurring' ? { type: recurringType, time: recurringTime || undefined, duration_minutes: recurringDuration ? parseInt(recurringDuration) : undefined, days_of_week: recurringType === 'custom' ? recurringDays : undefined } : {}
+                dueDateMode === 'recurring' ? { type: recurringType, time: recurringTime || undefined, duration_minutes: recurringDuration ? parseInt(recurringDuration) : undefined, days_of_week: recurringType === 'custom' ? recurringDays : undefined } : {},
+                showCreateNotes ? { type: createNotesType, content: createNotesContent } : undefined
             )
             setNewTask('')
             setAmount('1')
@@ -143,6 +148,9 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
             setRecurringTime('')
             setRecurringDuration('60')
             setRecurringDays([])
+            setShowCreateNotes(false)
+            setCreateNotesContent('')
+            setCreateNotesType('text')
         } catch (err: any) {
             console.error('Operation creation failed:', err)
             alert(err.message || 'Failed to create operation. Please check your connection.')
@@ -598,6 +606,139 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
                                 </div>
                             </div>
                         )}
+
+                        {/* Notes Creator */}
+                        <div className="flex flex-col gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setShowCreateNotes(!showCreateNotes)}
+                                className={cn(
+                                    "flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[10px] font-bold transition-all w-fit uppercase tracking-wider",
+                                    showCreateNotes
+                                        ? "bg-black text-white border-black"
+                                        : "bg-white text-black/40 border-black/10 hover:border-black/20"
+                                )}
+                            >
+                                <LayoutList className="w-3.5 h-3.5" />
+                                {showCreateNotes ? "Hide Notes" : "Add Notes/Checklist"}
+                            </button>
+
+                            {showCreateNotes && (
+                                <div className="flex flex-col gap-3 p-3 bg-black/[0.03] border border-black/5 rounded-xl animate-in slide-in-from-top-2 duration-200">
+                                    <div className="flex gap-1.5">
+                                        {([
+                                            { type: 'text', icon: Type, label: 'Text' },
+                                            { type: 'bullets', icon: List, label: 'Bullets' },
+                                            { type: 'checklist', icon: ListChecks, label: 'Checklist' },
+                                        ] as const).map(noteType => (
+                                            <button
+                                                key={noteType.type}
+                                                type="button"
+                                                onClick={() => {
+                                                    setCreateNotesType(noteType.type)
+                                                    if (noteType.type === 'checklist' && !Array.isArray(createNotesContent)) {
+                                                        setCreateNotesContent([])
+                                                    } else if (noteType.type !== 'checklist' && Array.isArray(createNotesContent)) {
+                                                        setCreateNotesContent('')
+                                                    }
+                                                }}
+                                                className={cn(
+                                                    "px-2 py-1 text-[9px] font-bold rounded-lg border transition-all uppercase tracking-tight flex items-center gap-1",
+                                                    createNotesType === noteType.type
+                                                        ? 'bg-black text-white border-black'
+                                                        : 'bg-white text-black/40 border-black/10 hover:text-black/60'
+                                                )}
+                                            >
+                                                <noteType.icon className="w-3 h-3" />
+                                                {noteType.label}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {createNotesType === 'text' && (
+                                        <textarea
+                                            value={createNotesContent}
+                                            onChange={(e) => setCreateNotesContent(e.target.value)}
+                                            placeholder="Add some notes..."
+                                            className="w-full bg-white border border-black/10 rounded-lg px-3 py-2 text-[12px] text-black outline-none focus:border-black/30 min-h-[60px]"
+                                        />
+                                    )}
+
+                                    {createNotesType === 'bullets' && (
+                                        <textarea
+                                            value={createNotesContent}
+                                            onChange={(e) => setCreateNotesContent(e.target.value)}
+                                            placeholder="Add bullet points, one per line..."
+                                            className="w-full bg-white border border-black/10 rounded-lg px-3 py-2 text-[12px] text-black outline-none focus:border-black/30 min-h-[60px]"
+                                        />
+                                    )}
+
+                                    {createNotesType === 'checklist' && (
+                                        <div className="flex flex-col gap-2">
+                                            {(createNotesContent as any[]).map((item: any, index: number) => (
+                                                <div key={index} className="flex items-center gap-2 bg-white border border-black/10 rounded-lg px-3 py-1.5">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={item.completed}
+                                                        onChange={() => {
+                                                            const newC = [...createNotesContent]
+                                                            newC[index] = { ...newC[index], completed: !newC[index].completed }
+                                                            setCreateNotesContent(newC)
+                                                        }}
+                                                        className="w-4 h-4 accent-black cursor-pointer shrink-0"
+                                                    />
+                                                    <span className={cn(
+                                                        "flex-1 text-[12px] text-black",
+                                                        item.completed && "line-through text-black/40"
+                                                    )}>
+                                                        {item.text}
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setCreateNotesContent(createNotesContent.filter((_: any, i: number) => i !== index))
+                                                        }}
+                                                        className="text-black/30 hover:text-red-500 transition-colors"
+                                                    >
+                                                        <X className="w-3 h-3" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={newCreateChecklistItem}
+                                                    onChange={(e) => setNewCreateChecklistItem(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            e.preventDefault()
+                                                            if (newCreateChecklistItem.trim()) {
+                                                                setCreateNotesContent([...createNotesContent, { text: newCreateChecklistItem.trim(), completed: false }])
+                                                                setNewCreateChecklistItem('')
+                                                            }
+                                                        }
+                                                    }}
+                                                    placeholder="Add new item..."
+                                                    className="flex-1 bg-white border border-black/10 rounded-lg px-3 py-1.5 text-[12px] text-black outline-none focus:border-black/30"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        if (newCreateChecklistItem.trim()) {
+                                                            setCreateNotesContent([...createNotesContent, { text: newCreateChecklistItem.trim(), completed: false }])
+                                                            setNewCreateChecklistItem('')
+                                                        }
+                                                    }}
+                                                    className="w-8 h-8 flex items-center justify-center bg-black text-white rounded-lg hover:bg-neutral-800 transition-colors"
+                                                >
+                                                    <Plus className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
             </form>
@@ -1134,58 +1275,71 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
                                     </div>
                                 )}
                                 {task.notes?.content && (
-                                    <div className="relative">
-                                        <p className={cn(
-                                            "text-[11px] text-black/40 leading-relaxed",
-                                            !isExpanded && "line-clamp-1"
-                                        )}>
-                                            {task.notes.type === 'checklist'
-                                                ? (task.notes.content as any[]).map(i => (i.completed ? '✓ ' : '○ ') + i.text).join(', ')
-                                                : task.notes.content}
-                                        </p>
-                                        {(task.notes.content.length > 50 || (task.notes.type === 'checklist' && totalSubtasks > 1)) && (
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    setIsExpanded(!isExpanded)
-                                                }}
-                                                className="text-[10px] font-bold text-black/20 hover:text-black/40 transition-colors mt-0.5"
-                                            >
-                                                {isExpanded ? 'Show less' : 'Show more'}
-                                            </button>
-                                        )}
-                                        {/* Expanded Checklist View */}
-                                        {isExpanded && task.notes.type === 'checklist' && (
-                                            <div className="mt-3 flex flex-col gap-2 pl-1 border-l-2 border-black/[0.03]">
-                                                {(task.notes.content as any[]).map((item, idx) => (
-                                                    <div
-                                                        key={idx}
-                                                        className="flex items-center gap-2 group/sub cursor-pointer"
+                                    <div className="relative mt-1">
+                                        {!isExpanded ? (
+                                            <div className="flex flex-col items-start gap-1">
+                                                <p className="text-[11px] text-black/40 leading-relaxed line-clamp-1">
+                                                    {task.notes.type === 'checklist'
+                                                        ? (task.notes.content as any[]).map(i => (i.completed ? '✓ ' : '○ ') + i.text).join(', ')
+                                                        : task.notes.content}
+                                                </p>
+                                                {(task.notes.content.length > 50 || (task.notes.type === 'checklist' && totalSubtasks > 1)) && (
+                                                    <button
                                                         onClick={(e) => {
                                                             e.stopPropagation()
-                                                            handleToggleSubtask(idx)
+                                                            setIsExpanded(true)
                                                         }}
+                                                        className="text-[10px] font-bold text-black/20 hover:text-black/40 transition-colors uppercase tracking-tight"
                                                     >
-                                                        <div className={cn(
-                                                            "w-3.5 h-3.5 rounded border flex items-center justify-center transition-all",
-                                                            item.completed ? "bg-emerald-500 border-emerald-500" : "bg-white border-black/10 group-hover/sub:border-black/30"
-                                                        )}>
-                                                            {item.completed && <CheckSquare className="w-2.5 h-2.5 text-white" />}
-                                                        </div>
-                                                        <span className={cn(
-                                                            "text-[11px] transition-all",
-                                                            item.completed ? "text-black/30 line-through" : "text-black/60"
-                                                        )}>
-                                                            {item.text}
-                                                        </span>
-                                                    </div>
-                                                ))}
+                                                        + Show More
+                                                    </button>
+                                                )}
                                             </div>
-                                        )}
-                                        {/* Expanded Bullets/Text View */}
-                                        {isExpanded && task.notes.type !== 'checklist' && (
-                                            <div className="mt-2 text-[11px] text-black/60 whitespace-pre-wrap pl-3 border-l-2 border-black/[0.03] leading-relaxed">
-                                                {task.notes.content}
+                                        ) : (
+                                            <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                {/* Expanded Checklist View */}
+                                                {task.notes.type === 'checklist' && (
+                                                    <div className="flex flex-col gap-2 pl-1 border-l-2 border-black/[0.03]">
+                                                        {(task.notes.content as any[]).map((item, idx) => (
+                                                            <div
+                                                                key={idx}
+                                                                className="flex items-center gap-2 group/sub cursor-pointer"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation()
+                                                                    handleToggleSubtask(idx)
+                                                                }}
+                                                            >
+                                                                <div className={cn(
+                                                                    "w-3.5 h-3.5 rounded border flex items-center justify-center transition-all",
+                                                                    item.completed ? "bg-emerald-500 border-emerald-500" : "bg-white border-black/10 group-hover/sub:border-black/30"
+                                                                )}>
+                                                                    {item.completed && <CheckSquare className="w-2.5 h-2.5 text-white" />}
+                                                                </div>
+                                                                <span className={cn(
+                                                                    "text-[11px] transition-all",
+                                                                    item.completed ? "text-black/30 line-through" : "text-black/60 font-medium"
+                                                                )}>
+                                                                    {item.text}
+                                                                </span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                {/* Expanded Bullets/Text View */}
+                                                {task.notes.type !== 'checklist' && (
+                                                    <div className="text-[11px] text-black/60 whitespace-pre-wrap pl-3 border-l-2 border-black/[0.03] leading-relaxed font-medium">
+                                                        {task.notes.content}
+                                                    </div>
+                                                )}
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        setIsExpanded(false)
+                                                    }}
+                                                    className="text-[10px] font-bold text-black/20 hover:text-black/40 transition-colors uppercase tracking-tight w-fit"
+                                                >
+                                                    - Show Less
+                                                </button>
                                             </div>
                                         )}
                                     </div>
