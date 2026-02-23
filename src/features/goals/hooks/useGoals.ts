@@ -134,19 +134,85 @@ export function useGoals() {
         }
     }
 
-    const updateGoal = async (id: string, updates: Partial<Goal>) => {
+    const updateGoal = async (id: string, updates: Partial<CreateGoalData>, imageFile?: File) => {
         try {
             if (settings.is_demo_mode) {
-                setGoals(prev => prev.map(g => g.id === id ? { ...g, ...updates } : g))
+                setGoals(prev => prev.map(g => {
+                    if (g.id === id) {
+                        return {
+                            ...g,
+                            ...updates,
+                            milestones: updates.milestones ? updates.milestones.map((m, idx) => ({
+                                id: Math.random().toString(36).substr(2, 9),
+                                goal_id: id,
+                                title: m,
+                                is_completed: false,
+                                position: idx,
+                                created_at: new Date().toISOString()
+                            })) : g.milestones
+                        }
+                    }
+                    return g
+                }))
                 return
             }
 
+            // Attempt to get user session for storage path
+            const { data: { session } } = await supabase.auth.getSession()
+            const userId = session?.user?.id || 'anonymous'
+
+            // Upload image file to Supabase Storage if provided
+            let finalImageUrl = updates.vision_image_url
+            if (imageFile) {
+                try {
+                    const ext = imageFile.name.split('.').pop() || 'jpg'
+                    const path = `goals/${userId}/${Date.now()}.${ext}`
+                    const { error: uploadError } = await supabase.storage
+                        .from('goal-images')
+                        .upload(path, imageFile, { upsert: true, cacheControl: '3600' })
+
+                    if (!uploadError) {
+                        const { data: urlData } = supabase.storage.from('goal-images').getPublicUrl(path)
+                        finalImageUrl = urlData.publicUrl
+                    }
+                } catch (e) {
+                    console.warn('Image upload failed during update:', e)
+                }
+            }
+
+            // Update goal fields
             const { error: goalError } = await supabase
                 .from('sys_goals')
-                .update(updates)
+                .update({
+                    title: updates.title,
+                    description: updates.description,
+                    category: updates.category,
+                    target_date: updates.target_date,
+                    priority: updates.priority,
+                    timeframe: updates.timeframe,
+                    vision_image_url: finalImageUrl,
+                    status: updates.status
+                })
                 .eq('id', id)
 
             if (goalError) throw goalError
+
+            // Sync milestones if provided
+            if (updates.milestones) {
+                // Simplest approach: delete existing and re-insert
+                // (Appropriate for this tactical layer as milestones don't have deep relations)
+                await supabase.from('sys_milestones').delete().eq('goal_id', id)
+
+                if (updates.milestones.length > 0) {
+                    const milestones = updates.milestones.map((m, idx) => ({
+                        goal_id: id,
+                        title: m,
+                        position: idx
+                    }))
+                    await supabase.from('sys_milestones').insert(milestones)
+                }
+            }
+
             await fetchGoals()
         } catch (err: any) {
             setError(err.message)

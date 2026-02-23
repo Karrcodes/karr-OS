@@ -17,6 +17,7 @@ export default function GoalsDashboard() {
     const { goals, loading, createGoal, toggleMilestone, deleteGoal, updateGoal } = useGoals()
     const [view, setView] = useState<GoalsView>('matrix')
     const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null)
+    const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
 
@@ -26,6 +27,17 @@ export default function GoalsDashboard() {
             goal.category.toLowerCase().includes(searchQuery.toLowerCase())
         )
     }, [goals, searchQuery])
+
+    const handleEditGoal = (goal: Goal) => {
+        setEditingGoal(goal)
+        setIsCreateModalOpen(true)
+        setSelectedGoal(null)
+    }
+
+    const handleCloseModal = () => {
+        setIsCreateModalOpen(false)
+        setEditingGoal(null)
+    }
 
     if (loading) {
         return (
@@ -110,8 +122,15 @@ export default function GoalsDashboard() {
             {/* Overlays */}
             <GoalCreationModal
                 isOpen={isCreateModalOpen}
-                onClose={() => setIsCreateModalOpen(false)}
-                onSave={createGoal}
+                initialGoal={editingGoal}
+                onClose={handleCloseModal}
+                onSave={async (data, file, id) => {
+                    if (id) {
+                        await updateGoal(id, data, file)
+                    } else {
+                        await createGoal(data, file)
+                    }
+                }}
             />
 
             {selectedGoal && (
@@ -121,7 +140,7 @@ export default function GoalsDashboard() {
                     onClose={() => setSelectedGoal(null)}
                     onToggleMilestone={toggleMilestone}
                     onDeleteGoal={deleteGoal}
-                    onUpdateGoal={updateGoal}
+                    onEdit={handleEditGoal}
                 />
             )}
         </div>

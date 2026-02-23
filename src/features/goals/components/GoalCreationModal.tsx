@@ -7,12 +7,13 @@ import {
     User, Wallet, Trash2, Sparkles, Upload, Loader2, AlertCircle, ImageIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { GoalCategory, GoalPriority, CreateGoalData } from '../types/goals.types'
+import type { Goal, GoalCategory, GoalPriority, CreateGoalData, GoalStatus } from '../types/goals.types'
 
 interface GoalCreationModalProps {
     isOpen: boolean
     onClose: () => void
-    onSave: (data: CreateGoalData, imageFile?: File) => Promise<void>
+    onSave: (data: CreateGoalData, imageFile?: File, id?: string) => Promise<void>
+    initialGoal?: Goal | null
 }
 
 const CATEGORIES: { value: GoalCategory; label: string; icon: any }[] = [
@@ -29,10 +30,11 @@ const PRIORITIES: { value: GoalPriority; label: string }[] = [
     { value: 'super', label: 'Super' },
 ]
 
-export default function GoalCreationModal({ isOpen, onClose, onSave }: GoalCreationModalProps) {
+export default function GoalCreationModal({ isOpen, onClose, onSave, initialGoal }: GoalCreationModalProps) {
     const [title, setTitle] = useState('')
     const [description, setDescription] = useState('')
     const [category, setCategory] = useState<GoalCategory>('personal')
+    const [status, setStatus] = useState<GoalStatus>('active')
     const [priority, setPriority] = useState<GoalPriority>('mid')
     const [timeframe, setTimeframe] = useState<'short' | 'medium' | 'long'>('short')
     const [visionImageUrl, setVisionImageUrl] = useState('')
@@ -46,6 +48,30 @@ export default function GoalCreationModal({ isOpen, onClose, onSave }: GoalCreat
     const [aiUsed, setAiUsed] = useState(false)
 
     const fileInputRef = useRef<HTMLInputElement>(null)
+
+    // Populate fields when editing
+    React.useEffect(() => {
+        if (initialGoal && isOpen) {
+            setTitle(initialGoal.title)
+            setDescription(initialGoal.description || '')
+            setCategory(initialGoal.category)
+            setStatus(initialGoal.status)
+            setPriority(initialGoal.priority)
+            setTimeframe(initialGoal.timeframe)
+            setVisionImageUrl(initialGoal.vision_image_url || '')
+            setTargetDate(initialGoal.target_date || '')
+            setMilestones(initialGoal.milestones?.map(m => m.title) || [''])
+            setImagePreview(null)
+            setImageFile(null)
+            setAiUsed(false)
+            setError(null)
+        } else if (!initialGoal && isOpen) {
+            // Reset for new goal
+            setTitle(''); setDescription(''); setCategory('personal'); setStatus('active')
+            setPriority('mid'); setTimeframe('short'); setVisionImageUrl(''); setTargetDate('')
+            setMilestones(['']); setImagePreview(null); setImageFile(null); setAiUsed(false); setError(null)
+        }
+    }, [initialGoal, isOpen])
 
     // ── helpers ──────────────────────────────────────────────
     const addMilestone = () => setMilestones([...milestones, ''])
@@ -107,16 +133,14 @@ export default function GoalCreationModal({ isOpen, onClose, onSave }: GoalCreat
                 title,
                 description,
                 category,
+                status,
                 priority,
                 timeframe,
                 vision_image_url: visionImageUrl || undefined,
                 target_date: targetDate || undefined,
                 milestones: milestones.filter(m => m.trim() !== '')
-            }, imageFile || undefined)
+            }, imageFile || undefined, initialGoal?.id)
 
-            // reset
-            setTitle(''); setDescription(''); setVisionImageUrl(''); setImageFile(null)
-            setImagePreview(null); setMilestones(['']); setAiUsed(false)
             onClose()
         } catch (err: any) {
             setError(err?.message || 'Failed to save. Please try again.')
@@ -150,7 +174,7 @@ export default function GoalCreationModal({ isOpen, onClose, onSave }: GoalCreat
                                     <Target className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <h2 className="text-[18px] md:text-[20px] font-bold text-black tracking-tight">Define New Objective</h2>
+                                    <h2 className="text-[18px] md:text-[20px] font-bold text-black tracking-tight">{initialGoal ? 'Refine Objective' : 'Define New Objective'}</h2>
                                     <p className="text-[10px] text-black/35 font-medium uppercase tracking-wider">Strategic Tactical Layer</p>
                                 </div>
                             </div>
@@ -446,7 +470,7 @@ export default function GoalCreationModal({ isOpen, onClose, onSave }: GoalCreat
                                     className="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-2.5 bg-black text-white rounded-xl font-bold text-[12px] uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-black/10 disabled:opacity-40 disabled:scale-100"
                                 >
                                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Target className="w-4 h-4" />}
-                                    {saving ? 'Authorizing...' : 'Authorize Mission'}
+                                    {saving ? (initialGoal ? 'Refining...' : 'Authorizing...') : (initialGoal ? 'Refine Mission' : 'Authorize Mission')}
                                 </button>
                             </div>
                         </form>

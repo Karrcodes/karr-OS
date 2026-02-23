@@ -31,6 +31,7 @@ export interface CreateGoalData {
     title: string
     description?: string
     category?: GoalCategory
+    status?: GoalStatus
     target_date?: string
     priority?: GoalPriority
     timeframe?: GoalTimeframe

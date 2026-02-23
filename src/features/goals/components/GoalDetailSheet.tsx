@@ -12,10 +12,10 @@ interface GoalDetailSheetProps {
     onClose: () => void
     onToggleMilestone: (milestoneId: string, completed: boolean) => void
     onDeleteGoal: (id: string) => void
-    onUpdateGoal: (id: string, updates: Partial<Goal>) => void
+    onEdit: (goal: Goal) => void
 }
 
-export default function GoalDetailSheet({ goal, isOpen, onClose, onToggleMilestone, onDeleteGoal, onUpdateGoal }: GoalDetailSheetProps) {
+export default function GoalDetailSheet({ goal, isOpen, onClose, onToggleMilestone, onDeleteGoal, onEdit }: GoalDetailSheetProps) {
     if (!goal) return null
 
     const totalMilestones = goal.milestones?.length || 0
@@ -63,12 +63,20 @@ export default function GoalDetailSheet({ goal, isOpen, onClose, onToggleMilesto
                                     <h2 className="text-[24px] md:text-[32px] font-bold text-black tracking-tight leading-[1.1]">{goal.title}</h2>
                                     <p className="text-[14px] md:text-[15px] text-black/50 font-medium leading-relaxed max-w-xl">{goal.description || 'Define your strategic path.'}</p>
                                 </div>
-                                <button
-                                    onClick={onClose}
-                                    className="w-12 h-12 flex items-center justify-center bg-black/[0.03] hover:bg-black/[0.06] rounded-full transition-colors group"
-                                >
-                                    <X className="w-5 h-5 text-black/40 group-hover:text-black transition-colors" />
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => onEdit(goal)}
+                                        className="w-12 h-12 flex items-center justify-center bg-black text-white rounded-full transition-transform active:scale-90 shadow-lg shadow-black/10"
+                                    >
+                                        <Plus className="w-5 h-5 rotate-45" /> {/* Using Plus rotated for a "refine" feel, or Pencil if preferred */}
+                                    </button>
+                                    <button
+                                        onClick={onClose}
+                                        className="w-12 h-12 flex items-center justify-center bg-black/[0.03] hover:bg-black/[0.06] rounded-full transition-colors group"
+                                    >
+                                        <X className="w-5 h-5 text-black/40 group-hover:text-black transition-colors" />
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -114,6 +122,13 @@ export default function GoalDetailSheet({ goal, isOpen, onClose, onToggleMilesto
                                             </div>
                                         </div>
                                     </div>
+
+                                    <button
+                                        onClick={() => onEdit(goal)}
+                                        className="w-full flex items-center justify-center gap-2 py-3 bg-black/[0.04] hover:bg-black/[0.08] rounded-xl transition-colors text-[12px] font-bold uppercase tracking-widest text-black mb-1"
+                                    >
+                                        Refine Objective
+                                    </button>
 
                                     <button
                                         onClick={() => {
