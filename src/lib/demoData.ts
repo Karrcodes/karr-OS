@@ -118,3 +118,68 @@ export const MOCK_SCHEDULE = {
     daysPerWeek: 4, // Mon-Thu
     label: 'Lumina Digital Work'
 }
+
+export const MOCK_GOALS = [
+    {
+        id: 'd-g-1',
+        title: 'Apartment Deposit',
+        description: 'Save £50k for a first-time buyer deposit in South London.',
+        category: 'finance',
+        status: 'active',
+        priority: 'super',
+        target_date: '2027-12-31',
+        created_at: '2025-01-01T00:00:00Z'
+    },
+    {
+        id: 'd-g-2',
+        title: 'Creative Studio Upgrades',
+        description: 'Upgrade to a 4K multi-cam setup and soundproof the room.',
+        category: 'career',
+        status: 'active',
+        priority: 'high',
+        target_date: '2026-08-31',
+        created_at: '2025-06-15T00:00:00Z'
+    },
+    {
+        id: 'd-g-3',
+        title: 'Tokyo Trip 2026',
+        description: 'Two-week solo photography adventure in Japan.',
+        category: 'personal',
+        status: 'active',
+        priority: 'high',
+        target_date: '2026-10-15',
+        created_at: '2025-09-10T00:00:00Z'
+    },
+    {
+        id: 'd-g-4',
+        title: 'Marathon Readiness',
+        description: 'Run the London Marathon in under 4 hours.',
+        category: 'health',
+        status: 'active',
+        priority: 'mid',
+        target_date: '2026-04-20',
+        created_at: '2025-11-20T00:00:00Z'
+    }
+]
+
+export const MOCK_MILESTONES = [
+    // Apartment Deposit
+    { id: 'd-m-1', goal_id: 'd-g-1', title: 'Reach £10k baseline', is_completed: true, position: 1 },
+    { id: 'd-m-2', goal_id: 'd-g-1', title: 'Reach £25k (Halfway)', is_completed: false, position: 2 },
+    { id: 'd-m-3', goal_id: 'd-g-1', title: 'Final £50k target', is_completed: false, position: 3 },
+
+    // Studio Upgrades
+    { id: 'd-m-4', goal_id: 'd-g-2', title: 'Sony A7S III acquisition', is_completed: true, position: 1 },
+    { id: 'd-m-5', goal_id: 'd-g-2', title: 'Sound treatment panels', is_completed: true, position: 2 },
+    { id: 'd-m-6', goal_id: 'd-g-2', title: 'Blackmagic ATEM Mini setup', is_completed: false, position: 3 },
+
+    // Tokyo Trip
+    { id: 'd-m-7', goal_id: 'd-g-3', title: 'Book Flights', is_completed: true, position: 1 },
+    { id: 'd-m-8', goal_id: 'd-g-3', title: 'Secure accommodation (Shibuya/Kyoto)', is_completed: false, position: 2 },
+    { id: 'd-m-9', goal_id: 'd-g-3', title: 'Finalize photography itinerary', is_completed: false, position: 3 },
+
+    // Marathon
+    { id: 'd-m-10', goal_id: 'd-g-4', title: 'Reach 10k sub-50min', is_completed: true, position: 1 },
+    { id: 'd-m-11', goal_id: 'd-g-4', title: 'Completer Half Marathon sub-2hr', is_completed: false, position: 2 },
+    { id: 'd-m-12', goal_id: 'd-g-4', title: 'Full 42km run', is_completed: false, position: 3 }
+]

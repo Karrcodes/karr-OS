@@ -1,6 +1,6 @@
 'use client'
 
-import { LayoutDashboard, Activity, TrendingUp, Heart, Terminal, Lock, Target, AlertCircle, RefreshCw, BarChart3, Brain, Shield, SlidersHorizontal, Sparkles } from 'lucide-react'
+import { LayoutDashboard, Activity, TrendingUp, Heart, Terminal, Lock, Target, AlertCircle, RefreshCw, BarChart3, Brain, Shield, SlidersHorizontal, Sparkles, ArrowRight } from 'lucide-react'
 import { KarrFooter } from '@/components/KarrFooter'
 import Link from 'next/link'
 import { useState, useEffect, useMemo } from 'react'
@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils'
 import { isShiftDay } from '@/features/finance/utils/rotaUtils'
 import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
 import { useRota } from '@/features/finance/hooks/useRota'
+import { useGoals } from '@/features/goals/hooks/useGoals'
 
 const MOTIVATION_QUOTES = [
     { text: "The mind is the battlefield. Control what you can, let the rest burn.", tag: "Stoic" },
@@ -23,8 +24,9 @@ const MOTIVATION_QUOTES = [
 export default function ControlCentrePage() {
     const { tasks, loading: tasksLoading } = useTasks('todo', 'all')
     const { transactions, loading: financeLoading } = useTransactions('all')
-    const { overrides, loading: rotaLoading } = useRota('all') // Added useRota hook
-    const { settings } = useSystemSettings() // Added useSystemSettings hook
+    const { overrides, loading: rotaLoading } = useRota('all')
+    const { goals, loading: goalsLoading } = useGoals()
+    const { settings } = useSystemSettings()
     const [quoteIndex, setQuoteIndex] = useState(0)
 
     // Motivation Rotation
@@ -137,6 +139,15 @@ export default function ControlCentrePage() {
                             <span className="text-[12px] font-bold text-black/70 group-hover:text-black">Karr AI</span>
                         </Link>
                         <Link
+                            href="/goals"
+                            className="flex items-center gap-2 px-3 py-2 bg-white border border-black/[0.06] rounded-xl hover:border-black/20 hover:bg-black/[0.02] transition-all group"
+                        >
+                            <div className="w-6 h-6 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-600 group-hover:scale-110 transition-transform">
+                                <Target className="w-3.5 h-3.5" />
+                            </div>
+                            <span className="text-[12px] font-bold text-black/70 group-hover:text-black">Goals</span>
+                        </Link>
+                        <Link
                             href="/system/settings"
                             className="flex items-center gap-2 px-3 py-2 bg-white border border-black/[0.06] rounded-xl hover:border-black/20 hover:bg-black/[0.02] transition-all group"
                         >
@@ -231,9 +242,41 @@ export default function ControlCentrePage() {
                             </div>
                         </div>
 
-                        {/* Schedule Widget */}
-                        <div className="lg:col-span-1">
+                        {/* Right Column: Schedule & Goals */}
+                        <div className="lg:col-span-1 space-y-6">
                             <ScheduleWidget />
+
+                            <SectionBlock title="Strategic Focus" desc="Top Objectives">
+                                <div className="space-y-4 p-1">
+                                    {goals.slice(0, 3).map(goal => {
+                                        const total = goal.milestones?.length || 0
+                                        const completed = goal.milestones?.filter(m => m.is_completed).length || 0
+                                        const perc = total > 0 ? (completed / total) * 100 : 0
+
+                                        return (
+                                            <Link key={goal.id} href="/goals" className="block space-y-2 group">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-[12px] font-bold text-black/70 group-hover:text-black transition-colors">{goal.title}</span>
+                                                    <span className="text-[10px] font-black text-black/20 group-hover:text-black/40 transition-colors">{Math.round(perc)}%</span>
+                                                </div>
+                                                <div className="h-1.5 w-full bg-black/[0.04] rounded-full overflow-hidden">
+                                                    <div
+                                                        className="h-full bg-black transition-all duration-700"
+                                                        style={{ width: `${perc}%` }}
+                                                    />
+                                                </div>
+                                            </Link>
+                                        )
+                                    })}
+                                    {goals.length === 0 && (
+                                        <p className="text-[11px] text-black/30 font-medium italic">No active strategic objectives.</p>
+                                    )}
+                                    <Link href="/goals" className="flex items-center justify-center gap-2 py-2 mt-2 text-[10px] font-black uppercase tracking-[0.2em] text-black/20 hover:text-black transition-colors">
+                                        View All Goals
+                                        <ArrowRight className="w-3 h-3" />
+                                    </Link>
+                                </div>
+                            </SectionBlock>
                         </div>
                     </div>
                 </div>

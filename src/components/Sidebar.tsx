@@ -49,7 +49,7 @@ const navItems = [
         ],
     },
     { label: 'Create', href: '/create', icon: Sparkles, disabled: true },
-    { label: 'Goals', href: '/goals', icon: Target, disabled: true },
+    { label: 'Goals', href: '/goals', icon: Target },
     { label: 'Health & Wellbeing', href: '/health', icon: Heart, disabled: true },
     { label: 'Wishlist', href: '/wishlist', icon: Gift, disabled: true },
 ]

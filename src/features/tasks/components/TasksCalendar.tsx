@@ -174,7 +174,7 @@ export function TasksCalendar() {
                                                 item.type === 'shift' && "bg-blue-50 text-blue-700 border-blue-100",
                                                 item.type === 'overtime' && "bg-orange-50 text-orange-700 border-orange-100",
                                                 item.type === 'holiday' && "bg-purple-50 text-purple-700 border-purple-100",
-                                                item.type === 'task' && item.profile === 'business' && !item.is_completed && "bg-indigo-50 text-indigo-700 border-indigo-100",
+                                                item.type === 'task' && item.profile === 'business' && !item.is_completed && "bg-rose-50 text-rose-700 border-rose-100",
                                                 item.type === 'task' && item.profile !== 'business' && !item.is_completed && "bg-black text-white border-black",
                                                 item.type === 'task' && item.is_completed && "bg-emerald-50 text-emerald-600 border-emerald-100 opacity-50"
                                             )}
@@ -239,7 +239,11 @@ export function TasksCalendar() {
                                         selectedItem.type === 'shift' && "bg-blue-500",
                                         selectedItem.type === 'overtime' && "bg-orange-500",
                                         selectedItem.type === 'holiday' && "bg-purple-500",
-                                        selectedItem.type === 'task' && (selectedItem.is_completed ? "bg-emerald-500" : "bg-black")
+                                        selectedItem.type === 'task' && (
+                                            selectedItem.is_completed
+                                                ? "bg-emerald-500"
+                                                : (selectedItem.profile === 'business' ? "bg-rose-500" : "bg-black")
+                                        )
                                     )} />
                                     <h3 className="text-[12px] font-black text-black/30 uppercase tracking-widest">
                                         {selectedItem.type === 'task' ? 'Operation Details' : 'Rota Information'}
@@ -336,7 +340,7 @@ export function TasksCalendar() {
                                             {selectedItem.profile && (
                                                 <span className={cn(
                                                     "text-[10px] font-bold uppercase tracking-widest mt-1 inline-block px-1.5 py-0.5 rounded",
-                                                    selectedItem.profile === 'business' ? "bg-indigo-50 text-indigo-600" : "bg-black/5 text-black/40"
+                                                    selectedItem.profile === 'business' ? "bg-rose-50 text-rose-600" : "bg-black/5 text-black/40"
                                                 )}>{selectedItem.profile}</span>
                                             )}
                                         </div>
@@ -389,7 +393,7 @@ export function TasksCalendar() {
 
                 <div className="mt-6 flex flex-wrap items-center gap-4 sm:gap-6 p-4 bg-black/[0.02] rounded-xl border border-black/[0.04]">
                     <LegendItem color="bg-black" label="Personal" />
-                    <LegendItem color="bg-indigo-500" label="Business" />
+                    <LegendItem color="bg-rose-500" label="Business" />
                     <LegendItem color="bg-blue-500" label="Work Shift" />
                     <LegendItem color="bg-orange-500" label="Overtime" />
                     <LegendItem color="bg-purple-500" label="Holiday" />
