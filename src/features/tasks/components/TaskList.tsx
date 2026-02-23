@@ -211,34 +211,36 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
                         autoFocus
                     />
                 </div>
-                <div className="flex items-center justify-between">
-                    <div className="flex gap-1 p-1 bg-black/[0.03] rounded-lg border border-black/5">
-                        {(['super', 'high', 'mid', 'low'] as const).map(p => (
-                            <button
-                                key={p}
-                                type="button"
-                                onClick={() => setEditPriority(p)}
-                                className={cn(
-                                    "px-2 py-1 text-[9px] font-bold rounded-md border transition-all uppercase tracking-tight",
-                                    editPriority === p
-                                        ? PRIORITY_CONFIG[p].color + " shadow-sm"
-                                        : "bg-transparent text-black/30 border-transparent hover:text-black/50"
-                                )}
-                            >
-                                {PRIORITY_CONFIG[p].label}
-                            </button>
-                        ))}
+                <div className="flex items-center justify-between flex-wrap gap-y-3 gap-x-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex gap-1 p-1 bg-black/[0.03] rounded-lg border border-black/5">
+                            {(['super', 'high', 'mid', 'low'] as const).map(p => (
+                                <button
+                                    key={p}
+                                    type="button"
+                                    onClick={() => setEditPriority(p)}
+                                    className={cn(
+                                        "px-2 py-1 text-[9px] font-bold rounded-md border transition-all uppercase tracking-tight whitespace-nowrap",
+                                        editPriority === p
+                                            ? PRIORITY_CONFIG[p].color + " shadow-sm"
+                                            : "bg-transparent text-black/30 border-transparent hover:text-black/50"
+                                    )}
+                                >
+                                    {PRIORITY_CONFIG[p].label}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="flex items-center gap-2 bg-black/[0.03] border border-black/5 rounded-lg px-2.5 py-1 min-w-[110px]">
+                            <Calendar className="w-3 h-3 text-black/30 shrink-0" />
+                            <input
+                                type="date"
+                                value={editDueDate}
+                                onChange={(e) => setEditDueDate(e.target.value)}
+                                className="bg-transparent text-[10px] font-bold text-black/60 outline-none uppercase tracking-tight w-full"
+                            />
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2 bg-black/[0.03] border border-black/5 rounded-lg px-2.5 py-1">
-                        <Calendar className="w-3 h-3 text-black/30" />
-                        <input
-                            type="date"
-                            value={editDueDate}
-                            onChange={(e) => setEditDueDate(e.target.value)}
-                            className="bg-transparent text-[10px] font-bold text-black/60 outline-none uppercase tracking-tight"
-                        />
-                    </div>
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-2 ml-auto">
                         <button onClick={() => setIsEditing(false)} className="px-3 py-1.5 text-black/40 hover:text-black text-[12px] font-bold transition-colors">
                             Cancel
                         </button>
