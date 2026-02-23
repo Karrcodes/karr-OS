@@ -140,7 +140,7 @@ export default function GoalCreationModal({ isOpen, onClose, onSave, initialGoal
                 status,
                 priority,
                 timeframe,
-                vision_image_url: visionImageUrl || undefined,
+                vision_image_url: visionImageUrl, // Pass the actual state (empty string means removal)
                 target_date: targetDate || undefined,
                 milestones: milestones.map(m => m.text).filter(m => m.trim() !== '')
             }, imageFile || undefined, initialGoal?.id)

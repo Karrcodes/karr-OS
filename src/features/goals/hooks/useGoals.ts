@@ -149,7 +149,8 @@ export function useGoals() {
                         return {
                             ...g,
                             ...updates,
-                            vision_image_url: imageFile ? URL.createObjectURL(imageFile) : (updates.vision_image_url ?? g.vision_image_url),
+                            vision_image_url: imageFile ? URL.createObjectURL(imageFile) :
+                                (updates.vision_image_url !== undefined ? updates.vision_image_url : g.vision_image_url),
                             milestones: updates.milestones ? updates.milestones.map((m, idx) => ({
                                 id: Math.random().toString(36).substring(2, 9),
                                 goal_id: id,
@@ -174,7 +175,7 @@ export function useGoals() {
             // Fetch the existing goal to get the current vision_image_url if needed
             const { data: existingGoal } = await supabase.from('sys_goals').select('vision_image_url').eq('id', id).single()
 
-            let finalImageUrl = updates.vision_image_url || existingGoal?.vision_image_url
+            let finalImageUrl = imageFile ? undefined : (updates.vision_image_url !== undefined ? updates.vision_image_url : existingGoal?.vision_image_url)
             if (imageFile) {
                 const storageFolder = userId || 'public'
                 console.log(`Attempting storage update for: ${imageFile.name} (folder: ${storageFolder})`)
