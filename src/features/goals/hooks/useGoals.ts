@@ -72,27 +72,35 @@ export function useGoals() {
                 return
             }
 
-            const { data: userData } = await supabase.auth.getUser()
-            if (!userData.user) throw new Error('Not authenticated')
+            // Attempt to get user session for storage path
+            const { data: { session } } = await supabase.auth.getSession()
+            const userId = session?.user?.id || 'anonymous'
 
             // Upload image file to Supabase Storage if provided
             let finalImageUrl = data.vision_image_url
             if (imageFile) {
-                const ext = imageFile.name.split('.').pop() || 'jpg'
-                const path = `${userData.user.id}/${Date.now()}.${ext}`
-                const { error: uploadError } = await supabase.storage
-                    .from('goal-images')
-                    .upload(path, imageFile, { upsert: true })
-                if (!uploadError) {
-                    const { data: urlData } = supabase.storage.from('goal-images').getPublicUrl(path)
-                    finalImageUrl = urlData.publicUrl
+                try {
+                    const ext = imageFile.name.split('.').pop() || 'jpg'
+                    const path = `goals/${userId}/${Date.now()}.${ext}`
+                    const { error: uploadError } = await supabase.storage
+                        .from('goal-images')
+                        .upload(path, imageFile, { upsert: true, cacheControl: '3600' })
+
+                    if (!uploadError) {
+                        const { data: urlData } = supabase.storage.from('goal-images').getPublicUrl(path)
+                        finalImageUrl = urlData.publicUrl
+                    } else {
+                        console.warn('Image upload failed, falling back to URL:', uploadError)
+                    }
+                } catch (e) {
+                    console.warn('Image upload failed unexpectedly:', e)
                 }
             }
 
             const { data: goal, error: goalError } = await supabase
                 .from('sys_goals')
                 .insert([{
-                    user_id: userData.user.id,
+                    user_id: session?.user?.id || undefined, // Provide session ID if we have it
                     title: data.title,
                     description: data.description,
                     category: data.category || 'personal',
@@ -104,7 +112,10 @@ export function useGoals() {
                 .select()
                 .single()
 
-            if (goalError) throw goalError
+            if (goalError) {
+                console.error('Goal Creation Error:', goalError)
+                throw new Error(goalError.message || 'Failed to authorize mission in database')
+            }
 
             if (data.milestones && data.milestones.length > 0) {
                 const milestones = data.milestones.map((m, idx) => ({
@@ -112,7 +123,8 @@ export function useGoals() {
                     title: m,
                     position: idx
                 }))
-                await supabase.from('sys_milestones').insert(milestones)
+                const { error: mError } = await supabase.from('sys_milestones').insert(milestones)
+                if (mError) console.warn('Milestones failed to save:', mError)
             }
 
             await fetchGoals()
