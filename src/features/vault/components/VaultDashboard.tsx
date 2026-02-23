@@ -52,36 +52,38 @@ export function VaultDashboard({ defaultTab }: { defaultTab?: VaultTab }) {
                 </div>
             </header>
 
-            <main className="w-full max-w-5xl mx-auto px-4 sm:px-6 pt-8 pb-20 flex-1">
-                {activeTab === 'clipboard' ? (
-                    <section className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                        <div className="mb-6">
-                            <h2 className="text-lg font-bold text-black flex items-center gap-2">
-                                <span>📋</span> Clipboard
-                            </h2>
-                            <p className="text-[12px] text-black/40 font-medium">Instantly share text and links between your devices</p>
+            <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
+                <main className="w-full max-w-5xl mx-auto px-4 sm:px-6 pt-8 pb-20 flex-1">
+                    {activeTab === 'clipboard' ? (
+                        <section className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                            <div className="mb-6">
+                                <h2 className="text-lg font-bold text-black flex items-center gap-2">
+                                    <span>📋</span> Clipboard
+                                </h2>
+                                <p className="text-[12px] text-black/40 font-medium">Instantly share text and links between your devices</p>
+                            </div>
+                            <Clipboard />
+                        </section>
+                    ) : (
+                        <section className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                            <SecretsManager />
+                        </section>
+                    )}
+
+                    {/* Security Note */}
+                    <div className="mt-16 pt-8 border-t border-black/[0.06] flex flex-col items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-black/[0.03] flex items-center justify-center">
+                            <Lock className="w-4 h-4 text-black/20" />
                         </div>
-                        <Clipboard />
-                    </section>
-                ) : (
-                    <section className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                        <SecretsManager />
-                    </section>
-                )}
-
-                {/* Security Note */}
-                <div className="mt-16 pt-8 border-t border-black/[0.06] flex flex-col items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-black/[0.03] flex items-center justify-center">
-                        <Lock className="w-4 h-4 text-black/20" />
+                        <p className="text-[11px] text-center text-black/20 font-bold uppercase tracking-widest max-w-xs leading-relaxed">
+                            End-to-End Encryption Logic Pending <br />
+                            Data is currently stored in secure database
+                        </p>
                     </div>
-                    <p className="text-[11px] text-center text-black/20 font-bold uppercase tracking-widest max-w-xs leading-relaxed">
-                        End-to-End Encryption Logic Pending <br />
-                        Data is currently stored in secure database
-                    </p>
-                </div>
-            </main>
+                </main>
 
-            <KarrFooter />
+                <KarrFooter />
+            </div>
         </div>
     )
 }

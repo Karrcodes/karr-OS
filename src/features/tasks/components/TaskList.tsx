@@ -15,16 +15,19 @@ const PRIORITY_CONFIG = {
 } as const
 
 export function TaskList({ category, title, icon: Icon }: { category: 'todo' | 'grocery' | 'reminder', title: string, icon: any }) {
-    const { tasks, loading, createTask, toggleTask, deleteTask, clearAllTasks, editTask } = useTasks(category)
+    const { tasks, loading, createTask, toggleTask, deleteTask, clearAllTasks, clearCompletedTasks, editTask } = useTasks(category)
     const [newTask, setNewTask] = useState('')
     const [amount, setAmount] = useState('1')
     const [priority, setPriority] = useState<'super' | 'high' | 'mid' | 'low'>('low')
     const [dueDate, setDueDate] = useState('')
     const [dueDateMode, setDueDateMode] = useState<'none' | 'on' | 'before' | 'range' | 'recurring'>('none')
     const [endDate, setEndDate] = useState('')
-    const [recurringType, setRecurringType] = useState<'daily' | 'weekdays' | 'weekends' | 'work_days' | 'off_days' | 'weekly' | 'custom'>('off_days')
+    const [recurringType, setRecurringType] = useState<'daily' | 'work_days' | 'off_days' | 'custom'>('off_days')
     const [recurringTime, setRecurringTime] = useState('')
-    const [recurringDuration, setRecurringDuration] = useState('')
+    const [recurringDuration, setRecurringDuration] = useState('60')
+    const [recurringDays, setRecurringDays] = useState<number[]>([])
+    const [lastDeletedTask, setLastDeletedTask] = useState<Task | null>(null)
+    const [showUndo, setShowUndo] = useState(false)
 
     // Intelligent Task System states
     const [isAnalyzingPriority, setIsAnalyzingPriority] = useState(false)
@@ -110,7 +113,7 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
                 category === 'grocery' ? finalAmount : undefined,
                 dueDateMode !== 'none' && dueDateMode !== 'recurring' ? (dueDateMode as 'on' | 'before' | 'range') : undefined,
                 endDate || undefined,
-                dueDateMode === 'recurring' ? { type: recurringType, time: recurringTime || undefined, duration_minutes: recurringDuration ? parseInt(recurringDuration) : undefined } : {}
+                dueDateMode === 'recurring' ? { type: recurringType, time: recurringTime || undefined, duration_minutes: recurringDuration ? parseInt(recurringDuration) : undefined, days_of_week: recurringType === 'custom' ? recurringDays : undefined } : {}
             )
             setNewTask('')
             setAmount('1')
@@ -120,7 +123,8 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
             setEndDate('')
             setRecurringType('off_days')
             setRecurringTime('')
-            setRecurringDuration('')
+            setRecurringDuration('60')
+            setRecurringDays([])
         } catch (err: any) {
             console.error('Operation creation failed:', err)
             alert(err.message || 'Failed to create operation. Please check your connection.')
@@ -131,6 +135,39 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
         const itemType = category === 'todo' ? 'operations' : category === 'grocery' ? 'groceries' : 'reminders'
         if (window.confirm(`Are you sure you want to clear all ${itemType}? This cannot be undone.`)) {
             await clearAllTasks()
+        }
+    }
+
+    const handleClearCompleted = async () => {
+        const itemType = category === 'todo' ? 'completed operations' : category === 'grocery' ? 'completed groceries' : 'completed reminders'
+        if (window.confirm(`Clear all ${itemType}?`)) {
+            await clearCompletedTasks()
+        }
+    }
+
+    const handleDeleteWithSafety = async (task: Task) => {
+        if (window.confirm(`Are you sure you want to delete "${task.title}"?`)) {
+            setLastDeletedTask(task)
+            setShowUndo(true)
+            await deleteTask(task.id)
+            setTimeout(() => setShowUndo(false), 5000) // Hide undo after 5 seconds
+        }
+    }
+
+    const handleUndo = async () => {
+        if (lastDeletedTask) {
+            const t = lastDeletedTask
+            await createTask(
+                t.title,
+                t.priority || 'low',
+                t.due_date,
+                t.amount,
+                t.due_date_mode as any,
+                t.end_date,
+                t.recurrence_config
+            )
+            setLastDeletedTask(null)
+            setShowUndo(false)
         }
     }
 
@@ -176,11 +213,9 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
             let shouldInclude = false
 
             if (type === 'daily') shouldInclude = true
-            else if (type === 'weekdays' && dayOfWeek >= 1 && dayOfWeek <= 5) shouldInclude = true
-            else if (type === 'weekends' && (dayOfWeek === 0 || dayOfWeek === 6)) shouldInclude = true
             else if (type === 'work_days' && isShiftDay(today)) shouldInclude = true
             else if (type === 'off_days' && !isShiftDay(today)) shouldInclude = true
-            else if ((type === 'weekly' || type === 'custom') && daysOfWeek.includes(dayOfWeek)) shouldInclude = true
+            else if (type === 'custom' && daysOfWeek.includes(dayOfWeek)) shouldInclude = true
 
             // Legacy fallback support
             if ((type as any) === 'shift_relative') {
@@ -209,15 +244,37 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
                         <p className="text-[12px] text-black/50">{tasks.filter(t => !t.is_completed).length} pending</p>
                     </div>
                 </div>
-                {tasks.length > 0 && (
-                    <button
-                        onClick={handleClearAll}
-                        className="text-[12px] font-medium text-black/40 hover:text-red-500 transition-colors px-2 py-1 rounded hover:bg-red-50"
-                    >
-                        Clear All
-                    </button>
-                )}
+                <div className="flex items-center gap-2">
+                    {tasks.some(t => t.is_completed) && (
+                        <button
+                            onClick={handleClearCompleted}
+                            className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 transition-colors px-2 py-1 rounded hover:bg-emerald-50 bg-emerald-50/50"
+                        >
+                            Clear Completed
+                        </button>
+                    )}
+                    {tasks.length > 0 && (
+                        <button
+                            onClick={handleClearAll}
+                            className="text-[11px] font-medium text-black/40 hover:text-red-500 transition-colors px-2 py-1 rounded hover:bg-red-50"
+                        >
+                            All
+                        </button>
+                    )}
+                </div>
             </div>
+
+            {showUndo && (
+                <div className="mb-4 p-3 bg-black text-white rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+                    <span className="text-[12px] font-medium">Operation deleted</span>
+                    <button
+                        onClick={handleUndo}
+                        className="text-[12px] font-bold text-emerald-400 hover:text-emerald-300 transition-colors px-2 py-1"
+                    >
+                        Undo
+                    </button>
+                </div>
+            )}
 
             <form onSubmit={handleSubmit} className="mb-5 flex flex-col gap-2">
                 <div className="flex gap-1.5 sm:gap-2">
@@ -388,11 +445,8 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
                                 <div className="flex flex-wrap gap-1.5">
                                     {([
                                         { value: 'daily', label: 'Daily' },
-                                        { value: 'weekdays', label: 'Weekdays' },
-                                        { value: 'weekends', label: 'Weekends' },
                                         { value: 'work_days', label: 'Work Days' },
                                         { value: 'off_days', label: 'Days Off' },
-                                        { value: 'weekly', label: 'Weekly' },
                                         { value: 'custom', label: 'Custom' },
                                     ] as const).map(opt => (
                                         <button
@@ -412,20 +466,37 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
                                 </div>
 
                                 {/* Weekly day picker */}
-                                {(recurringType === 'weekly' || recurringType === 'custom') && (
-                                    <div className="flex gap-1">
-                                        {['M', 'T', 'W', 'Th', 'F', 'Sa', 'Su'].map((day, i) => {
-                                            const dayNum = i === 6 ? 0 : i + 1
-                                            return (
-                                                <button
-                                                    key={day}
-                                                    type="button"
-                                                    className="w-7 h-7 rounded-md text-[10px] font-bold border border-emerald-200 bg-white text-black/50 hover:bg-emerald-100 transition-all"
-                                                >
-                                                    {day}
-                                                </button>
-                                            )
-                                        })}
+                                {(recurringType === 'custom') && (
+                                    <div className="flex gap-1.5 animate-in fade-in zoom-in-95 duration-200">
+                                        {[
+                                            { d: 'M', v: 1 },
+                                            { d: 'T', v: 2 },
+                                            { d: 'W', v: 3 },
+                                            { d: 'Th', v: 4 },
+                                            { d: 'F', v: 5 },
+                                            { d: 'Sa', v: 6 },
+                                            { d: 'Su', v: 0 }
+                                        ].map((day) => (
+                                            <button
+                                                key={day.v}
+                                                type="button"
+                                                onClick={() => {
+                                                    setRecurringDays(prev =>
+                                                        prev.includes(day.v)
+                                                            ? prev.filter(d => d !== day.v)
+                                                            : [...prev, day.v]
+                                                    )
+                                                }}
+                                                className={cn(
+                                                    "w-8 h-8 rounded-lg text-[11px] font-bold border transition-all",
+                                                    recurringDays.includes(day.v)
+                                                        ? "bg-emerald-600 border-emerald-700 text-white shadow-sm"
+                                                        : "bg-white border-emerald-200 text-black/40 hover:bg-emerald-50 hover:border-emerald-300"
+                                                )}
+                                            >
+                                                {day.d}
+                                            </button>
+                                        ))}
                                     </div>
                                 )}
 
@@ -442,15 +513,17 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
                                     </div>
                                     <div className="flex items-center gap-1.5 bg-white border border-emerald-200 rounded-lg px-2.5 py-1.5">
                                         <span className="text-[10px] font-bold text-black/40 uppercase">Duration</span>
-                                        <input
-                                            type="number"
-                                            placeholder="mins"
+                                        <select
                                             value={recurringDuration}
                                             onChange={e => setRecurringDuration(e.target.value)}
-                                            className="bg-transparent text-[11px] font-bold text-black/60 outline-none w-14"
-                                            min="5"
-                                            step="5"
-                                        />
+                                            className="bg-transparent text-[11px] font-bold text-black/60 outline-none"
+                                        >
+                                            {[30, 60, 90, 120, 150, 180, 240, 300, 360].map(mins => {
+                                                const hrs = mins / 60
+                                                const label = hrs >= 1 ? `${hrs}${hrs % 1 === 0 ? '' : '.5'}h` : `${mins}m`
+                                                return <option key={mins} value={mins}>{label}</option>
+                                            })}
+                                        </select>
                                     </div>
                                 </div>
                             </div>
@@ -471,7 +544,7 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
                     </div>
                 ) : (
                     expandedTasks.map((task) => (
-                        <TaskRow key={task.id} task={task} toggleTask={toggleTask} deleteTask={deleteTask} editTask={editTask} category={category} />
+                        <TaskRow key={task.id} task={task} toggleTask={toggleTask} deleteTask={handleDeleteWithSafety} editTask={editTask} category={category} />
                     ))
                 )}
             </div>
@@ -487,9 +560,26 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
     const [editDueDate, setEditDueDate] = useState(task.due_date ? task.due_date.split('T')[0] : '')
     const [editEndDate, setEditEndDate] = useState(task.end_date ? task.end_date.split('T')[0] : '')
     const [editDueDateMode, setEditDueDateMode] = useState<'none' | 'on' | 'before' | 'range' | 'recurring'>(task.recurrence_config?.type && task.recurrence_config.type !== 'none' ? 'recurring' : (task.due_date_mode || 'none'))
-    const [editRecurrence, setEditRecurrence] = useState<'none' | 'daily' | 'weekdays' | 'weekends' | 'work_days' | 'off_days' | 'weekly' | 'custom'>(task.recurrence_config?.type && task.recurrence_config.type !== 'none' ? task.recurrence_config.type as any : 'off_days')
+    const [editRecurrence, setEditRecurrence] = useState<'daily' | 'work_days' | 'off_days' | 'custom'>(task.recurrence_config?.type && task.recurrence_config.type !== 'none' ? task.recurrence_config.type as any : 'off_days')
     const [editRecurringTime, setEditRecurringTime] = useState(task.recurrence_config?.time || '')
-    const [editRecurringDuration, setEditRecurringDuration] = useState(task.recurrence_config?.duration_minutes?.toString() || '')
+    const [editRecurringDuration, setEditRecurringDuration] = useState(task.recurrence_config?.duration_minutes?.toString() || '60')
+    const [editRecurringDays, setEditRecurringDays] = useState<number[]>(task.recurrence_config?.days_of_week || [])
+
+    // Reset edit states to DB truth whenever editing starts
+    useEffect(() => {
+        if (isEditing) {
+            setEditValue(task.title)
+            setEditAmount(task.amount || '')
+            setEditPriority(task.priority || 'low')
+            setEditDueDate(task.due_date ? task.due_date.split('T')[0] : '')
+            setEditEndDate(task.end_date ? task.end_date.split('T')[0] : '')
+            setEditDueDateMode(task.recurrence_config?.type && task.recurrence_config.type !== 'none' ? 'recurring' : (task.due_date_mode || 'none'))
+            setEditRecurrence(task.recurrence_config?.type && task.recurrence_config.type !== 'none' ? task.recurrence_config.type as any : 'off_days')
+            setEditRecurringTime(task.recurrence_config?.time || '')
+            setEditRecurringDuration(task.recurrence_config?.duration_minutes?.toString() || '60')
+            setEditRecurringDays(task.recurrence_config?.days_of_week || [])
+        }
+    }, [isEditing, task])
 
     const handleSave = () => {
         const updates: Partial<Task> = {}
@@ -510,7 +600,12 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
         }
 
         if (editDueDateMode === 'recurring') {
-            updates.recurrence_config = { type: editRecurrence, time: editRecurringTime || undefined, duration_minutes: editRecurringDuration ? parseInt(editRecurringDuration) : undefined }
+            updates.recurrence_config = {
+                type: editRecurrence,
+                time: editRecurringTime || undefined,
+                duration_minutes: editRecurringDuration ? parseInt(editRecurringDuration) : undefined,
+                days_of_week: editRecurrence === 'custom' ? editRecurringDays : undefined
+            }
             updates.due_date = undefined
             updates.due_date_mode = undefined
         } else if (editDueDateMode === 'none') {
@@ -635,15 +730,47 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
                                         <span className="text-[9px] font-bold text-black/40 uppercase">Dur.</span>
                                         <select value={editRecurringDuration} onChange={e => setEditRecurringDuration(e.target.value)} className="bg-transparent text-[10px] font-bold text-black/60 outline-none w-full">
                                             <option value="">Duration</option>
-                                            <option value="30">30 mins</option>
-                                            <option value="60">1 hr</option>
-                                            <option value="90">1.5 hrs</option>
-                                            <option value="120">2 hrs</option>
-                                            <option value="150">2.5 hrs</option>
-                                            <option value="180">3 hrs</option>
+                                            {[30, 60, 90, 120, 150, 180, 240, 300, 360].map(mins => {
+                                                const hrs = mins / 60
+                                                const label = hrs >= 1 ? `${hrs}${hrs % 1 === 0 ? '' : '.5'}h` : `${mins}m`
+                                                return <option key={mins} value={mins}>{label}</option>
+                                            })}
                                         </select>
                                     </div>
                                 </div>
+                                {editRecurrence === 'custom' && (
+                                    <div className="flex gap-1 mt-1 animate-in fade-in zoom-in-95 duration-200">
+                                        {[
+                                            { d: 'M', v: 1 },
+                                            { d: 'T', v: 2 },
+                                            { d: 'W', v: 3 },
+                                            { d: 'Th', v: 4 },
+                                            { d: 'F', v: 5 },
+                                            { d: 'Sa', v: 6 },
+                                            { d: 'Su', v: 0 }
+                                        ].map((day) => (
+                                            <button
+                                                key={day.v}
+                                                type="button"
+                                                onClick={() => {
+                                                    setEditRecurringDays(prev =>
+                                                        prev.includes(day.v)
+                                                            ? prev.filter(d => d !== day.v)
+                                                            : [...prev, day.v]
+                                                    )
+                                                }}
+                                                className={cn(
+                                                    "w-7 h-7 rounded-md text-[10px] font-bold border transition-all",
+                                                    editRecurringDays.includes(day.v)
+                                                        ? "bg-emerald-600 border-emerald-700 text-white"
+                                                        : "bg-white border-emerald-200 text-black/40 hover:bg-emerald-50"
+                                                )}
+                                            >
+                                                {day.d}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
@@ -687,9 +814,10 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
                 ? "bg-black/[0.02] border-transparent opacity-60"
                 : "bg-white border-black/[0.06] hover:border-black/[0.15] shadow-sm"
         )}>
-            <label className="flex items-center gap-3 cursor-pointer flex-1 min-w-0">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
                 <input
                     type="checkbox"
+                    id={`task-${task.id}`}
                     checked={task.is_completed}
                     onChange={(e) => toggleTask(task.id, e.target.checked)}
                     className="w-5 h-5 accent-black cursor-pointer shrink-0"
@@ -731,7 +859,7 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
                         </div>
                     )}
                 </div>
-            </label>
+            </div>
 
             <div className="flex items-center gap-1 shrink-0">
                 <button
@@ -749,6 +877,6 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
                     <Trash2 className="w-4 h-4" />
                 </button>
             </div>
-        </div>
+        </div >
     )
 }

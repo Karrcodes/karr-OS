@@ -120,11 +120,11 @@ export function CommandCenter() {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto bg-[#fafafa] flex flex-col">
+            <div className="flex-1 flex flex-col min-h-0 overflow-y-auto bg-[#fafafa]">
                 <div className="p-6 pb-2 select-none flex items-center gap-2 text-[13px] font-bold text-black/40 uppercase tracking-wider">
                     Overview
                 </div>
-                <div className="px-6 pb-6 space-y-8">
+                <div className="px-6 pb-6 space-y-8 flex-1">
                     {/* Summary Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <SummaryCard
@@ -218,7 +218,7 @@ export function CommandCenter() {
                         />
                     </div>
                 </div>
-                <KarrFooter />
+                <KarrFooter dark />
             </div>
         </div>
     )

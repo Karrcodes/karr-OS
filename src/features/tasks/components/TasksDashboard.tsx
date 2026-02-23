@@ -189,10 +189,12 @@ export function TasksDashboard() {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 pb-32 flex flex-col">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-                    <TaskList category="todo" title="Deployment" icon={Activity} />
-                    <TaskList category="grocery" title="Grocery List" icon={ShoppingCart} />
+            <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
+                <div className="p-6 pb-32 flex-1">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+                        <TaskList category="todo" title="Deployment" icon={Activity} />
+                        <TaskList category="grocery" title="Grocery List" icon={ShoppingCart} />
+                    </div>
                 </div>
                 <KarrFooter />
             </div>

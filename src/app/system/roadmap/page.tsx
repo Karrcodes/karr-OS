@@ -50,8 +50,8 @@ export default function SystemRoadmapPage() {
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 overflow-y-auto p-6">
-                <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <div className="flex-1 flex flex-col min-h-0 overflow-y-auto p-6">
+                <div className="max-w-4xl mx-auto w-full space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500 flex-1">
 
                     {/* Future Roadmap Section */}
                     <section className="space-y-6">

@@ -116,11 +116,9 @@ export function useDayPlanner(date: Date = new Date()) {
                 const daysOfWeek = task.recurrence_config.days_of_week || []
 
                 if (type === 'daily') shouldInclude = true
-                else if (type === 'weekdays' && dayOfWeek >= 1 && dayOfWeek <= 5) shouldInclude = true
-                else if (type === 'weekends' && (dayOfWeek === 0 || dayOfWeek === 6)) shouldInclude = true
                 else if (type === 'work_days' && isWorkDay) shouldInclude = true
                 else if (type === 'off_days' && !isWorkDay) shouldInclude = true
-                else if ((type === 'weekly' || type === 'custom') && daysOfWeek.includes(dayOfWeek)) shouldInclude = true
+                else if (type === 'custom' && daysOfWeek.includes(dayOfWeek)) shouldInclude = true
 
                 // Legacy fallback support
                 if ((type as any) === 'shift_relative') {

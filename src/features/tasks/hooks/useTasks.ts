@@ -165,6 +165,22 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder', profileOverr
         await fetchTasks()
     }
 
+    const clearCompletedTasks = async () => {
+        if (settings.is_demo_mode) {
+            const updated = tasks.filter(t => !t.is_completed)
+            setTasks(updated)
+            saveSessionTasks(updated)
+            return
+        }
+        const { error } = await supabase.from('fin_tasks')
+            .delete()
+            .eq('profile', activeProfile)
+            .eq('category', category)
+            .eq('is_completed', true)
+        if (error) throw error
+        await fetchTasks()
+    }
+
     useEffect(() => {
         fetchTasks()
     }, [fetchTasks])
@@ -177,6 +193,7 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder', profileOverr
         toggleTask,
         deleteTask,
         clearAllTasks,
+        clearCompletedTasks,
         editTask,
         refetch: fetchTasks
     }
