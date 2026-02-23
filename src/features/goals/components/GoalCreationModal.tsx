@@ -4,8 +4,9 @@ import React, { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     X, Plus, Target, Calendar, Briefcase, Heart,
-    User, Wallet, Trash2, Sparkles, Upload, Loader2, AlertCircle, ImageIcon
+    User, Wallet, Trash2, Sparkles, Upload, Loader2, AlertCircle, ImageIcon, GripVertical
 } from 'lucide-react'
+import { Reorder } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import type { Goal, GoalCategory, GoalPriority, CreateGoalData, GoalStatus } from '../types/goals.types'
 
@@ -41,7 +42,7 @@ export default function GoalCreationModal({ isOpen, onClose, onSave, initialGoal
     const [imageFile, setImageFile] = useState<File | null>(null)
     const [imagePreview, setImagePreview] = useState<string | null>(null)
     const [targetDate, setTargetDate] = useState('')
-    const [milestones, setMilestones] = useState<string[]>([''])
+    const [milestones, setMilestones] = useState<{ id: string, text: string }[]>([{ id: 'initial', text: '' }])
     const [saving, setSaving] = useState(false)
     const [aiLoading, setAiLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -60,7 +61,7 @@ export default function GoalCreationModal({ isOpen, onClose, onSave, initialGoal
             setTimeframe(initialGoal.timeframe)
             setVisionImageUrl(initialGoal.vision_image_url || '')
             setTargetDate(initialGoal.target_date || '')
-            setMilestones(initialGoal.milestones?.map(m => m.title) || [''])
+            setMilestones(initialGoal.milestones?.map(m => ({ id: m.id, text: m.title })) || [{ id: Math.random().toString(), text: '' }])
             setImagePreview(null)
             setImageFile(null)
             setAiUsed(false)
@@ -69,18 +70,18 @@ export default function GoalCreationModal({ isOpen, onClose, onSave, initialGoal
             // Reset for new goal
             setTitle(''); setDescription(''); setCategory('personal'); setStatus('active')
             setPriority('mid'); setTimeframe('short'); setVisionImageUrl(''); setTargetDate('')
-            setMilestones(['']); setImagePreview(null); setImageFile(null); setAiUsed(false); setError(null)
+            setMilestones([{ id: 'initial', text: '' }]); setImagePreview(null); setImageFile(null); setAiUsed(false); setError(null)
         }
     }, [initialGoal, isOpen])
 
     // ── helpers ──────────────────────────────────────────────
-    const addMilestone = () => setMilestones([...milestones, ''])
-    const removeMilestone = (i: number) => {
-        if (milestones.length === 1) { setMilestones(['']); return }
-        setMilestones(milestones.filter((_, idx) => idx !== i))
+    const addMilestone = () => setMilestones([...milestones, { id: Math.random().toString(36).substr(2, 9), text: '' }])
+    const removeMilestone = (id: string) => {
+        if (milestones.length === 1) { setMilestones([{ id: Math.random().toString(36).substr(2, 9), text: '' }]); return }
+        setMilestones(milestones.filter(m => m.id !== id))
     }
-    const updateMilestone = (i: number, v: string) => {
-        const n = [...milestones]; n[i] = v; setMilestones(n)
+    const updateMilestone = (id: string, text: string) => {
+        setMilestones(milestones.map(m => m.id === id ? { ...m, text } : m))
     }
 
     const handleImageFile = (file: File) => {
@@ -113,7 +114,7 @@ export default function GoalCreationModal({ isOpen, onClose, onSave, initialGoal
             if (data.priority) setPriority(data.priority)
             if (data.timeframe) setTimeframe(data.timeframe)
             if (data.target_date) setTargetDate(data.target_date)
-            if (data.milestones?.length) setMilestones(data.milestones)
+            if (data.milestones?.length) setMilestones(data.milestones.map((m: string) => ({ id: Math.random().toString(36).substr(2, 9), text: m })))
             setAiUsed(true)
         } catch (e: any) {
             setError('AI assist failed. Fill in manually.')
@@ -138,7 +139,7 @@ export default function GoalCreationModal({ isOpen, onClose, onSave, initialGoal
                 timeframe,
                 vision_image_url: visionImageUrl || undefined,
                 target_date: targetDate || undefined,
-                milestones: milestones.filter(m => m.trim() !== '')
+                milestones: milestones.map(m => m.text).filter(m => m.trim() !== '')
             }, imageFile || undefined, initialGoal?.id)
 
             onClose()
@@ -417,7 +418,7 @@ export default function GoalCreationModal({ isOpen, onClose, onSave, initialGoal
                                         <div className="flex items-center gap-2">
                                             <label className="text-[10px] font-bold text-black/40 uppercase tracking-widest ml-1">Milestone Breakdown</label>
                                             <div className="bg-emerald-100 text-emerald-600 rounded px-1.5 py-0.5 text-[10px] font-bold">
-                                                {milestones.filter(m => m.trim()).length}
+                                                {milestones.filter(m => m.text.trim()).length}
                                             </div>
                                         </div>
                                         <button
@@ -430,28 +431,40 @@ export default function GoalCreationModal({ isOpen, onClose, onSave, initialGoal
                                         </button>
                                     </div>
 
-                                    <div className="space-y-2">
-                                        {milestones.map((milestone, idx) => (
-                                            <div key={idx} className="flex items-center gap-2">
+                                    <Reorder.Group
+                                        axis="y"
+                                        values={milestones}
+                                        onReorder={setMilestones}
+                                        className="space-y-2"
+                                    >
+                                        {milestones.map((milestone) => (
+                                            <Reorder.Item
+                                                key={milestone.id}
+                                                value={milestone}
+                                                className="flex items-center gap-2 group/item"
+                                            >
+                                                <div className="cursor-grab active:cursor-grabbing p-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                                                    <GripVertical className="w-4 h-4 text-black/20" />
+                                                </div>
                                                 <div className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center text-[9px] font-bold text-black/20 shrink-0">
-                                                    {idx + 1}
+                                                    {milestones.indexOf(milestone) + 1}
                                                 </div>
                                                 <input
-                                                    value={milestone}
-                                                    onChange={e => updateMilestone(idx, e.target.value)}
-                                                    placeholder={`Milestone ${idx + 1}...`}
+                                                    value={milestone.text}
+                                                    onChange={e => updateMilestone(milestone.id, e.target.value)}
+                                                    placeholder="Designate next step..."
                                                     className="flex-1 text-[13px] font-medium text-black/70 border-b border-black/5 py-2 px-1 focus:border-black/20 focus:outline-none transition-all bg-transparent"
                                                 />
                                                 <button
                                                     type="button"
-                                                    onClick={() => removeMilestone(idx)}
+                                                    onClick={() => removeMilestone(milestone.id)}
                                                     className="p-1 rounded hover:bg-red-50 text-black/10 hover:text-red-400 transition-colors"
                                                 >
                                                     <Trash2 className="w-3.5 h-3.5" />
                                                 </button>
-                                            </div>
+                                            </Reorder.Item>
                                         ))}
-                                    </div>
+                                    </Reorder.Group>
                                 </div>
                             </div>
 

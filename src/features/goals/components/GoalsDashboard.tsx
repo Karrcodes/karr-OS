@@ -16,10 +16,14 @@ import type { Goal, GoalCategory } from '../types/goals.types'
 export default function GoalsDashboard() {
     const { goals, loading, createGoal, toggleMilestone, deleteGoal, updateGoal } = useGoals()
     const [view, setView] = useState<GoalsView>('matrix')
-    const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null)
+    const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null)
     const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
+
+    const selectedGoal = useMemo(() =>
+        goals.find(g => g.id === selectedGoalId) || null,
+        [goals, selectedGoalId])
 
     const filteredGoals = useMemo(() => {
         return goals.filter(goal =>
@@ -31,7 +35,7 @@ export default function GoalsDashboard() {
     const handleEditGoal = (goal: Goal) => {
         setEditingGoal(goal)
         setIsCreateModalOpen(true)
-        setSelectedGoal(null)
+        setSelectedGoalId(null)
     }
 
     const handleCloseModal = () => {
@@ -39,7 +43,7 @@ export default function GoalsDashboard() {
         setEditingGoal(null)
     }
 
-    if (loading) {
+    if (loading && goals.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
                 <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin" />
@@ -112,9 +116,9 @@ export default function GoalsDashboard() {
                         transition={{ duration: 0.3 }}
                         className={view === 'timeline' ? "flex-1 min-h-[600px]" : "pb-20"}
                     >
-                        {view === 'matrix' && <GoalsMatrix goals={filteredGoals} onGoalClick={setSelectedGoal} />}
-                        {view === 'timeline' && <GoalsRoadmap goals={filteredGoals} onGoalClick={setSelectedGoal} />}
-                        {view === 'vision' && <GoalsVisionBoard goals={filteredGoals} onGoalClick={setSelectedGoal} />}
+                        {view === 'matrix' && <GoalsMatrix goals={filteredGoals} onGoalClick={g => setSelectedGoalId(g.id)} />}
+                        {view === 'timeline' && <GoalsRoadmap goals={filteredGoals} onGoalClick={g => setSelectedGoalId(g.id)} />}
+                        {view === 'vision' && <GoalsVisionBoard goals={filteredGoals} onGoalClick={g => setSelectedGoalId(g.id)} />}
                     </motion.div>
                 </div>
             </div>
@@ -137,7 +141,7 @@ export default function GoalsDashboard() {
                 <GoalDetailSheet
                     goal={selectedGoal}
                     isOpen={!!selectedGoal}
-                    onClose={() => setSelectedGoal(null)}
+                    onClose={() => setSelectedGoalId(null)}
                     onToggleMilestone={toggleMilestone}
                     onDeleteGoal={deleteGoal}
                     onEdit={handleEditGoal}

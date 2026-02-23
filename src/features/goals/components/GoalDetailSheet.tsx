@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Target, Calendar, Clock, Trash2, Plus, CheckCircle2, Circle, Image as ImageIcon } from 'lucide-react'
+import { X, Target, Calendar, Clock, Trash2, Plus, CheckCircle2, Circle, Image as ImageIcon, Sparkles, Pencil } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Goal, Milestone } from '../types/goals.types'
 
@@ -68,7 +68,7 @@ export default function GoalDetailSheet({ goal, isOpen, onClose, onToggleMilesto
                                         onClick={() => onEdit(goal)}
                                         className="w-12 h-12 flex items-center justify-center bg-black text-white rounded-full transition-transform active:scale-90 shadow-lg shadow-black/10"
                                     >
-                                        <Plus className="w-5 h-5 rotate-45" /> {/* Using Plus rotated for a "refine" feel, or Pencil if preferred */}
+                                        <Sparkles className="w-5 h-5" />
                                     </button>
                                     <button
                                         onClick={onClose}

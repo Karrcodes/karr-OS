@@ -13,7 +13,7 @@ export function useGoals() {
     const { settings } = useSystemSettings()
 
     const fetchGoals = useCallback(async () => {
-        setLoading(true)
+        if (goals.length === 0) setLoading(true)
         setError(null)
 
         try {
@@ -35,7 +35,14 @@ export function useGoals() {
                 .order('created_at', { ascending: false })
 
             if (goalsError) throw goalsError
-            setGoals(goalsData || [])
+
+            // Sort milestones by position safely
+            const sortedGoals = (goalsData || []).map((goal: any) => ({
+                ...goal,
+                milestones: (goal.milestones || []).sort((a: any, b: any) => (a.position || 0) - (b.position || 0))
+            }))
+
+            setGoals(sortedGoals)
         } catch (err: any) {
             console.error('Error fetching goals:', err)
             setError(err.message)
@@ -57,7 +64,7 @@ export function useGoals() {
                     target_date: data.target_date || null,
                     priority: data.priority || 'mid',
                     timeframe: data.timeframe || 'short',
-                    vision_image_url: data.vision_image_url,
+                    vision_image_url: imageFile ? URL.createObjectURL(imageFile) : data.vision_image_url,
                     created_at: new Date().toISOString(),
                     milestones: data.milestones?.map((m, idx) => ({
                         id: Math.random().toString(36).substr(2, 9),
@@ -142,6 +149,7 @@ export function useGoals() {
                         return {
                             ...g,
                             ...updates,
+                            vision_image_url: imageFile ? URL.createObjectURL(imageFile) : updates.vision_image_url,
                             milestones: updates.milestones ? updates.milestones.map((m, idx) => ({
                                 id: Math.random().toString(36).substr(2, 9),
                                 goal_id: id,
@@ -241,16 +249,17 @@ export function useGoals() {
     }
 
     const toggleMilestone = async (milestoneId: string, isCompleted: boolean) => {
+        // Optimistically update local state
+        const originalGoals = [...goals]
+        setGoals(prev => prev.map(goal => ({
+            ...goal,
+            milestones: goal.milestones?.map(m =>
+                m.id === milestoneId ? { ...m, is_completed: isCompleted } : m
+            )
+        })))
+
         try {
-            if (settings.is_demo_mode) {
-                setGoals(prev => prev.map(goal => ({
-                    ...goal,
-                    milestones: goal.milestones?.map(m =>
-                        m.id === milestoneId ? { ...m, is_completed: isCompleted } : m
-                    )
-                })))
-                return
-            }
+            if (settings.is_demo_mode) return
 
             const { error: mError } = await supabase
                 .from('sys_milestones')
@@ -260,6 +269,8 @@ export function useGoals() {
             if (mError) throw mError
             await fetchGoals()
         } catch (err: any) {
+            // Rollback on error
+            setGoals(originalGoals)
             setError(err.message)
             throw err
         }
