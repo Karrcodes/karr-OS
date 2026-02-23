@@ -492,24 +492,29 @@ export function Sidebar() {
 
             {/* ── Mobile top bar ─────────────────────────────────────────── */}
             <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-white border-b border-black/[0.07] flex items-center px-4 z-40">
-                <button
-                    onClick={() => setMobileOpen(true)}
-                    className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-black/[0.05] transition-colors"
-                >
-                    <Menu className="w-5 h-5 text-black/60" />
-                </button>
-                <div className="flex-1 flex justify-center items-center h-full">
-                    <Link href="/system/control-centre" className="flex justify-center items-center" onClick={() => setMobileOpen(false)}>
-                        <Image src="/karros-logo.png.jpeg" alt="KarrOS" width={120} height={32} priority className="h-7 w-auto object-contain" />
+                <div className="flex items-center gap-1">
+                    <button
+                        onClick={() => setMobileOpen(true)}
+                        className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-black/[0.05] transition-colors"
+                    >
+                        <Menu className="w-5 h-5 text-black/60" />
+                    </button>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-black/[0.05] transition-colors"
+                        title="Refresh App"
+                    >
+                        <RefreshCw className="w-5 h-5 text-black/60" />
+                    </button>
+                </div>
+
+                <div className="flex-1" />
+
+                <div className="flex items-center pr-2">
+                    <Link href="/system/control-centre" className="flex items-center" onClick={() => setMobileOpen(false)}>
+                        <Image src="/karros-logo.png.jpeg" alt="KarrOS" width={110} height={28} priority className="h-6 w-auto object-contain" />
                     </Link>
                 </div>
-                <button
-                    onClick={() => window.location.reload()}
-                    className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-black/[0.05] transition-colors"
-                    title="Refresh App"
-                >
-                    <RefreshCw className="w-5 h-5 text-black/60" />
-                </button>
             </div>
 
             {/* ── Mobile drawer overlay ──────────────────────────────────── */}
