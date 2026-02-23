@@ -44,7 +44,7 @@ export function useGoals() {
         }
     }, [settings.is_demo_mode])
 
-    const createGoal = async (data: CreateGoalData) => {
+    const createGoal = async (data: CreateGoalData, imageFile?: File) => {
         try {
             if (settings.is_demo_mode) {
                 const newGoal: Goal = {
@@ -73,7 +73,21 @@ export function useGoals() {
             }
 
             const { data: userData } = await supabase.auth.getUser()
-            if (!userData.user) return
+            if (!userData.user) throw new Error('Not authenticated')
+
+            // Upload image file to Supabase Storage if provided
+            let finalImageUrl = data.vision_image_url
+            if (imageFile) {
+                const ext = imageFile.name.split('.').pop() || 'jpg'
+                const path = `${userData.user.id}/${Date.now()}.${ext}`
+                const { error: uploadError } = await supabase.storage
+                    .from('goal-images')
+                    .upload(path, imageFile, { upsert: true })
+                if (!uploadError) {
+                    const { data: urlData } = supabase.storage.from('goal-images').getPublicUrl(path)
+                    finalImageUrl = urlData.publicUrl
+                }
+            }
 
             const { data: goal, error: goalError } = await supabase
                 .from('sys_goals')
@@ -85,7 +99,7 @@ export function useGoals() {
                     target_date: data.target_date,
                     priority: data.priority || 'mid',
                     timeframe: data.timeframe || 'short',
-                    vision_image_url: data.vision_image_url
+                    vision_image_url: finalImageUrl
                 }])
                 .select()
                 .single()
