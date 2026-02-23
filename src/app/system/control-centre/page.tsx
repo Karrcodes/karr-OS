@@ -168,7 +168,7 @@ export default function ControlCentrePage() {
                             sub="Action Engine Recommendation"
                         />
                         <SummaryCard
-                            label="Karrtesian Score"
+                            label="Efficiency Analysis"
                             value={`${stats.score}/100`}
                             icon={<TrendingUp className="w-5 h-5" />}
                             color="#059669"
@@ -198,7 +198,7 @@ export default function ControlCentrePage() {
                                                 <span className="text-2xl font-black">{stats.score}</span>
                                             </div>
                                         </div>
-                                        <p className="text-[11px] font-bold text-black/40 uppercase tracking-widest mt-4">Karrtesian Index</p>
+                                        <p className="text-[11px] font-bold text-black/40 uppercase tracking-widest mt-4">Efficiency Index</p>
                                     </div>
 
                                     <div className="space-y-6 flex flex-col justify-center">
@@ -240,11 +240,12 @@ export default function ControlCentrePage() {
                                     <p className="text-[10px] font-mono text-white/25 uppercase tracking-widest mt-4">— {MOTIVATION_QUOTES[quoteIndex].tag}</p>
                                 </div>
                             </div>
+
+                            <ScheduleWidget />
                         </div>
 
-                        {/* Right Column: Schedule & Goals */}
+                        {/* Right Column: Strategic Focus */}
                         <div className="lg:col-span-1 space-y-6">
-                            <ScheduleWidget />
 
                             <SectionBlock title="Strategic Focus" desc="Top Objectives">
                                 <div className="space-y-4 p-1">

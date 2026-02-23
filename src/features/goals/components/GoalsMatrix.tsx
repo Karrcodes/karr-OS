@@ -99,9 +99,25 @@ function GoalMatrixCard({ goal, index, onClick }: { goal: Goal, index: number, o
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
             onClick={onClick}
-            className="group relative bg-white border border-black/[0.06] rounded-2xl p-6 hover:border-black/20 hover:shadow-xl hover:shadow-black/5 transition-all cursor-pointer overflow-hidden"
+            className="group relative bg-white border border-black/[0.06] rounded-2xl hover:border-black/20 hover:shadow-xl hover:shadow-black/5 transition-all cursor-pointer overflow-hidden flex flex-col"
         >
-            <div className="relative z-10 space-y-4">
+            {/* Image Header */}
+            <div className="relative w-full aspect-[21/9] bg-black/[0.02] overflow-hidden border-b border-black/[0.04]">
+                {goal.vision_image_url ? (
+                    <img
+                        src={goal.vision_image_url}
+                        alt={goal.title}
+                        className="w-full h-full object-cover grayscale-[30%] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700"
+                    />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center opacity-[0.03]">
+                        <Target className="w-8 h-8 text-black" />
+                    </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+
+            <div className="p-6 space-y-4 flex-1 flex flex-col">
                 <div className="flex items-start justify-between">
                     <div className={cn("p-2.5 rounded-xl flex items-center justify-center", config.color)}>
                         <config.icon className="w-4 h-4" />
@@ -122,30 +138,32 @@ function GoalMatrixCard({ goal, index, onClick }: { goal: Goal, index: number, o
                     </p>
                 </div>
 
-                <div className="space-y-2">
-                    <div className="flex items-center justify-between text-[11px]">
-                        <span className="font-bold text-black/30 uppercase tracking-wider">{completedMilestones}/{totalMilestones} Milestones</span>
-                        <span className="font-mono font-bold">{Math.round(progress)}%</span>
+                <div className="mt-auto space-y-4">
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between text-[11px]">
+                            <span className="font-bold text-black/30 uppercase tracking-wider">{completedMilestones}/{totalMilestones} Milestones</span>
+                            <span className="font-mono font-bold">{Math.round(progress)}%</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-black/[0.04] rounded-full overflow-hidden">
+                            <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${progress}%` }}
+                                transition={{ duration: 0.8, ease: "easeOut" }}
+                                className="h-full bg-black group-hover:bg-blue-600 transition-colors"
+                            />
+                        </div>
                     </div>
-                    <div className="h-1.5 w-full bg-black/[0.04] rounded-full overflow-hidden">
-                        <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${progress}%` }}
-                            transition={{ duration: 0.8, ease: "easeOut" }}
-                            className="h-full bg-black group-hover:bg-blue-600 transition-colors"
-                        />
-                    </div>
-                </div>
 
-                <div className="flex items-center justify-between pt-2">
-                    <div className="flex items-center gap-1.5 text-black/25">
-                        <Clock className="w-3 h-3" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">
-                            {goal.target_date ? new Date(goal.target_date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : 'No Deadline'}
-                        </span>
-                    </div>
-                    <div className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center text-black/20 group-hover:bg-black group-hover:text-white transition-all transform group-hover:translate-x-1">
-                        <ChevronRight className="w-3.5 h-3.5" />
+                    <div className="flex items-center justify-between pt-2 border-t border-black/[0.04]">
+                        <div className="flex items-center gap-1.5 text-black/25">
+                            <Clock className="w-3 h-3" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider">
+                                {goal.target_date ? new Date(goal.target_date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : 'No Deadline'}
+                            </span>
+                        </div>
+                        <div className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center text-black/20 group-hover:bg-black group-hover:text-white transition-all transform group-hover:translate-x-1">
+                            <ChevronRight className="w-3.5 h-3.5" />
+                        </div>
                     </div>
                 </div>
             </div>
