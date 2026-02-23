@@ -208,7 +208,7 @@ export default function GoalCreationModal({ isOpen, onClose, onSave }: GoalCreat
                                 </div>
 
                                 {/* Priority & Date & Image */}
-                                <div className="space-y-6 min-w-0 overflow-hidden">
+                                <div className="space-y-6 min-w-0">
                                     <div className="space-y-3 md:space-y-4">
                                         <label className="text-[10px] md:text-[11px] font-bold text-black/40 uppercase tracking-widest ml-1">Tier Priority</label>
                                         <div className="flex items-center gap-1.5 p-1 bg-black/5 rounded-xl md:rounded-2xl">
