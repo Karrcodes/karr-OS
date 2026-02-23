@@ -64,10 +64,10 @@ export function TasksCalendar() {
     return (
         <div className="rounded-2xl border border-black/[0.08] bg-white overflow-hidden shadow-sm">
             <div className="p-5 border-b border-black/[0.04] flex items-center justify-between bg-black/[0.01]">
-                <h2 className="text-[16px] font-bold text-black flex items-center gap-2">
-                    <CalendarIcon className="w-4 h-4" />
-                    Focus Schedule
-                </h2>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                    <CalendarIcon className="w-4 h-4 text-black/50" />
+                    <h2 className="text-[16px] font-bold text-black">Focus Schedule</h2>
+                </div>
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                         <button
@@ -87,7 +87,7 @@ export function TasksCalendar() {
                         </button>
                     </div>
                 </div>
-            </div>
+            </div >
 
             <div className="p-4 sm:p-6">
                 <div className="grid grid-cols-7 mb-2">
@@ -197,7 +197,7 @@ export function TasksCalendar() {
                     <LegendItem color="bg-emerald-500" label="Completed" opacity />
                 </div>
             </div>
-        </div>
+        </div >
     )
 }
 
