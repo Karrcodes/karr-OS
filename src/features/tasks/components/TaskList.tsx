@@ -29,6 +29,23 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
     const [lastDeletedTask, setLastDeletedTask] = useState<Task | null>(null)
     const [showUndo, setShowUndo] = useState(false)
 
+    // Confirmation Modal States
+    const [confirmModal, setConfirmModal] = useState<{
+        open: boolean;
+        title: string;
+        message: string;
+        action: () => Promise<void>;
+        confirmText: string;
+        type: 'danger' | 'warning' | 'info';
+    }>({
+        open: false,
+        title: '',
+        message: '',
+        action: async () => { },
+        confirmText: 'Confirm',
+        type: 'danger'
+    })
+
     // Intelligent Task System states
     const [isAnalyzingPriority, setIsAnalyzingPriority] = useState(false)
     const [suggestedPriority, setSuggestedPriority] = useState<{ level: 'super' | 'high' | 'mid' | 'low', reason: string } | null>(null)
@@ -131,27 +148,51 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
         }
     }
 
-    const handleClearAll = async () => {
+    const handleClearAll = () => {
         const itemType = category === 'todo' ? 'operations' : category === 'grocery' ? 'groceries' : 'reminders'
-        if (window.confirm(`Are you sure you want to clear all ${itemType}? This cannot be undone.`)) {
-            await clearAllTasks()
-        }
+        setConfirmModal({
+            open: true,
+            title: `Clear All ${category === 'todo' ? 'Operations' : category === 'grocery' ? 'Groceries' : 'Reminders'}?`,
+            message: `Are you sure you want to delete every item in this list? This action cannot be undone.`,
+            confirmText: 'Yes, Clear All',
+            type: 'danger',
+            action: async () => {
+                await clearAllTasks()
+                setConfirmModal(prev => ({ ...prev, open: false }))
+            }
+        })
     }
 
-    const handleClearCompleted = async () => {
+    const handleClearCompleted = () => {
         const itemType = category === 'todo' ? 'completed operations' : category === 'grocery' ? 'completed groceries' : 'completed reminders'
-        if (window.confirm(`Clear all ${itemType}?`)) {
-            await clearCompletedTasks()
-        }
+        setConfirmModal({
+            open: true,
+            title: 'Clear Completed?',
+            message: `Are you sure you want to remove all ${itemType}?`,
+            confirmText: 'Yes, Clear Completed',
+            type: 'danger',
+            action: async () => {
+                await clearCompletedTasks()
+                setConfirmModal(prev => ({ ...prev, open: false }))
+            }
+        })
     }
 
-    const handleDeleteWithSafety = async (task: Task) => {
-        if (window.confirm(`Are you sure you want to delete "${task.title}"?`)) {
-            setLastDeletedTask(task)
-            setShowUndo(true)
-            await deleteTask(task.id)
-            setTimeout(() => setShowUndo(false), 5000) // Hide undo after 5 seconds
-        }
+    const handleDeleteWithSafety = (task: Task) => {
+        setConfirmModal({
+            open: true,
+            title: 'Delete Operation?',
+            message: `Are you sure you want to delete "${task.title}"?`,
+            confirmText: 'Yes, Delete',
+            type: 'danger',
+            action: async () => {
+                setLastDeletedTask(task)
+                setShowUndo(true)
+                await deleteTask(task.id)
+                setConfirmModal(prev => ({ ...prev, open: false }))
+                setTimeout(() => setShowUndo(false), 5000)
+            }
+        })
     }
 
     const handleUndo = async () => {
@@ -233,7 +274,42 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
     })
 
     return (
-        <div className="bg-white rounded-xl border border-black/[0.08] p-4 sm:p-5 shadow-sm flex flex-col min-h-[500px]">
+        <div className="bg-white rounded-xl border border-black/[0.08] p-4 sm:p-5 shadow-sm flex flex-col min-h-[500px] relative">
+            {/* Confirmation Modal */}
+            {confirmModal.open && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setConfirmModal(prev => ({ ...prev, open: false }))} />
+                    <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col p-6 text-center animate-in zoom-in-95 duration-200">
+                        <div className={cn(
+                            "w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4",
+                            confirmModal.type === 'danger' ? "bg-red-100 text-red-600" : "bg-emerald-100 text-emerald-600"
+                        )}>
+                            <Trash2 className="w-8 h-8" />
+                        </div>
+                        <h3 className="text-lg font-bold text-black mb-2">{confirmModal.title}</h3>
+                        <p className="text-[14px] text-black/60 mb-6 leading-relaxed">
+                            {confirmModal.message}
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setConfirmModal(prev => ({ ...prev, open: false }))}
+                                className="flex-1 py-3 rounded-xl border border-black/[0.1] text-black/60 font-bold text-[14px] hover:bg-black/[0.05] transition-colors"
+                            >
+                                Back
+                            </button>
+                            <button
+                                onClick={confirmModal.action}
+                                className={cn(
+                                    "flex-1 py-3 rounded-xl text-white font-bold text-[14px] transition-colors shadow-lg",
+                                    confirmModal.type === 'danger' ? "bg-red-600 hover:bg-red-700 shadow-red-200" : "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200"
+                                )}
+                            >
+                                {confirmModal.confirmText}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-black/5 border border-black/10 flex items-center justify-center">
@@ -870,7 +946,7 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
                     <Edit2 className="w-4 h-4" />
                 </button>
                 <button
-                    onClick={() => deleteTask(task.id)}
+                    onClick={() => deleteTask(task)}
                     className="w-8 h-8 flex items-center justify-center rounded-lg text-black/40 hover:text-red-500 hover:bg-red-50 transition-all"
                     aria-label="Delete task"
                 >
