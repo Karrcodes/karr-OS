@@ -1,6 +1,6 @@
 'use client'
 
-import { Calendar as CalendarIcon, Clock, ChevronRight, Briefcase, CheckSquare } from 'lucide-react'
+import { Calendar as CalendarIcon, Clock, ChevronRight, Briefcase, Activity } from 'lucide-react'
 import { useSchedule, ScheduleItem } from '@/hooks/useSchedule'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
@@ -56,7 +56,7 @@ export function ScheduleWidget() {
                                     {item.type === 'shift' || item.type === 'overtime' ? (
                                         <Briefcase className={cn("w-5 h-5", isToday ? "text-white" : "text-black/40")} />
                                     ) : (
-                                        <CheckSquare className={cn("w-5 h-5", isToday ? "text-white" : "text-black/40")} />
+                                        <Activity className={cn("w-5 h-5", isToday ? "text-white" : "text-black/40")} />
                                     )}
                                 </div>
                                 <div className="flex-1 min-w-0">

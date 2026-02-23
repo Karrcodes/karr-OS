@@ -2,12 +2,12 @@
 
 import { TasksLayout } from '@/features/tasks/components/TasksLayout'
 import { TaskList } from '@/features/tasks/components/TaskList'
-import { CheckSquare } from 'lucide-react'
+import { Activity } from 'lucide-react'
 
 export default function TodoPage() {
     return (
         <TasksLayout>
-            <TaskList category="todo" title="Action Items" icon={CheckSquare} />
+            <TaskList category="todo" title="Deployment" icon={Activity} />
         </TasksLayout>
     )
 }

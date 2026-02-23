@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { CheckSquare, ShoppingCart, Plus, Trash2, RefreshCw } from 'lucide-react'
+import { Activity, ShoppingCart, Plus, Trash2, RefreshCw } from 'lucide-react'
 import { useTasks } from '../hooks/useTasks'
 import { cn } from '@/lib/utils'
 import type { Task } from '../types/tasks.types'
@@ -34,7 +34,7 @@ function TaskList({ category, title, icon: Icon }: { category: 'todo' | 'grocery
     }
 
     const handleClearAll = async () => {
-        if (window.confirm(`Are you sure you want to clear all ${category === 'todo' ? 'action items' : 'groceries'}? This cannot be undone.`)) {
+        if (window.confirm(`Are you sure you want to clear all ${category === 'todo' ? 'deployment items' : 'groceries'}? This cannot be undone.`)) {
             await clearAllTasks()
         }
     }
@@ -83,7 +83,7 @@ function TaskList({ category, title, icon: Icon }: { category: 'todo' | 'grocery
                         type="text"
                         value={newTask}
                         onChange={(e) => setNewTask(e.target.value)}
-                        placeholder={`Add new ${category === 'todo' ? 'task' : 'item'}...`}
+                        placeholder={`Add new ${category === 'todo' ? 'operation' : 'item'}...`}
                         className="flex-1 bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[13px] text-black placeholder-black/30 outline-none focus:border-black/40 transition-colors"
                     />
                     <button
@@ -171,7 +171,7 @@ function TaskRow({ task, toggleTask, deleteTask, category }: { task: Task, toggl
             <button
                 onClick={() => deleteTask(task.id)}
                 className="w-8 h-8 flex items-center justify-center rounded-lg text-black/10 hover:text-red-500 hover:bg-red-50 transition-all shrink-0 md:opacity-0 group-hover:opacity-100 focus:opacity-100"
-                aria-label="Delete task"
+                aria-label="Delete operation"
             >
                 <Trash2 className="w-4 h-4" />
             </button>
@@ -185,13 +185,13 @@ export function TasksDashboard() {
             <div className="flex items-center justify-between px-6 py-5 border-b border-black/[0.06] bg-white flex-shrink-0 z-10">
                 <div>
                     <h1 className="text-[22px] font-bold text-black tracking-tight">Focus & Execution</h1>
-                    <p className="text-[12px] text-black/40 mt-0.5">Manage tasks and groceries sync'd across your devices.</p>
+                    <p className="text-[12px] text-black/40 mt-0.5">Manage core operations and groceries sync'd across your devices.</p>
                 </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 pb-32 flex flex-col">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-                    <TaskList category="todo" title="Action Items" icon={CheckSquare} />
+                    <TaskList category="todo" title="Deployment" icon={Activity} />
                     <TaskList category="grocery" title="Grocery List" icon={ShoppingCart} />
                 </div>
                 <KarrFooter />

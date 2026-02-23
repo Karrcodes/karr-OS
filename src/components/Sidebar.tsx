@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 import {
-    BarChart3, CheckSquare, ShoppingCart, Bell,
+    BarChart3, Activity, ShoppingCart, Bell,
     SlidersHorizontal, Menu, X, RefreshCw,
     Shield, ChevronDown, Check,
     TrendingUp, Calendar, CreditCard, PiggyBank,
@@ -22,11 +22,11 @@ const navItems = [
     { label: 'Control Centre', href: '/system/control-centre', icon: LayoutDashboard },
     { label: 'Intelligence', href: '/intelligence', icon: Brain },
     {
-        label: 'Tasks',
+        label: 'Operations',
         href: '/tasks',
-        icon: CheckSquare,
+        icon: Activity,
         sub: [
-            { label: 'Action Items', href: '/tasks/todo', icon: CheckSquare },
+            { label: 'Deployment', href: '/tasks/todo', icon: Activity },
             { label: 'Groceries', href: '/tasks/groceries', icon: ShoppingCart },
             { label: 'Reminders', href: '/tasks/reminders', icon: Bell }
         ]

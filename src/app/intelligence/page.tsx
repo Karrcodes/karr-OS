@@ -208,7 +208,7 @@ export default function IntelligencePage() {
                     </form>
                     <div className="mt-3 flex items-center justify-center gap-6">
                         <button onClick={() => setInput('/scan-finances')} className="text-[10px] font-bold text-black/30 uppercase tracking-widest hover:text-black transition-colors">Scan Finances</button>
-                        <button onClick={() => setInput('/tasks')} className="text-[10px] font-bold text-black/30 uppercase tracking-widest hover:text-black transition-colors">Task Audit</button>
+                        <button onClick={() => setInput('/tasks')} className="text-[10px] font-bold text-black/30 uppercase tracking-widest hover:text-black transition-colors">Ops Audit</button>
                         <button onClick={() => setInput('/help')} className="text-[10px] font-bold text-black/30 uppercase tracking-widest hover:text-black transition-colors">Help</button>
                     </div>
                 </div>

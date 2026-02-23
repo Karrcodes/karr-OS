@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { CheckSquare, ShoppingCart, Bell, Plus, Trash2, RefreshCw, Edit2, Calendar } from 'lucide-react'
+import { Activity, ShoppingCart, Bell, Plus, Trash2, RefreshCw, Edit2, Calendar } from 'lucide-react'
 import { useTasks } from '../hooks/useTasks'
 import { cn } from '@/lib/utils'
 import type { Task } from '../types/tasks.types'
@@ -37,13 +37,14 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
             setPriority('low')
             setDueDate('')
         } catch (err: any) {
-            console.error('Task creation failed:', err)
-            alert(err.message || 'Failed to create task. Please check your connection.')
+            console.error('Operation creation failed:', err)
+            alert(err.message || 'Failed to create operation. Please check your connection.')
         }
     }
 
     const handleClearAll = async () => {
-        if (window.confirm(`Are you sure you want to clear all items? This cannot be undone.`)) {
+        const itemType = category === 'todo' ? 'operations' : category === 'grocery' ? 'groceries' : 'reminders'
+        if (window.confirm(`Are you sure you want to clear all ${itemType}? This cannot be undone.`)) {
             await clearAllTasks()
         }
     }
@@ -101,7 +102,7 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
                         type="text"
                         value={newTask}
                         onChange={(e) => setNewTask(e.target.value)}
-                        placeholder={`Add new ${category === 'todo' ? 'task' : 'item'}...`}
+                        placeholder={`Add new ${category === 'todo' ? 'operation' : 'item'}...`}
                         className="flex-1 bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[13px] text-black placeholder-black/30 outline-none focus:border-black/40 transition-colors"
                     />
                     <button
@@ -170,6 +171,9 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
     const [editAmount, setEditAmount] = useState(task.amount || '')
     const [editPriority, setEditPriority] = useState(task.priority)
     const [editDueDate, setEditDueDate] = useState(task.due_date ? task.due_date.split('T')[0] : '')
+    const [editEndDate, setEditEndDate] = useState(task.end_date ? task.end_date.split('T')[0] : '')
+    const [editDueDateMode, setEditDueDateMode] = useState<Task['due_date_mode']>(task.due_date_mode || 'on')
+    const [editRecurrence, setEditRecurrence] = useState(task.recurrence_config?.type || 'none')
 
     const handleSave = () => {
         const updates: Partial<Task> = {}
@@ -182,6 +186,22 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
         if (editPriority !== task.priority) updates.priority = editPriority
         if (editDueDate !== (task.due_date ? task.due_date.split('T')[0] : '')) {
             updates.due_date = editDueDate || undefined
+            if (!editDueDate) updates.due_date_mode = 'on'
+        }
+
+        if (editEndDate !== (task.end_date ? task.end_date.split('T')[0] : '')) {
+            updates.end_date = editEndDate || undefined
+        }
+
+        if (editDueDateMode !== (task.due_date_mode || 'on')) updates.due_date_mode = editDueDateMode
+
+        const currentRecurrenceType = task.recurrence_config?.type || 'none'
+        if (editRecurrence !== currentRecurrenceType) {
+            if (editRecurrence === 'shift_relative') {
+                updates.recurrence_config = { type: 'shift_relative', target: 'off_days' }
+            } else if (editRecurrence === 'none') {
+                updates.recurrence_config = { type: 'none' }
+            }
         }
 
         if (Object.keys(updates).length > 0) {
@@ -207,12 +227,66 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
                         type="text"
                         value={editValue}
                         onChange={(e) => setEditValue(e.target.value)}
-                        className="flex-1 bg-black/[0.03] border border-black/[0.08] rounded-lg px-3 py-1.5 text-[14px] text-black outline-none focus:border-black/30"
+                        className="flex-1 bg-black/[0.03] border border-black/[0.08] rounded-lg px-3 py-1.5 text-[14px] text-black outline-none focus:border-black/30 placeholder:text-black/20"
+                        placeholder="Operation title..."
                         autoFocus
                     />
                 </div>
-                <div className="flex items-center justify-between flex-wrap gap-y-3 gap-x-2">
+
+                <div className="flex flex-col gap-3">
+                    {/* Scheduling Options */}
                     <div className="flex items-center gap-2 flex-wrap">
+                        <select
+                            value={editDueDateMode}
+                            onChange={(e) => setEditDueDateMode(e.target.value as any)}
+                            className="bg-black/[0.03] border border-black/5 rounded-lg px-2 py-1 text-[10px] font-bold text-black/60 outline-none uppercase tracking-tight"
+                        >
+                            <option value="on">On Date</option>
+                            <option value="before">Before Date</option>
+                            <option value="range">Range</option>
+                        </select>
+
+                        <div className="flex items-center gap-2 bg-black/[0.03] border border-black/5 rounded-lg px-2.5 py-1 min-w-[110px]">
+                            <Calendar className="w-3 h-3 text-black/30 shrink-0" />
+                            <input
+                                type="date"
+                                value={editDueDate}
+                                onChange={(e) => setEditDueDate(e.target.value)}
+                                className="bg-transparent text-[10px] font-bold text-black/60 outline-none uppercase tracking-tight w-full"
+                            />
+                        </div>
+
+                        {editDueDateMode === 'range' && (
+                            <>
+                                <span className="text-[10px] font-bold text-black/20 uppercase tracking-tighter">to</span>
+                                <div className="flex items-center gap-2 bg-black/[0.03] border border-black/5 rounded-lg px-2.5 py-1 min-w-[110px]">
+                                    <Calendar className="w-3 h-3 text-black/30 shrink-0" />
+                                    <input
+                                        type="date"
+                                        value={editEndDate}
+                                        onChange={(e) => setEditEndDate(e.target.value)}
+                                        className="bg-transparent text-[10px] font-bold text-black/60 outline-none uppercase tracking-tight w-full"
+                                    />
+                                </div>
+                            </>
+                        )}
+
+                        <button
+                            type="button"
+                            onClick={() => setEditRecurrence(prev => prev === 'shift_relative' ? 'none' : 'shift_relative')}
+                            className={cn(
+                                "px-2.5 py-1 text-[10px] font-bold rounded-lg border transition-all uppercase tracking-tight flex items-center gap-1.5",
+                                editRecurrence === 'shift_relative'
+                                    ? "bg-black text-white border-black"
+                                    : "bg-black/[0.03] border-black/5 text-black/40 hover:text-black/60"
+                            )}
+                        >
+                            <RefreshCw className="w-3 h-3" />
+                            On Days Off
+                        </button>
+                    </div>
+
+                    <div className="flex items-center justify-between flex-wrap gap-y-3 gap-x-2 border-t border-black/5 pt-3">
                         <div className="flex gap-1 p-1 bg-black/[0.03] rounded-lg border border-black/5">
                             {(['super', 'high', 'mid', 'low'] as const).map(p => (
                                 <button
@@ -230,23 +304,14 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
                                 </button>
                             ))}
                         </div>
-                        <div className="flex items-center gap-2 bg-black/[0.03] border border-black/5 rounded-lg px-2.5 py-1 min-w-[110px]">
-                            <Calendar className="w-3 h-3 text-black/30 shrink-0" />
-                            <input
-                                type="date"
-                                value={editDueDate}
-                                onChange={(e) => setEditDueDate(e.target.value)}
-                                className="bg-transparent text-[10px] font-bold text-black/60 outline-none uppercase tracking-tight w-full"
-                            />
+                        <div className="flex items-center gap-2 ml-auto">
+                            <button onClick={() => setIsEditing(false)} className="px-3 py-1.5 text-black/40 hover:text-black text-[12px] font-bold transition-colors">
+                                Cancel
+                            </button>
+                            <button onClick={handleSave} className="px-4 py-1.5 bg-black text-white text-[12px] font-bold rounded-lg hover:bg-neutral-800 transition-colors shadow-sm">
+                                Save
+                            </button>
                         </div>
-                    </div>
-                    <div className="flex items-center gap-2 ml-auto">
-                        <button onClick={() => setIsEditing(false)} className="px-3 py-1.5 text-black/40 hover:text-black text-[12px] font-bold transition-colors">
-                            Cancel
-                        </button>
-                        <button onClick={handleSave} className="px-4 py-1.5 bg-black text-white text-[12px] font-bold rounded-lg hover:bg-neutral-800 transition-colors shadow-sm">
-                            Save
-                        </button>
                     </div>
                 </div>
             </div>
@@ -290,9 +355,17 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
                         </span>
                     )}
                     {task.due_date && !task.is_completed && (
-                        <div className="flex items-center gap-1 text-[10px] text-black/30 font-bold uppercase tracking-wider mt-1">
+                        <div className="flex items-center gap-1.5 text-[10px] text-black/30 font-bold uppercase tracking-wider mt-1">
                             <Calendar className="w-2.5 h-2.5" />
-                            {new Date(task.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                            {task.due_date_mode === 'before' && <span>On or Before </span>}
+                            {task.due_date_mode === 'range' && <span>Range </span>}
+                            <span>{new Date(task.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
+                            {task.due_date_mode === 'range' && task.end_date && (
+                                <>
+                                    <span className="opacity-40">→</span>
+                                    <span>{new Date(task.end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
+                                </>
+                            )}
                         </div>
                     )}
                 </div>

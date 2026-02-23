@@ -69,13 +69,24 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder') {
         setLoading(false)
     }, [activeProfile, category, settings.is_demo_mode, getSessionTasks, saveSessionTasks])
 
-    const createTask = async (title: string, priority: 'super' | 'high' | 'mid' | 'low' = 'low', due_date?: string, amount?: string) => {
+    const createTask = async (
+        title: string,
+        priority: 'super' | 'high' | 'mid' | 'low' = 'low',
+        due_date?: string,
+        amount?: string,
+        due_date_mode: 'on' | 'before' | 'range' = 'on',
+        end_date?: string,
+        recurrence_config: any = {}
+    ) => {
         if (settings.is_demo_mode) {
             const newTask: Task = {
                 id: `demo-${Date.now()}`,
                 title,
                 priority,
                 due_date,
+                due_date_mode,
+                end_date,
+                recurrence_config,
                 amount,
                 is_completed: false,
                 category,
@@ -93,6 +104,9 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder') {
             category,
             priority,
             due_date,
+            due_date_mode,
+            end_date,
+            recurrence_config,
             amount,
             profile: activeProfile
         })

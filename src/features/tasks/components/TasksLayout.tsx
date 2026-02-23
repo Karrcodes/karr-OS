@@ -3,11 +3,12 @@
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { KarrFooter } from '@/components/KarrFooter'
-import { CheckSquare, ShoppingCart, Bell, Calendar } from 'lucide-react'
+import { Activity, ShoppingCart, Bell, Calendar } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const TABS = [
-    { title: 'Action Items', href: '/tasks/todo', icon: CheckSquare },
+    { title: 'Planner', href: '/tasks/planner', icon: Calendar },
+    { title: 'Deployment', href: '/tasks/todo', icon: Activity },
     { title: 'Groceries', href: '/tasks/groceries', icon: ShoppingCart },
     { title: 'Reminders', href: '/tasks/reminders', icon: Bell },
 ]
@@ -21,7 +22,7 @@ export function TasksLayout({ children }: { children: React.ReactNode }) {
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-[22px] font-bold text-black tracking-tight">Focus & Execution</h1>
-                        <p className="text-[12px] text-black/40 mt-0.5">Manage tasks, groceries, and reminders sync'd across your devices.</p>
+                        <p className="text-[12px] text-black/40 mt-0.5">Manage core operations, groceries, and reminders sync'd across your devices.</p>
                     </div>
                     <Link
                         href="/tasks/calendar"

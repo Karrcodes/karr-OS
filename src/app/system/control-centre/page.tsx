@@ -1,6 +1,6 @@
 'use client'
 
-import { LayoutDashboard, CheckSquare, TrendingUp, Heart, Terminal, Lock, Target, AlertCircle, RefreshCw, BarChart3, Brain, Shield, SlidersHorizontal, Sparkles } from 'lucide-react'
+import { LayoutDashboard, Activity, TrendingUp, Heart, Terminal, Lock, Target, AlertCircle, RefreshCw, BarChart3, Brain, Shield, SlidersHorizontal, Sparkles } from 'lucide-react'
 import { KarrFooter } from '@/components/KarrFooter'
 import Link from 'next/link'
 import { useState, useEffect, useMemo } from 'react'
@@ -114,9 +114,9 @@ export default function ControlCentrePage() {
                             className="flex items-center gap-2 px-3 py-2 bg-white border border-black/[0.06] rounded-xl hover:border-black/20 hover:bg-black/[0.02] transition-all group"
                         >
                             <div className="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
-                                <CheckSquare className="w-3.5 h-3.5" />
+                                <Activity className="w-3.5 h-3.5" />
                             </div>
-                            <span className="text-[12px] font-bold text-black/70 group-hover:text-black">Tasks</span>
+                            <span className="text-[12px] font-bold text-black/70 group-hover:text-black">Operations</span>
                         </Link>
                         <Link
                             href="/vault"
@@ -166,9 +166,9 @@ export default function ControlCentrePage() {
                         <SummaryCard
                             label="Pending Items"
                             value={tasks.filter(t => !t.is_completed).length.toString()}
-                            icon={<CheckSquare className="w-5 h-5" />}
+                            icon={<Activity className="w-5 h-5" />}
                             color="#f59e0b"
-                            sub="Tasks requiring attention"
+                            sub="Ops requiring attention"
                         />
                     </div>
 

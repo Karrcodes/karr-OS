@@ -31,18 +31,80 @@ export function useSchedule(days: number = 14) {
         const allTasks = [...todoTasks, ...reminderTasks]
 
         // Add Tasks
+        const currDate = new Date(start)
+        const dateRange: Date[] = []
+        for (let i = 0; i < days; i++) {
+            const d = new Date(currDate)
+            d.setDate(currDate.getDate() + i)
+            dateRange.push(d)
+        }
+
         allTasks.forEach(task => {
+            // 1. Handle Recurring (Shift Relative)
+            if (task.recurrence_config?.type === 'shift_relative') {
+                dateRange.forEach(d => {
+                    const isShift = isShiftDay(d)
+                    const targetMatch = (task.recurrence_config?.target === 'off_days' && !isShift) ||
+                        (task.recurrence_config?.target === 'on_days' && isShift);
+
+                    if (targetMatch) {
+                        items.push({
+                            id: `${task.id}-${d.toISOString()}`,
+                            title: task.title,
+                            date: d,
+                            type: 'task',
+                            priority: task.priority,
+                            is_completed: task.is_completed
+                        })
+                    }
+                })
+                return
+            }
+
+            // 2. Handle Simple/Range/Before
             if (task.due_date) {
-                const date = new Date(task.due_date)
-                if (date >= start && date <= end) {
-                    items.push({
-                        id: task.id,
-                        title: task.title,
-                        date,
-                        type: 'task',
-                        priority: task.priority,
-                        is_completed: task.is_completed
+                const startDate = new Date(task.due_date)
+                startDate.setHours(0, 0, 0, 0)
+
+                if (task.due_date_mode === 'range' && task.end_date) {
+                    const endDate = new Date(task.end_date)
+                    endDate.setHours(23, 59, 59, 999)
+
+                    dateRange.forEach(d => {
+                        if (d >= startDate && d <= endDate) {
+                            items.push({
+                                id: `${task.id}-${d.toISOString()}`,
+                                title: `[Range] ${task.title}`,
+                                date: d,
+                                type: 'task',
+                                priority: task.priority,
+                                is_completed: task.is_completed
+                            })
+                        }
                     })
+                } else if (task.due_date_mode === 'before') {
+                    if (startDate >= start && startDate <= end) {
+                        items.push({
+                            id: task.id,
+                            title: `[By] ${task.title}`,
+                            date: startDate,
+                            type: 'task',
+                            priority: task.priority,
+                            is_completed: task.is_completed
+                        })
+                    }
+                } else {
+                    // Regular 'on' date
+                    if (startDate >= start && startDate <= end) {
+                        items.push({
+                            id: task.id,
+                            title: task.title,
+                            date: startDate,
+                            type: 'task',
+                            priority: task.priority,
+                            is_completed: task.is_completed
+                        })
+                    }
                 }
             }
         })
