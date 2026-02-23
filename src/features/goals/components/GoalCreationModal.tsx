@@ -6,7 +6,7 @@ import {
     X, Plus, Target, Calendar, Briefcase, Heart,
     User, Wallet, Trash2, Sparkles, Upload, Loader2, AlertCircle, ImageIcon, GripVertical
 } from 'lucide-react'
-import { Reorder } from 'framer-motion'
+import { Reorder, useDragControls } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import type { Goal, GoalCategory, GoalPriority, CreateGoalData, GoalStatus } from '../types/goals.types'
 
@@ -61,7 +61,7 @@ export default function GoalCreationModal({ isOpen, onClose, onSave, initialGoal
             setTimeframe(initialGoal.timeframe)
             setVisionImageUrl(initialGoal.vision_image_url || '')
             setTargetDate(initialGoal.target_date || '')
-            setMilestones(initialGoal.milestones?.map(m => ({ id: m.id, text: m.title })) || [{ id: Math.random().toString(), text: '' }])
+            setMilestones(initialGoal.milestones?.map(m => ({ id: m.id || Math.random().toString(36).substring(2, 9), text: m.title })) || [{ id: Math.random().toString(36).substring(2, 9), text: '' }])
             setImagePreview(null)
             setImageFile(null)
             setAiUsed(false)
@@ -75,7 +75,10 @@ export default function GoalCreationModal({ isOpen, onClose, onSave, initialGoal
     }, [initialGoal, isOpen])
 
     // ── helpers ──────────────────────────────────────────────
-    const addMilestone = () => setMilestones([...milestones, { id: Math.random().toString(36).substr(2, 9), text: '' }])
+    const addMilestone = () => {
+        console.log('Adding milestone...')
+        setMilestones([...milestones, { id: Math.random().toString(36).substring(2, 9), text: '' }])
+    }
     const removeMilestone = (id: string) => {
         if (milestones.length === 1) { setMilestones([{ id: Math.random().toString(36).substr(2, 9), text: '' }]); return }
         setMilestones(milestones.filter(m => m.id !== id))
@@ -424,9 +427,9 @@ export default function GoalCreationModal({ isOpen, onClose, onSave, initialGoal
                                         <button
                                             type="button"
                                             onClick={addMilestone}
-                                            className="text-[10px] font-bold text-black hover:text-black/60 uppercase tracking-widest flex items-center gap-1.5 transition-colors"
+                                            className="text-[10px] font-bold text-black bg-black/5 hover:bg-black/10 px-3 py-1.5 rounded-lg uppercase tracking-widest flex items-center gap-1.5 transition-all active:scale-95"
                                         >
-                                            <Plus className="w-3 h-3" />
+                                            <Plus className="w-3.5 h-3.5" />
                                             Add Step
                                         </button>
                                     </div>
@@ -438,31 +441,13 @@ export default function GoalCreationModal({ isOpen, onClose, onSave, initialGoal
                                         className="space-y-2"
                                     >
                                         {milestones.map((milestone) => (
-                                            <Reorder.Item
+                                            <MilestoneItem
                                                 key={milestone.id}
-                                                value={milestone}
-                                                className="flex items-center gap-2 group/item"
-                                            >
-                                                <div className="cursor-grab active:cursor-grabbing p-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
-                                                    <GripVertical className="w-4 h-4 text-black/20" />
-                                                </div>
-                                                <div className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center text-[9px] font-bold text-black/20 shrink-0">
-                                                    {milestones.indexOf(milestone) + 1}
-                                                </div>
-                                                <input
-                                                    value={milestone.text}
-                                                    onChange={e => updateMilestone(milestone.id, e.target.value)}
-                                                    placeholder="Designate next step..."
-                                                    className="flex-1 text-[13px] font-medium text-black/70 border-b border-black/5 py-2 px-1 focus:border-black/20 focus:outline-none transition-all bg-transparent"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removeMilestone(milestone.id)}
-                                                    className="p-1 rounded hover:bg-red-50 text-black/10 hover:text-red-400 transition-colors"
-                                                >
-                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                </button>
-                                            </Reorder.Item>
+                                                milestone={milestone}
+                                                onUpdate={updateMilestone}
+                                                onRemove={removeMilestone}
+                                                index={milestones.indexOf(milestone)}
+                                            />
                                         ))}
                                     </Reorder.Group>
                                 </div>
@@ -491,5 +476,53 @@ export default function GoalCreationModal({ isOpen, onClose, onSave, initialGoal
                 </div>
             )}
         </AnimatePresence>
+    )
+}
+
+interface MilestoneItemProps {
+    milestone: { id: string; text: string }
+    onUpdate: (id: string, text: string) => void
+    onRemove: (id: string) => void
+    index: number
+}
+
+function MilestoneItem({ milestone, onUpdate, onRemove, index }: MilestoneItemProps) {
+    const controls = useDragControls()
+
+    return (
+        <Reorder.Item
+            value={milestone}
+            dragListener={false}
+            dragControls={controls}
+            className="flex items-center gap-2 group/item"
+        >
+            <div
+                onPointerDown={(e) => controls.start(e)}
+                className="cursor-grab active:cursor-grabbing p-2 touch-none hover:bg-black/10 rounded-lg transition-colors border border-transparent hover:border-black/5 flex items-center justify-center bg-black/5"
+                title="Drag to reorder"
+            >
+                <GripVertical className="w-4 h-4 text-black/40" />
+            </div>
+
+            <div className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center text-[9px] font-bold text-black/20 shrink-0">
+                {index + 1}
+            </div>
+
+            <input
+                value={milestone.text}
+                onChange={e => onUpdate(milestone.id, e.target.value)}
+                placeholder="Designate next step..."
+                className="flex-1 text-[13px] font-medium text-black/70 border-b border-black/5 py-2 px-1 focus:border-black/20 focus:outline-none transition-all bg-transparent min-w-0"
+            />
+
+            <button
+                type="button"
+                onClick={() => onRemove(milestone.id)}
+                className="p-1.5 rounded hover:bg-red-50 text-black/10 hover:text-red-400 transition-colors"
+                title="Remove step"
+            >
+                <Trash2 className="w-3.5 h-3.5" />
+            </button>
+        </Reorder.Item>
     )
 }
