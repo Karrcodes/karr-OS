@@ -118,32 +118,30 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder', profileOverr
     }
 
     const updateTaskPositions = async (orderedTasks: Task[]) => {
+        // Calculate new positions: ensure descending order (higher position at index 0)
+        // We update the objects directly so the local sort in TaskList doesn't revert them
+        const updatedTasks = orderedTasks.map((t, idx) => ({
+            ...t,
+            position: (orderedTasks.length - idx) * 1000
+        }))
+
         // Update local state immediately for snappy UI
-        setTasks(orderedTasks)
+        setTasks(updatedTasks)
 
         if (settings.is_demo_mode) {
-            saveSessionTasks(orderedTasks)
+            saveSessionTasks(updatedTasks)
             return
         }
 
-        // Prepare batch update
-        // We only update tasks that actually changed position if we were being fancy, 
-        // but simple batch upsert/update is fine for small lists.
-        const updates = orderedTasks.map((t, idx) => ({
-            id: t.id,
-            position: (orderedTasks.length - idx) * 1000 // Ensure descending order (top a higher pos)
-        }))
-
-        // Supabase doesn't have a great "batch update different rows with different values" 
-        // without a custom RPC or multiple calls. 
-        // For KarrOS scale, we'll just loop for now or use upsert if we have all fields.
-        // Actually, let's use a simpler approach: update them one by one or expose a bulk API.
         try {
-            for (const up of updates) {
-                await supabase.from('fin_tasks').update({ position: up.position }).eq('id', up.id)
+            // Batch update positions in background
+            for (const t of updatedTasks) {
+                await supabase.from('fin_tasks').update({ position: t.position }).eq('id', t.id)
             }
         } catch (err) {
             console.error('Failed to persist task positions', err)
+            // Optional: refetch on error to revert to DB truth
+            await fetchTasks()
         }
     }
 

@@ -21,6 +21,10 @@ export interface Task {
     }
     created_at: string
     position: number
+    notes?: {
+        type: 'text' | 'bullets' | 'checklist'
+        content: any // string for 'text'/'bullets', Array of items for 'checklist'
+    }
 }
 
 export interface DayPlannerSettings {

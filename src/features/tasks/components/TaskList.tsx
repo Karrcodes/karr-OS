@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import { Activity, ShoppingCart, Bell, Plus, Trash2, RefreshCw, Edit2, Calendar, X, GripVertical, User, Briefcase } from 'lucide-react'
+import { Activity, ShoppingCart, Bell, Plus, Trash2, RefreshCw, Edit2, Calendar, X, GripVertical, User, Briefcase, ChevronDown, ChevronUp, List, CheckSquare, Type, LayoutList, ListChecks, GraduationCap } from 'lucide-react'
 import { useTasks } from '../hooks/useTasks'
 import { cn } from '@/lib/utils'
 import { Reorder, useDragControls } from 'framer-motion'
@@ -634,12 +634,14 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
     )
 }
 
+
 function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: Task, toggleTask: any, deleteTask: any, editTask: any, category: string }) {
     const controls = useDragControls()
     const [isEditing, setIsEditing] = useState(false)
+    const [isExpanded, setIsExpanded] = useState(false)
     const [editValue, setEditValue] = useState(task.title)
     const [editAmount, setEditAmount] = useState(task.amount || '')
-    const [editPriority, setEditPriority] = useState(task.priority)
+    const [editPriority, setEditPriority] = useState(task.priority || 'low')
     const [editDueDate, setEditDueDate] = useState(task.due_date ? task.due_date.split('T')[0] : '')
     const [editEndDate, setEditEndDate] = useState(task.end_date ? task.end_date.split('T')[0] : '')
     const [editDueDateMode, setEditDueDateMode] = useState<'none' | 'on' | 'before' | 'range' | 'recurring'>(task.recurrence_config?.type && task.recurrence_config.type !== 'none' ? 'recurring' : (task.due_date_mode || 'none'))
@@ -648,6 +650,9 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
     const [editRecurringDuration, setEditRecurringDuration] = useState(task.recurrence_config?.duration_minutes?.toString() || '60')
     const [editRecurringDays, setEditRecurringDays] = useState<number[]>(task.recurrence_config?.days_of_week || [])
     const [editProfile, setEditProfile] = useState(task.profile)
+    const [editNotesType, setEditNotesType] = useState<'text' | 'bullets' | 'checklist'>(task.notes?.type || 'text')
+    const [editNotesContent, setEditNotesContent] = useState<any>(task.notes?.content || '')
+    const [newChecklistItem, setNewChecklistItem] = useState('')
 
     // Reset edit states to DB truth whenever editing starts
     useEffect(() => {
@@ -663,12 +668,22 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
             setEditRecurringDuration(task.recurrence_config?.duration_minutes?.toString() || '60')
             setEditRecurringDays(task.recurrence_config?.days_of_week || [])
             setEditProfile(task.profile)
+            setEditNotesType(task.notes?.type || 'text')
+            setEditNotesContent(task.notes?.content || (task.notes?.type === 'checklist' ? [] : ''))
         }
     }, [isEditing, task])
 
-    const handleSave = () => {
-        const updates: Partial<Task> = {}
-        if (editValue.trim() !== task.title) updates.title = editValue.trim()
+    const handleSave = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault()
+        if (!editValue.trim()) return
+
+        const updates: Partial<Task> = {
+            title: editValue.trim(),
+            notes: {
+                type: editNotesType,
+                content: editNotesContent
+            }
+        }
         if (editAmount.trim() !== (task.amount || '')) {
             let val = editAmount.trim()
             if (category === 'grocery' && val && !val.startsWith('x')) val = `x${val}`
@@ -709,6 +724,36 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
         setIsEditing(false)
     }
 
+    const handleToggleSubtask = async (subindex: number) => {
+        if (task.notes?.type !== 'checklist') return
+        const newContent = [...(task.notes.content as any[])]
+        newContent[subindex] = { ...newContent[subindex], completed: !newContent[subindex].completed }
+
+        await editTask(task.id, {
+            notes: {
+                ...task.notes,
+                content: newContent
+            }
+        })
+    }
+
+    const handleAddChecklistItem = () => {
+        if (newChecklistItem.trim()) {
+            setEditNotesContent((prev: any[]) => [...prev, { text: newChecklistItem.trim(), completed: false }])
+            setNewChecklistItem('')
+        }
+    }
+
+    const handleToggleChecklistItem = (index: number) => {
+        setEditNotesContent((prev: any[]) =>
+            prev.map((item, i) => (i === index ? { ...item, completed: !item.completed } : item))
+        )
+    }
+
+    const handleRemoveChecklistItem = (index: number) => {
+        setEditNotesContent((prev: any[]) => prev.filter((_, i) => i !== index))
+    }
+
     if (isEditing) {
         return (
             <div className="flex flex-col gap-3 p-3 rounded-xl border bg-white border-black/[0.15] shadow-lg animate-in fade-in zoom-in-95 duration-200">
@@ -733,6 +778,107 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
                 </div>
 
                 <div className="flex flex-col gap-3">
+                    {/* Notes Editor */}
+                    <div className="flex flex-col gap-2 p-2.5 bg-black/[0.03] border border-black/5 rounded-xl">
+                        <div className="flex gap-1.5">
+                            {([
+                                { type: 'text', icon: Type, label: 'Text' },
+                                { type: 'bullets', icon: List, label: 'Bullets' },
+                                { type: 'checklist', icon: ListChecks, label: 'Checklist' },
+                            ] as const).map(noteType => (
+                                <button
+                                    key={noteType.type}
+                                    type="button"
+                                    onClick={() => {
+                                        setEditNotesType(noteType.type)
+                                        if (noteType.type === 'checklist' && !Array.isArray(editNotesContent)) {
+                                            setEditNotesContent([])
+                                        } else if (noteType.type !== 'checklist' && Array.isArray(editNotesContent)) {
+                                            setEditNotesContent('')
+                                        }
+                                    }}
+                                    className={cn(
+                                        "px-2 py-1 text-[9px] font-bold rounded-lg border transition-all uppercase tracking-tight flex items-center gap-1",
+                                        editNotesType === noteType.type
+                                            ? 'bg-black text-white border-black'
+                                            : 'bg-white text-black/40 border-black/10 hover:text-black/60'
+                                    )}
+                                >
+                                    <noteType.icon className="w-3 h-3" />
+                                    {noteType.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {editNotesType === 'text' && (
+                            <textarea
+                                value={editNotesContent}
+                                onChange={(e) => setEditNotesContent(e.target.value)}
+                                placeholder="Add some notes..."
+                                className="w-full bg-white border border-black/10 rounded-lg px-3 py-2 text-[12px] text-black outline-none focus:border-black/30 min-h-[60px]"
+                            />
+                        )}
+
+                        {editNotesType === 'bullets' && (
+                            <textarea
+                                value={editNotesContent}
+                                onChange={(e) => setEditNotesContent(e.target.value)}
+                                placeholder="Add bullet points, one per line..."
+                                className="w-full bg-white border border-black/10 rounded-lg px-3 py-2 text-[12px] text-black outline-none focus:border-black/30 min-h-[60px]"
+                            />
+                        )}
+
+                        {editNotesType === 'checklist' && (
+                            <div className="flex flex-col gap-2">
+                                {editNotesContent.map((item: any, index: number) => (
+                                    <div key={index} className="flex items-center gap-2 bg-white border border-black/10 rounded-lg px-3 py-1.5">
+                                        <input
+                                            type="checkbox"
+                                            checked={item.completed}
+                                            onChange={() => handleToggleChecklistItem(index)}
+                                            className="w-4 h-4 accent-black cursor-pointer shrink-0"
+                                        />
+                                        <span className={cn(
+                                            "flex-1 text-[12px] text-black",
+                                            item.completed && "line-through text-black/40"
+                                        )}>
+                                            {item.text}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveChecklistItem(index)}
+                                            className="text-black/30 hover:text-red-500 transition-colors"
+                                        >
+                                            <X className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                ))}
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="text"
+                                        value={newChecklistItem}
+                                        onChange={(e) => setNewChecklistItem(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault()
+                                                handleAddChecklistItem()
+                                            }
+                                        }}
+                                        placeholder="Add new item..."
+                                        className="flex-1 bg-white border border-black/10 rounded-lg px-3 py-1.5 text-[12px] text-black outline-none focus:border-black/30"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleAddChecklistItem}
+                                        className="w-8 h-8 flex items-center justify-center bg-black text-white rounded-lg hover:bg-neutral-800 transition-colors"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
                     {/* Scheduling Options */}
                     <div className="flex items-center gap-2 flex-wrap">
                         {/* Date/Recurrence mode selector */}
@@ -915,6 +1061,11 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
         )
     }
 
+    const checklistItems = task.notes?.type === 'checklist' ? (task.notes.content as any[]) : []
+    const completedSubtasks = checklistItems.filter(i => i.completed).length
+    const totalSubtasks = checklistItems.length
+    const progress = totalSubtasks > 0 ? (completedSubtasks / totalSubtasks) * 100 : 0
+
     return (
         <Reorder.Item
             key={task.id}
@@ -944,29 +1095,102 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
                         id={`task-${task.id}`}
                         checked={task.is_completed}
                         onChange={(e) => toggleTask(task.id, e.target.checked)}
-                        className="w-5 h-5 accent-black cursor-pointer shrink-0"
+                        className="w-5 h-5 rounded-lg border-2 border-black/10 checked:bg-black checked:border-black transition-all cursor-pointer accent-black shrink-0"
                     />
-                    <div className="flex flex-col flex-1 min-w-0">
+                    <div className="flex flex-col min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                             {category === 'grocery' && task.amount && (
                                 <span className="text-[12px] font-bold text-black/40 shrink-0">{task.amount}</span>
                             )}
                             <span className={cn(
-                                "text-[14px] transition-all truncate",
-                                task.is_completed
-                                    ? "text-black/30 line-through"
-                                    : "text-black/90 font-medium"
+                                "text-[14px] font-bold truncate transition-all",
+                                task.is_completed ? "text-black/30 line-through" : "text-black"
                             )}>
                                 {task.title}
                             </span>
+                            {task.priority && !task.is_completed && (
+                                <span className={cn(
+                                    "px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider shrink-0",
+                                    PRIORITY_CONFIG[task.priority].color
+                                )}>
+                                    {task.priority}
+                                </span>
+                            )}
                         </div>
-                        {!task.is_completed && task.priority && task.priority !== 'low' && PRIORITY_CONFIG[task.priority] && (
-                            <span className={cn(
-                                "text-[10px] w-fit px-1.5 py-0.5 rounded uppercase font-bold tracking-wider mt-1 border",
-                                PRIORITY_CONFIG[task.priority].color
-                            )}>
-                                {PRIORITY_CONFIG[task.priority].label} Priority
-                            </span>
+                        {/* Notes Teaser or Progress Bar */}
+                        {!isEditing && (
+                            <div className="mt-1 flex flex-col gap-1.5">
+                                {task.notes?.type === 'checklist' && totalSubtasks > 0 && (
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex-1 h-1 bg-black/[0.05] rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full bg-emerald-500 transition-all duration-500 ease-out"
+                                                style={{ width: `${progress}%` }}
+                                            />
+                                        </div>
+                                        <span className="text-[9px] font-bold text-black/30 whitespace-nowrap">
+                                            {completedSubtasks}/{totalSubtasks}
+                                        </span>
+                                    </div>
+                                )}
+                                {task.notes?.content && (
+                                    <div className="relative">
+                                        <p className={cn(
+                                            "text-[11px] text-black/40 leading-relaxed",
+                                            !isExpanded && "line-clamp-1"
+                                        )}>
+                                            {task.notes.type === 'checklist'
+                                                ? (task.notes.content as any[]).map(i => (i.completed ? '✓ ' : '○ ') + i.text).join(', ')
+                                                : task.notes.content}
+                                        </p>
+                                        {(task.notes.content.length > 50 || (task.notes.type === 'checklist' && totalSubtasks > 1)) && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    setIsExpanded(!isExpanded)
+                                                }}
+                                                className="text-[10px] font-bold text-black/20 hover:text-black/40 transition-colors mt-0.5"
+                                            >
+                                                {isExpanded ? 'Show less' : 'Show more'}
+                                            </button>
+                                        )}
+                                        {/* Expanded Checklist View */}
+                                        {isExpanded && task.notes.type === 'checklist' && (
+                                            <div className="mt-3 flex flex-col gap-2 pl-1 border-l-2 border-black/[0.03]">
+                                                {(task.notes.content as any[]).map((item, idx) => (
+                                                    <div
+                                                        key={idx}
+                                                        className="flex items-center gap-2 group/sub cursor-pointer"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            handleToggleSubtask(idx)
+                                                        }}
+                                                    >
+                                                        <div className={cn(
+                                                            "w-3.5 h-3.5 rounded border flex items-center justify-center transition-all",
+                                                            item.completed ? "bg-emerald-500 border-emerald-500" : "bg-white border-black/10 group-hover/sub:border-black/30"
+                                                        )}>
+                                                            {item.completed && <CheckSquare className="w-2.5 h-2.5 text-white" />}
+                                                        </div>
+                                                        <span className={cn(
+                                                            "text-[11px] transition-all",
+                                                            item.completed ? "text-black/30 line-through" : "text-black/60"
+                                                        )}>
+                                                            {item.text}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {/* Expanded Bullets/Text View */}
+                                        {isExpanded && task.notes.type !== 'checklist' && (
+                                            <div className="mt-2 text-[11px] text-black/60 whitespace-pre-wrap pl-3 border-l-2 border-black/[0.03] leading-relaxed">
+                                                {task.notes.content}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         )}
                         {task.due_date && !task.is_completed && (
                             <div className="flex items-center gap-1.5 text-[10px] text-black/30 font-bold uppercase tracking-wider mt-1">
