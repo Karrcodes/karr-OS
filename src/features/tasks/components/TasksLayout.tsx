@@ -9,8 +9,8 @@ import { useTasksProfile } from '../contexts/TasksProfileContext'
 
 const TABS = [
     { title: 'Deployment', href: '/tasks/todo', icon: Activity },
-    { title: 'Groceries', href: '/tasks/groceries', icon: ShoppingCart },
     { title: 'Reminders', href: '/tasks/reminders', icon: Bell },
+    { title: 'Groceries', href: '/tasks/groceries', icon: ShoppingCart },
 ]
 
 function ProfileToggle({ activeProfile, setActiveProfile }: { activeProfile: string, setActiveProfile: (p: 'personal' | 'business') => void }) {
@@ -42,7 +42,7 @@ export function TasksLayout({ children }: { children: React.ReactNode }) {
     const isGroceries = pathname === '/tasks/groceries'
 
     return (
-        <div className="flex flex-col h-full bg-[#fafafa]">
+        <div className="flex flex-col min-h-screen bg-[#fafafa]">
             <div className="px-6 py-5 border-b border-black/[0.06] bg-white flex-shrink-0 z-10">
                 {/* Row 1: Title + nav buttons */}
                 <div className="flex items-center justify-between gap-3">
@@ -52,24 +52,6 @@ export function TasksLayout({ children }: { children: React.ReactNode }) {
                     </div>
                     {/* Calendar + Planner buttons — always right of title on all screen sizes */}
                     <div className="flex items-center gap-2 flex-shrink-0">
-                        {/* Calendar: go back if currently on calendar, otherwise navigate to calendar */}
-                        {isOnCalendar ? (
-                            <button
-                                onClick={() => router.back()}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border bg-black text-white border-black"
-                            >
-                                <Calendar className="w-3.5 h-3.5" />
-                                <span className="hidden sm:inline">Calendar</span>
-                            </button>
-                        ) : (
-                            <Link
-                                href="/tasks/calendar"
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border bg-white text-black/60 border-black/[0.08] hover:border-black/20"
-                            >
-                                <Calendar className="w-3.5 h-3.5" />
-                                <span className="hidden sm:inline">Calendar</span>
-                            </Link>
-                        )}
                         {/* Planner: go back if currently on planner, otherwise navigate to planner */}
                         {isPlanner ? (
                             <button
@@ -86,6 +68,24 @@ export function TasksLayout({ children }: { children: React.ReactNode }) {
                             >
                                 <Activity className="w-3.5 h-3.5" />
                                 <span className="hidden sm:inline">Planner</span>
+                            </Link>
+                        )}
+                        {/* Calendar: go back if currently on calendar, otherwise navigate to calendar */}
+                        {isOnCalendar ? (
+                            <button
+                                onClick={() => router.back()}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border bg-black text-white border-black"
+                            >
+                                <Calendar className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Calendar</span>
+                            </button>
+                        ) : (
+                            <Link
+                                href="/tasks/calendar"
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border bg-white text-black/60 border-black/[0.08] hover:border-black/20"
+                            >
+                                <Calendar className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Calendar</span>
                             </Link>
                         )}
                     </div>

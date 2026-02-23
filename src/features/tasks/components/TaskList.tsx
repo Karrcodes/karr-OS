@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import { Activity, ShoppingCart, Bell, Plus, Trash2, RefreshCw, Edit2, Calendar } from 'lucide-react'
+import { Activity, ShoppingCart, Bell, Plus, Trash2, RefreshCw, Edit2, Calendar, X } from 'lucide-react'
 import { useTasks } from '../hooks/useTasks'
 import { cn } from '@/lib/utils'
 import type { Task } from '../types/tasks.types'
@@ -162,15 +162,34 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
         }
     }
 
-    // For recurring tasks that target off-days specifically, inject virtual copies for the current off period
+    // Expand recurring tasks: Only include if the task's recurrence rule applies to TODAY.
+    // It will show up once on the list for today.
+    const dateStr = today.toISOString().split('T')[0]
+    const dayOfWeek = today.getDay()
     const expandedTasks: (Task & { _recurringDate?: string })[] = []
+
     sortedTasks.forEach(task => {
-        const isOffDaysRecurring = task.recurrence_config?.type === 'off_days'
-        if (isOffDaysRecurring && offDays.length > 0) {
-            offDays.forEach(d => {
-                const dateStr = d.toISOString().split('T')[0]
+        if (task.recurrence_config && task.recurrence_config.type !== 'none') {
+            const type = task.recurrence_config.type
+            const daysOfWeek = task.recurrence_config.days_of_week || []
+            let shouldInclude = false
+
+            if (type === 'daily') shouldInclude = true
+            else if (type === 'weekdays' && dayOfWeek >= 1 && dayOfWeek <= 5) shouldInclude = true
+            else if (type === 'weekends' && (dayOfWeek === 0 || dayOfWeek === 6)) shouldInclude = true
+            else if (type === 'work_days' && isShiftDay(today)) shouldInclude = true
+            else if (type === 'off_days' && !isShiftDay(today)) shouldInclude = true
+            else if ((type === 'weekly' || type === 'custom') && daysOfWeek.includes(dayOfWeek)) shouldInclude = true
+
+            // Legacy fallback support
+            if ((type as any) === 'shift_relative') {
+                if ((task.recurrence_config as any).target === 'off_days' && !isShiftDay(today)) shouldInclude = true
+                if ((task.recurrence_config as any).target === 'on_days' && isShiftDay(today)) shouldInclude = true
+            }
+
+            if (shouldInclude) {
                 expandedTasks.push({ ...task, id: `${task.id}__${dateStr}`, _recurringDate: dateStr })
-            })
+            }
         } else {
             expandedTasks.push(task)
         }
@@ -223,6 +242,24 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
                     >
                         <Plus className="w-5 h-5" />
                     </button>
+                    {(newTask.trim().length > 0 || dueDateMode !== 'none') && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setNewTask('')
+                                setAmount('')
+                                setDueDateMode('none')
+                                setPriority(undefined as any)
+                                setRecurringType('off_days')
+                                setRecurringTime('')
+                                setRecurringDuration('')
+                                setShowSuggestions(false)
+                            }}
+                            className="w-11 h-11 rounded-xl bg-black/5 hover:bg-black/10 flex items-center justify-center text-black/40 hover:text-red-500 transition-colors shrink-0"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                    )}
                 </div>
 
                 {/* Tier 1: Local Autocomplete Suggestions */}
@@ -447,7 +484,7 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
     const [editPriority, setEditPriority] = useState(task.priority)
     const [editDueDate, setEditDueDate] = useState(task.due_date ? task.due_date.split('T')[0] : '')
     const [editEndDate, setEditEndDate] = useState(task.end_date ? task.end_date.split('T')[0] : '')
-    const [editDueDateMode, setEditDueDateMode] = useState<'none' | 'on' | 'before' | 'range' | 'recurring'>(task.recurrence_config && task.recurrence_config.type !== 'none' ? 'recurring' : (task.due_date_mode || 'none'))
+    const [editDueDateMode, setEditDueDateMode] = useState<'none' | 'on' | 'before' | 'range' | 'recurring'>(task.recurrence_config?.type && task.recurrence_config.type !== 'none' ? 'recurring' : (task.due_date_mode || 'none'))
     const [editRecurrence, setEditRecurrence] = useState<'none' | 'daily' | 'weekdays' | 'weekends' | 'work_days' | 'off_days' | 'weekly' | 'custom'>(task.recurrence_config?.type && task.recurrence_config.type !== 'none' ? task.recurrence_config.type as any : 'off_days')
     const [editRecurringTime, setEditRecurringTime] = useState(task.recurrence_config?.time || '')
     const [editRecurringDuration, setEditRecurringDuration] = useState(task.recurrence_config?.duration_minutes?.toString() || '')
@@ -571,11 +608,11 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
                         {editDueDateMode === 'recurring' && (
                             <div className="flex flex-col gap-2 p-2.5 bg-emerald-50 border border-emerald-100 rounded-xl">
                                 <div className="flex flex-wrap gap-1">
-                                    {(['daily', 'weekdays', 'weekends', 'work_days', 'off_days', 'weekly', 'custom'] as const).map(rt => (
+                                    {(['daily', 'work_days', 'off_days', 'custom'] as const).map(rt => (
                                         <button
                                             key={rt}
                                             type="button"
-                                            onClick={() => setEditRecurrence(rt)}
+                                            onClick={() => setEditRecurrence(rt as any)}
                                             className={cn(
                                                 "px-2 py-0.5 text-[9px] font-bold rounded-md border transition-all uppercase tracking-tight",
                                                 editRecurrence === rt
@@ -592,9 +629,17 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
                                         <span className="text-[9px] font-bold text-black/40 uppercase">Time</span>
                                         <input type="time" value={editRecurringTime} onChange={e => setEditRecurringTime(e.target.value)} className="bg-transparent text-[10px] font-bold text-black/60 outline-none" />
                                     </div>
-                                    <div className="flex items-center gap-1 bg-white border border-emerald-200 rounded-md px-2 py-1">
+                                    <div className="flex items-center gap-1 bg-white border border-emerald-200 rounded-md px-2 py-1 flex-1">
                                         <span className="text-[9px] font-bold text-black/40 uppercase">Dur.</span>
-                                        <input type="number" placeholder="mins" value={editRecurringDuration} onChange={e => setEditRecurringDuration(e.target.value)} className="bg-transparent text-[10px] font-bold text-black/60 outline-none w-12" min="5" step="5" />
+                                        <select value={editRecurringDuration} onChange={e => setEditRecurringDuration(e.target.value)} className="bg-transparent text-[10px] font-bold text-black/60 outline-none w-full">
+                                            <option value="">Duration</option>
+                                            <option value="30">30 mins</option>
+                                            <option value="60">1 hr</option>
+                                            <option value="90">1.5 hrs</option>
+                                            <option value="120">2 hrs</option>
+                                            <option value="150">2.5 hrs</option>
+                                            <option value="180">3 hrs</option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>

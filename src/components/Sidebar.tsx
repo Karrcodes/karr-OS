@@ -24,13 +24,7 @@ const navItems = [
     {
         label: 'Operations',
         href: '/tasks',
-        icon: Activity,
-        sub: [
-            { label: 'Planner', href: '/tasks/planner', icon: Calendar, caps: ['P', 'B'] },
-            { label: 'Deployment', href: '/tasks/todo', icon: Activity, caps: ['P', 'B'] },
-            { label: 'Groceries', href: '/tasks/groceries', icon: ShoppingCart, caps: ['P'] },
-            { label: 'Reminders', href: '/tasks/reminders', icon: Bell, caps: ['P', 'B'] }
-        ]
+        icon: Activity
     },
     {
         label: 'Vault',
@@ -272,12 +266,28 @@ export function Sidebar() {
         setSetting('karrOS_finance_subtabs_order', JSON.stringify(newOrder))
     }
 
-    // Close drawer on route change
-    useEffect(() => { setMobileOpen(false) }, [pathname])
+    // Close drawer on route change and auto-collapse others
+    useEffect(() => { 
+        setMobileOpen(false) 
+        // Find which module contains the current pathname and expand only that
+        const activeItemWithSub = navItems.find(item => 
+            'sub' in item && item.sub?.some(sub => pathname.startsWith(sub.href))
+        )
+        if (activeItemWithSub) {
+            setExpandedFolders({ [activeItemWithSub.href]: true })
+        }
+    }, [pathname])
 
     const toggleFolder = (href: string, e: React.MouseEvent) => {
         e.preventDefault()
-        setExpandedFolders(prev => ({ ...prev, [href]: !prev[href] }))
+        setExpandedFolders(prev => {
+            const isCurrentlyExpanded = prev[href]
+            // Auto-collapse others when opening one
+            if (!isCurrentlyExpanded) {
+                return { [href]: true }
+            }
+            return { ...prev, [href]: false }
+        })
     }
 
     const renderContent = (itemsToRender: string[], isReorderable: boolean) =>

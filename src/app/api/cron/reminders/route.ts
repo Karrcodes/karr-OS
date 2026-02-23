@@ -100,12 +100,38 @@ export async function GET(req: Request) {
 
             if (upsertError) console.error('Failed to update last_reminder_sent:', upsertError)
 
-            return NextResponse.json({ success: true, message: 'Reminder sent successfully' })
+            // 4. Reset recurring tasks completion status
+            // This ensures routines like "Gym" appear fresh the next day
+            const { error: resetError } = await supabase
+                .from('fin_tasks')
+                .update({ is_completed: false })
+                .not('recurrence_config', 'is', null)
+
+            if (resetError) console.error('Failed to reset recurring tasks:', resetError)
+
+            return NextResponse.json({ success: true, message: 'Reminder sent and tasks reset' })
+        }
+
+        // Even if we didn't send a reminder, we should still reset tasks daily
+        // But only if we haven't already done it today (last_reminder_sent used as proxy or add new setting)
+        if (!alreadySentToday) {
+            await supabase
+                .from('fin_tasks')
+                .update({ is_completed: false })
+                .not('recurrence_config', 'is', null)
+
+            await supabase
+                .from('sys_settings')
+                .upsert({
+                    key: 'last_reminder_sent',
+                    value: todayDate,
+                    updated_at: new Date().toISOString()
+                })
         }
 
         return NextResponse.json({
             success: true,
-            message: shouldSend ? 'Already sent today' : 'Not a reminder day'
+            message: shouldSend ? 'Already sent today' : 'Not a reminder day, but tasks reset'
         })
 
     } catch (error: any) {
