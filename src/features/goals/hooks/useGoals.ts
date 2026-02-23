@@ -79,22 +79,29 @@ export function useGoals() {
                 return
             }
 
-            const { data: { session } } = await supabase.auth.getSession()
-            const userId = session?.user?.id || 'anonymous'
-            console.log('Upload check - User ID:', userId, 'Role:', session?.user?.role)
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+            if (sessionError) console.error('Session retrieval error:', sessionError)
+
+            const userId = session?.user?.id
+            console.log('Upload check - Session:', !!session, 'User ID:', userId, 'Role:', session?.user?.role)
+
+            if (!userId) {
+                throw new Error('Authentication required: You must be signed in to upload images to the cloud.')
+            }
 
             let finalImageUrl = data.vision_image_url
             if (imageFile) {
-                console.log('Attempting storage upload for:', imageFile.name)
+                console.log('Attempting storage upload for:', imageFile.name, 'to bucket: goal-images')
                 const ext = imageFile.name.split('.').pop() || 'jpg'
                 const path = `goals/${userId}/${Date.now()}.${ext}`
+
                 const { error: uploadError } = await supabase.storage
                     .from('goal-images')
                     .upload(path, imageFile, { upsert: true, cacheControl: '3600' })
 
                 if (uploadError) {
-                    console.error('Image upload failed:', uploadError)
-                    throw new Error(`Upload failed: ${uploadError.message}. Ensure you are signed in and bucket policies are applied.`)
+                    console.error('Storage Upload Error Detail:', uploadError)
+                    throw new Error(`Upload failed: ${uploadError.message}. Check if "goal-images" bucket exists in Supabase Storage.`)
                 }
 
                 const { data: urlData } = supabase.storage.from('goal-images').getPublicUrl(path)
@@ -159,9 +166,15 @@ export function useGoals() {
                 return
             }
 
-            const { data: { session } } = await supabase.auth.getSession()
-            const userId = session?.user?.id || 'anonymous'
-            console.log('Update check - User ID:', userId, 'Role:', session?.user?.role)
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+            if (sessionError) console.error('Update session retrieval error:', sessionError)
+
+            const userId = session?.user?.id
+            console.log('Update check - Session:', !!session, 'User ID:', userId, 'Role:', session?.user?.role)
+
+            if (!userId) {
+                throw new Error('Authentication required: You must be signed in to update goals in the cloud.')
+            }
 
             // Fetch the existing goal to get the current vision_image_url if needed
             const { data: existingGoal } = await supabase.from('sys_goals').select('vision_image_url').eq('id', id).single()
