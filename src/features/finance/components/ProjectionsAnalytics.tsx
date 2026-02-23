@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Calendar as CalendarIcon, ExternalLink, Briefcase, DollarSign, ChevronLeft, ChevronRight, Info, Check, X, Trash2, Clock } from 'lucide-react'
+import { Calendar as CalendarIcon, ExternalLink, Briefcase, DollarSign, ChevronLeft, ChevronRight, Info, Check, X, Trash2, Clock, CheckCircle2, AlertCircle } from 'lucide-react'
 import { useRota } from '../hooks/useRota'
+import { usePayslips } from '../hooks/usePayslips'
 import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
 import { KarrFooter } from '@/components/KarrFooter'
 
@@ -19,9 +20,13 @@ function getFirstDayOfMonth(year: number, month: number) {
     return day === 0 ? 6 : day - 1 // Convert Sunday=0 to Monday=0
 }
 
-const HOURS_PER_SHIFT = 8
-const BASE_RATE = 21.63 // Approx for £45k
-const DEDUCTION_RATE = 0.223 // ~22.3% deduced for £45k net
+// Pay constants derived from payslip (wk ending 14/02/2026):
+// 34.5 hrs across 3 shifts = 11.5 hrs/shift, base £15.26/hr, holiday £14.38/hr
+// Deductions: tax £59.80 + NI £22.75 + pension £13.27 = £95.82 on £526.47 gross => 18.21%
+const HOURS_PER_SHIFT = 11.5
+const BASE_RATE = 15.26
+const HOLIDAY_RATE = 14.38
+const DEDUCTION_RATE = 0.1821
 
 export function ProjectionsAnalytics() {
     const [currentDate, setCurrentDate] = useState(new Date())
@@ -30,6 +35,14 @@ export function ProjectionsAnalytics() {
 
     // Persistent overrides from DB
     const { overrides: bookedOverrides, saveOverrides, deleteOverrideByDate, updateOverrideStatus } = useRota()
+
+    // Actual payslips for confirming past paydays
+    const { payslips } = usePayslips()
+    const payslipByDate = useMemo(() => {
+        const map: Record<string, number> = {}
+        payslips.forEach(p => { map[p.date] = p.net_pay })
+        return map
+    }, [payslips])
 
     // Modals State
     const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false)
@@ -134,9 +147,9 @@ export function ProjectionsAnalytics() {
             let isHol = isShift && override === 'holiday'
 
             let gross = 0
-            if (isWorked || isHol) gross += HOURS_PER_SHIFT * BASE_RATE
-            // OT rate for demo is same as base for simplicity or +25%
-            if (isOT) gross += HOURS_PER_SHIFT * (BASE_RATE * 1.25)
+            if (isHol) gross += HOURS_PER_SHIFT * HOLIDAY_RATE         // Holiday: lower rate £14.38/hr
+            else if (isWorked) gross += HOURS_PER_SHIFT * BASE_RATE     // Normal shift: £15.26/hr
+            if (isOT) gross += HOURS_PER_SHIFT * (BASE_RATE * 1.25)    // OT: +25%
 
             dailyEarnings[dateStr] = gross * (1 - DEDUCTION_RATE)
 
@@ -198,7 +211,10 @@ export function ProjectionsAnalytics() {
             if (isShift) shiftsCount++
             if (isPayday) {
                 paydaysCount++
-                totalMonthNet += weeklyPayMap[dateStr] || 0
+                // Use actual payslip net_pay if the payday has passed and a payslip exists
+                const isPast = date < new Date(new Date().setHours(0, 0, 0, 0))
+                const confirmedPay = payslipByDate[dateStr]
+                totalMonthNet += (isPast && confirmedPay != null) ? confirmedPay : (weeklyPayMap[dateStr] || 0)
             }
 
             daysArr.push({
@@ -321,7 +337,7 @@ export function ProjectionsAnalytics() {
                             <span className="text-[16px] sm:text-[18px] opacity-70">£</span>
                             {projectedNet.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
-                        <p className="text-[11px] text-emerald-100 mt-1 relative z-10">Based on {shiftsThisMonth - absencesThisMonth} worked + {holidaysThisMonth} hol + {otThisMonth} OT. (~18.8% Ded.)</p>
+                        <p className="text-[11px] text-emerald-100 mt-1 relative z-10">Based on {shiftsThisMonth - absencesThisMonth} worked + {holidaysThisMonth} hol + {otThisMonth} OT. (~18.2% Ded.)</p>
                     </div>
                 </div>
             </div>
@@ -458,11 +474,21 @@ export function ProjectionsAnalytics() {
                                                 </div>
                                             )}
                                         </div>
-                                        {isPayday && (
-                                            <div className={`hidden sm:flex items-center gap-0.5 font-bold text-[10px] sm:text-[11px] opacity-90 privacy-blur ${isShift && !override ? 'text-emerald-600' : 'text-emerald-700'}`}>
-                                                <span>£{(weeklyPayMap[dateStr] || 0).toFixed(0)}</span>
-                                            </div>
-                                        )}
+                                        {isPayday && (() => {
+                                            const today = new Date(); today.setHours(0, 0, 0, 0)
+                                            const isPast = d.date < today
+                                            const confirmedPay = payslipByDate[dateStr]
+                                            const displayAmt = (isPast && confirmedPay != null) ? confirmedPay : (weeklyPayMap[dateStr] || 0)
+                                            return (
+                                                <div className="hidden sm:flex flex-col items-end gap-0.5">
+                                                    <span className={`font-bold text-[10px] sm:text-[11px] opacity-90 privacy-blur ${isPast && confirmedPay != null ? 'text-emerald-700' : isPast ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                                        £{displayAmt.toFixed(0)}
+                                                    </span>
+                                                    {isPast && confirmedPay != null && <CheckCircle2 className="w-3 h-3 text-emerald-500" />}
+                                                    {isPast && confirmedPay == null && <AlertCircle className="w-3 h-3 text-amber-400" />}
+                                                </div>
+                                            )
+                                        })()}
                                     </div>
                                     <div className="mt-auto flex items-end justify-between">
                                         {(isShift || isOvertime) && !isAbsence && !isHoliday && (
@@ -532,6 +558,12 @@ export function ProjectionsAnalytics() {
                         </div>
                         <div className="flex items-center gap-2">
                             <div className="w-3 h-3 rounded border border-black/20 border-dashed" /> Staged (Pending)
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Payslip Confirmed
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <AlertCircle className="w-3 h-3 text-amber-400" /> Awaiting Payslip
                         </div>
                     </div>
                 </div>
