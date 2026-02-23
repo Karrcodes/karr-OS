@@ -31,6 +31,7 @@ export const viewport: Viewport = {
 
 import { FinanceProfileProvider } from '@/features/finance/contexts/FinanceProfileContext'
 import { SystemSettingsProvider } from '@/features/system/contexts/SystemSettingsContext'
+import { TasksProfileProvider } from '@/features/tasks/contexts/TasksProfileContext'
 import { SecurityLock } from '@/components/SecurityLock'
 
 export default function RootLayout({
@@ -48,13 +49,15 @@ export default function RootLayout({
       <body className={`${inter.className} bg-white text-[#0a0a0a] antialiased`}>
         <SystemSettingsProvider>
           <FinanceProfileProvider>
-            <SecurityLock>
-              <Sidebar />
-              {/* md:ml-[220px] — full width on mobile (sidebar is a drawer), shifted on desktop */}
-              <main className="md:ml-[220px] min-h-screen bg-white">
-                {children}
-              </main>
-            </SecurityLock>
+            <TasksProfileProvider>
+              <SecurityLock>
+                <Sidebar />
+                {/* md:ml-[220px] — full width on mobile (sidebar is a drawer), shifted on desktop */}
+                <main className="md:ml-[220px] min-h-screen bg-white">
+                  {children}
+                </main>
+              </SecurityLock>
+            </TasksProfileProvider>
           </FinanceProfileProvider>
         </SystemSettingsProvider>
       </body>

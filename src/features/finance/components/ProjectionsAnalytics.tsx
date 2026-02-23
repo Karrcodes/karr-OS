@@ -140,15 +140,16 @@ export function ProjectionsAnalytics() {
 
             dailyEarnings[dateStr] = gross * (1 - DEDUCTION_RATE)
 
-            // Adjust pay cycle for demo: Monthly on last Friday? Or weekly? 
-            // Persona says £2,912 net/month. Let's stick to weekly if it was weekly, 
-            // or switch to monthly if demo. Projections currently assumes weekly Fridays.
-            // Let's keep weekly Fridays but adjust rate.
+            // Paid in arrears: work from Monday to Sunday is paid the *following* Friday.
             const dayOfWeek = curr.getDay()
-            const daysUntilFriday = (5 - dayOfWeek + 7) % 7
+            const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1
 
-            const paydayFri = new Date(curr)
-            paydayFri.setDate(curr.getDate() + daysUntilFriday)
+            const currentMonday = new Date(curr)
+            currentMonday.setDate(curr.getDate() - daysSinceMonday)
+
+            // Pay is issued on the Friday of the NEXT week (Monday + 11 days)
+            const paydayFri = new Date(currentMonday)
+            paydayFri.setDate(currentMonday.getDate() + 11)
 
             const paydayStr = paydayFri.toISOString().split('T')[0]
             weeklyPayMap[paydayStr] = (weeklyPayMap[paydayStr] || 0) + dailyEarnings[dateStr]
