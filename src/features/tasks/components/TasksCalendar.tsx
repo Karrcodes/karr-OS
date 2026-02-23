@@ -23,7 +23,7 @@ export function TasksCalendar() {
     const [quickAddTitle, setQuickAddTitle] = useState('')
     const { createTask, editTask, deleteTask } = useTasks('todo')
 
-    const { schedule, loading } = useSchedule(60) // Fetch 60 days to cover month views
+    const { schedule, loading } = useSchedule(60, true) // Fetch 60 days across both profiles
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
@@ -92,20 +92,21 @@ export function TasksCalendar() {
     return (
         <div className="rounded-2xl border border-black/[0.08] bg-white overflow-hidden shadow-sm">
             <div className="p-4 sm:p-5 border-b border-black/[0.04] bg-black/[0.01]">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+                {/* Title row — month picker inline right of title on all screen sizes */}
+                <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                         <CalendarIcon className="w-4 h-4 text-black/50 shrink-0" />
-                        <h2 className="text-[16px] font-bold text-black">Focus Schedule</h2>
+                        <h2 className="text-[15px] sm:text-[16px] font-bold text-black">Focus Schedule</h2>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-0.5">
                         <button
                             onClick={() => setCalMonth(m => { const n = new Date(m); n.setMonth(n.getMonth() - 1); return n })}
                             className="p-1.5 rounded-lg hover:bg-black/5 text-black/40"
                         >
                             <ChevronLeft className="w-4 h-4" />
                         </button>
-                        <span className="text-[13px] font-bold text-black min-w-[120px] text-center">
-                            {calMonth.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
+                        <span className="text-[11px] sm:text-[13px] font-bold text-black min-w-[90px] sm:min-w-[120px] text-center">
+                            {calMonth.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }).toUpperCase()}
                         </span>
                         <button
                             onClick={() => setCalMonth(m => { const n = new Date(m); n.setMonth(n.getMonth() + 1); return n })}
@@ -173,7 +174,9 @@ export function TasksCalendar() {
                                                 item.type === 'shift' && "bg-blue-50 text-blue-700 border-blue-100",
                                                 item.type === 'overtime' && "bg-orange-50 text-orange-700 border-orange-100",
                                                 item.type === 'holiday' && "bg-purple-50 text-purple-700 border-purple-100",
-                                                item.type === 'task' && (item.is_completed ? "bg-emerald-50 text-emerald-600 border-emerald-100 opacity-50" : "bg-black text-white border-black")
+                                                item.type === 'task' && item.profile === 'business' && !item.is_completed && "bg-indigo-50 text-indigo-700 border-indigo-100",
+                                                item.type === 'task' && item.profile !== 'business' && !item.is_completed && "bg-black text-white border-black",
+                                                item.type === 'task' && item.is_completed && "bg-emerald-50 text-emerald-600 border-emerald-100 opacity-50"
                                             )}
                                         >
                                             {item.type === 'shift' ? 'Work' : item.title}
@@ -321,9 +324,21 @@ export function TasksCalendar() {
                                             <div className="text-[18px] font-bold text-black tracking-tight leading-tight">
                                                 {selectedItem.type === 'shift' ? 'Work Shift' : selectedItem.title}
                                             </div>
+                                            {/* Date context subtitle */}
                                             <p className="text-[12px] text-black/40 mt-1">
-                                                {selectedItem.date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+                                                {selectedItem.due_date_mode === 'before'
+                                                    ? `By ${selectedItem.date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}`
+                                                    : selectedItem.due_date_mode === 'range'
+                                                        ? `Range · ends ${selectedItem.end_date ? new Date(selectedItem.end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : ''}`
+                                                        : selectedItem.date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
+                                                }
                                             </p>
+                                            {selectedItem.profile && (
+                                                <span className={cn(
+                                                    "text-[10px] font-bold uppercase tracking-widest mt-1 inline-block px-1.5 py-0.5 rounded",
+                                                    selectedItem.profile === 'business' ? "bg-indigo-50 text-indigo-600" : "bg-black/5 text-black/40"
+                                                )}>{selectedItem.profile}</span>
+                                            )}
                                         </div>
 
                                         {selectedItem.type === 'task' ? (
@@ -372,12 +387,13 @@ export function TasksCalendar() {
                     </div>
                 )}
 
-                <div className="mt-6 flex flex-wrap items-center gap-6 p-4 bg-black/[0.02] rounded-xl border border-black/[0.04]">
-                    <LegendItem color="bg-black" label="Tasks" />
+                <div className="mt-6 flex flex-wrap items-center gap-4 sm:gap-6 p-4 bg-black/[0.02] rounded-xl border border-black/[0.04]">
+                    <LegendItem color="bg-black" label="Personal" />
+                    <LegendItem color="bg-indigo-500" label="Business" />
                     <LegendItem color="bg-blue-500" label="Work Shift" />
                     <LegendItem color="bg-orange-500" label="Overtime" />
                     <LegendItem color="bg-purple-500" label="Holiday" />
-                    <LegendItem color="bg-emerald-500" label="Completed" opacity />
+                    <LegendItem color="bg-emerald-500" label="Done" opacity />
                 </div>
             </div>
         </div >

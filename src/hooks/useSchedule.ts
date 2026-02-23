@@ -13,13 +13,21 @@ export interface ScheduleItem {
     type: 'task' | 'shift' | 'overtime' | 'holiday'
     priority?: string
     is_completed?: boolean
+    due_date_mode?: 'on' | 'before' | 'range'
+    end_date?: string
+    profile?: string
 }
 
-export function useSchedule(days: number = 14) {
-    const { tasks: todoTasks, loading: todoLoading } = useTasks('todo')
-    const { tasks: reminderTasks, loading: reminderLoading } = useTasks('reminder')
+export function useSchedule(days: number = 14, allProfiles: boolean = false) {
+    const { tasks: todoTasksPersonal, loading: todoLoading } = useTasks('todo', 'personal')
+    const { tasks: todoTasksBusiness, loading: todoLoadingBiz } = useTasks('todo', 'business')
+    const { tasks: reminderTasks, loading: reminderLoading } = useTasks('reminder', 'personal')
+    const { tasks: reminderTasksBiz, loading: reminderLoadingBiz } = useTasks('reminder', 'business')
     const { overrides, loading: rotaLoading } = useRota()
     const { settings } = useSystemSettings()
+
+    const todoTasks = allProfiles ? [...todoTasksPersonal, ...todoTasksBusiness] : todoTasksPersonal
+    const allReminderTasks = allProfiles ? [...reminderTasks, ...reminderTasksBiz] : reminderTasks
 
     const schedule = useMemo(() => {
         const items: ScheduleItem[] = []
@@ -28,7 +36,7 @@ export function useSchedule(days: number = 14) {
         const end = new Date(start)
         end.setDate(start.getDate() + days)
 
-        const allTasks = [...todoTasks, ...reminderTasks]
+        const allTasks = [...todoTasks, ...allReminderTasks]
 
         // Add Tasks
         const currDate = new Date(start)
@@ -41,11 +49,11 @@ export function useSchedule(days: number = 14) {
 
         allTasks.forEach(task => {
             // 1. Handle Recurring (Shift Relative)
-            if (task.recurrence_config?.type === 'shift_relative') {
+            if ((task.recurrence_config?.type as any) === 'shift_relative') {
                 dateRange.forEach(d => {
                     const isShift = isShiftDay(d)
-                    const targetMatch = (task.recurrence_config?.target === 'off_days' && !isShift) ||
-                        (task.recurrence_config?.target === 'on_days' && isShift);
+                    const targetMatch = ((task.recurrence_config as any)?.target === 'off_days' && !isShift) ||
+                        ((task.recurrence_config as any)?.target === 'on_days' && isShift);
 
                     if (targetMatch) {
                         items.push({
@@ -54,7 +62,8 @@ export function useSchedule(days: number = 14) {
                             date: d,
                             type: 'task',
                             priority: task.priority,
-                            is_completed: task.is_completed
+                            is_completed: task.is_completed,
+                            profile: task.profile
                         })
                     }
                 })
@@ -74,11 +83,14 @@ export function useSchedule(days: number = 14) {
                         if (d >= startDate && d <= endDate) {
                             items.push({
                                 id: `${task.id}-${d.toISOString()}`,
-                                title: `[Range] ${task.title}`,
+                                title: task.title,
                                 date: d,
                                 type: 'task',
                                 priority: task.priority,
-                                is_completed: task.is_completed
+                                is_completed: task.is_completed,
+                                due_date_mode: 'range',
+                                end_date: task.end_date,
+                                profile: task.profile
                             })
                         }
                     })
@@ -86,11 +98,13 @@ export function useSchedule(days: number = 14) {
                     if (startDate >= start && startDate <= end) {
                         items.push({
                             id: task.id,
-                            title: `[By] ${task.title}`,
+                            title: task.title,
                             date: startDate,
                             type: 'task',
                             priority: task.priority,
-                            is_completed: task.is_completed
+                            is_completed: task.is_completed,
+                            due_date_mode: 'before',
+                            profile: task.profile
                         })
                     }
                 } else {
@@ -102,7 +116,9 @@ export function useSchedule(days: number = 14) {
                             date: startDate,
                             type: 'task',
                             priority: task.priority,
-                            is_completed: task.is_completed
+                            is_completed: task.is_completed,
+                            due_date_mode: 'on',
+                            profile: task.profile
                         })
                     }
                 }
@@ -138,10 +154,10 @@ export function useSchedule(days: number = 14) {
         }
 
         return items.sort((a, b) => a.date.getTime() - b.date.getTime())
-    }, [todoTasks, reminderTasks, overrides, days, settings.is_demo_mode])
+    }, [todoTasks, allReminderTasks, overrides, days, settings.is_demo_mode])
 
     return {
         schedule,
-        loading: todoLoading || reminderLoading || rotaLoading
+        loading: todoLoading || todoLoadingBiz || reminderLoading || reminderLoadingBiz || rotaLoading
     }
 }

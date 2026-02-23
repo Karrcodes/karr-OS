@@ -10,7 +10,11 @@ export interface Task {
     due_date_mode?: 'on' | 'before' | 'range'
     end_date?: string
     recurrence_config?: {
-        type: 'none' | 'daily' | 'weekly' | 'shift_relative'
+        type: 'none' | 'daily' | 'weekdays' | 'weekends' | 'work_days' | 'off_days' | 'weekly' | 'custom'
+        days_of_week?: number[]   // 0=Sun,1=Mon...6=Sat (used for weekly/custom)
+        time?: string             // "HH:MM" for planner placement e.g. "07:00"
+        duration_minutes?: number // e.g. 90 for planner block sizing
+        // Legacy fields
         interval?: number
         target?: 'on_days' | 'off_days'
         constraint?: 'within_window'

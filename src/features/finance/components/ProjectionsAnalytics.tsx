@@ -252,7 +252,7 @@ export function ProjectionsAnalytics() {
             projectedNet: totalMonthNet,
             weeklyPayMap
         }
-    }, [year, monthIndex, allOverrides, dayOverrides, bookedOverrides])
+    }, [year, monthIndex, allOverrides, dayOverrides, bookedOverrides, payslipByDate])
 
     const nextMonth = () => {
         setCurrentDate(new Date(year, monthIndex + 1, 1))
@@ -358,18 +358,13 @@ export function ProjectionsAnalytics() {
                     <div>
                         <h2 className="text-[16px] font-bold text-black flex items-center gap-2">
                             {settings.is_demo_mode ? 'Work & Pay Calendar' : 'Rota & Pay Calendar'}
-                            <span className="text-[10px] bg-black/5 text-black/40 px-2 py-0.5 rounded font-bold uppercase tracking-wider">{monthName} {year}</span>
                         </h2>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                         <button onClick={prevMonth} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/5 text-black/40 hover:text-black transition-colors">
                             <ChevronLeft className="w-4 h-4" />
                         </button>
-                        {(year !== new Date().getFullYear() || monthIndex !== new Date().getMonth()) && (
-                            <button onClick={() => setCurrentDate(new Date())} className="text-[11px] font-bold text-black/40 hover:text-black px-2 transition-colors uppercase tracking-wider">
-                                Today
-                            </button>
-                        )}
+                        <span className="text-[12px] font-bold text-black min-w-[90px] text-center">{monthName} {year}</span>
                         <button onClick={nextMonth} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/5 text-black/40 hover:text-black transition-colors">
                             <ChevronRight className="w-4 h-4" />
                         </button>

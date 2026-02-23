@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Activity, ShoppingCart, Bell, Plus, Trash2, RefreshCw, Edit2, Calendar } from 'lucide-react'
 import { useTasks } from '../hooks/useTasks'
 import { cn } from '@/lib/utils'
@@ -20,9 +20,77 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
     const [amount, setAmount] = useState('1')
     const [priority, setPriority] = useState<'super' | 'high' | 'mid' | 'low'>('low')
     const [dueDate, setDueDate] = useState('')
-    const [dueDateMode, setDueDateMode] = useState<'on' | 'before' | 'range'>('on')
+    const [dueDateMode, setDueDateMode] = useState<'none' | 'on' | 'before' | 'range' | 'recurring'>('none')
     const [endDate, setEndDate] = useState('')
-    const [recurrence, setRecurrence] = useState<'none' | 'shift_relative'>('none')
+    const [recurringType, setRecurringType] = useState<'daily' | 'weekdays' | 'weekends' | 'work_days' | 'off_days' | 'weekly' | 'custom'>('off_days')
+    const [recurringTime, setRecurringTime] = useState('')
+    const [recurringDuration, setRecurringDuration] = useState('')
+
+    // Intelligent Task System states
+    const [isAnalyzingPriority, setIsAnalyzingPriority] = useState(false)
+    const [suggestedPriority, setSuggestedPriority] = useState<{ level: 'super' | 'high' | 'mid' | 'low', reason: string } | null>(null)
+    const [showSuggestions, setShowSuggestions] = useState(false)
+
+    // Derived autocomplete from history
+    const autocompleteTitles = useMemo(() => {
+        if (!newTask.trim() || newTask.length < 2) return []
+        const lowerInput = newTask.toLowerCase()
+        // Unique titles from existing tasks that contain the input, excluding exact match
+        const matches = Array.from(new Set(tasks.map(t => t.title)))
+            .filter(t => t.toLowerCase().includes(lowerInput) && t.toLowerCase() !== lowerInput)
+            .slice(0, 3)
+        return matches
+    }, [newTask, tasks])
+
+    // Debounced Smart Priority Analysis
+    useEffect(() => {
+        if (!newTask.trim() || newTask.length < 3 || category !== 'todo') {
+            setSuggestedPriority(null)
+            setIsAnalyzingPriority(false)
+            return
+        }
+
+        setIsAnalyzingPriority(true)
+        const timeout = setTimeout(async () => {
+            try {
+                // Get current workload context
+                const openCount = tasks.filter(t => !t.is_completed).length
+                const dist = tasks.reduce((acc, t) => {
+                    if (!t.is_completed && t.priority) {
+                        acc[t.priority] = (acc[t.priority] || 0) + 1
+                    }
+                    return acc
+                }, {} as Record<string, number>)
+
+                const res = await fetch('/api/smart-task', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: newTask,
+                        openTasksCount: openCount,
+                        priorityDistribution: dist
+                    })
+                })
+
+                if (res.ok) {
+                    const data = await res.json()
+                    // Only show suggestion if it's different to current selected
+                    if (data.priority && data.priority !== priority) {
+                        setSuggestedPriority({ level: data.priority, reason: data.reason })
+                    } else {
+                        setSuggestedPriority(null)
+                    }
+                }
+            } catch (err) {
+                console.error('Smart priority failed', err)
+                setSuggestedPriority(null)
+            } finally {
+                setIsAnalyzingPriority(false)
+            }
+        }, 800) // 800ms debounce
+
+        return () => clearTimeout(timeout)
+    }, [newTask, priority, category, tasks])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -38,19 +106,21 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
             await createTask(
                 finalTitle,
                 priority,
-                dueDate || undefined,
+                dueDateMode !== 'none' && dueDateMode !== 'recurring' ? dueDate || undefined : undefined,
                 category === 'grocery' ? finalAmount : undefined,
-                dueDateMode,
+                dueDateMode !== 'none' && dueDateMode !== 'recurring' ? (dueDateMode as 'on' | 'before' | 'range') : undefined,
                 endDate || undefined,
-                recurrence === 'shift_relative' ? { type: 'shift_relative', target: 'off_days' } : {}
+                dueDateMode === 'recurring' ? { type: recurringType, time: recurringTime || undefined, duration_minutes: recurringDuration ? parseInt(recurringDuration) : undefined } : {}
             )
             setNewTask('')
             setAmount('1')
             setPriority('low')
             setDueDate('')
-            setDueDateMode('on')
+            setDueDateMode('none')
             setEndDate('')
-            setRecurrence('none')
+            setRecurringType('off_days')
+            setRecurringTime('')
+            setRecurringDuration('')
         } catch (err: any) {
             console.error('Operation creation failed:', err)
             alert(err.message || 'Failed to create operation. Please check your connection.')
@@ -92,11 +162,11 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
         }
     }
 
-    // For each recurring task, inject virtual copies for each off-day
+    // For recurring tasks that target off-days specifically, inject virtual copies for the current off period
     const expandedTasks: (Task & { _recurringDate?: string })[] = []
     sortedTasks.forEach(task => {
-        const isRecurring = task.recurrence_config?.type === 'shift_relative'
-        if (isRecurring && offDays.length > 0) {
+        const isOffDaysRecurring = task.recurrence_config?.type === 'off_days'
+        if (isOffDaysRecurring && offDays.length > 0) {
             offDays.forEach(d => {
                 const dateStr = d.toISOString().split('T')[0]
                 expandedTasks.push({ ...task, id: `${task.id}__${dateStr}`, _recurringDate: dateStr })
@@ -154,9 +224,58 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
                         <Plus className="w-5 h-5" />
                     </button>
                 </div>
-                {(newTask.trim().length > 0 || dueDate) && (
-                    <div className="flex flex-wrap items-center gap-2 mt-1 animate-in slide-in-from-top-1 fade-in duration-200">
-                        <div className="flex gap-1.5 p-1 bg-black/[0.03] rounded-xl border border-black/5">
+
+                {/* Tier 1: Local Autocomplete Suggestions */}
+                {autocompleteTitles.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 px-1 animate-in slide-in-from-top-1 fade-in duration-200">
+                        {autocompleteTitles.map(title => (
+                            <button
+                                key={title}
+                                type="button"
+                                onClick={() => setNewTask(title)}
+                                className="px-2 py-1 bg-black/[0.03] hover:bg-black/[0.06] border border-black/[0.05] rounded-lg text-[11px] font-medium text-black/60 transition-colors tracking-tight text-left truncate max-w-[200px]"
+                            >
+                                {title}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                {/* Main Form Fields (expanded when typing or date set) */}
+                {(newTask.trim().length > 0 || dueDateMode !== 'none') && (
+                    <div className="flex flex-col gap-2 animate-in slide-in-from-top-1 fade-in duration-200">
+
+                        {/* Tier 2: AI Priority Suggestion Badge */}
+                        {category === 'todo' && (
+                            <div className="h-[24px] flex items-center px-1">
+                                {isAnalyzingPriority ? (
+                                    <div className="flex items-center gap-1.5 text-black/30">
+                                        <RefreshCw className="w-3 h-3 animate-spin" />
+                                        <span className="text-[10px] uppercase font-bold tracking-widest">Analyzing priority...</span>
+                                    </div>
+                                ) : suggestedPriority ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setPriority(suggestedPriority.level)
+                                            setSuggestedPriority(null)
+                                        }}
+                                        className={cn(
+                                            "flex items-center gap-1.5 px-2 py-1 rounded-md border text-[10px] font-bold uppercase tracking-wide transition-all hover:scale-[1.02] active:scale-95 group",
+                                            PRIORITY_CONFIG[suggestedPriority.level].color,
+                                            "shadow-sm ring-2 ring-offset-1 ring-black/5"
+                                        )}
+                                    >
+                                        <span className="opacity-70 group-hover:opacity-100">✨ Make {suggestedPriority.level} Priority</span>
+                                        <div className="w-px h-2.5 bg-current opacity-20" />
+                                        <span className="opacity-50 text-[9px] lowercase tracking-normal font-medium">{suggestedPriority.reason}</span>
+                                    </button>
+                                ) : null}
+                            </div>
+                        )}
+
+                        {/* Priority row */}
+                        <div className="flex gap-1.5 p-1 bg-black/[0.03] rounded-xl border border-black/5 w-fit">
                             {(['super', 'high', 'mid', 'low'] as const).map(p => (
                                 <button
                                     key={p}
@@ -173,75 +292,130 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
                                 </button>
                             ))}
                         </div>
-                        <div className="flex items-center gap-2 bg-black/[0.03] border border-black/5 rounded-xl px-2 py-1.5">
-                            <select
-                                value={dueDateMode}
-                                onChange={(e) => setDueDateMode(e.target.value as any)}
-                                className="bg-transparent text-[10px] font-bold text-black/60 outline-none uppercase tracking-tight"
-                            >
-                                <option value="on">On</option>
-                                <option value="before">By</option>
-                                <option value="range">Range</option>
-                            </select>
-                            <div className="w-px h-3 bg-black/10" />
-                            <div className="flex items-center gap-1.5 min-w-[100px]">
-                                <Calendar className="w-3 h-3 text-black/30 shrink-0" />
-                                <input
-                                    type="date"
-                                    value={dueDate}
-                                    onChange={(e) => setDueDate(e.target.value)}
-                                    className="bg-transparent text-[11px] font-bold text-black/60 outline-none uppercase tracking-tight w-full"
-                                />
-                            </div>
+
+                        {/* Date mode selector */}
+                        <div className="flex flex-wrap gap-1.5">
+                            {(['none', 'on', 'before', 'range', 'recurring'] as const).map(mode => (
+                                <button
+                                    key={mode}
+                                    type="button"
+                                    onClick={() => setDueDateMode(mode)}
+                                    className={cn(
+                                        "px-2.5 py-1 text-[10px] font-bold rounded-lg border transition-all uppercase tracking-tight flex items-center gap-1",
+                                        dueDateMode === mode
+                                            ? mode === 'recurring' ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-black text-white border-black'
+                                            : 'bg-black/[0.03] border-black/5 text-black/40 hover:text-black/60'
+                                    )}
+                                >
+                                    {mode === 'none' && '✕ None'}
+                                    {mode === 'on' && '📅 On'}
+                                    {mode === 'before' && '⏰ By'}
+                                    {mode === 'range' && '↔ Range'}
+                                    {mode === 'recurring' && '🔁 Recurring'}
+                                </button>
+                            ))}
                         </div>
 
-                        {dueDateMode === 'range' && (
-                            <div className="flex items-center gap-2 bg-black/[0.03] border border-black/5 rounded-xl px-3 py-1.5">
-                                <span className="text-[10px] font-bold text-black/20 uppercase tracking-tighter">to</span>
-                                <div className="flex items-center gap-1.5 min-w-[100px]">
+                        {/* Date fields — hidden when None or Recurring */}
+                        {dueDateMode !== 'none' && dueDateMode !== 'recurring' && (
+                            <div className="flex flex-wrap items-center gap-2">
+                                <div className="flex items-center gap-1.5 bg-black/[0.03] border border-black/5 rounded-xl px-3 py-1.5">
                                     <Calendar className="w-3 h-3 text-black/30 shrink-0" />
                                     <input
                                         type="date"
-                                        value={endDate}
-                                        onChange={(e) => setEndDate(e.target.value)}
+                                        value={dueDate}
+                                        onChange={(e) => setDueDate(e.target.value)}
                                         className="bg-transparent text-[11px] font-bold text-black/60 outline-none uppercase tracking-tight w-full"
                                     />
                                 </div>
+                                {dueDateMode === 'range' && (
+                                    <div className="flex items-center gap-2 bg-black/[0.03] border border-black/5 rounded-xl px-3 py-1.5">
+                                        <span className="text-[10px] font-bold text-black/20 uppercase tracking-tighter">to</span>
+                                        <Calendar className="w-3 h-3 text-black/30 shrink-0" />
+                                        <input
+                                            type="date"
+                                            value={endDate}
+                                            onChange={(e) => setEndDate(e.target.value)}
+                                            className="bg-transparent text-[11px] font-bold text-black/60 outline-none uppercase tracking-tight w-full"
+                                        />
+                                    </div>
+                                )}
                             </div>
                         )}
 
-                        <button
-                            type="button"
-                            onClick={() => {
-                                if (recurrence === 'shift_relative') {
-                                    setRecurrence('none')
-                                    setDueDateMode('on')
-                                    setDueDate('')
-                                    setEndDate('')
-                                } else {
-                                    setRecurrence('shift_relative')
-                                    const { start, end } = getNextOffPeriod()
-                                    if (start.getTime() === end.getTime()) {
-                                        setDueDateMode('on')
-                                        setDueDate(start.toISOString().split('T')[0])
-                                        setEndDate('')
-                                    } else {
-                                        setDueDateMode('range')
-                                        setDueDate(start.toISOString().split('T')[0])
-                                        setEndDate(end.toISOString().split('T')[0])
-                                    }
-                                }
-                            }}
-                            className={cn(
-                                "px-3 py-1.5 text-[10px] font-bold rounded-xl border transition-all uppercase tracking-tight flex items-center gap-1.5",
-                                recurrence === 'shift_relative'
-                                    ? "bg-black text-white border-black"
-                                    : "bg-black/[0.03] border-black/5 text-black/40 hover:text-black/60"
-                            )}
-                        >
-                            <RefreshCw className="w-3.5 h-3.5" />
-                            On Days Off
-                        </button>
+                        {/* Recurring sub-panel */}
+                        {dueDateMode === 'recurring' && (
+                            <div className="flex flex-col gap-2 p-3 bg-emerald-50 border border-emerald-100 rounded-xl">
+                                <div className="flex flex-wrap gap-1.5">
+                                    {([
+                                        { value: 'daily', label: 'Daily' },
+                                        { value: 'weekdays', label: 'Weekdays' },
+                                        { value: 'weekends', label: 'Weekends' },
+                                        { value: 'work_days', label: 'Work Days' },
+                                        { value: 'off_days', label: 'Days Off' },
+                                        { value: 'weekly', label: 'Weekly' },
+                                        { value: 'custom', label: 'Custom' },
+                                    ] as const).map(opt => (
+                                        <button
+                                            key={opt.value}
+                                            type="button"
+                                            onClick={() => setRecurringType(opt.value)}
+                                            className={cn(
+                                                "px-2.5 py-1 text-[10px] font-bold rounded-lg border transition-all uppercase tracking-tight",
+                                                recurringType === opt.value
+                                                    ? 'bg-emerald-600 text-white border-emerald-700'
+                                                    : 'bg-white text-black/40 border-emerald-200 hover:text-black/60'
+                                            )}
+                                        >
+                                            {opt.label}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Weekly day picker */}
+                                {(recurringType === 'weekly' || recurringType === 'custom') && (
+                                    <div className="flex gap-1">
+                                        {['M', 'T', 'W', 'Th', 'F', 'Sa', 'Su'].map((day, i) => {
+                                            const dayNum = i === 6 ? 0 : i + 1
+                                            return (
+                                                <button
+                                                    key={day}
+                                                    type="button"
+                                                    className="w-7 h-7 rounded-md text-[10px] font-bold border border-emerald-200 bg-white text-black/50 hover:bg-emerald-100 transition-all"
+                                                >
+                                                    {day}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+
+                                {/* Time + Duration */}
+                                <div className="flex flex-wrap gap-2">
+                                    <div className="flex items-center gap-1.5 bg-white border border-emerald-200 rounded-lg px-2.5 py-1.5">
+                                        <span className="text-[10px] font-bold text-black/40 uppercase">Time</span>
+                                        <input
+                                            type="time"
+                                            value={recurringTime}
+                                            onChange={e => setRecurringTime(e.target.value)}
+                                            className="bg-transparent text-[11px] font-bold text-black/60 outline-none"
+                                        />
+                                    </div>
+                                    <div className="flex items-center gap-1.5 bg-white border border-emerald-200 rounded-lg px-2.5 py-1.5">
+                                        <span className="text-[10px] font-bold text-black/40 uppercase">Duration</span>
+                                        <input
+                                            type="number"
+                                            placeholder="mins"
+                                            value={recurringDuration}
+                                            onChange={e => setRecurringDuration(e.target.value)}
+                                            className="bg-transparent text-[11px] font-bold text-black/60 outline-none w-14"
+                                            min="5"
+                                            step="5"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </form>
@@ -273,8 +447,10 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
     const [editPriority, setEditPriority] = useState(task.priority)
     const [editDueDate, setEditDueDate] = useState(task.due_date ? task.due_date.split('T')[0] : '')
     const [editEndDate, setEditEndDate] = useState(task.end_date ? task.end_date.split('T')[0] : '')
-    const [editDueDateMode, setEditDueDateMode] = useState<Task['due_date_mode']>(task.due_date_mode || 'on')
-    const [editRecurrence, setEditRecurrence] = useState(task.recurrence_config?.type || 'none')
+    const [editDueDateMode, setEditDueDateMode] = useState<'none' | 'on' | 'before' | 'range' | 'recurring'>(task.recurrence_config && task.recurrence_config.type !== 'none' ? 'recurring' : (task.due_date_mode || 'none'))
+    const [editRecurrence, setEditRecurrence] = useState<'none' | 'daily' | 'weekdays' | 'weekends' | 'work_days' | 'off_days' | 'weekly' | 'custom'>(task.recurrence_config?.type && task.recurrence_config.type !== 'none' ? task.recurrence_config.type as any : 'off_days')
+    const [editRecurringTime, setEditRecurringTime] = useState(task.recurrence_config?.time || '')
+    const [editRecurringDuration, setEditRecurringDuration] = useState(task.recurrence_config?.duration_minutes?.toString() || '')
 
     const handleSave = () => {
         const updates: Partial<Task> = {}
@@ -294,15 +470,17 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
             updates.end_date = editEndDate || undefined
         }
 
-        if (editDueDateMode !== (task.due_date_mode || 'on')) updates.due_date_mode = editDueDateMode
-
-        const currentRecurrenceType = task.recurrence_config?.type || 'none'
-        if (editRecurrence !== currentRecurrenceType) {
-            if (editRecurrence === 'shift_relative') {
-                updates.recurrence_config = { type: 'shift_relative', target: 'off_days' }
-            } else if (editRecurrence === 'none') {
-                updates.recurrence_config = { type: 'none' }
-            }
+        if (editDueDateMode === 'recurring') {
+            updates.recurrence_config = { type: editRecurrence, time: editRecurringTime || undefined, duration_minutes: editRecurringDuration ? parseInt(editRecurringDuration) : undefined }
+            updates.due_date = undefined
+            updates.due_date_mode = undefined
+        } else if (editDueDateMode === 'none') {
+            updates.recurrence_config = { type: 'none' }
+            updates.due_date = undefined
+            updates.due_date_mode = undefined
+        } else {
+            updates.recurrence_config = { type: 'none' }
+            if (editDueDateMode !== (task.due_date_mode || 'on')) updates.due_date_mode = editDueDateMode as 'on' | 'before' | 'range'
         }
 
         if (Object.keys(updates).length > 0) {
@@ -337,70 +515,90 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
                 <div className="flex flex-col gap-3">
                     {/* Scheduling Options */}
                     <div className="flex items-center gap-2 flex-wrap">
-                        <select
-                            value={editDueDateMode}
-                            onChange={(e) => setEditDueDateMode(e.target.value as any)}
-                            className="bg-black/[0.03] border border-black/5 rounded-lg px-2 py-1 text-[10px] font-bold text-black/60 outline-none uppercase tracking-tight"
-                        >
-                            <option value="on">On Date</option>
-                            <option value="before">Before Date</option>
-                            <option value="range">Range</option>
-                        </select>
-
-                        <div className="flex items-center gap-2 bg-black/[0.03] border border-black/5 rounded-lg px-2.5 py-1 min-w-[110px]">
-                            <Calendar className="w-3 h-3 text-black/30 shrink-0" />
-                            <input
-                                type="date"
-                                value={editDueDate}
-                                onChange={(e) => setEditDueDate(e.target.value)}
-                                className="bg-transparent text-[10px] font-bold text-black/60 outline-none uppercase tracking-tight w-full"
-                            />
+                        {/* Date/Recurrence mode selector */}
+                        <div className="flex flex-wrap gap-1.5">
+                            {(['none', 'on', 'before', 'range', 'recurring'] as const).map(mode => (
+                                <button
+                                    key={mode}
+                                    type="button"
+                                    onClick={() => setEditDueDateMode(mode)}
+                                    className={cn(
+                                        "px-2 py-1 text-[9px] font-bold rounded-lg border transition-all uppercase tracking-tight",
+                                        editDueDateMode === mode
+                                            ? mode === 'recurring' ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-black text-white border-black'
+                                            : 'bg-black/[0.03] border-black/5 text-black/40 hover:text-black/60'
+                                    )}
+                                >
+                                    {mode === 'none' && 'None'}
+                                    {mode === 'on' && 'On'}
+                                    {mode === 'before' && 'By'}
+                                    {mode === 'range' && 'Range'}
+                                    {mode === 'recurring' && '🔁 Recurring'}
+                                </button>
+                            ))}
                         </div>
 
-                        {editDueDateMode === 'range' && (
-                            <>
-                                <span className="text-[10px] font-bold text-black/20 uppercase tracking-tighter">to</span>
+                        {/* Date inputs — hidden when None or Recurring */}
+                        {editDueDateMode !== 'none' && editDueDateMode !== 'recurring' && (
+                            <div className="flex flex-wrap items-center gap-2">
                                 <div className="flex items-center gap-2 bg-black/[0.03] border border-black/5 rounded-lg px-2.5 py-1 min-w-[110px]">
                                     <Calendar className="w-3 h-3 text-black/30 shrink-0" />
                                     <input
                                         type="date"
-                                        value={editEndDate}
-                                        onChange={(e) => setEditEndDate(e.target.value)}
+                                        value={editDueDate}
+                                        onChange={(e) => setEditDueDate(e.target.value)}
                                         className="bg-transparent text-[10px] font-bold text-black/60 outline-none uppercase tracking-tight w-full"
                                     />
                                 </div>
-                            </>
+                                {editDueDateMode === 'range' && (
+                                    <>
+                                        <span className="text-[10px] font-bold text-black/20 uppercase tracking-tighter">to</span>
+                                        <div className="flex items-center gap-2 bg-black/[0.03] border border-black/5 rounded-lg px-2.5 py-1 min-w-[110px]">
+                                            <Calendar className="w-3 h-3 text-black/30 shrink-0" />
+                                            <input
+                                                type="date"
+                                                value={editEndDate}
+                                                onChange={(e) => setEditEndDate(e.target.value)}
+                                                className="bg-transparent text-[10px] font-bold text-black/60 outline-none uppercase tracking-tight w-full"
+                                            />
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                         )}
 
-                        <button
-                            type="button"
-                            onClick={() => {
-                                if (editRecurrence === 'shift_relative') {
-                                    setEditRecurrence('none')
-                                } else {
-                                    setEditRecurrence('shift_relative')
-                                    const { start, end } = getNextOffPeriod()
-                                    if (start.getTime() === end.getTime()) {
-                                        setEditDueDateMode('on')
-                                        setEditDueDate(start.toISOString().split('T')[0])
-                                        setEditEndDate('')
-                                    } else {
-                                        setEditDueDateMode('range')
-                                        setEditDueDate(start.toISOString().split('T')[0])
-                                        setEditEndDate(end.toISOString().split('T')[0])
-                                    }
-                                }
-                            }}
-                            className={cn(
-                                "px-2.5 py-1 text-[10px] font-bold rounded-lg border transition-all uppercase tracking-tight flex items-center gap-1.5",
-                                editRecurrence === 'shift_relative'
-                                    ? "bg-black text-white border-black"
-                                    : "bg-black/[0.03] border-black/5 text-black/40 hover:text-black/60"
-                            )}
-                        >
-                            <RefreshCw className="w-3 h-3" />
-                            On Days Off
-                        </button>
+                        {/* Recurring sub-panel */}
+                        {editDueDateMode === 'recurring' && (
+                            <div className="flex flex-col gap-2 p-2.5 bg-emerald-50 border border-emerald-100 rounded-xl">
+                                <div className="flex flex-wrap gap-1">
+                                    {(['daily', 'weekdays', 'weekends', 'work_days', 'off_days', 'weekly', 'custom'] as const).map(rt => (
+                                        <button
+                                            key={rt}
+                                            type="button"
+                                            onClick={() => setEditRecurrence(rt)}
+                                            className={cn(
+                                                "px-2 py-0.5 text-[9px] font-bold rounded-md border transition-all uppercase tracking-tight",
+                                                editRecurrence === rt
+                                                    ? 'bg-emerald-600 text-white border-emerald-700'
+                                                    : 'bg-white text-black/40 border-emerald-200 hover:text-black/60'
+                                            )}
+                                        >
+                                            {rt.replace('_', ' ')}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    <div className="flex items-center gap-1 bg-white border border-emerald-200 rounded-md px-2 py-1">
+                                        <span className="text-[9px] font-bold text-black/40 uppercase">Time</span>
+                                        <input type="time" value={editRecurringTime} onChange={e => setEditRecurringTime(e.target.value)} className="bg-transparent text-[10px] font-bold text-black/60 outline-none" />
+                                    </div>
+                                    <div className="flex items-center gap-1 bg-white border border-emerald-200 rounded-md px-2 py-1">
+                                        <span className="text-[9px] font-bold text-black/40 uppercase">Dur.</span>
+                                        <input type="number" placeholder="mins" value={editRecurringDuration} onChange={e => setEditRecurringDuration(e.target.value)} className="bg-transparent text-[10px] font-bold text-black/60 outline-none w-12" min="5" step="5" />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex items-center justify-between flex-wrap gap-y-3 gap-x-2 border-t border-black/5 pt-3">

@@ -101,35 +101,44 @@ export function useDayPlanner(date: Date = new Date()) {
         }
 
         // 3. Add Tasks scheduled for this day
+        const dayOfWeek = date.getDay() // 0=Sun, 1=Mon...
+
         allTasks.forEach(task => {
+            let shouldInclude = false
+            let time = task.recurrence_config?.time || (isWorkDay ? '17:30' : '10:00')
+            let duration = task.recurrence_config?.duration_minutes
+
+            // Check direct due date
             if (task.due_date === dateStr) {
-                // If it's a specific time task (we might need a time field eventually, but for now we place it at 10am or 2pm)
-                const time = isWorkDay ? '17:30' : '10:00'
+                shouldInclude = true
+            } else if (task.recurrence_config && task.recurrence_config.type !== 'none') {
+                const type = task.recurrence_config.type
+                const daysOfWeek = task.recurrence_config.days_of_week || []
+
+                if (type === 'daily') shouldInclude = true
+                else if (type === 'weekdays' && dayOfWeek >= 1 && dayOfWeek <= 5) shouldInclude = true
+                else if (type === 'weekends' && (dayOfWeek === 0 || dayOfWeek === 6)) shouldInclude = true
+                else if (type === 'work_days' && isWorkDay) shouldInclude = true
+                else if (type === 'off_days' && !isWorkDay) shouldInclude = true
+                else if ((type === 'weekly' || type === 'custom') && daysOfWeek.includes(dayOfWeek)) shouldInclude = true
+
+                // Legacy fallback support
+                if ((type as any) === 'shift_relative') {
+                    if ((task.recurrence_config as any).target === 'off_days' && !isWorkDay) shouldInclude = true
+                    if ((task.recurrence_config as any).target === 'on_days' && isWorkDay) shouldInclude = true
+                }
+            }
+
+            if (shouldInclude) {
                 items.push({
-                    id: task.id,
+                    id: task.recurrence_config?.type && task.recurrence_config.type !== 'none' ? `${task.id}-${dateStr}` : task.id,
                     title: task.title,
                     time,
                     type: 'task',
                     is_completed: task.is_completed,
-                    profile: task.profile
+                    profile: task.profile,
+                    duration
                 })
-            }
-
-            // Handle shift-relative tasks (like Gym on days off)
-            if (task.recurrence_config?.type === 'shift_relative') {
-                const targetMatch = (task.recurrence_config.target === 'off_days' && !isWorkDay) ||
-                    (task.recurrence_config.target === 'on_days' && isWorkDay);
-
-                if (targetMatch) {
-                    items.push({
-                        id: `${task.id}-recurring`,
-                        title: task.title,
-                        time: isWorkDay ? '18:00' : '11:00',
-                        type: 'task',
-                        is_completed: false,
-                        profile: task.profile
-                    })
-                }
             }
         })
 

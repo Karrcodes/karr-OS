@@ -37,7 +37,6 @@ export function TasksLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter()
     const { activeProfile, setActiveProfile } = useTasksProfile()
 
-    const calendarHref = pathname === '/tasks/calendar' ? '/tasks/todo' : '/tasks/calendar'
     const isOnCalendar = pathname === '/tasks/calendar'
     const isPlanner = pathname === '/tasks/planner'
     const isGroceries = pathname === '/tasks/groceries'
@@ -53,34 +52,46 @@ export function TasksLayout({ children }: { children: React.ReactNode }) {
                     </div>
                     {/* Calendar + Planner buttons — always right of title on all screen sizes */}
                     <div className="flex items-center gap-2 flex-shrink-0">
-                        <Link
-                            href={calendarHref}
-                            className={cn(
-                                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border",
-                                isOnCalendar
-                                    ? "bg-black text-white border-black"
-                                    : "bg-white text-black/60 border-black/[0.08] hover:border-black/20"
-                            )}
-                        >
-                            <Calendar className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">{isOnCalendar ? '← Back' : 'Calendar'}</span>
-                        </Link>
-                        <Link
-                            href="/tasks/planner"
-                            className={cn(
-                                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border",
-                                isPlanner
-                                    ? "bg-black text-white border-black"
-                                    : "bg-white text-black/60 border-black/[0.08] hover:border-black/20"
-                            )}
-                        >
-                            <Activity className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">Planner</span>
-                        </Link>
+                        {/* Calendar: go back if currently on calendar, otherwise navigate to calendar */}
+                        {isOnCalendar ? (
+                            <button
+                                onClick={() => router.back()}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border bg-black text-white border-black"
+                            >
+                                <Calendar className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Calendar</span>
+                            </button>
+                        ) : (
+                            <Link
+                                href="/tasks/calendar"
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border bg-white text-black/60 border-black/[0.08] hover:border-black/20"
+                            >
+                                <Calendar className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Calendar</span>
+                            </Link>
+                        )}
+                        {/* Planner: go back if currently on planner, otherwise navigate to planner */}
+                        {isPlanner ? (
+                            <button
+                                onClick={() => router.back()}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border bg-black text-white border-black"
+                            >
+                                <Activity className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Planner</span>
+                            </button>
+                        ) : (
+                            <Link
+                                href="/tasks/planner"
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border bg-white text-black/60 border-black/[0.08] hover:border-black/20"
+                            >
+                                <Activity className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Planner</span>
+                            </Link>
+                        )}
                     </div>
                 </div>
-                {/* Row 2: ProfileToggle — only when needed */}
-                {!isPlanner && !isGroceries && (
+                {/* Row 2: ProfileToggle — hidden on Planner, Calendar, Groceries */}
+                {!isPlanner && !isGroceries && !isOnCalendar && (
                     <div className="mt-3">
                         <ProfileToggle activeProfile={activeProfile} setActiveProfile={setActiveProfile} />
                     </div>
@@ -114,13 +125,14 @@ export function TasksLayout({ children }: { children: React.ReactNode }) {
                 </div>
             )}
 
-            <div className="flex-1 overflow-y-auto min-h-0 flex flex-col">
-                <div className="p-6 flex-1 flex flex-col">
-                    <div className="max-w-3xl mx-auto w-full flex-1 flex flex-col">
-                        {children}
+            {/* Main content — flex-1 ensures children fill space, footer sticks to bottom */}
+            <div className="flex-1 overflow-y-auto min-h-0">
+                <div className="min-h-full flex flex-col">
+                    <div className="p-6 flex-1">
+                        <div className="max-w-3xl mx-auto w-full">
+                            {children}
+                        </div>
                     </div>
-                </div>
-                <div className="mt-auto">
                     <KarrFooter />
                 </div>
             </div>
