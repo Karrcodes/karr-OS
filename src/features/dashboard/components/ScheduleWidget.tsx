@@ -1,16 +1,59 @@
-'use client'
-
+import { useState } from 'react'
 import { Calendar as CalendarIcon, Clock, ChevronRight, Briefcase, Activity } from 'lucide-react'
 import { useSchedule, ScheduleItem } from '@/hooks/useSchedule'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 
 import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
+import { useTasks } from '@/features/tasks/hooks/useTasks'
+import { TaskDetailModal } from '@/features/tasks/components/TaskDetailModal'
+import type { Task } from '@/features/tasks/types/tasks.types'
 
 export function ScheduleWidget() {
     const { schedule, loading } = useSchedule(7, true) // Next 7 days, all profiles
     const { settings } = useSystemSettings()
+    const { toggleTask: toggleTodo, editTask: editTodo } = useTasks('todo', 'all')
+    const { toggleTask: toggleReminder, editTask: editReminder } = useTasks('reminder', 'all')
+    const [selectedTask, setSelectedTask] = useState<Task | null>(null)
     const today = new Date().toISOString().split('T')[0]
+
+    const handleToggleSubtask = async (taskId: string, idx: number) => {
+        const item = schedule.find(s => s.originalTask?.id === taskId)
+        const task = item?.originalTask
+        if (!task?.notes || task.notes.type !== 'checklist') return
+
+        const newContent = [...task.notes.content]
+        newContent[idx] = { ...newContent[idx], completed: !newContent[idx].completed }
+
+        const mutate = task.category === 'todo' ? editTodo : editReminder
+        await mutate(taskId, {
+            notes: {
+                type: task.notes.type,
+                content: newContent
+            }
+        })
+        setSelectedTask(prev => {
+            if (prev?.id === taskId && prev.notes && prev.notes.type === 'checklist') {
+                return {
+                    ...prev,
+                    notes: {
+                        type: prev.notes.type,
+                        content: newContent
+                    }
+                }
+            }
+            return prev
+        })
+    }
+
+    const handleToggleComplete = async (taskId: string, completed: boolean) => {
+        const item = schedule.find(s => s.originalTask?.id === taskId)
+        if (!item?.originalTask) return
+
+        const toggle = item.originalTask.category === 'todo' ? toggleTodo : toggleReminder
+        await toggle(taskId, completed)
+        setSelectedTask(prev => prev?.id === taskId ? { ...prev, is_completed: completed } : prev)
+    }
 
     return (
         <div className="rounded-2xl border border-black/[0.08] bg-white p-5 shadow-sm h-full flex flex-col">
@@ -42,8 +85,12 @@ export function ScheduleWidget() {
                         return (
                             <div
                                 key={item.id + idx}
+                                onClick={() => {
+                                    if (item.originalTask) setSelectedTask(item.originalTask)
+                                }}
                                 className={cn(
                                     "group flex items-center gap-3 p-3 rounded-xl border transition-all",
+                                    item.originalTask && "cursor-pointer",
                                     isToday
                                         ? "bg-black border-black text-white shadow-md shadow-black/10"
                                         : "bg-white border-black/[0.05] hover:border-black/[0.1] text-black"
@@ -88,6 +135,14 @@ export function ScheduleWidget() {
                 </div>
                 <div className="text-[10px] font-mono text-black/20">v1.2.0</div>
             </div>
+
+            <TaskDetailModal
+                task={selectedTask}
+                isOpen={!!selectedTask}
+                onClose={() => setSelectedTask(null)}
+                onToggleSubtask={handleToggleSubtask}
+                onToggleComplete={handleToggleComplete}
+            />
         </div>
     )
 }

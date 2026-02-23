@@ -1,11 +1,29 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
-import { Activity, ShoppingCart, Bell, Plus, Trash2, RefreshCw, Edit2, Calendar, X, GripVertical, User, Briefcase, ChevronDown, ChevronUp, List, CheckSquare, Type, LayoutList, ListChecks, GraduationCap } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import {
+    Plus,
+    Search,
+    Calendar,
+    Clock,
+    ChevronDown,
+    ChevronUp,
+    MoreVertical,
+    Trash2,
+    Edit2,
+    GripVertical,
+    Zap,
+    Briefcase,
+    User,
+    CheckSquare,
+    AlertCircle,
+    ArrowRight
+} from 'lucide-react'
+import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion'
 import { useTasks } from '../hooks/useTasks'
 import { cn } from '@/lib/utils'
-import { Reorder, useDragControls } from 'framer-motion'
 import type { Task } from '../types/tasks.types'
+import { TaskDetailModal } from './TaskDetailModal'
 import { getNextOffPeriod, isShiftDay } from '@/features/finance/utils/rotaUtils'
 
 const PRIORITY_CONFIG = {
@@ -15,9 +33,10 @@ const PRIORITY_CONFIG = {
     low: { label: 'Low', color: 'bg-black/5 text-black/60 border-black/10', sort: 3 }
 } as const
 
-export function TaskList({ category, title, icon: Icon }: { category: 'todo' | 'grocery' | 'reminder', title: string, icon: any }) {
+export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminder' }) {
     const { tasks, loading, createTask, toggleTask, deleteTask, clearAllTasks, clearCompletedTasks, editTask, updateTaskPositions } = useTasks(category)
-    const [newTask, setNewTask] = useState('')
+    const [selectedTaskForModal, setSelectedTaskForModal] = useState<Task | null>(null)
+    const [searchQuery, setSearchQuery] = useState('')
     const [amount, setAmount] = useState('1')
     const [priority, setPriority] = useState<'super' | 'high' | 'mid' | 'low'>('low')
     const [dueDate, setDueDate] = useState('')
@@ -50,6 +69,38 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
         confirmText: 'Confirm',
         type: 'danger'
     })
+
+    const handleModalToggleSubtask = async (taskId: string, idx: number) => {
+        const t = tasks.find(item => item.id === taskId)
+        if (!t?.notes || t.notes.type !== 'checklist') return
+
+        const newContent = [...(t.notes.content as any[])]
+        newContent[idx] = { ...newContent[idx], completed: !newContent[idx].completed }
+
+        await editTask(taskId, {
+            notes: {
+                type: t.notes.type,
+                content: newContent
+            }
+        })
+        setSelectedTaskForModal(prev => {
+            if (prev?.id === taskId && prev.notes && prev.notes.type === 'checklist') {
+                return {
+                    ...prev,
+                    notes: {
+                        type: prev.notes.type,
+                        content: newContent
+                    }
+                }
+            }
+            return prev
+        })
+    }
+
+    const handleModalToggleComplete = async (taskId: string, completed: boolean) => {
+        await toggleTask(taskId, completed)
+        setSelectedTaskForModal(prev => prev?.id === taskId ? { ...prev, is_completed: completed } : prev)
+    }
 
     // Intelligent Task System states
     const [isAnalyzingPriority, setIsAnalyzingPriority] = useState(false)
@@ -771,6 +822,14 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
                     ))
                 )}
             </Reorder.Group>
+
+            <TaskDetailModal
+                task={selectedTaskForModal}
+                isOpen={!!selectedTaskForModal}
+                onClose={() => setSelectedTaskForModal(null)}
+                onToggleSubtask={handleModalToggleSubtask}
+                onToggleComplete={handleModalToggleComplete}
+            />
         </div>
     )
 }
@@ -1230,12 +1289,18 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
                         <GripVertical className="w-4 h-4" />
                     </div>
                 )}
-                <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div
+                    className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
+                    onClick={() => setSelectedTaskForModal(task)}
+                >
                     <input
                         type="checkbox"
                         id={`task-${task.id}`}
                         checked={task.is_completed}
-                        onChange={(e) => toggleTask(task.id, e.target.checked)}
+                        onChange={(e) => {
+                            e.stopPropagation()
+                            toggleTask(task.id, e.target.checked)
+                        }}
                         className="w-5 h-5 rounded-lg border-2 border-black/10 checked:bg-black checked:border-black transition-all cursor-pointer accent-black shrink-0"
                     />
                     <div className="flex flex-col min-w-0 flex-1">

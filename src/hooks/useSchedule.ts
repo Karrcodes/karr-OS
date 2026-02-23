@@ -5,6 +5,7 @@ import { useTasks } from '@/features/tasks/hooks/useTasks'
 import { useRota } from '@/features/finance/hooks/useRota'
 import { isShiftDay } from '@/features/finance/utils/rotaUtils'
 import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
+import type { Task } from '@/features/tasks/types/tasks.types'
 
 export interface ScheduleItem {
     id: string
@@ -16,6 +17,7 @@ export interface ScheduleItem {
     due_date_mode?: 'on' | 'before' | 'range'
     end_date?: string
     profile?: string
+    originalTask?: Task
 }
 
 export function useSchedule(days: number = 14, allProfiles: boolean = false) {
@@ -59,7 +61,8 @@ export function useSchedule(days: number = 14, allProfiles: boolean = false) {
                             type: 'task',
                             priority: task.priority,
                             is_completed: task.is_completed,
-                            profile: task.profile
+                            profile: task.profile,
+                            originalTask: task
                         })
                     }
                 })
@@ -86,7 +89,8 @@ export function useSchedule(days: number = 14, allProfiles: boolean = false) {
                                 is_completed: task.is_completed,
                                 due_date_mode: 'range',
                                 end_date: task.end_date,
-                                profile: task.profile
+                                profile: task.profile,
+                                originalTask: task
                             })
                         }
                     })
@@ -100,7 +104,8 @@ export function useSchedule(days: number = 14, allProfiles: boolean = false) {
                             priority: task.priority,
                             is_completed: task.is_completed,
                             due_date_mode: 'before',
-                            profile: task.profile
+                            profile: task.profile,
+                            originalTask: task
                         })
                     }
                 } else {
@@ -114,7 +119,8 @@ export function useSchedule(days: number = 14, allProfiles: boolean = false) {
                             priority: task.priority,
                             is_completed: task.is_completed,
                             due_date_mode: 'on',
-                            profile: task.profile
+                            profile: task.profile,
+                            originalTask: task
                         })
                     }
                 }
