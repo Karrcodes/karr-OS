@@ -17,8 +17,8 @@ export function DayPlanner() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-[18px] font-bold text-black tracking-tight">Operations Blueprint</h2>
-                    <p className="text-[12px] text-black/40">Your optimized deployment for this {isWorkDay ? 'Work Day' : 'Day Off'}.</p>
+                    <h2 className="text-[18px] font-bold text-black tracking-tight">Operations Planner</h2>
+                    <p className="text-[12px] text-black/40">Your optimized plan for this {isWorkDay ? 'Work Day' : 'Day Off'}.</p>
                 </div>
                 <button
                     onClick={() => setIsSettingsOpen(!isSettingsOpen)}

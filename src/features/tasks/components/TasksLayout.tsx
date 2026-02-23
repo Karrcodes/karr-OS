@@ -8,10 +8,24 @@ import { cn } from '@/lib/utils'
 import { useTasksProfile } from '../contexts/TasksProfileContext'
 
 const TABS = [
-    { title: 'Deployment', href: '/tasks/todo', icon: Activity },
-    { title: 'Groceries', href: '/tasks/groceries', icon: ShoppingCart },
-    { title: 'Reminders', href: '/tasks/reminders', icon: Bell },
+    { title: 'Planner', href: '/tasks/planner', icon: Calendar, caps: ['P', 'B'] },
+    { title: 'Deployment', href: '/tasks/todo', icon: Activity, caps: ['P', 'B'] },
+    { title: 'Groceries', href: '/tasks/groceries', icon: ShoppingCart, caps: ['P'] },
+    { title: 'Reminders', href: '/tasks/reminders', icon: Bell, caps: ['P', 'B'] },
 ]
+
+function CapBadge({ cap }: { cap: 'P' | 'B' }) {
+    return (
+        <span className={cn(
+            "w-3.5 h-3.5 flex items-center justify-center rounded-[2px] text-[8px] font-bold border shrink-0 select-none ml-1.5",
+            cap === 'P'
+                ? "bg-blue-50 text-blue-600 border-blue-200/50"
+                : "bg-emerald-50 text-emerald-600 border-emerald-200/50"
+        )}>
+            {cap}
+        </span>
+    )
+}
 
 export function TasksLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
@@ -25,19 +39,37 @@ export function TasksLayout({ children }: { children: React.ReactNode }) {
                         <h1 className="text-[22px] font-bold text-black tracking-tight">Focus & Execution</h1>
                         <p className="text-[12px] text-black/40 mt-0.5">Manage core operations, groceries, and reminders sync'd across your devices.</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Link
-                            href="/tasks/planner"
-                            className={cn(
-                                "flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-[12px] font-bold transition-all border",
-                                pathname === '/tasks/planner'
-                                    ? "bg-black text-white border-black"
-                                    : "bg-white text-black/60 border-black/[0.08] hover:border-black/20"
-                            )}
-                        >
-                            <Calendar className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">Blueprint</span>
-                        </Link>
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        {/* Profile Toggle in Header */}
+                        <div className="flex bg-black/[0.04] p-0.5 rounded-lg shrink-0 border border-black/[0.04]">
+                            <button
+                                onClick={() => setActiveProfile('personal')}
+                                className={cn(
+                                    "p-1.5 px-2.5 sm:px-3 rounded-md flex items-center justify-center transition-all",
+                                    activeProfile === 'personal'
+                                        ? "bg-white text-black shadow-sm font-bold"
+                                        : "text-black/40 hover:text-black/60 font-medium"
+                                )}
+                                aria-label="Personal Profile"
+                            >
+                                <User className="w-3.5 h-3.5 sm:hidden" />
+                                <span className="hidden sm:inline text-[11px]">Personal</span>
+                            </button>
+                            <button
+                                onClick={() => setActiveProfile('business')}
+                                className={cn(
+                                    "p-1.5 px-2.5 sm:px-3 rounded-md flex items-center justify-center transition-all",
+                                    activeProfile === 'business'
+                                        ? "bg-white text-black shadow-sm font-bold"
+                                        : "text-black/40 hover:text-black/60 font-medium"
+                                )}
+                                aria-label="Business Profile"
+                            >
+                                <Briefcase className="w-3.5 h-3.5 sm:hidden" />
+                                <span className="hidden sm:inline text-[11px]">Business</span>
+                            </button>
+                        </div>
+                        <div className="w-px h-5 bg-black/[0.08]" />
                         <Link
                             href="/tasks/calendar"
                             className={cn(
@@ -53,35 +85,8 @@ export function TasksLayout({ children }: { children: React.ReactNode }) {
                     </div>
                 </div>
 
-                {/* Mobile/Tablet Tabs & Toggle */}
+                {/* Mobile/Tablet Tabs */}
                 <div className="flex items-center gap-4 mt-6 overflow-x-auto no-scrollbar pb-1">
-                    {/* Profile Toggle */}
-                    <div className="flex bg-black/[0.04] p-0.5 rounded-lg shrink-0">
-                        <button
-                            onClick={() => setActiveProfile('personal')}
-                            className={cn(
-                                "p-1.5 px-2.5 rounded-md flex items-center gap-1.5 transition-all",
-                                activeProfile === 'personal'
-                                    ? "bg-white text-black shadow-sm"
-                                    : "text-black/40 hover:text-black/60"
-                            )}
-                        >
-                            <User className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                            onClick={() => setActiveProfile('business')}
-                            className={cn(
-                                "p-1.5 px-2.5 rounded-md flex items-center gap-1.5 transition-all",
-                                activeProfile === 'business'
-                                    ? "bg-white text-black shadow-sm"
-                                    : "text-black/40 hover:text-black/60"
-                            )}
-                        >
-                            <Briefcase className="w-3.5 h-3.5" />
-                        </button>
-                    </div>
-
-                    <div className="w-px h-4 bg-black/10 shrink-0" />
 
                     {TABS.filter(tab => !(activeProfile === 'business' && tab.href.includes('groceries'))).map(tab => {
                         const isActive = pathname === tab.href
@@ -98,7 +103,9 @@ export function TasksLayout({ children }: { children: React.ReactNode }) {
                                 )}
                             >
                                 <Icon className="w-4 h-4" />
-                                <span className="text-[13px]">{tab.title}</span>
+                                <span className="text-[13px] flex items-center">{tab.title}
+                                    {tab.caps.map(c => <CapBadge key={c} cap={c as 'P' | 'B'} />)}
+                                </span>
                             </Link>
                         )
                     })}

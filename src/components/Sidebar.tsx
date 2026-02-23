@@ -26,9 +26,10 @@ const navItems = [
         href: '/tasks',
         icon: Activity,
         sub: [
-            { label: 'Deployment', href: '/tasks/todo', icon: Activity },
-            { label: 'Groceries', href: '/tasks/groceries', icon: ShoppingCart },
-            { label: 'Reminders', href: '/tasks/reminders', icon: Bell }
+            { label: 'Planner', href: '/tasks/planner', icon: Calendar, caps: ['P', 'B'] },
+            { label: 'Deployment', href: '/tasks/todo', icon: Activity, caps: ['P', 'B'] },
+            { label: 'Groceries', href: '/tasks/groceries', icon: ShoppingCart, caps: ['P'] },
+            { label: 'Reminders', href: '/tasks/reminders', icon: Bell, caps: ['P', 'B'] }
         ]
     },
     {
