@@ -22,7 +22,11 @@ import {
     ShoppingCart,
     Bell,
     X,
-    RefreshCw
+    RefreshCw,
+    LayoutList,
+    Type,
+    List,
+    ListChecks
 } from 'lucide-react'
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion'
 import { useTasks } from '../hooks/useTasks'
@@ -828,6 +832,7 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
                             deleteTask={handleDeleteWithSafety}
                             editTask={editTask}
                             category={category}
+                            setSelectedTaskForModal={setSelectedTaskForModal}
                         />
                     ))
                 )}
@@ -845,7 +850,14 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
 }
 
 
-function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: Task, toggleTask: any, deleteTask: any, editTask: any, category: string }) {
+function TaskRow({ task, toggleTask, deleteTask, editTask, category, setSelectedTaskForModal }: {
+    task: Task,
+    toggleTask: any,
+    deleteTask: any,
+    editTask: any,
+    category: string,
+    setSelectedTaskForModal: (task: Task) => void
+}) {
     const controls = useDragControls()
     const [isEditing, setIsEditing] = useState(false)
     const [isExpanded, setIsExpanded] = useState(false)
