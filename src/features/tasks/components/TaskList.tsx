@@ -169,7 +169,8 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
     const expandedTasks: (Task & { _recurringDate?: string })[] = []
 
     sortedTasks.forEach(task => {
-        if (task.recurrence_config && task.recurrence_config.type !== 'none') {
+        // Only apply special filtering if it HAS a valid recurrence type
+        if (task.recurrence_config && task.recurrence_config.type && task.recurrence_config.type !== 'none') {
             const type = task.recurrence_config.type
             const daysOfWeek = task.recurrence_config.days_of_week || []
             let shouldInclude = false
@@ -191,6 +192,7 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
                 expandedTasks.push({ ...task, id: `${task.id}__${dateStr}`, _recurringDate: dateStr })
             }
         } else {
+            // Task has NO recurrence or type is 'none' -> ALWAYS include
             expandedTasks.push(task)
         }
     })

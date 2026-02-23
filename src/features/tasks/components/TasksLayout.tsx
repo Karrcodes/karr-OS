@@ -125,16 +125,14 @@ export function TasksLayout({ children }: { children: React.ReactNode }) {
                 </div>
             )}
 
-            {/* Main content — flex-1 ensures children fill space, footer sticks to bottom */}
-            <div className="flex-1 overflow-y-auto min-h-0">
-                <div className="min-h-full flex flex-col">
-                    <div className="p-6 flex-1">
-                        <div className="max-w-3xl mx-auto w-full">
-                            {children}
-                        </div>
+            {/* Main content — ensured to fill screen so footer is pinned to absolute bottom */}
+            <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
+                <div className="flex-1 p-6">
+                    <div className="max-w-3xl mx-auto w-full">
+                        {children}
                     </div>
-                    <KarrFooter />
                 </div>
+                <KarrFooter />
             </div>
         </div>
     )
