@@ -5,6 +5,7 @@ import { Activity, ShoppingCart, Bell, Plus, Trash2, RefreshCw, Edit2, Calendar 
 import { useTasks } from '../hooks/useTasks'
 import { cn } from '@/lib/utils'
 import type { Task } from '../types/tasks.types'
+import { getNextOffPeriod } from '@/features/finance/utils/rotaUtils'
 
 const PRIORITY_CONFIG = {
     super: { label: 'Super', color: 'bg-blue-50 text-blue-600 border-blue-200', sort: 0 },
@@ -19,6 +20,9 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
     const [amount, setAmount] = useState('1')
     const [priority, setPriority] = useState<'super' | 'high' | 'mid' | 'low'>('low')
     const [dueDate, setDueDate] = useState('')
+    const [dueDateMode, setDueDateMode] = useState<'on' | 'before' | 'range'>('on')
+    const [endDate, setEndDate] = useState('')
+    const [recurrence, setRecurrence] = useState<'none' | 'shift_relative'>('none')
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -31,11 +35,22 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
                 finalAmount = `x${finalAmount}`
             }
 
-            await createTask(finalTitle, priority, dueDate || undefined, category === 'grocery' ? finalAmount : undefined)
+            await createTask(
+                finalTitle,
+                priority,
+                dueDate || undefined,
+                category === 'grocery' ? finalAmount : undefined,
+                dueDateMode,
+                endDate || undefined,
+                recurrence === 'shift_relative' ? { type: 'shift_relative', target: 'off_days' } : {}
+            )
             setNewTask('')
             setAmount('1')
             setPriority('low')
             setDueDate('')
+            setDueDateMode('on')
+            setEndDate('')
+            setRecurrence('none')
         } catch (err: any) {
             console.error('Operation creation failed:', err)
             alert(err.message || 'Failed to create operation. Please check your connection.')
@@ -66,7 +81,7 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
     })
 
     return (
-        <div className="bg-white rounded-xl border border-black/[0.08] p-5 shadow-sm flex flex-col min-h-[500px]">
+        <div className="bg-white rounded-xl border border-black/[0.08] p-4 sm:p-5 shadow-sm flex flex-col min-h-[500px]">
             <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-black/5 border border-black/10 flex items-center justify-center">
@@ -88,14 +103,14 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
             </div>
 
             <form onSubmit={handleSubmit} className="mb-5 flex flex-col gap-2">
-                <div className="flex gap-2">
+                <div className="flex gap-1.5 sm:gap-2">
                     {category === 'grocery' && (
                         <input
                             type="text"
                             value={amount}
                             onChange={(e) => setAmount(e.target.value)}
                             placeholder="x1"
-                            className="w-16 bg-black/[0.03] border border-black/[0.08] rounded-xl px-2 py-2.5 text-[13px] text-center text-black placeholder-black/30 outline-none focus:border-black/40 transition-colors shrink-0"
+                            className="w-12 sm:w-16 bg-black/[0.03] border border-black/[0.08] rounded-xl px-1 sm:px-2 py-2.5 text-[13px] text-center text-black placeholder-black/30 outline-none focus:border-black/40 transition-colors shrink-0"
                         />
                     )}
                     <input
@@ -103,7 +118,7 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
                         value={newTask}
                         onChange={(e) => setNewTask(e.target.value)}
                         placeholder={`Add new ${category === 'todo' ? 'operation' : 'item'}...`}
-                        className="flex-1 bg-black/[0.03] border border-black/[0.08] rounded-xl px-4 py-2.5 text-[13px] text-black placeholder-black/30 outline-none focus:border-black/40 transition-colors"
+                        className="flex-1 min-w-0 bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 sm:px-4 py-2.5 text-[13px] text-black placeholder-black/30 outline-none focus:border-black/40 transition-colors"
                     />
                     <button
                         type="submit"
@@ -132,15 +147,72 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
                                 </button>
                             ))}
                         </div>
-                        <div className="flex items-center gap-2 bg-black/[0.03] border border-black/5 rounded-xl px-3 py-1.5">
-                            <Calendar className="w-3.5 h-3.5 text-black/30" />
-                            <input
-                                type="date"
-                                value={dueDate}
-                                onChange={(e) => setDueDate(e.target.value)}
-                                className="bg-transparent text-[11px] font-bold text-black/60 outline-none uppercase tracking-tight"
-                            />
+                        <div className="flex items-center gap-2 bg-black/[0.03] border border-black/5 rounded-xl px-2 py-1.5">
+                            <select
+                                value={dueDateMode}
+                                onChange={(e) => setDueDateMode(e.target.value as any)}
+                                className="bg-transparent text-[10px] font-bold text-black/60 outline-none uppercase tracking-tight"
+                            >
+                                <option value="on">On</option>
+                                <option value="before">By</option>
+                                <option value="range">Range</option>
+                            </select>
+                            <div className="w-px h-3 bg-black/10" />
+                            <div className="flex items-center gap-1.5 min-w-[100px]">
+                                <Calendar className="w-3 h-3 text-black/30 shrink-0" />
+                                <input
+                                    type="date"
+                                    value={dueDate}
+                                    onChange={(e) => setDueDate(e.target.value)}
+                                    className="bg-transparent text-[11px] font-bold text-black/60 outline-none uppercase tracking-tight w-full"
+                                />
+                            </div>
                         </div>
+
+                        {dueDateMode === 'range' && (
+                            <div className="flex items-center gap-2 bg-black/[0.03] border border-black/5 rounded-xl px-3 py-1.5">
+                                <span className="text-[10px] font-bold text-black/20 uppercase tracking-tighter">to</span>
+                                <div className="flex items-center gap-1.5 min-w-[100px]">
+                                    <Calendar className="w-3 h-3 text-black/30 shrink-0" />
+                                    <input
+                                        type="date"
+                                        value={endDate}
+                                        onChange={(e) => setEndDate(e.target.value)}
+                                        className="bg-transparent text-[11px] font-bold text-black/60 outline-none uppercase tracking-tight w-full"
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (recurrence === 'shift_relative') {
+                                    setRecurrence('none')
+                                } else {
+                                    setRecurrence('shift_relative')
+                                    const { start, end } = getNextOffPeriod()
+                                    if (start.getTime() === end.getTime()) {
+                                        setDueDateMode('on')
+                                        setDueDate(start.toISOString().split('T')[0])
+                                        setEndDate('')
+                                    } else {
+                                        setDueDateMode('range')
+                                        setDueDate(start.toISOString().split('T')[0])
+                                        setEndDate(end.toISOString().split('T')[0])
+                                    }
+                                }
+                            }}
+                            className={cn(
+                                "px-3 py-1.5 text-[10px] font-bold rounded-xl border transition-all uppercase tracking-tight flex items-center gap-1.5",
+                                recurrence === 'shift_relative'
+                                    ? "bg-black text-white border-black"
+                                    : "bg-black/[0.03] border-black/5 text-black/40 hover:text-black/60"
+                            )}
+                        >
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            On Days Off
+                        </button>
                     </div>
                 )}
             </form>
@@ -273,7 +345,23 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category }: { task: T
 
                         <button
                             type="button"
-                            onClick={() => setEditRecurrence(prev => prev === 'shift_relative' ? 'none' : 'shift_relative')}
+                            onClick={() => {
+                                if (editRecurrence === 'shift_relative') {
+                                    setEditRecurrence('none')
+                                } else {
+                                    setEditRecurrence('shift_relative')
+                                    const { start, end } = getNextOffPeriod()
+                                    if (start.getTime() === end.getTime()) {
+                                        setEditDueDateMode('on')
+                                        setEditDueDate(start.toISOString().split('T')[0])
+                                        setEditEndDate('')
+                                    } else {
+                                        setEditDueDateMode('range')
+                                        setEditDueDate(start.toISOString().split('T')[0])
+                                        setEditEndDate(end.toISOString().split('T')[0])
+                                    }
+                                }
+                            }}
                             className={cn(
                                 "px-2.5 py-1 text-[10px] font-bold rounded-lg border transition-all uppercase tracking-tight flex items-center gap-1.5",
                                 editRecurrence === 'shift_relative'

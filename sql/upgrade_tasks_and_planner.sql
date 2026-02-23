@@ -34,3 +34,19 @@ CREATE TABLE IF NOT EXISTS fin_day_planner_settings (
 
 -- Index for recurrence lookups
 CREATE INDEX IF NOT EXISTS idx_fin_tasks_recurrence ON fin_tasks USING gin (recurrence_config);
+
+-- 3. Enable RLS and add policies
+ALTER TABLE fin_day_planner_settings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own planner settings"
+    ON fin_day_planner_settings FOR SELECT
+    USING (auth.uid() = profile);
+
+CREATE POLICY "Users can update their own planner settings"
+    ON fin_day_planner_settings FOR UPDATE
+    USING (auth.uid() = profile)
+    WITH CHECK (auth.uid() = profile);
+
+CREATE POLICY "Users can insert their own planner settings"
+    ON fin_day_planner_settings FOR INSERT
+    WITH CHECK (auth.uid() = profile);

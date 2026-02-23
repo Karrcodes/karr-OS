@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Task } from '../types/tasks.types'
-import { useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
+import { useTasksProfile } from '@/features/tasks/contexts/TasksProfileContext'
 import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
 import { MOCK_TASKS } from '@/lib/demoData'
 
@@ -13,7 +13,7 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder') {
     const [tasks, setTasks] = useState<Task[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-    const { activeProfile } = useFinanceProfile()
+    const { activeProfile } = useTasksProfile()
     const { settings } = useSystemSettings()
 
     const getSessionTasks = useCallback(() => {

@@ -17,8 +17,8 @@ export function DayPlanner() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-[18px] font-bold text-black tracking-tight">Today's Blueprint</h2>
-                    <p className="text-[12px] text-black/40">Your optimized blueprint for this {isWorkDay ? 'Work Day' : 'Day Off'}.</p>
+                    <h2 className="text-[18px] font-bold text-black tracking-tight">Operations Blueprint</h2>
+                    <p className="text-[12px] text-black/40">Your optimized deployment for this {isWorkDay ? 'Work Day' : 'Day Off'}.</p>
                 </div>
                 <button
                     onClick={() => setIsSettingsOpen(!isSettingsOpen)}
@@ -81,9 +81,9 @@ export function DayPlanner() {
                 </div>
             )}
 
-            <div className="relative space-y-4 before:absolute before:left-[17px] before:top-2 before:bottom-2 before:w-px before:bg-black/5">
+            <div className="relative space-y-4 before:absolute before:left-[18px] before:top-2 before:bottom-2 before:w-px before:bg-black/5">
                 {plannerItems.map((item) => (
-                    <div key={item.id} className="flex gap-4 relative group">
+                    <div key={item.id} className="flex gap-4 items-center relative group">
                         <div className={cn(
                             "w-9 h-9 rounded-full border border-black/5 flex items-center justify-center bg-white z-10 shrink-0 shadow-sm transition-transform group-hover:scale-110",
                             item.type === 'shift' ? "bg-blue-50 border-blue-100 text-blue-600" :
