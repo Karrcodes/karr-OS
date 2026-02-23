@@ -148,10 +148,6 @@ export default function GoalDetailSheet({ goal, isOpen, onClose, onToggleMilesto
                                 <div className="md:col-span-2 space-y-6">
                                     <div className="flex items-center justify-between">
                                         <h3 className="text-[12px] font-bold uppercase tracking-widest text-black/40">Tactical Milestones</h3>
-                                        <button className="flex items-center gap-1.5 text-blue-600 hover:text-blue-700 font-bold text-[12px] transition-all group">
-                                            <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform" />
-                                            Add Milestone
-                                        </button>
                                     </div>
 
                                     <div className="space-y-4">

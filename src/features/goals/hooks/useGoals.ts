@@ -81,9 +81,11 @@ export function useGoals() {
 
             const { data: { session } } = await supabase.auth.getSession()
             const userId = session?.user?.id || 'anonymous'
+            console.log('Upload check - User ID:', userId, 'Role:', session?.user?.role)
 
             let finalImageUrl = data.vision_image_url
             if (imageFile) {
+                console.log('Attempting storage upload for:', imageFile.name)
                 const ext = imageFile.name.split('.').pop() || 'jpg'
                 const path = `goals/${userId}/${Date.now()}.${ext}`
                 const { error: uploadError } = await supabase.storage
@@ -92,7 +94,7 @@ export function useGoals() {
 
                 if (uploadError) {
                     console.error('Image upload failed:', uploadError)
-                    throw new Error(`Upload failed: ${uploadError.message}`)
+                    throw new Error(`Upload failed: ${uploadError.message}. Ensure you are signed in and bucket policies are applied.`)
                 }
 
                 const { data: urlData } = supabase.storage.from('goal-images').getPublicUrl(path)
@@ -159,12 +161,14 @@ export function useGoals() {
 
             const { data: { session } } = await supabase.auth.getSession()
             const userId = session?.user?.id || 'anonymous'
+            console.log('Update check - User ID:', userId, 'Role:', session?.user?.role)
 
             // Fetch the existing goal to get the current vision_image_url if needed
             const { data: existingGoal } = await supabase.from('sys_goals').select('vision_image_url').eq('id', id).single()
 
             let finalImageUrl = updates.vision_image_url || existingGoal?.vision_image_url
             if (imageFile) {
+                console.log('Attempting storage update for:', imageFile.name)
                 const ext = imageFile.name.split('.').pop() || 'jpg'
                 const path = `goals/${userId}/${Date.now()}.${ext}`
                 const { error: uploadError } = await supabase.storage
@@ -172,8 +176,8 @@ export function useGoals() {
                     .upload(path, imageFile, { upsert: true, cacheControl: '3600' })
 
                 if (uploadError) {
-                    console.error('Image upload failed:', uploadError)
-                    throw new Error(`Upload failed: ${uploadError.message}`)
+                    console.error('Image upload failed during update:', uploadError)
+                    throw new Error(`Upload failed: ${uploadError.message}. Ensure you are signed in and bucket policies are updated.`)
                 }
 
                 const { data: urlData } = supabase.storage.from('goal-images').getPublicUrl(path)
