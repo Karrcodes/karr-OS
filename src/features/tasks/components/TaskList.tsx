@@ -36,6 +36,7 @@ const PRIORITY_CONFIG = {
 export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminder' }) {
     const { tasks, loading, createTask, toggleTask, deleteTask, clearAllTasks, clearCompletedTasks, editTask, updateTaskPositions } = useTasks(category)
     const [selectedTaskForModal, setSelectedTaskForModal] = useState<Task | null>(null)
+    const [newTask, setNewTask] = useState('')
     const [searchQuery, setSearchQuery] = useState('')
     const [amount, setAmount] = useState('1')
     const [priority, setPriority] = useState<'super' | 'high' | 'mid' | 'low'>('low')
