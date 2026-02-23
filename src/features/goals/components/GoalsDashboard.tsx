@@ -2,13 +2,13 @@
 
 import React, { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Wallet, Briefcase, Heart, User, LayoutGrid, Calendar, Image as ImageIcon, Search, Filter } from 'lucide-react'
+import { Plus, Wallet, Briefcase, Heart, User, LayoutGrid, Image as ImageIcon, Search, Filter } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useGoals } from '../hooks/useGoals'
 import GoalCreationModal from './GoalCreationModal'
 import GoalsViewSwitcher, { type GoalsView } from './GoalsViewSwitcher'
 import GoalsMatrix from './GoalsMatrix'
-import GoalsTimeline from './GoalsTimeline'
+import GoalsRoadmap from './GoalsRoadmap'
 import GoalsVisionBoard from './GoalsVisionBoard'
 import GoalDetailSheet from './GoalDetailSheet'
 import type { Goal, GoalCategory } from '../types/goals.types'
@@ -60,34 +60,37 @@ export default function GoalsDashboard() {
 
             {/* Scrollable Workspace */}
             <div className="flex-1 flex flex-col min-h-0 overflow-y-auto bg-[#fafafa]">
-                <div className="p-8 space-y-8 max-w-[1600px] mx-auto w-full">
-                    {/* Toolbar */}
-                    <div className="flex flex-col gap-4 bg-white border border-black/[0.06] p-4 md:p-5 rounded-2xl shadow-sm">
-                        <div className="relative w-full text-black">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
-                            <input
-                                type="text"
-                                placeholder="Search strategy..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full bg-black/[0.02] border-transparent focus:bg-white focus:border-black/5 rounded-xl pl-11 pr-4 py-3 md:py-3.5 text-sm font-bold placeholder:text-black/20 outline-none transition-all placeholder:font-bold"
-                            />
-                        </div>
-                        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar w-full pb-1 md:pb-0 scroll-smooth">
-                            <div className="flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-black/30 border-r border-black/5 mr-1 shrink-0">
-                                <Filter className="w-3.5 h-3.5" />
-                                Filter
+                <div className={view === 'timeline' ? "p-4 md:p-6 h-full flex flex-col" : "p-4 md:p-8 space-y-6 max-w-[1600px] mx-auto w-full"}>
+
+                    {/* Toolbar — hidden for roadmap view */}
+                    {view !== 'timeline' && (
+                        <div className="flex flex-col gap-4 bg-white border border-black/[0.06] p-4 md:p-5 rounded-2xl shadow-sm">
+                            <div className="relative w-full text-black">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
+                                <input
+                                    type="text"
+                                    placeholder="Search strategy..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full bg-black/[0.02] border-transparent focus:bg-white focus:border-black/5 rounded-xl pl-11 pr-4 py-3 md:py-3.5 text-sm font-bold placeholder:text-black/20 outline-none transition-all placeholder:font-bold"
+                                />
                             </div>
-                            {['finance', 'career', 'health', 'personal'].map((cat) => (
-                                <button
-                                    key={cat}
-                                    className="whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-black/[0.03] text-black/40 hover:bg-black hover:text-white transition-all border border-transparent hover:border-black/10 shrink-0"
-                                >
-                                    {cat}
-                                </button>
-                            ))}
+                            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar w-full pb-1 md:pb-0 scroll-smooth">
+                                <div className="flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-black/30 border-r border-black/5 mr-1 shrink-0">
+                                    <Filter className="w-3.5 h-3.5" />
+                                    Filter
+                                </div>
+                                {['finance', 'career', 'health', 'personal'].map((cat) => (
+                                    <button
+                                        key={cat}
+                                        className="whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-black/[0.03] text-black/40 hover:bg-black hover:text-white transition-all border border-transparent hover:border-black/10 shrink-0"
+                                    >
+                                        {cat}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* Viewport */}
                     <motion.div
@@ -95,10 +98,10 @@ export default function GoalsDashboard() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3 }}
-                        className="pb-20"
+                        className={view === 'timeline' ? "flex-1 min-h-[600px]" : "pb-20"}
                     >
                         {view === 'matrix' && <GoalsMatrix goals={filteredGoals} onGoalClick={setSelectedGoal} />}
-                        {view === 'timeline' && <GoalsTimeline goals={filteredGoals} onGoalClick={setSelectedGoal} />}
+                        {view === 'timeline' && <GoalsRoadmap goals={filteredGoals} onGoalClick={setSelectedGoal} />}
                         {view === 'vision' && <GoalsVisionBoard goals={filteredGoals} onGoalClick={setSelectedGoal} />}
                     </motion.div>
                 </div>

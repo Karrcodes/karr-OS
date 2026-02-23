@@ -230,7 +230,7 @@ export default function GoalCreationModal({ isOpen, onClose, onSave }: GoalCreat
 
                                     <div className="space-y-3 md:space-y-4">
                                         <label className="text-[10px] md:text-[11px] font-bold text-black/40 uppercase tracking-widest ml-1">Target Deadline</label>
-                                        <div className="relative group text-black/60">
+                                        <div className="relative group text-black/60 w-full">
                                             <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
                                             <input
                                                 type="date"
