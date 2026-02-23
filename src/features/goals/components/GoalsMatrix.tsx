@@ -48,7 +48,7 @@ export default function GoalsMatrix({ goals, onGoalClick }: GoalsMatrixProps) {
                         <span className="text-[11px] text-black/35 font-medium">
                             {TIMEFRAME_CONFIG[timeframe].desc}
                         </span>
-                        <div className="ml-auto bg-black/[0.04] px-1.5 py-0.5 rounded text-[9px] font-black font-mono text-black/20">
+                        <div className="ml-auto bg-black/[0.04] px-1.5 py-0.5 rounded text-[9px] font-bold font-mono text-black/20">
                             {groupedGoals[timeframe].length}
                         </div>
                     </div>
@@ -97,7 +97,7 @@ function GoalMatrixCard({ goal, index, onClick }: { goal: Goal, index: number, o
                         <config.icon className="w-4 h-4" />
                     </div>
                     {goal.priority === 'super' && (
-                        <div className="px-2 py-0.5 bg-amber-500/10 text-amber-600 rounded-full text-[9px] font-black uppercase tracking-wider animate-pulse">
+                        <div className="px-2 py-0.5 bg-amber-500/10 text-amber-600 rounded-full text-[9px] font-bold uppercase tracking-wider animate-pulse">
                             Super Priority
                         </div>
                     )}

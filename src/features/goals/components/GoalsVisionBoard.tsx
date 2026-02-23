@@ -21,7 +21,7 @@ export default function GoalsVisionBoard({ goals, onGoalClick }: GoalsVisionBoar
                     <Target className="w-8 h-8 text-black/20" />
                 </div>
                 <div>
-                    <h3 className="text-sm font-black uppercase tracking-widest text-black/40">Visualizer Empty</h3>
+                    <h3 className="text-sm font-bold uppercase tracking-widest text-black/40">Visualizer Empty</h3>
                     <p className="text-[12px] text-black/25 mt-1 max-w-[240px]">Attach vision images to your objectives to populate the board.</p>
                 </div>
             </div>

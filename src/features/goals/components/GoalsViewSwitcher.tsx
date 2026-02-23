@@ -25,14 +25,14 @@ export default function GoalsViewSwitcher({ currentView, onViewChange }: GoalsVi
                     key={view.id}
                     onClick={() => onViewChange(view.id)}
                     className={cn(
-                        "flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-bold transition-all",
+                        "flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg text-[13px] font-bold transition-all",
                         currentView === view.id
                             ? "bg-white text-black shadow-sm"
                             : "text-black/40 hover:text-black/60 hover:bg-black/[0.02]"
                     )}
                 >
                     <view.icon className={cn("w-4 h-4", currentView === view.id ? "text-black" : "text-black/40")} />
-                    {view.label}
+                    <span className="hidden md:block">{view.label}</span>
                 </button>
             ))}
         </div>

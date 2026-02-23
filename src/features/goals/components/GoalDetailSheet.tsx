@@ -51,17 +51,17 @@ export default function GoalDetailSheet({ goal, isOpen, onClose, onToggleMilesto
                         <div className="max-w-3xl mx-auto px-6 pb-12">
                             <div className="flex items-start justify-between mb-8">
                                 <div className="space-y-3">
-                                    <div className="flex items-center gap-2">
-                                        <span className="px-2.5 py-1 bg-black text-white rounded-lg text-[10px] font-bold uppercase tracking-wider">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="px-2 md:px-2.5 py-1 bg-black text-white rounded-lg text-[9px] md:text-[10px] font-bold uppercase tracking-wider">
                                             {goal.category}
                                         </span>
-                                        <div className="w-1 h-1 rounded-full bg-black/10" />
-                                        <span className="px-2.5 py-1 bg-black/[0.04] text-black/50 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-black/5">
+                                        <div className="hidden xs:block w-1 h-1 rounded-full bg-black/10" />
+                                        <span className="px-2 md:px-2.5 py-1 bg-black/[0.04] text-black/50 rounded-lg text-[9px] md:text-[10px] font-bold uppercase tracking-wider border border-black/5">
                                             {goal.timeframe} Horizon
                                         </span>
                                     </div>
-                                    <h2 className="text-[32px] font-bold text-black tracking-tight leading-[1.1]">{goal.title}</h2>
-                                    <p className="text-[15px] text-black/50 font-medium leading-relaxed max-w-xl">{goal.description || 'Define your strategic path.'}</p>
+                                    <h2 className="text-[24px] md:text-[32px] font-bold text-black tracking-tight leading-[1.1]">{goal.title}</h2>
+                                    <p className="text-[14px] md:text-[15px] text-black/50 font-medium leading-relaxed max-w-xl">{goal.description || 'Define your strategic path.'}</p>
                                 </div>
                                 <button
                                     onClick={onClose}
@@ -86,7 +86,7 @@ export default function GoalDetailSheet({ goal, isOpen, onClose, onToggleMilesto
                                     ) : (
                                         <div className="aspect-square rounded-2xl bg-black/[0.02] border-2 border-dashed border-black/[0.05] flex flex-col items-center justify-center gap-3 text-center p-6">
                                             <ImageIcon className="w-8 h-8 text-black/10" />
-                                            <p className="text-[11px] font-black uppercase text-black/20 tracking-widest leading-tight">No Vision Image</p>
+                                            <p className="text-[11px] font-bold uppercase text-black/20 tracking-widest leading-tight">No Vision Image</p>
                                         </div>
                                     )}
 
@@ -122,7 +122,7 @@ export default function GoalDetailSheet({ goal, isOpen, onClose, onToggleMilesto
                                                 onClose()
                                             }
                                         }}
-                                        className="w-full flex items-center justify-center gap-2 py-3 text-red-500 hover:bg-red-50 rounded-xl transition-colors text-[12px] font-black uppercase tracking-widest"
+                                        className="w-full flex items-center justify-center gap-2 py-3 text-red-500 hover:bg-red-50 rounded-xl transition-colors text-[12px] font-bold uppercase tracking-widest"
                                     >
                                         <Trash2 className="w-4 h-4" />
                                         Delete Goal

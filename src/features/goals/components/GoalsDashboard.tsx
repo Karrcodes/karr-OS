@@ -31,7 +31,7 @@ export default function GoalsDashboard() {
         return (
             <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
                 <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin" />
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-black/20">Parsing Strategy...</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-black/20">Parsing Strategy...</p>
             </div>
         )
     }
@@ -39,21 +39,21 @@ export default function GoalsDashboard() {
     return (
         <div className="flex flex-col h-full bg-white">
             {/* Standard Module Header */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between px-6 py-5 border-b border-black/[0.06] bg-white flex-shrink-0 shadow-sm z-10 gap-4 lg:gap-0">
-                <div>
-                    <h1 className="text-[22px] font-bold text-black tracking-tight">Strategic Objectives</h1>
-                    <p className="text-[12px] text-black/35 mt-0.5">Strategic Module · Objectives & Milestones</p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 md:px-6 py-4 md:py-5 border-b border-black/[0.06] bg-white flex-shrink-0 shadow-sm z-10 gap-4 sm:gap-0">
+                <div className="space-y-0.5">
+                    <h1 className="text-[18px] md:text-[22px] font-bold text-black tracking-tight">Strategic Objectives</h1>
+                    <p className="text-[10px] md:text-[12px] text-black/35 font-medium uppercase tracking-wider">Strategic Module · Tactical Layer</p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 md:gap-3">
                     <GoalsViewSwitcher currentView={view} onViewChange={setView} />
 
                     <button
                         onClick={() => setIsCreateModalOpen(true)}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-black text-white rounded-xl font-bold text-[12px] uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-black/10 group"
+                        className="flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 bg-black text-white rounded-xl font-bold text-[11px] md:text-[12px] uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-black/10 group whitespace-nowrap"
                     >
                         <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform" />
-                        Initiate Mission
+                        <span className="hidden xs:block">Initiate Mission</span>
                     </button>
                 </div>
             </div>
@@ -62,26 +62,26 @@ export default function GoalsDashboard() {
             <div className="flex-1 flex flex-col min-h-0 overflow-y-auto bg-[#fafafa]">
                 <div className="p-8 space-y-8 max-w-[1600px] mx-auto w-full">
                     {/* Toolbar */}
-                    <div className="flex flex-col md:flex-row items-center gap-4 bg-white border border-black/[0.06] p-4 rounded-2xl shadow-sm">
-                        <div className="relative flex-1 w-full text-black">
+                    <div className="flex flex-col gap-4 bg-white border border-black/[0.06] p-4 md:p-5 rounded-2xl shadow-sm">
+                        <div className="relative w-full text-black">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
                             <input
                                 type="text"
                                 placeholder="Search strategy..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full bg-black/[0.02] border-transparent focus:bg-white focus:border-black/5 rounded-xl pl-11 pr-4 py-3 text-sm font-bold placeholder:text-black/20 outline-none transition-all placeholder:font-bold"
+                                className="w-full bg-black/[0.02] border-transparent focus:bg-white focus:border-black/5 rounded-xl pl-11 pr-4 py-3 md:py-3.5 text-sm font-bold placeholder:text-black/20 outline-none transition-all placeholder:font-bold"
                             />
                         </div>
-                        <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
-                            <div className="flex items-center gap-2 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-black/30 border-r border-black/5 mr-1">
+                        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar w-full pb-1 md:pb-0 scroll-smooth">
+                            <div className="flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-black/30 border-r border-black/5 mr-1 shrink-0">
                                 <Filter className="w-3.5 h-3.5" />
                                 Filter
                             </div>
                             {['finance', 'career', 'health', 'personal'].map((cat) => (
                                 <button
                                     key={cat}
-                                    className="whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-black/[0.03] text-black/40 hover:bg-black hover:text-white transition-all border border-transparent hover:border-black/10"
+                                    className="whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-black/[0.03] text-black/40 hover:bg-black hover:text-white transition-all border border-transparent hover:border-black/10 shrink-0"
                                 >
                                     {cat}
                                 </button>

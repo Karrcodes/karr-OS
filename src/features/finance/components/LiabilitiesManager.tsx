@@ -29,6 +29,23 @@ export function LiabilitiesManager() {
     const [selectedLenderId, setSelectedLenderId] = useState<string | null>(null)
     const [saving, setSaving] = useState(false)
 
+    // Confirmation Modal State
+    const [confirmModal, setConfirmModal] = useState<{
+        open: boolean;
+        title: string;
+        message: string;
+        action: () => Promise<void>;
+        confirmText: string;
+        type: 'danger' | 'warning';
+    }>({
+        open: false,
+        title: '',
+        message: '',
+        action: async () => { },
+        confirmText: 'Confirm',
+        type: 'danger'
+    })
+
     const calculateEndDate = (startDate: string, frequency: string, paymentsLeft: number) => {
         if (!startDate || paymentsLeft <= 0) return null
         const date = new Date(startDate)
@@ -105,6 +122,42 @@ export function LiabilitiesManager() {
 
     return (
         <Section title="Active Liabilities" desc="Track active subscriptions and debt schedules">
+            {/* Confirmation Modal */}
+            {confirmModal.open && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setConfirmModal(prev => ({ ...prev, open: false }))} />
+                    <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col p-6 text-center animate-in zoom-in-95 duration-200">
+                        <div className={cn(
+                            "w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4",
+                            confirmModal.type === 'danger' ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-600"
+                        )}>
+                            <Trash2 className="w-8 h-8" />
+                        </div>
+                        <h3 className="text-lg font-bold text-black mb-2">{confirmModal.title}</h3>
+                        <p className="text-[14px] text-black/60 mb-6 leading-relaxed">
+                            {confirmModal.message}
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setConfirmModal(prev => ({ ...prev, open: false }))}
+                                className="flex-1 py-3 rounded-xl border border-black/[0.1] text-black/60 font-bold text-[14px] hover:bg-black/[0.05] transition-colors"
+                            >
+                                Back
+                            </button>
+                            <button
+                                onClick={confirmModal.action}
+                                className={cn(
+                                    "flex-1 py-3 rounded-xl text-white font-bold text-[14px] transition-colors shadow-lg",
+                                    confirmModal.type === 'danger' ? "bg-red-600 hover:bg-red-700 shadow-red-200" : "bg-amber-500 hover:bg-amber-600 shadow-amber-200"
+                                )}
+                            >
+                                {confirmModal.confirmText}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {loading ? <Spinner /> : (
                 <div className="space-y-4">
                     {obligations.length > 0 && (
@@ -152,7 +205,24 @@ export function LiabilitiesManager() {
                                         <div className="flex items-center gap-1 border-l border-black/[0.06] pl-3">
                                             <button onClick={() => markObligationAsPaid(o)} title="Mark as Paid" className="w-8 h-8 rounded-lg flex items-center justify-center text-black/20 hover:text-emerald-500 hover:bg-emerald-50 transition-colors"><Check className="w-4 h-4" /></button>
                                             <button onClick={() => startEdit(o)} className="w-8 h-8 rounded-lg flex items-center justify-center text-black/20 hover:text-black/60 hover:bg-black/5 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
-                                            <button onClick={() => deleteObligation(o.id)} className="w-8 h-8 rounded-lg flex items-center justify-center text-black/20 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                                            <button
+                                                onClick={() => {
+                                                    setConfirmModal({
+                                                        open: true,
+                                                        title: 'Cancel Liability?',
+                                                        message: `Are you sure you want to cancel and delete "${o.name}"? This will stop tracking its payments.`,
+                                                        confirmText: 'Yes, Cancel',
+                                                        type: 'danger',
+                                                        action: async () => {
+                                                            await deleteObligation(o.id)
+                                                            setConfirmModal(prev => ({ ...prev, open: false }))
+                                                        }
+                                                    })
+                                                }}
+                                                className="w-8 h-8 rounded-lg flex items-center justify-center text-black/20 hover:text-red-500 hover:bg-red-50 transition-colors"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
