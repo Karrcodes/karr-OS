@@ -230,13 +230,15 @@ export default function GoalCreationModal({ isOpen, onClose, onSave }: GoalCreat
 
                                     <div className="space-y-3 md:space-y-4">
                                         <label className="text-[10px] md:text-[11px] font-bold text-black/40 uppercase tracking-widest ml-1">Target Deadline</label>
-                                        <input
-                                            type="date"
-                                            value={targetDate}
-                                            onChange={e => setTargetDate(e.target.value)}
-                                            style={{ boxSizing: 'border-box' }}
-                                            className="block w-full py-3 md:py-3.5 px-4 rounded-xl md:rounded-2xl border border-black/5 text-[12px] md:text-sm font-bold focus:border-black/20 focus:bg-white bg-black/[0.02] transition-all outline-none"
-                                        />
+                                        <div className="w-full rounded-xl md:rounded-2xl border border-black/5 bg-black/[0.02] focus-within:border-black/20 focus-within:bg-white transition-all overflow-hidden">
+                                            <input
+                                                type="date"
+                                                value={targetDate}
+                                                onChange={e => setTargetDate(e.target.value)}
+                                                style={{ minWidth: 0 }}
+                                                className="block w-full py-3 md:py-3.5 px-4 text-[12px] md:text-sm font-bold outline-none bg-transparent border-none"
+                                            />
+                                        </div>
                                     </div>
 
                                     <div className="space-y-3 md:space-y-4">
