@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Plus, Trash2, Pencil, Check, X, Loader2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { useRecurring } from '@/features/finance/hooks/useRecurring'
 import type { RecurringObligation } from '@/features/finance/types/finance.types'
 import { getLenderLogo } from '@/features/finance/utils/lenderLogos'
