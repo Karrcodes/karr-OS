@@ -12,20 +12,17 @@ DROP POLICY IF EXISTS "Goals Authenticated Upload" ON storage.objects;
 DROP POLICY IF EXISTS "Goals Individual Update" ON storage.objects;
 DROP POLICY IF EXISTS "Goals Individual Delete" ON storage.objects;
 DROP POLICY IF EXISTS "Goals Full Access for Auth" ON storage.objects;
+DROP POLICY IF EXISTS "Goals Public Full Access" ON storage.objects;
 
 -- 3. Public Read Access
 CREATE POLICY "Goals Public Access"
 ON storage.objects FOR SELECT
 USING ( bucket_id = 'goal-images' );
 
--- 4. Full Access for Authenticated Users (Handles INSERT, UPDATE, DELETE, and UPSERT)
--- We use FOR ALL and TO authenticated to be as permissive as possible for this bucket
-CREATE POLICY "Goals Full Access for Auth"
+-- 4. Full Access for ALL Users (Public/Anonymous)
+-- This allows anyone to upload and manage goal images, bypassing auth requirements
+CREATE POLICY "Goals Public Full Access"
 ON storage.objects FOR ALL
-TO authenticated
+TO public
 USING ( bucket_id = 'goal-images' )
 WITH CHECK ( bucket_id = 'goal-images' );
-
--- Note: 'USING' works for SELECT, UPDATE, DELETE.
--- 'WITH CHECK' works for INSERT and UPDATE.
--- By combining them in FOR ALL, we cover the 'upsert' case where an INSERT fails and falls back to UPDATE.

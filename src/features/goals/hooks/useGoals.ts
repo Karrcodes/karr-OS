@@ -83,17 +83,16 @@ export function useGoals() {
             if (sessionError) console.error('Session retrieval error:', sessionError)
 
             const userId = session?.user?.id
-            console.log('Upload check - Session:', !!session, 'User ID:', userId, 'Role:', session?.user?.role)
-
-            if (!userId) {
-                throw new Error('Authentication required: You must be signed in to upload images to the cloud.')
-            }
+            console.log('Creation check - Session:', !!session, 'User ID:', userId, 'Role:', session?.user?.role)
 
             let finalImageUrl = data.vision_image_url
             if (imageFile) {
-                console.log('Attempting storage upload for:', imageFile.name, 'to bucket: goal-images')
+                // Use userId or 'public' as top-level folder
+                const storageFolder = userId || 'public'
+                console.log(`Attempting storage upload for: ${imageFile.name} to bucket: goal-images (folder: ${storageFolder})`)
+
                 const ext = imageFile.name.split('.').pop() || 'jpg'
-                const path = `goals/${userId}/${Date.now()}.${ext}`
+                const path = `goals/${storageFolder}/${Date.now()}.${ext}`
 
                 const { error: uploadError } = await supabase.storage
                     .from('goal-images')
@@ -101,7 +100,7 @@ export function useGoals() {
 
                 if (uploadError) {
                     console.error('Storage Upload Error Detail:', uploadError)
-                    throw new Error(`Upload failed: ${uploadError.message}. Check if "goal-images" bucket exists in Supabase Storage.`)
+                    throw new Error(`Upload failed: ${uploadError.message}. Check if "goal-images" bucket exists and policies are public.`)
                 }
 
                 const { data: urlData } = supabase.storage.from('goal-images').getPublicUrl(path)
@@ -172,25 +171,23 @@ export function useGoals() {
             const userId = session?.user?.id
             console.log('Update check - Session:', !!session, 'User ID:', userId, 'Role:', session?.user?.role)
 
-            if (!userId) {
-                throw new Error('Authentication required: You must be signed in to update goals in the cloud.')
-            }
-
             // Fetch the existing goal to get the current vision_image_url if needed
             const { data: existingGoal } = await supabase.from('sys_goals').select('vision_image_url').eq('id', id).single()
 
             let finalImageUrl = updates.vision_image_url || existingGoal?.vision_image_url
             if (imageFile) {
-                console.log('Attempting storage update for:', imageFile.name)
+                const storageFolder = userId || 'public'
+                console.log(`Attempting storage update for: ${imageFile.name} (folder: ${storageFolder})`)
+
                 const ext = imageFile.name.split('.').pop() || 'jpg'
-                const path = `goals/${userId}/${Date.now()}.${ext}`
+                const path = `goals/${storageFolder}/${Date.now()}.${ext}`
                 const { error: uploadError } = await supabase.storage
                     .from('goal-images')
                     .upload(path, imageFile, { upsert: true, cacheControl: '3600' })
 
                 if (uploadError) {
                     console.error('Image upload failed during update:', uploadError)
-                    throw new Error(`Upload failed: ${uploadError.message}. Ensure you are signed in and bucket policies are updated.`)
+                    throw new Error(`Upload failed: ${uploadError.message}. Ensure bucket policies are public.`)
                 }
 
                 const { data: urlData } = supabase.storage.from('goal-images').getPublicUrl(path)
