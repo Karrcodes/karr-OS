@@ -17,7 +17,10 @@ import {
     User,
     CheckSquare,
     AlertCircle,
-    ArrowRight
+    ArrowRight,
+    Activity,
+    ShoppingCart,
+    Bell
 } from 'lucide-react'
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion'
 import { useTasks } from '../hooks/useTasks'
@@ -35,6 +38,10 @@ const PRIORITY_CONFIG = {
 
 export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminder' }) {
     const { tasks, loading, createTask, toggleTask, deleteTask, clearAllTasks, clearCompletedTasks, editTask, updateTaskPositions } = useTasks(category)
+
+    // Internalized title and icon logic
+    const title = category === 'todo' ? 'Deployment' : category === 'grocery' ? 'Grocery List' : 'Reminders'
+    const Icon = category === 'todo' ? Activity : category === 'grocery' ? ShoppingCart : Bell
     const [selectedTaskForModal, setSelectedTaskForModal] = useState<Task | null>(null)
     const [newTask, setNewTask] = useState('')
     const [searchQuery, setSearchQuery] = useState('')
