@@ -9,11 +9,12 @@ import { MOCK_TASKS } from '@/lib/demoData'
 
 const SESSION_STORAGE_KEY = 'karros_demo_tasks'
 
-export function useTasks(category: 'todo' | 'grocery' | 'reminder') {
+export function useTasks(category: 'todo' | 'grocery' | 'reminder', profileOverride?: string) {
     const [tasks, setTasks] = useState<Task[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-    const { activeProfile } = useTasksProfile()
+    const { activeProfile: contextProfile } = useTasksProfile()
+    const activeProfile = profileOverride || contextProfile
     const { settings } = useSystemSettings()
 
     const getSessionTasks = useCallback(() => {

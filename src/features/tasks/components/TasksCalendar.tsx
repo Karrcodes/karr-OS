@@ -5,7 +5,7 @@ import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, CheckCircle, Clock
 import { useSchedule, ScheduleItem } from '@/hooks/useSchedule'
 import { cn } from '@/lib/utils'
 import { useTasks } from '../hooks/useTasks'
-import { Plus, X as CloseIcon } from 'lucide-react'
+import { Plus, X as CloseIcon, Edit2, Trash2, CheckCircle2, AlertCircle } from 'lucide-react'
 
 export function TasksCalendar() {
     const [calMonth, setCalMonth] = useState(() => {
@@ -15,8 +15,12 @@ export function TasksCalendar() {
         return d
     })
     const [selectedQuickAdd, setSelectedQuickAdd] = useState<{ day: number, date: Date } | null>(null)
+    const [selectedItem, setSelectedItem] = useState<ScheduleItem | null>(null)
+    const [isEditing, setIsEditing] = useState(false)
+    const [editedTitle, setEditedTitle] = useState('')
+    const [editedDate, setEditedDate] = useState('')
     const [quickAddTitle, setQuickAddTitle] = useState('')
-    const { createTask } = useTasks('todo')
+    const { createTask, editTask, deleteTask } = useTasks('todo')
 
     const { schedule, loading } = useSchedule(60) // Fetch 60 days to cover month views
     const today = new Date()
@@ -54,6 +58,29 @@ export function TasksCalendar() {
             await createTask(quickAddTitle.trim(), 'low', selectedQuickAdd.date.toISOString().split('T')[0])
             setQuickAddTitle('')
             setSelectedQuickAdd(null)
+        } catch (err) {
+            console.error(err)
+        }
+    }
+
+    const handleToggleTask = async (item: ScheduleItem) => {
+        if (item.type !== 'task') return
+        const realId = item.id.split('-')[0]
+        try {
+            await editTask(realId, { is_completed: !item.is_completed })
+            setSelectedItem(null)
+        } catch (err) {
+            console.error(err)
+        }
+    }
+
+    const handleDeleteTask = async (item: ScheduleItem) => {
+        if (item.type !== 'task') return
+        if (!window.confirm('Are you sure you want to delete this task?')) return
+        const realId = item.id.split('-')[0]
+        try {
+            await deleteTask(realId)
+            setSelectedItem(null)
         } catch (err) {
             console.error(err)
         }
@@ -132,8 +159,15 @@ export function TasksCalendar() {
                                     {items.map((item, idx) => (
                                         <div
                                             key={item.id + idx}
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                setSelectedItem(item)
+                                                setIsEditing(false)
+                                                setEditedTitle(item.title)
+                                                setEditedDate(item.date.toISOString().split('T')[0])
+                                            }}
                                             className={cn(
-                                                "text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded font-bold border truncate",
+                                                "text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded font-bold border truncate cursor-pointer transition-transform hover:scale-[1.02] active:scale-95",
                                                 item.type === 'shift' && "bg-blue-50 text-blue-700 border-blue-100",
                                                 item.type === 'overtime' && "bg-orange-50 text-orange-700 border-orange-100",
                                                 item.type === 'holiday' && "bg-purple-50 text-purple-700 border-purple-100",
@@ -185,6 +219,130 @@ export function TasksCalendar() {
                                     </button>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+                )}
+
+                {/* Item Detail Overlay */}
+                {selectedItem && (
+                    <div className="absolute inset-0 z-30 flex items-center justify-center p-4 bg-white/60 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="bg-white border border-black/10 rounded-2xl shadow-2xl p-6 w-full max-w-sm animate-in zoom-in-95 duration-200">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-2">
+                                    <div className={cn(
+                                        "w-2 h-2 rounded-full",
+                                        selectedItem.type === 'shift' && "bg-blue-500",
+                                        selectedItem.type === 'overtime' && "bg-orange-500",
+                                        selectedItem.type === 'holiday' && "bg-purple-500",
+                                        selectedItem.type === 'task' && (selectedItem.is_completed ? "bg-emerald-500" : "bg-black")
+                                    )} />
+                                    <h3 className="text-[12px] font-black text-black/30 uppercase tracking-widest">
+                                        {selectedItem.type === 'task' ? 'Operation Details' : 'Rota Information'}
+                                    </h3>
+                                </div>
+                                <button onClick={() => setSelectedItem(null)} className="p-1 hover:bg-black/5 rounded-lg text-black/40">
+                                    <CloseIcon className="w-4 h-4" />
+                                </button>
+                            </div>
+
+                            <div className="space-y-6">
+                                {isEditing ? (
+                                    <div className="space-y-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black text-black/30 uppercase tracking-widest pl-1">Title</label>
+                                            <input
+                                                type="text"
+                                                value={editedTitle}
+                                                onChange={(e) => setEditedTitle(e.target.value)}
+                                                className="w-full bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] font-medium outline-none focus:border-black/20 focus:bg-white transition-all"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black text-black/30 uppercase tracking-widest pl-1">Date</label>
+                                            <input
+                                                type="date"
+                                                value={editedDate}
+                                                onChange={(e) => setEditedDate(e.target.value)}
+                                                className="w-full bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] font-medium outline-none focus:border-black/20 focus:bg-white transition-all"
+                                            />
+                                        </div>
+                                        <div className="flex gap-2 pt-2">
+                                            <button
+                                                onClick={() => setIsEditing(false)}
+                                                className="flex-1 bg-black/[0.05] text-black/60 rounded-xl py-3 text-[12px] font-bold uppercase tracking-widest hover:bg-black/10 transition-all"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                onClick={async () => {
+                                                    const realId = selectedItem.id.split('-')[0]
+                                                    try {
+                                                        await editTask(realId, { title: editedTitle, due_date: editedDate })
+                                                        setSelectedItem(null)
+                                                        setIsEditing(false)
+                                                    } catch (err) {
+                                                        console.error(err)
+                                                    }
+                                                }}
+                                                className="flex-1 bg-black text-white rounded-xl py-3 text-[12px] font-bold uppercase tracking-widest hover:bg-black/80 transition-all"
+                                            >
+                                                Save
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div>
+                                            <div className="text-[18px] font-bold text-black tracking-tight leading-tight">
+                                                {selectedItem.type === 'shift' ? 'Work Shift' : selectedItem.title}
+                                            </div>
+                                            <p className="text-[12px] text-black/40 mt-1">
+                                                {selectedItem.date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+                                            </p>
+                                        </div>
+
+                                        {selectedItem.type === 'task' ? (
+                                            <div className="flex flex-col gap-3 pt-2">
+                                                <button
+                                                    onClick={() => handleToggleTask(selectedItem)}
+                                                    className={cn(
+                                                        "w-full flex items-center justify-center gap-2 py-3 rounded-xl border text-[13px] font-bold transition-all",
+                                                        selectedItem.is_completed
+                                                            ? "bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100"
+                                                            : "bg-black text-white border-black hover:bg-black/90"
+                                                    )}
+                                                >
+                                                    {selectedItem.is_completed ? <CheckCircle2 className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
+                                                    {selectedItem.is_completed ? 'Mark as Pending' : 'Mark as Completed'}
+                                                </button>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <button
+                                                        onClick={() => setIsEditing(true)}
+                                                        className="flex items-center justify-center gap-2 py-3 rounded-xl border border-black/[0.08] text-black/60 text-[13px] font-bold hover:bg-black/[0.02] transition-all"
+                                                    >
+                                                        <Edit2 className="w-4 h-4" />
+                                                        Edit
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteTask(selectedItem)}
+                                                        className="flex items-center justify-center gap-2 py-3 rounded-xl border border-red-100 text-red-600 text-[13px] font-bold hover:bg-red-50 transition-all"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="p-4 bg-black/[0.02] rounded-xl border border-black/5">
+                                                <p className="text-[11px] text-black/50 leading-relaxed font-medium">
+                                                    This is a {selectedItem.type} generated from your rotation settings.
+                                                    {selectedItem.type !== 'shift' && " It can be managed in the Finances module."}
+                                                </p>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}

@@ -16,6 +16,7 @@ export interface PlannerItem {
     type: 'routine' | 'task' | 'shift'
     duration?: number
     is_completed?: boolean
+    profile?: string
 }
 
 const DEFAULT_SETTINGS: DayPlannerSettings = {
@@ -37,9 +38,12 @@ const DEFAULT_SETTINGS: DayPlannerSettings = {
 export function useDayPlanner(date: Date = new Date()) {
     const [settings, setSettings] = useState<DayPlannerSettings>(DEFAULT_SETTINGS)
     const [loading, setLoading] = useState(true)
-    const { activeProfile } = useFinanceProfile()
     const { settings: systemSettings } = useSystemSettings()
-    const { tasks: allTasks } = useTasks('todo')
+    const { tasks: personalTasks } = useTasks('todo', 'personal')
+    const { tasks: businessTasks } = useTasks('todo', 'business')
+    const activeProfile = 'personal' // Default settings to personal profile
+
+    const allTasks = useMemo(() => [...personalTasks, ...businessTasks], [personalTasks, businessTasks])
 
     const isWorkDay = useMemo(() => isShiftDay(date), [date])
 
@@ -106,7 +110,8 @@ export function useDayPlanner(date: Date = new Date()) {
                     title: task.title,
                     time,
                     type: 'task',
-                    is_completed: task.is_completed
+                    is_completed: task.is_completed,
+                    profile: task.profile
                 })
             }
 
@@ -121,7 +126,8 @@ export function useDayPlanner(date: Date = new Date()) {
                         title: task.title,
                         time: isWorkDay ? '18:00' : '11:00',
                         type: 'task',
-                        is_completed: false
+                        is_completed: false,
+                        profile: task.profile
                     })
                 }
             }

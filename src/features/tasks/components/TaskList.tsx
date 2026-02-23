@@ -215,6 +215,9 @@ export function TaskList({ category, title, icon: Icon }: { category: 'todo' | '
                             onClick={() => {
                                 if (recurrence === 'shift_relative') {
                                     setRecurrence('none')
+                                    setDueDateMode('on')
+                                    setDueDate('')
+                                    setEndDate('')
                                 } else {
                                     setRecurrence('shift_relative')
                                     const { start, end } = getNextOffPeriod()

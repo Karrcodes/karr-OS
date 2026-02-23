@@ -5,6 +5,19 @@ import { Clock, Coffee, ShowerHead as ShowerHeadIcon, Bed, Dumbbell, Utensils, Z
 import { useDayPlanner } from '../hooks/useDayPlanner'
 import { cn } from '@/lib/utils'
 
+function CapBadge({ cap }: { cap: string }) {
+    if (!cap) return null
+    const char = cap.charAt(0).toUpperCase()
+    return (
+        <div className={cn(
+            "w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-black border leading-none shrink-0",
+            char === 'B' ? "bg-amber-500 text-white border-amber-600" : "bg-blue-500 text-white border-blue-600"
+        )}>
+            {char}
+        </div>
+    )
+}
+
 export function DayPlanner() {
     const { settings, loading, plannerItems, updateSettings, isWorkDay } = useDayPlanner()
     const [isSettingsOpen, setIsSettingsOpen] = useState(false)
@@ -98,7 +111,10 @@ export function DayPlanner() {
                             item.type === 'task' && item.is_completed && "opacity-50 grayscale"
                         )}>
                             <div className="flex items-center justify-between">
-                                <h3 className="text-[14px] font-bold text-black tracking-tight">{item.title}</h3>
+                                <div className="flex items-center gap-2">
+                                    <h3 className="text-[14px] font-bold text-black tracking-tight">{item.title}</h3>
+                                    {item.profile && <CapBadge cap={item.profile} />}
+                                </div>
                                 <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-black/[0.03] border border-black/5">
                                     <Clock className="w-3 h-3 text-black/30" />
                                     <span className="text-[11px] font-bold text-black/60">{item.time}</span>
