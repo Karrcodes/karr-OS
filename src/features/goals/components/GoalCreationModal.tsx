@@ -14,7 +14,8 @@ import {
     AlertCircle,
     Trash2,
     Check,
-    ArrowRight
+    ArrowRight,
+    Image as ImageIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { GoalCategory, GoalPriority, CreateGoalData } from '../types/goals.types'
@@ -44,6 +45,8 @@ export default function GoalCreationModal({ isOpen, onClose, onSave }: GoalCreat
     const [description, setDescription] = useState('')
     const [category, setCategory] = useState<GoalCategory>('personal')
     const [priority, setPriority] = useState<GoalPriority>('mid')
+    const [timeframe, setTimeframe] = useState<'short' | 'medium' | 'long'>('short')
+    const [visionImageUrl, setVisionImageUrl] = useState('')
     const [targetDate, setTargetDate] = useState('')
     const [milestones, setMilestones] = useState<string[]>([''])
     const [loading, setLoading] = useState(false)
@@ -73,12 +76,15 @@ export default function GoalCreationModal({ isOpen, onClose, onSave }: GoalCreat
                 description,
                 category,
                 priority,
+                timeframe,
+                vision_image_url: visionImageUrl || undefined,
                 target_date: targetDate || undefined,
                 milestones: milestones.filter(m => m.trim() !== '')
             })
             // Reset and close
             setTitle('')
             setDescription('')
+            setVisionImageUrl('')
             setMilestones([''])
             onClose()
         } catch (err) {
@@ -153,34 +159,55 @@ export default function GoalCreationModal({ isOpen, onClose, onSave }: GoalCreat
 
                             {/* Configuration Grid */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-black/5">
-                                {/* Category picker */}
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Module Alignment</label>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {CATEGORIES.map(cat => {
-                                            const Icon = cat.icon
-                                            const active = category === cat.value
-                                            return (
+                                {/* Left Side: Category & Timeframe */}
+                                <div className="space-y-6">
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Module Alignment</label>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {CATEGORIES.map(cat => {
+                                                const Icon = cat.icon
+                                                const active = category === cat.value
+                                                return (
+                                                    <button
+                                                        key={cat.value}
+                                                        type="button"
+                                                        onClick={() => setCategory(cat.value)}
+                                                        className={cn(
+                                                            "flex items-center gap-2.5 px-4 py-3 rounded-2xl border transition-all text-sm font-bold",
+                                                            active
+                                                                ? "bg-black text-white border-black"
+                                                                : "bg-white border-black/5 text-black/40 hover:border-black/20"
+                                                        )}
+                                                    >
+                                                        <Icon className="w-4 h-4" />
+                                                        {cat.label}
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Strategic Horizon</label>
+                                        <div className="flex items-center gap-1.5 p-1 bg-black/5 rounded-2xl">
+                                            {(['short', 'medium', 'long'] as const).map(t => (
                                                 <button
-                                                    key={cat.value}
+                                                    key={t}
                                                     type="button"
-                                                    onClick={() => setCategory(cat.value)}
+                                                    onClick={() => setTimeframe(t)}
                                                     className={cn(
-                                                        "flex items-center gap-2.5 px-4 py-3 rounded-2xl border transition-all text-sm font-bold",
-                                                        active
-                                                            ? "bg-black text-white border-black"
-                                                            : "bg-white border-black/5 text-black/40 hover:border-black/20"
+                                                        "flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all",
+                                                        timeframe === t ? "bg-white text-black shadow-sm" : "text-black/30 hover:text-black/60"
                                                     )}
                                                 >
-                                                    <Icon className="w-4 h-4" />
-                                                    {cat.label}
+                                                    {t}
                                                 </button>
-                                            )
-                                        })}
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* Priority & Date */}
+                                {/* Right Side: Priority & Date & Image */}
                                 <div className="space-y-6">
                                     <div className="space-y-3">
                                         <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Tier Priority</label>
@@ -200,6 +227,7 @@ export default function GoalCreationModal({ isOpen, onClose, onSave }: GoalCreat
                                             ))}
                                         </div>
                                     </div>
+
                                     <div className="space-y-3">
                                         <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Target Deadline</label>
                                         <div className="relative group">
@@ -208,6 +236,20 @@ export default function GoalCreationModal({ isOpen, onClose, onSave }: GoalCreat
                                                 type="date"
                                                 value={targetDate}
                                                 onChange={e => setTargetDate(e.target.value)}
+                                                className="w-full pl-12 pr-4 py-4 rounded-2xl border border-black/5 text-sm font-bold focus:border-black/20 focus:ring-4 focus:ring-black/5 transition-all outline-none"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Vision Image URL</label>
+                                        <div className="relative group">
+                                            <ImageIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
+                                            <input
+                                                type="text"
+                                                value={visionImageUrl}
+                                                onChange={e => setVisionImageUrl(e.target.value)}
+                                                placeholder="https://..."
                                                 className="w-full pl-12 pr-4 py-4 rounded-2xl border border-black/5 text-sm font-bold focus:border-black/20 focus:ring-4 focus:ring-black/5 transition-all outline-none"
                                             />
                                         </div>

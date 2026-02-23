@@ -1,6 +1,7 @@
 export type GoalCategory = 'finance' | 'health' | 'career' | 'personal'
 export type GoalStatus = 'active' | 'completed' | 'archived'
 export type GoalPriority = 'super' | 'high' | 'mid' | 'low'
+export type GoalTimeframe = 'short' | 'medium' | 'long'
 
 export interface Milestone {
     id: string
@@ -20,6 +21,8 @@ export interface Goal {
     status: GoalStatus
     target_date: string | null
     priority: GoalPriority
+    timeframe: GoalTimeframe
+    vision_image_url?: string
     created_at: string
     milestones?: Milestone[]
 }
@@ -30,5 +33,7 @@ export interface CreateGoalData {
     category?: GoalCategory
     target_date?: string
     priority?: GoalPriority
+    timeframe?: GoalTimeframe
+    vision_image_url?: string
     milestones?: string[] // Array of milestone titles
 }

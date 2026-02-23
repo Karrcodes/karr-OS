@@ -46,17 +46,46 @@ export function useGoals() {
 
     const createGoal = async (data: CreateGoalData) => {
         try {
-            if (settings.is_demo_mode) return // No mutations in demo mode
+            if (settings.is_demo_mode) {
+                const newGoal: Goal = {
+                    id: Math.random().toString(36).substr(2, 9),
+                    user_id: 'demo-user',
+                    title: data.title,
+                    description: data.description || null,
+                    category: data.category || 'personal',
+                    status: 'active',
+                    target_date: data.target_date || null,
+                    priority: data.priority || 'mid',
+                    timeframe: data.timeframe || 'short',
+                    vision_image_url: data.vision_image_url,
+                    created_at: new Date().toISOString(),
+                    milestones: data.milestones?.map((m, idx) => ({
+                        id: Math.random().toString(36).substr(2, 9),
+                        goal_id: 'new-id',
+                        title: m,
+                        is_completed: false,
+                        position: idx,
+                        created_at: new Date().toISOString()
+                    }))
+                }
+                setGoals(prev => [newGoal, ...prev])
+                return
+            }
+
+            const { data: userData } = await supabase.auth.getUser()
+            if (!userData.user) return
 
             const { data: goal, error: goalError } = await supabase
                 .from('sys_goals')
                 .insert([{
+                    user_id: userData.user.id,
                     title: data.title,
                     description: data.description,
                     category: data.category || 'personal',
-                    priority: data.priority || 'mid',
                     target_date: data.target_date,
-                    user_id: (await supabase.auth.getUser()).data.user?.id
+                    priority: data.priority || 'mid',
+                    timeframe: data.timeframe || 'short',
+                    vision_image_url: data.vision_image_url
                 }])
                 .select()
                 .single()
@@ -64,15 +93,12 @@ export function useGoals() {
             if (goalError) throw goalError
 
             if (data.milestones && data.milestones.length > 0) {
-                const milestonesToInsert = data.milestones.map((title, index) => ({
+                const milestones = data.milestones.map((m, idx) => ({
                     goal_id: goal.id,
-                    title,
-                    position: index + 1
+                    title: m,
+                    position: idx
                 }))
-                const { error: mError } = await supabase
-                    .from('sys_milestones')
-                    .insert(milestonesToInsert)
-                if (mError) throw mError
+                await supabase.from('sys_milestones').insert(milestones)
             }
 
             await fetchGoals()
@@ -84,7 +110,10 @@ export function useGoals() {
 
     const updateGoal = async (id: string, updates: Partial<Goal>) => {
         try {
-            if (settings.is_demo_mode) return
+            if (settings.is_demo_mode) {
+                setGoals(prev => prev.map(g => g.id === id ? { ...g, ...updates } : g))
+                return
+            }
 
             const { error: goalError } = await supabase
                 .from('sys_goals')
@@ -101,7 +130,10 @@ export function useGoals() {
 
     const deleteGoal = async (id: string) => {
         try {
-            if (settings.is_demo_mode) return
+            if (settings.is_demo_mode) {
+                setGoals(prev => prev.filter(g => g.id !== id))
+                return
+            }
 
             const { error: goalError } = await supabase
                 .from('sys_goals')
@@ -119,7 +151,6 @@ export function useGoals() {
     const toggleMilestone = async (milestoneId: string, isCompleted: boolean) => {
         try {
             if (settings.is_demo_mode) {
-                // For demo mode, we just update local state to feel interactive
                 setGoals(prev => prev.map(goal => ({
                     ...goal,
                     milestones: goal.milestones?.map(m =>

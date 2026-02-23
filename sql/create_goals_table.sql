@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS sys_goals (
     status TEXT DEFAULT 'active',     -- active, completed, archived
     target_date DATE,
     priority TEXT DEFAULT 'mid',      -- super, high, mid, low
+    timeframe TEXT DEFAULT 'short',   -- short, medium, long
+    vision_image_url TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

@@ -127,6 +127,8 @@ export const MOCK_GOALS = [
         category: 'finance',
         status: 'active',
         priority: 'super',
+        timeframe: 'long',
+        vision_image_url: '/brain/c60f96e1-94d9-4b29-a7b7-916a20d17ee8/karr_apartment_vision_1771863229585.png',
         target_date: '2027-12-31',
         created_at: '2025-01-01T00:00:00Z'
     },
@@ -137,6 +139,8 @@ export const MOCK_GOALS = [
         category: 'career',
         status: 'active',
         priority: 'high',
+        timeframe: 'medium',
+        vision_image_url: '/brain/c60f96e1-94d9-4b29-a7b7-916a20d17ee8/karr_studio_vision_1771863332418.png',
         target_date: '2026-08-31',
         created_at: '2025-06-15T00:00:00Z'
     },
@@ -147,6 +151,8 @@ export const MOCK_GOALS = [
         category: 'personal',
         status: 'active',
         priority: 'high',
+        timeframe: 'medium',
+        vision_image_url: '/brain/c60f96e1-94d9-4b29-a7b7-916a20d17ee8/karr_tokyo_vision_1771863422548.png',
         target_date: '2026-10-15',
         created_at: '2025-09-10T00:00:00Z'
     },
@@ -157,7 +163,9 @@ export const MOCK_GOALS = [
         category: 'health',
         status: 'active',
         priority: 'mid',
-        target_date: '2026-04-20',
+        timeframe: 'short',
+        vision_image_url: '/brain/c60f96e1-94d9-4b29-a7b7-916a20d17ee8/karr_marathon_vision_1771864882137.png',
+        target_date: '2026-04-26',
         created_at: '2025-11-20T00:00:00Z'
     }
 ]
