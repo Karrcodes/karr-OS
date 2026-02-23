@@ -19,6 +19,7 @@ export function TasksCalendar() {
     const [isEditing, setIsEditing] = useState(false)
     const [editedTitle, setEditedTitle] = useState('')
     const [editedDate, setEditedDate] = useState('')
+    const [editedPriority, setEditedPriority] = useState<'super' | 'high' | 'mid' | 'low'>('mid')
     const [quickAddTitle, setQuickAddTitle] = useState('')
     const { createTask, editTask, deleteTask } = useTasks('todo')
 
@@ -165,6 +166,7 @@ export function TasksCalendar() {
                                                 setIsEditing(false)
                                                 setEditedTitle(item.title)
                                                 setEditedDate(item.date.toISOString().split('T')[0])
+                                                setEditedPriority((item.priority as any) || 'mid')
                                             }}
                                             className={cn(
                                                 "text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded font-bold border truncate cursor-pointer transition-transform hover:scale-[1.02] active:scale-95",
@@ -190,7 +192,7 @@ export function TasksCalendar() {
 
                 {/* Quick Add Overlay */}
                 {selectedQuickAdd && (
-                    <div className="absolute inset-0 z-30 flex items-center justify-center p-4 bg-white/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-in fade-in duration-200">
                         <div className="bg-white border border-black/10 rounded-2xl shadow-2xl p-6 w-full max-w-sm animate-in zoom-in-95 duration-200">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-[14px] font-bold text-black uppercase tracking-tight">
@@ -225,7 +227,7 @@ export function TasksCalendar() {
 
                 {/* Item Detail Overlay */}
                 {selectedItem && (
-                    <div className="absolute inset-0 z-30 flex items-center justify-center p-4 bg-white/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-in fade-in duration-200">
                         <div className="bg-white border border-black/10 rounded-2xl shadow-2xl p-6 w-full max-w-sm animate-in zoom-in-95 duration-200">
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-2">
@@ -251,6 +253,7 @@ export function TasksCalendar() {
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-black text-black/30 uppercase tracking-widest pl-1">Title</label>
                                             <input
+                                                autoFocus
                                                 type="text"
                                                 value={editedTitle}
                                                 onChange={(e) => setEditedTitle(e.target.value)}
@@ -258,15 +261,37 @@ export function TasksCalendar() {
                                             />
                                         </div>
                                         <div className="space-y-1.5">
-                                            <label className="text-[10px] font-black text-black/30 uppercase tracking-widest pl-1">Date</label>
+                                            <label className="text-[10px] font-black text-black/30 uppercase tracking-widest pl-1">Due Date</label>
                                             <input
                                                 type="date"
                                                 value={editedDate}
                                                 onChange={(e) => setEditedDate(e.target.value)}
-                                                className="w-full bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] font-medium outline-none focus:border-black/20 focus:bg-white transition-all"
+                                                className="block w-full min-w-full appearance-none bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] font-medium outline-none focus:border-black/20 focus:bg-white transition-all min-h-[46px]"
                                             />
                                         </div>
-                                        <div className="flex gap-2 pt-2">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black text-black/30 uppercase tracking-widest pl-1">Priority</label>
+                                            <div className="flex gap-1.5 p-1 bg-black/[0.03] rounded-xl border border-black/5">
+                                                {(['super', 'high', 'mid', 'low'] as const).map(p => {
+                                                    const COLORS: Record<string, string> = { super: 'bg-red-100 text-red-700 border-red-200', high: 'bg-amber-100 text-amber-700 border-amber-200', mid: 'bg-blue-100 text-blue-700 border-blue-200', low: 'bg-black/5 text-black/50 border-black/10' }
+                                                    const LABELS: Record<string, string> = { super: 'Critical', high: 'High', mid: 'Mid', low: 'Low' }
+                                                    return (
+                                                        <button
+                                                            key={p}
+                                                            type="button"
+                                                            onClick={() => setEditedPriority(p)}
+                                                            className={cn(
+                                                                'flex-1 py-1.5 text-[10px] font-bold rounded-lg border transition-all uppercase tracking-tight',
+                                                                editedPriority === p ? COLORS[p] + ' shadow-sm' : 'bg-transparent text-black/30 border-transparent hover:text-black/50 hover:bg-black/5'
+                                                            )}
+                                                        >
+                                                            {LABELS[p]}
+                                                        </button>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2 pt-1">
                                             <button
                                                 onClick={() => setIsEditing(false)}
                                                 className="flex-1 bg-black/[0.05] text-black/60 rounded-xl py-3 text-[12px] font-bold uppercase tracking-widest hover:bg-black/10 transition-all"
@@ -277,7 +302,7 @@ export function TasksCalendar() {
                                                 onClick={async () => {
                                                     const realId = selectedItem.id.split('-')[0]
                                                     try {
-                                                        await editTask(realId, { title: editedTitle, due_date: editedDate })
+                                                        await editTask(realId, { title: editedTitle, due_date: editedDate, priority: editedPriority })
                                                         setSelectedItem(null)
                                                         setIsEditing(false)
                                                     } catch (err) {

@@ -211,10 +211,20 @@ export function ProjectionsAnalytics() {
             if (isShift) shiftsCount++
             if (isPayday) {
                 paydaysCount++
-                // Use actual payslip net_pay if the payday has passed and a payslip exists
-                const isPast = date < new Date(new Date().setHours(0, 0, 0, 0))
+
+                // If the payday is in the past or is today, try to use the actual payslip
+                // We use setHours(0,0,0,0) to compare dates purely by day
+                const todayMidnight = new Date()
+                todayMidnight.setHours(0, 0, 0, 0)
+                const isPastOrToday = date <= todayMidnight
+
                 const confirmedPay = payslipByDate[dateStr]
-                totalMonthNet += (isPast && confirmedPay != null) ? confirmedPay : (weeklyPayMap[dateStr] || 0)
+
+                if (isPastOrToday && confirmedPay !== undefined) {
+                    totalMonthNet += confirmedPay
+                } else {
+                    totalMonthNet += (weeklyPayMap[dateStr] || 0)
+                }
             }
 
             daysArr.push({

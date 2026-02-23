@@ -40,35 +40,49 @@ export function TasksLayout({ children }: { children: React.ReactNode }) {
     const calendarHref = pathname === '/tasks/calendar' ? '/tasks/todo' : '/tasks/calendar'
     const isOnCalendar = pathname === '/tasks/calendar'
     const isPlanner = pathname === '/tasks/planner'
+    const isGroceries = pathname === '/tasks/groceries'
 
     return (
         <div className="flex flex-col h-full bg-[#fafafa]">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between px-6 py-5 border-b border-black/[0.06] bg-white flex-shrink-0 z-10 gap-3 lg:gap-0">
-                <div>
-                    <h1 className="text-[22px] font-bold text-black tracking-tight">Focus &amp; Execution</h1>
-                    <p className="text-[12px] text-black/35 mt-0.5">Operations Module · {activeProfile === 'personal' ? 'Personal' : 'Business'}</p>
+            <div className="px-6 py-5 border-b border-black/[0.06] bg-white flex-shrink-0 z-10">
+                {/* Row 1: Title + nav buttons */}
+                <div className="flex items-center justify-between gap-3">
+                    <div>
+                        <h1 className="text-[22px] font-bold text-black tracking-tight">Focus & Execution</h1>
+                        <p className="text-[12px] text-black/35 mt-0.5">Operations Module · {activeProfile === 'personal' ? 'Personal' : 'Business'}</p>
+                    </div>
+                    {/* Calendar + Planner buttons — always right of title on all screen sizes */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                        <Link
+                            href={calendarHref}
+                            className={cn(
+                                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border",
+                                isOnCalendar
+                                    ? "bg-black text-white border-black"
+                                    : "bg-white text-black/60 border-black/[0.08] hover:border-black/20"
+                            )}
+                        >
+                            <Calendar className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">{isOnCalendar ? '← Back' : 'Calendar'}</span>
+                        </Link>
+                        <Link
+                            href="/tasks/planner"
+                            className={cn(
+                                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border",
+                                isPlanner
+                                    ? "bg-black text-white border-black"
+                                    : "bg-white text-black/60 border-black/[0.08] hover:border-black/20"
+                            )}
+                        >
+                            <Activity className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Planner</span>
+                        </Link>
+                    </div>
                 </div>
-                {!isPlanner && (
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                        {/* Toggle: visible below title on mobile/sm, moves right on lg */}
-                        <div className="order-2 sm:order-1">
-                            <ProfileToggle activeProfile={activeProfile} setActiveProfile={setActiveProfile} />
-                        </div>
-                        {/* Calendar button */}
-                        <div className="order-1 sm:order-2 flex items-center">
-                            <Link
-                                href={calendarHref}
-                                className={cn(
-                                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border",
-                                    isOnCalendar
-                                        ? "bg-black text-white border-black"
-                                        : "bg-white text-black/60 border-black/[0.08] hover:border-black/20"
-                                )}
-                            >
-                                <Calendar className="w-3.5 h-3.5" />
-                                <span className="hidden sm:inline">{isOnCalendar ? '← Back' : 'Calendar'}</span>
-                            </Link>
-                        </div>
+                {/* Row 2: ProfileToggle — only when needed */}
+                {!isPlanner && !isGroceries && (
+                    <div className="mt-3">
+                        <ProfileToggle activeProfile={activeProfile} setActiveProfile={setActiveProfile} />
                     </div>
                 )}
             </div>

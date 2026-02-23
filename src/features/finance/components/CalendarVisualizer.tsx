@@ -217,8 +217,29 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                         <CalendarIcon className="w-3.5 h-3.5 sm:w-4 h-4 text-black" />
                         {view === 'calendar' ? 'Payment Calendar' : 'Obligations'}
                     </h2>
+
+                    {view === 'calendar' && (
+                        <div className="flex items-center gap-1 bg-black/[0.04] p-0.5 rounded-lg ml-2">
+                            <button
+                                onClick={() => setCalMonth(m => { const n = new Date(m); n.setMonth(n.getMonth() - 1); return n })}
+                                className="p-1 rounded-md hover:bg-white hover:shadow-sm text-black/60 transition-all"
+                            >
+                                <ChevronLeft className="w-3.5 h-3.5" />
+                            </button>
+                            <span className="text-[11px] font-bold text-black min-w-[80px] text-center uppercase tracking-wider">
+                                {calMonth.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
+                            </span>
+                            <button
+                                onClick={() => setCalMonth(m => { const n = new Date(m); n.setMonth(n.getMonth() + 1); return n })}
+                                className="p-1 rounded-md hover:bg-white hover:shadow-sm text-black/60 transition-all"
+                            >
+                                <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
+                    )}
+
                     {/* Filter pills */}
-                    <div className="flex p-0.5 bg-black/[0.04] rounded-lg w-fit">
+                    <div className="flex p-0.5 bg-black/[0.04] rounded-lg w-fit sm:ml-2">
                         {(['all', 'debt', 'subscription'] as FilterMode[]).map(f => (
                             <button
                                 key={f}
@@ -249,24 +270,6 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
             <div className="p-4 max-h-[520px] overflow-y-auto">
                 {view === 'calendar' ? (
                     <div>
-                        {/* Month navigation */}
-                        <div className="flex items-center justify-between mb-3">
-                            <button
-                                onClick={() => setCalMonth(m => { const n = new Date(m); n.setMonth(n.getMonth() - 1); return n })}
-                                className="p-1.5 rounded-lg hover:bg-black/[0.05] transition-colors"
-                            >
-                                <ChevronLeft className="w-4 h-4 text-black/40" />
-                            </button>
-                            <span className="text-[13px] font-bold text-black">
-                                {calMonth.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
-                            </span>
-                            <button
-                                onClick={() => setCalMonth(m => { const n = new Date(m); n.setMonth(n.getMonth() + 1); return n })}
-                                className="p-1.5 rounded-lg hover:bg-black/[0.05] transition-colors"
-                            >
-                                <ChevronRight className="w-4 h-4 text-black/40" />
-                            </button>
-                        </div>
 
                         {/* Day-of-week headers */}
                         <div className="grid grid-cols-7 mb-1">
@@ -367,79 +370,82 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                             </div>
                         ))}
                     </div>
-                )}
-            </div>
+                )
+                }
+            </div >
 
             {/* Payment Details Modal */}
-            {selectedPayment && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm"
-                    onClick={() => setSelectedPayment(null)}>
-                    <div className="bg-white rounded-3xl shadow-xl w-full max-w-[320px] overflow-hidden border border-black/[0.08]" onClick={e => e.stopPropagation()}>
-                        <div className="p-5 border-b border-black/[0.04] bg-black/[0.01]">
-                            <div className="flex items-start justify-between">
-                                <div className="flex items-center gap-3">
-                                    <LenderBadge name={selectedPayment.obligation.name} />
+            {
+                selectedPayment && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm"
+                        onClick={() => setSelectedPayment(null)}>
+                        <div className="bg-white rounded-3xl shadow-xl w-full max-w-[320px] overflow-hidden border border-black/[0.08]" onClick={e => e.stopPropagation()}>
+                            <div className="p-5 border-b border-black/[0.04] bg-black/[0.01]">
+                                <div className="flex items-start justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <LenderBadge name={selectedPayment.obligation.name} />
+                                        <div>
+                                            <h3 className="text-[16px] font-bold text-black">{selectedPayment.obligation.name}</h3>
+                                            <p className="text-[12px] text-black/40">{selectedPayment.obligation.group_name || 'Obligation'}</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => setSelectedPayment(null)} className="p-1.5 rounded-full hover:bg-black/5 text-black/40"><X className="w-4 h-4" /></button>
+                                </div>
+                                <div className="mt-4 pt-4 border-t border-black/[0.04] flex items-end justify-between">
                                     <div>
-                                        <h3 className="text-[16px] font-bold text-black">{selectedPayment.obligation.name}</h3>
-                                        <p className="text-[12px] text-black/40">{selectedPayment.obligation.group_name || 'Obligation'}</p>
+                                        <p className="text-[10px] uppercase tracking-wider font-bold text-black/30 mb-0.5">Amount</p>
+                                        <div className="text-[24px] font-black text-red-500 leading-none privacy-blur">£{selectedPayment.obligation.amount.toFixed(2)}</div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-[10px] uppercase tracking-wider font-bold text-black/30 mb-0.5">Occurrence</p>
+                                        <div className="text-[13px] font-bold text-black/70 flex items-center gap-1 justify-end"><CalendarIcon className="w-3 h-3" /> {selectedPayment.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
                                     </div>
                                 </div>
-                                <button onClick={() => setSelectedPayment(null)} className="p-1.5 rounded-full hover:bg-black/5 text-black/40"><X className="w-4 h-4" /></button>
                             </div>
-                            <div className="mt-4 pt-4 border-t border-black/[0.04] flex items-end justify-between">
-                                <div>
-                                    <p className="text-[10px] uppercase tracking-wider font-bold text-black/30 mb-0.5">Amount</p>
-                                    <div className="text-[24px] font-black text-red-500 leading-none privacy-blur">£{selectedPayment.obligation.amount.toFixed(2)}</div>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-[10px] uppercase tracking-wider font-bold text-black/30 mb-0.5">Occurrence</p>
-                                    <div className="text-[13px] font-bold text-black/70 flex items-center gap-1 justify-end"><CalendarIcon className="w-3 h-3" /> {selectedPayment.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="p-5 bg-white space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <p className="text-[10px] uppercase tracking-wider font-bold text-black/30 mb-1">Frequency</p>
-                                    <div className="text-[13px] font-bold text-black/70 capitalize">{selectedPayment.obligation.frequency.replace('-', ' ')}</div>
-                                </div>
-                                <div>
-                                    <p className="text-[10px] uppercase tracking-wider font-bold text-black/30 mb-1">Category</p>
-                                    <div className="text-[13px] font-bold text-black/70 capitalize">{selectedPayment.obligation.category}</div>
-                                </div>
-                                <div>
-                                    <p className="text-[10px] uppercase tracking-wider font-bold text-black/30 mb-1">Remaining</p>
-                                    <div className="text-[13px] font-bold text-black/70">
-                                        {countRemainingPayments(selectedPayment.obligation.next_due_date, selectedPayment.obligation.end_date, selectedPayment.obligation.frequency, new Date(), selectedPayment.obligation.payments_left) > 0
-                                            ? `${countRemainingPayments(selectedPayment.obligation.next_due_date, selectedPayment.obligation.end_date, selectedPayment.obligation.frequency, new Date(), selectedPayment.obligation.payments_left)} payments`
-                                            : 'Ongoing'}
+                            <div className="p-5 bg-white space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-[10px] uppercase tracking-wider font-bold text-black/30 mb-1">Frequency</p>
+                                        <div className="text-[13px] font-bold text-black/70 capitalize">{selectedPayment.obligation.frequency.replace('-', ' ')}</div>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] uppercase tracking-wider font-bold text-black/30 mb-1">Category</p>
+                                        <div className="text-[13px] font-bold text-black/70 capitalize">{selectedPayment.obligation.category}</div>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] uppercase tracking-wider font-bold text-black/30 mb-1">Remaining</p>
+                                        <div className="text-[13px] font-bold text-black/70">
+                                            {countRemainingPayments(selectedPayment.obligation.next_due_date, selectedPayment.obligation.end_date, selectedPayment.obligation.frequency, new Date(), selectedPayment.obligation.payments_left) > 0
+                                                ? `${countRemainingPayments(selectedPayment.obligation.next_due_date, selectedPayment.obligation.end_date, selectedPayment.obligation.frequency, new Date(), selectedPayment.obligation.payments_left)} payments`
+                                                : 'Ongoing'}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] uppercase tracking-wider font-bold text-black/30 mb-1">End Date</p>
+                                        <div className="text-[13px] font-bold text-black/70">{selectedPayment.obligation.end_date ? new Date(selectedPayment.obligation.end_date).toLocaleDateString('en-GB') : '—'}</div>
                                     </div>
                                 </div>
-                                <div>
-                                    <p className="text-[10px] uppercase tracking-wider font-bold text-black/30 mb-1">End Date</p>
-                                    <div className="text-[13px] font-bold text-black/70">{selectedPayment.obligation.end_date ? new Date(selectedPayment.obligation.end_date).toLocaleDateString('en-GB') : '—'}</div>
-                                </div>
+                                {selectedPayment.obligation.description && (
+                                    <div className="pt-4 border-t border-black/[0.04]">
+                                        <p className="text-[10px] uppercase tracking-wider font-bold text-black/30 mb-1">Notes</p>
+                                        <p className="text-[12px] text-black/60">{selectedPayment.obligation.description}</p>
+                                    </div>
+                                )}
+                                <button
+                                    onClick={async () => {
+                                        await markObligationAsPaid(selectedPayment.obligation)
+                                        setSelectedPayment(null)
+                                    }}
+                                    className="w-full mt-2 flex items-center justify-center gap-2 py-3 rounded-xl bg-black text-white hover:bg-black/80 transition-colors text-[13px] font-bold shadow-sm"
+                                >
+                                    <CheckCircle className="w-4 h-4" />
+                                    Mark as Paid
+                                </button>
                             </div>
-                            {selectedPayment.obligation.description && (
-                                <div className="pt-4 border-t border-black/[0.04]">
-                                    <p className="text-[10px] uppercase tracking-wider font-bold text-black/30 mb-1">Notes</p>
-                                    <p className="text-[12px] text-black/60">{selectedPayment.obligation.description}</p>
-                                </div>
-                            )}
-                            <button
-                                onClick={async () => {
-                                    await markObligationAsPaid(selectedPayment.obligation)
-                                    setSelectedPayment(null)
-                                }}
-                                className="w-full mt-2 flex items-center justify-center gap-2 py-3 rounded-xl bg-black text-white hover:bg-black/80 transition-colors text-[13px] font-bold shadow-sm"
-                            >
-                                <CheckCircle className="w-4 h-4" />
-                                Mark as Paid
-                            </button>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     )
 }
