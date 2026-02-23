@@ -12,6 +12,7 @@ import GoalsRoadmap from './GoalsRoadmap'
 import GoalsVisionBoard from './GoalsVisionBoard'
 import GoalDetailSheet from './GoalDetailSheet'
 import type { Goal, GoalCategory } from '../types/goals.types'
+import { KarrFooter } from '@/components/KarrFooter'
 
 export default function GoalsDashboard() {
     const { goals, loading, createGoal, toggleMilestone, deleteGoal, updateGoal } = useGoals()
@@ -134,12 +135,13 @@ export default function GoalsDashboard() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3 }}
-                        className={view === 'timeline' ? "flex-1 min-h-[600px]" : "pb-20"}
+                        className={view === 'timeline' ? "flex-1 min-h-[600px]" : ""}
                     >
                         {view === 'matrix' && <GoalsMatrix goals={filteredGoals} onGoalClick={g => setSelectedGoalId(g.id)} />}
                         {view === 'timeline' && <GoalsRoadmap goals={filteredGoals} onGoalClick={g => setSelectedGoalId(g.id)} />}
                         {view === 'vision' && <GoalsVisionBoard goals={filteredGoals} onGoalClick={g => setSelectedGoalId(g.id)} />}
                     </motion.div>
+                    <KarrFooter dark={view === 'timeline'} />
                 </div>
             </div>
 

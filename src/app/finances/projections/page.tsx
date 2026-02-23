@@ -1,5 +1,6 @@
 import { ProjectionsAnalytics } from '@/features/finance/components/ProjectionsAnalytics'
 import { FinanceProfileProvider } from '@/features/finance/contexts/FinanceProfileContext'
+import { KarrFooter } from '@/components/KarrFooter'
 
 export default function ProjectionsPage() {
     return (
@@ -16,10 +17,11 @@ export default function ProjectionsPage() {
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto pb-8">
+                <div className="flex-1 overflow-y-auto">
                     <div className="p-6">
                         <ProjectionsAnalytics />
                     </div>
+                    <KarrFooter dark />
                 </div>
             </div>
         </FinanceProfileProvider>

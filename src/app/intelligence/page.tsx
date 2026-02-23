@@ -5,6 +5,7 @@ import { Brain, Terminal, Send, RefreshCw, Sparkles, Database, Shield, Zap } fro
 import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
+import { KarrFooter } from '@/components/KarrFooter'
 
 interface Message {
     role: 'user' | 'assistant'
@@ -140,6 +141,9 @@ export default function IntelligencePage() {
                     ref={scrollRef}
                     className="flex-1 overflow-y-auto space-y-6 max-w-3xl mx-auto w-full pb-8 pt-4 px-4 sm:px-6 custom-scrollbar"
                 >
+                    <div className="pt-4 pb-12">
+                        <KarrFooter dark />
+                    </div>
                     <AnimatePresence mode="popLayout">
                         {messages.map((msg, i) => (
                             <motion.div
