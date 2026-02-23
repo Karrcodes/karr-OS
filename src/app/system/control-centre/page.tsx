@@ -21,9 +21,9 @@ const MOTIVATION_QUOTES = [
 ]
 
 export default function ControlCentrePage() {
-    const { tasks, loading: tasksLoading } = useTasks('todo')
-    const { transactions, loading: financeLoading } = useTransactions()
-    const { overrides, loading: rotaLoading } = useRota() // Added useRota hook
+    const { tasks, loading: tasksLoading } = useTasks('todo', 'all')
+    const { transactions, loading: financeLoading } = useTransactions('all')
+    const { overrides, loading: rotaLoading } = useRota('all') // Added useRota hook
     const { settings } = useSystemSettings() // Added useSystemSettings hook
     const [quoteIndex, setQuoteIndex] = useState(0)
 

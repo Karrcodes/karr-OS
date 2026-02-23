@@ -19,15 +19,11 @@ export interface ScheduleItem {
 }
 
 export function useSchedule(days: number = 14, allProfiles: boolean = false) {
-    const { tasks: todoTasksPersonal, loading: todoLoading } = useTasks('todo', 'personal')
-    const { tasks: todoTasksBusiness, loading: todoLoadingBiz } = useTasks('todo', 'business')
-    const { tasks: reminderTasks, loading: reminderLoading } = useTasks('reminder', 'personal')
-    const { tasks: reminderTasksBiz, loading: reminderLoadingBiz } = useTasks('reminder', 'business')
-    const { overrides, loading: rotaLoading } = useRota()
+    const activeProfile = allProfiles ? 'all' : undefined
+    const { tasks: todoTasks, loading: todoLoading } = useTasks('todo', activeProfile)
+    const { tasks: allReminderTasks, loading: reminderLoading } = useTasks('reminder', activeProfile)
+    const { overrides, loading: rotaLoading } = useRota(activeProfile as any)
     const { settings } = useSystemSettings()
-
-    const todoTasks = allProfiles ? [...todoTasksPersonal, ...todoTasksBusiness] : todoTasksPersonal
-    const allReminderTasks = allProfiles ? [...reminderTasks, ...reminderTasksBiz] : reminderTasks
 
     const schedule = useMemo(() => {
         const items: ScheduleItem[] = []
@@ -158,6 +154,6 @@ export function useSchedule(days: number = 14, allProfiles: boolean = false) {
 
     return {
         schedule,
-        loading: todoLoading || todoLoadingBiz || reminderLoading || reminderLoadingBiz || rotaLoading
+        loading: todoLoading || reminderLoading || rotaLoading
     }
 }

@@ -1,3 +1,5 @@
+export type ProfileType = 'personal' | 'business'
+
 export interface Pocket {
     id: string
     name: string

@@ -53,18 +53,25 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder', profileOverr
                 saveSessionTasks(initial)
                 allTasks = initial
             }
-            const filtered = allTasks.filter((t: Task) => t.profile === activeProfile)
+            const filtered = activeProfile === 'all'
+                ? allTasks
+                : allTasks.filter((t: Task) => t.profile === activeProfile)
             setTasks(filtered)
             setLoading(false)
             return
         }
         setLoading(true)
-        const { data, error } = await supabase
+        let query = supabase
             .from('fin_tasks')
             .select('*')
-            .eq('profile', activeProfile)
             .eq('category', category)
             .order('position', { ascending: false })
+
+        if (activeProfile !== 'all') {
+            query = query.eq('profile', activeProfile)
+        }
+
+        const { data, error } = await query
 
         if (error) setError(error.message)
         else setTasks(data ?? [])

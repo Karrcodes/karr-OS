@@ -8,7 +8,7 @@ import Link from 'next/link'
 import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
 
 export function ScheduleWidget() {
-    const { schedule, loading } = useSchedule(7) // Next 7 days
+    const { schedule, loading } = useSchedule(7, true) // Next 7 days, all profiles
     const { settings } = useSystemSettings()
     const today = new Date().toISOString().split('T')[0]
 

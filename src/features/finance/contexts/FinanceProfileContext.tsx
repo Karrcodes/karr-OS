@@ -1,8 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
-
-export type ProfileType = 'personal' | 'business'
+import { ProfileType } from '../types/finance.types'
 
 interface FinanceProfileContextType {
     activeProfile: ProfileType

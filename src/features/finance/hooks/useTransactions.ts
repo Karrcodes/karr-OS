@@ -6,33 +6,57 @@ import type { Transaction } from '../types/finance.types'
 import { useFinanceProfile } from '../contexts/FinanceProfileContext'
 import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
 import { MOCK_FINANCE, MOCK_BUSINESS } from '@/lib/demoData'
+import { ProfileType } from '../types/finance.types'
 
-export function useTransactions() {
+export function useTransactions(profileOverride?: ProfileType | 'all') {
     const [transactions, setTransactions] = useState<Transaction[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-    const { activeProfile, refreshTrigger, globalRefresh } = useFinanceProfile()
+    const { activeProfile: contextProfile, refreshTrigger, globalRefresh } = useFinanceProfile()
+    const activeProfile = profileOverride || contextProfile
     const { settings } = useSystemSettings()
 
     const fetchTransactions = async () => {
         if (settings.is_demo_mode) {
-            const mockData = activeProfile === 'business' ? MOCK_BUSINESS.transactions : MOCK_FINANCE.transactions
+            let mockData: any[] = []
+            if (activeProfile === 'all') {
+                mockData = [
+                    ...MOCK_FINANCE.transactions.map(t => ({ ...t, profile: 'personal' })),
+                    ...MOCK_BUSINESS.transactions.map(t => ({ ...t, profile: 'business' }))
+                ]
+            } else {
+                mockData = activeProfile === 'business'
+                    ? MOCK_BUSINESS.transactions.map(t => ({ ...t, profile: 'business' }))
+                    : MOCK_FINANCE.transactions.map(t => ({ ...t, profile: 'personal' }))
+            }
+
             setTransactions(mockData.map(t => ({
                 ...t,
-                profile: activeProfile,
+                id: t.id,
+                description: t.description,
+                amount: t.amount,
+                category: t.category,
+                type: t.type,
+                date: t.date,
+                profile: t.profile,
                 created_at: new Date().toISOString(),
-                pocket_id: t.id.startsWith('d-tx-1') ? 'd-p-2' : null // Just a mock mapping
-            })) as any)
+                pocket_id: t.id.startsWith('d-tx-1') ? 'd-p-2' : (t.pocket_id || null)
+            })) as Transaction[])
             setLoading(false)
             return
         }
         setLoading(true)
-        const { data, error } = await supabase
+        let query = supabase
             .from('fin_transactions')
             .select('*')
-            .eq('profile', activeProfile)
             .order('date', { ascending: false })
             .order('created_at', { ascending: false })
+
+        if (activeProfile !== 'all') {
+            query = query.eq('profile', activeProfile)
+        }
+
+        const { data, error } = await query
 
         if (error) setError(error.message)
         else setTransactions(data ?? [])
@@ -40,6 +64,7 @@ export function useTransactions() {
     }
 
     const clearTransactions = async () => {
+        if (activeProfile === 'all') return // Safety
         setLoading(true)
         const { error } = await supabase
             .from('fin_transactions')
