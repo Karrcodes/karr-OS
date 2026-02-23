@@ -16,16 +16,25 @@ export function useRecurring() {
 
     const fetchObligations = useCallback(async () => {
         if (settings.is_demo_mode) {
-            const mockData = activeProfile === 'business' ? MOCK_BUSINESS.obligations : MOCK_FINANCE.obligations
-            setObligations(mockData.map(o => ({
-                ...o,
-                id: o.id,
-                created_at: new Date().toISOString(),
-                profile: activeProfile,
-                next_due_date: new Date(new Date().getFullYear(), new Date().getMonth(), o.due_day).toISOString().split('T')[0],
-                frequency: 'monthly',
-                is_active: true
-            })) as any)
+            const storageKey = `karr_os_demo_obligations_${activeProfile}`
+            const stored = sessionStorage.getItem(storageKey)
+
+            if (stored) {
+                setObligations(JSON.parse(stored))
+            } else {
+                const mockData = activeProfile === 'business' ? MOCK_BUSINESS.obligations : MOCK_FINANCE.obligations
+                const obligations = mockData.map(o => ({
+                    ...o,
+                    id: o.id,
+                    created_at: new Date().toISOString(),
+                    profile: activeProfile,
+                    next_due_date: new Date(new Date().getFullYear(), new Date().getMonth(), (o as any).due_day || 1).toISOString().split('T')[0],
+                    frequency: 'monthly',
+                    is_active: true
+                })) as any
+                setObligations(obligations)
+                sessionStorage.setItem(storageKey, JSON.stringify(obligations))
+            }
             setLoading(false)
             return
         }
@@ -42,18 +51,46 @@ export function useRecurring() {
     }, [activeProfile, refreshTrigger, settings.is_demo_mode])
 
     const createObligation = async (obligation: Omit<RecurringObligation, 'id' | 'created_at' | 'profile'>) => {
+        if (settings.is_demo_mode) {
+            const storageKey = `karr_os_demo_obligations_${activeProfile}`
+            const newObligation = {
+                ...obligation,
+                id: Math.random().toString(36).substr(2, 9),
+                created_at: new Date().toISOString(),
+                profile: activeProfile,
+                is_active: true
+            } as RecurringObligation
+            const updated = [...obligations, newObligation]
+            sessionStorage.setItem(storageKey, JSON.stringify(updated))
+            globalRefresh()
+            return
+        }
         const { error } = await supabase.from('fin_recurring').insert({ ...obligation, profile: activeProfile })
         if (error) throw error
         globalRefresh()
     }
 
     const updateObligation = async (id: string, updates: Partial<RecurringObligation>) => {
+        if (settings.is_demo_mode) {
+            const storageKey = `karr_os_demo_obligations_${activeProfile}`
+            const updated = obligations.map(o => o.id === id ? { ...o, ...updates } : o)
+            sessionStorage.setItem(storageKey, JSON.stringify(updated))
+            globalRefresh()
+            return
+        }
         const { error } = await supabase.from('fin_recurring').update(updates).eq('id', id)
         if (error) throw error
         globalRefresh()
     }
 
     const deleteObligation = async (id: string) => {
+        if (settings.is_demo_mode) {
+            const storageKey = `karr_os_demo_obligations_${activeProfile}`
+            const updated = obligations.filter(o => o.id !== id)
+            sessionStorage.setItem(storageKey, JSON.stringify(updated))
+            globalRefresh()
+            return
+        }
         const { error } = await supabase.from('fin_recurring').delete().eq('id', id)
         if (error) throw error
         globalRefresh()

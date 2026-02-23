@@ -7,7 +7,7 @@ import { Activity } from 'lucide-react'
 export default function TodoPage() {
     return (
         <TasksLayout>
-            <TaskList category="todo" title="Deployment" icon={Activity} />
+            <TaskList category="todo" />
         </TasksLayout>
     )
 }

@@ -7,7 +7,7 @@ import { ShoppingCart } from 'lucide-react'
 export default function GroceriesPage() {
     return (
         <TasksLayout>
-            <TaskList category="grocery" title="Grocery List" icon={ShoppingCart} />
+            <TaskList category="grocery" />
         </TasksLayout>
     )
 }

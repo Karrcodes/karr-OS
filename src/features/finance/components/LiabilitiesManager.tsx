@@ -84,6 +84,11 @@ export function LiabilitiesManager() {
     const startEdit = (o: RecurringObligation) => {
         setEditId(o.id)
         setAdding(false)
+
+        // Find if it matches a known lender, otherwise set to 'other'
+        const lender = LENDERS.find(l => l.name === o.name)
+        setSelectedLenderId(lender ? lender.id : 'other')
+
         setForm({
             name: o.name,
             amount: o.amount,
@@ -232,13 +237,22 @@ export function LiabilitiesManager() {
                                 <button onClick={() => handleSave(!!editId)} disabled={saving} className="btn-primary flex-1 h-12 text-[14px]">
                                     {saving ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : editId ? 'Save Changes' : 'Create Liability'}
                                 </button>
-                                <button onClick={() => { setAdding(false); setEditId(null); setSelectedLenderId(null); setForm({ frequency: 'monthly', amount: 0, category: 'other', emoji: '💸', payments_left: null }); }} className="btn-secondary px-8 h-12 text-[14px]">
+                                <button onClick={() => {
+                                    setAdding(false);
+                                    setEditId(null);
+                                    setSelectedLenderId(null);
+                                    setForm({ frequency: 'monthly', amount: 0, category: 'other', emoji: '💸', payments_left: null });
+                                }} className="btn-secondary px-8 h-12 text-[14px]">
                                     Cancel
                                 </button>
                             </div>
                         </div>
                     ) : (
-                        <button onClick={() => { setAdding(true); setSelectedLenderId('other'); }} className="flex items-center gap-2 text-[13px] text-black/60 hover:text-black hover:bg-black/5 font-bold transition-all border-2 border-dashed border-black/[0.08] hover:border-black/30 w-full p-6 rounded-2xl justify-center bg-white shadow-sm">
+                        <button onClick={() => {
+                            setAdding(true);
+                            setSelectedLenderId('other');
+                            setForm({ frequency: 'monthly', amount: 0, category: 'other', emoji: '💸', payments_left: null });
+                        }} className="flex items-center gap-2 text-[13px] text-black/60 hover:text-black hover:bg-black/5 font-bold transition-all border-2 border-dashed border-black/[0.08] hover:border-black/30 w-full p-6 rounded-2xl justify-center bg-white shadow-sm">
                             <Plus className="w-5 h-5" /> Add new subscription or debt schedule
                         </button>
                     )}

@@ -7,7 +7,7 @@ import { Bell } from 'lucide-react'
 export default function RemindersPage() {
     return (
         <TasksLayout>
-            <TaskList category="reminder" title="Reminders" icon={Bell} />
+            <TaskList category="reminder" />
         </TasksLayout>
     )
 }
