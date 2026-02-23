@@ -20,7 +20,8 @@ import {
     ArrowRight,
     Activity,
     ShoppingCart,
-    Bell
+    Bell,
+    X
 } from 'lucide-react'
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion'
 import { useTasks } from '../hooks/useTasks'
