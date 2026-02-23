@@ -52,10 +52,10 @@ export function TasksLayout({ children }: { children: React.ReactNode }) {
                     </div>
                     {/* Calendar + Planner buttons — always right of title on all screen sizes */}
                     <div className="flex items-center gap-2 flex-shrink-0">
-                        {/* Planner: go back if currently on planner, otherwise navigate to planner */}
+                        {/* Planner: go to ops page if currently on planner, otherwise navigate to planner */}
                         {isPlanner ? (
                             <button
-                                onClick={() => router.back()}
+                                onClick={() => router.push('/tasks/todo')}
                                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border bg-black text-white border-black"
                             >
                                 <Activity className="w-3.5 h-3.5" />
@@ -70,10 +70,10 @@ export function TasksLayout({ children }: { children: React.ReactNode }) {
                                 <span className="hidden sm:inline">Planner</span>
                             </Link>
                         )}
-                        {/* Calendar: go back if currently on calendar, otherwise navigate to calendar */}
+                        {/* Calendar: go to ops page if currently on calendar, otherwise navigate to calendar */}
                         {isOnCalendar ? (
                             <button
-                                onClick={() => router.back()}
+                                onClick={() => router.push('/tasks/todo')}
                                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border bg-black text-white border-black"
                             >
                                 <Calendar className="w-3.5 h-3.5" />
