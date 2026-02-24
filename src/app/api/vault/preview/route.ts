@@ -22,21 +22,28 @@ export async function GET(req: NextRequest) {
 
         const html = await response.text()
 
-        const getMetaContent = (property: string) => {
-            const regex = new RegExp(`<meta[^>]+(?:property|name)=["']${property}["'][^>]+content=["']([^"']+)["']`, 'i')
-            const match = html.match(regex)
-            if (match) return match[1]
+        const getMetaContent = (selectors: string[]) => {
+            for (const selector of selectors) {
+                // Handle property="...", name="..." and various orders
+                const patterns = [
+                    new RegExp(`<meta[^>]+(?:property|name)=["']${selector}["'][^>]+content=["']([^"']+)["']`, 'i'),
+                    new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${selector}["']`, 'i'),
+                    new RegExp(`<meta[^>]+itemprop=["']${selector}["'][^>]+content=["']([^"']+)["']`, 'i'),
+                    new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+itemprop=["']${selector}["']`, 'i')
+                ]
 
-            // Try alternate order: content before property/name
-            const altRegex = new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${property}["']`, 'i')
-            const altMatch = html.match(altRegex)
-            return altMatch ? altMatch[1] : null
+                for (const pattern of patterns) {
+                    const match = html.match(pattern)
+                    if (match && match[1]) return match[1]
+                }
+            }
+            return null
         }
 
-        const title = getMetaContent('og:title') || getMetaContent('twitter:title') || html.match(/<title>([^<]+)<\/title>/i)?.[1]
-        const description = getMetaContent('og:description') || getMetaContent('twitter:description') || getMetaContent('description')
-        const image = getMetaContent('og:image') || getMetaContent('twitter:image:src') || getMetaContent('twitter:image')
-        const siteName = getMetaContent('og:site_name') || new URL(url).hostname
+        const title = getMetaContent(['og:title', 'twitter:title', 'title']) || html.match(/<title>([^<]+)<\/title>/i)?.[1]
+        const description = getMetaContent(['og:description', 'twitter:description', 'description'])
+        const image = getMetaContent(['og:image', 'twitter:image:src', 'twitter:image', 'thumbnailUrl', 'image'])
+        const siteName = getMetaContent(['og:site_name', 'twitter:site']) || new URL(url).hostname
 
         return NextResponse.json({
             title: title || url,

@@ -22,6 +22,18 @@ export function Clipboard() {
     const [copiedId, setCopiedId] = useState<string | null>(null)
     const { settings } = useSystemSettings()
 
+    const [confirmModal, setConfirmModal] = useState<{
+        open: boolean;
+        title: string;
+        message: string;
+        id: string | null;
+    }>({
+        open: false,
+        title: '',
+        message: '',
+        id: null
+    })
+
     const fetchClips = async () => {
         if (settings.is_demo_mode) {
             setClips(MOCK_VAULT.clips)
@@ -76,6 +88,7 @@ export function Clipboard() {
         if (!error) {
             setClips(clips.filter(c => c.id !== id))
         }
+        setConfirmModal(prev => ({ ...prev, open: false }))
     }
 
     const handleCopy = (id: string, content: string) => {
@@ -84,10 +97,18 @@ export function Clipboard() {
         setTimeout(() => setCopiedId(null), 2000)
     }
 
+    const handleCancel = () => {
+        setNewClip('')
+    }
+
     const extractFirstUrl = (str: string) => {
         const urlRegex = /(https?:\/\/[^\s]+)/
         const match = str.match(urlRegex)
-        return match ? match[0] : null
+        // Clean up punctuation at the end of URL that might have been caught
+        if (match) {
+            return match[0].replace(/[.,!?;:)]+$/, '')
+        }
+        return null
     }
 
     const isBulletLine = (text: string) => {
@@ -112,8 +133,8 @@ export function Clipboard() {
                             const textarea = e.currentTarget
                             const start = textarea.selectionStart
                             const text = textarea.value
-                            const lines = text.substring(0, start).split('\n')
-                            const currentLine = lines[lines.length - 1]
+                            const linesBefore = text.substring(0, start).split('\n')
+                            const currentLine = linesBefore[linesBefore.length - 1]
 
                             if (currentLine.trim().startsWith('- ')) {
                                 e.preventDefault()
@@ -127,7 +148,7 @@ export function Clipboard() {
                                     const before = text.substring(0, start)
                                     const after = text.substring(start)
                                     setNewClip(before + '\n- ' + after)
-                                    // Selection needs to be handled via timeout or useEffect
+                                    // Selection needs to be handled via timeout
                                     setTimeout(() => {
                                         textarea.selectionStart = textarea.selectionEnd = start + 3
                                     }, 0)
@@ -136,7 +157,7 @@ export function Clipboard() {
                         }
                     }}
                 />
-                <div className="absolute bottom-3 left-3 flex items-center gap-1">
+                <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
                     <button
                         type="button"
                         onClick={() => {
@@ -151,11 +172,11 @@ export function Clipboard() {
 
                             // If multi-line selection, bullet each line
                             if (selected.includes('\n')) {
-                                const bulleted = selected.split('\n').map(line => line.startsWith('- ') ? line : `- ${line}`).join('\n')
+                                const bulleted = selected.split('\n').map(line => line.trim().startsWith('- ') ? line : `- ${line}`).join('\n')
                                 setNewClip(before + bulleted + after)
                             } else {
                                 // Just insert bullet at cursor or before selection
-                                setNewClip(before + (selected.startsWith('- ') ? selected : `- ${selected}`) + after)
+                                setNewClip(before + (selected.trim().startsWith('- ') ? selected : `- ${selected}`) + after)
                             }
                         }}
                         className={cn(
@@ -166,6 +187,15 @@ export function Clipboard() {
                     >
                         <List className="w-4 h-4" />
                     </button>
+                    {newClip.trim() && (
+                        <button
+                            type="button"
+                            onClick={handleCancel}
+                            className="text-[11px] font-bold text-black/40 hover:text-red-500 px-2 py-1 underline underline-offset-2 transition-colors uppercase tracking-tight"
+                        >
+                            Cancel
+                        </button>
+                    )}
                 </div>
                 <button
                     onClick={() => handleAdd()}
@@ -176,6 +206,33 @@ export function Clipboard() {
                     <Plus className="w-5 h-5" />
                 </button>
             </div>
+
+            {/* Confirmation Modal */}
+            {confirmModal.open && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-black/5 animate-in zoom-in-95 duration-200">
+                        <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center mb-4">
+                            <Trash2 className="w-6 h-6 text-red-500" />
+                        </div>
+                        <h3 className="text-[18px] font-black text-black mb-2">{confirmModal.title}</h3>
+                        <p className="text-[14px] text-black/50 leading-relaxed mb-6">{confirmModal.message}</p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setConfirmModal(prev => ({ ...prev, open: false }))}
+                                className="flex-1 px-4 py-3 rounded-2xl bg-black/[0.03] text-black font-bold text-[14px] hover:bg-black/[0.06] transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => confirmModal.id && handleDelete(confirmModal.id)}
+                                className="flex-1 px-4 py-3 rounded-2xl bg-red-500 text-white font-bold text-[14px] hover:bg-red-600 transition-colors shadow-lg shadow-red-500/20"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* List Area */}
             <div className="space-y-3">
@@ -196,7 +253,7 @@ export function Clipboard() {
                             clip={clip}
                             copiedId={copiedId}
                             handleCopy={handleCopy}
-                            handleDelete={handleDelete}
+                            setConfirmModal={setConfirmModal}
                             extractFirstUrl={extractFirstUrl}
                         />
                     ))
@@ -206,11 +263,16 @@ export function Clipboard() {
     )
 }
 
-function ClipItem({ clip, copiedId, handleCopy, handleDelete, extractFirstUrl }: {
+function ClipItem({ clip, copiedId, handleCopy, setConfirmModal, extractFirstUrl }: {
     clip: Clip,
     copiedId: string | null,
     handleCopy: (id: string, content: string) => void,
-    handleDelete: (id: string) => void,
+    setConfirmModal: React.Dispatch<React.SetStateAction<{
+        open: boolean;
+        title: string;
+        message: string;
+        id: string | null;
+    }>>,
     extractFirstUrl: (str: string) => string | null
 }) {
     const [isExpanded, setIsExpanded] = useState(false)
@@ -297,7 +359,12 @@ function ClipItem({ clip, copiedId, handleCopy, handleDelete, extractFirstUrl }:
                     {copiedId === clip.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                 </button>
                 <button
-                    onClick={() => handleDelete(clip.id)}
+                    onClick={() => setConfirmModal({
+                        open: true,
+                        title: 'Delete Clip?',
+                        message: 'Are you sure you want to remove this item from your vault? This cannot be undone.',
+                        id: clip.id
+                    })}
                     className="p-2 text-black/20 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
                 >
                     <Trash2 className="w-4 h-4" />
