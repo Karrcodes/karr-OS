@@ -139,10 +139,12 @@ export function GlobalQuickAction() {
     }
 
     const actions = useMemo(() => [
-        { id: 'spend', label: 'Spend', icon: Receipt, color: 'bg-emerald-500', glow: 'shadow-emerald-500/40' },
-        { id: 'task', label: 'Task', icon: CheckSquare, color: 'bg-blue-600', glow: 'shadow-blue-600/40' },
-        { id: 'vault', label: 'Vault', icon: Clipboard, color: 'bg-amber-500', glow: 'shadow-amber-500/40' },
+        { id: 'spend', label: 'Spend', icon: Receipt, color: 'bg-emerald-500/60', glow: 'shadow-emerald-500/30' },
+        { id: 'task', label: 'Task', icon: CheckSquare, color: 'bg-blue-600/60', glow: 'shadow-blue-600/30' },
+        { id: 'vault', label: 'Vault', icon: Clipboard, color: 'bg-amber-500/60', glow: 'shadow-amber-500/30' },
     ], [])
+
+    const liquidGlass = "backdrop-blur-2xl border border-white/20 saturate-[1.8] shadow-2xl"
 
     // Early return for SSR and excluded routes AFTER all hook calls
     if (!mounted || pathname === '/intelligence') return null
@@ -254,15 +256,15 @@ export function GlobalQuickAction() {
                                                     className={cn(inputBase, "focus:ring-4 focus:ring-rose-500/10")}
                                                 />
                                             </div>
-                                            <div className="space-y-2">
+                                            <div className="space-y-2 flex-1 min-w-0">
                                                 <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Date</label>
                                                 <div className="relative w-full">
                                                     <input
                                                         type="date"
                                                         value={form.date}
                                                         onChange={e => setForm({ ...form, date: e.target.value })}
-                                                        className={cn(inputBase, "focus:ring-4 focus:ring-rose-500/10 py-0 w-full min-w-0 border-box")}
-                                                        style={{ width: '100%' }}
+                                                        className={cn(inputBase, "focus:ring-4 focus:ring-emerald-500/10 py-0 w-full min-w-0")}
+                                                        style={{ width: '100%', boxSizing: 'border-box' }}
                                                     />
                                                     <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20 pointer-events-none" />
                                                 </div>
@@ -311,14 +313,14 @@ export function GlobalQuickAction() {
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2">
                                                     <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Criticality</label>
-                                                    <div className="flex gap-1 items-center overflow-x-auto no-scrollbar py-1">
+                                                    <div className="flex gap-1.5 items-center flex-wrap py-1">
                                                         {PRIORITY_OPTS.map(p => (
                                                             <button
                                                                 key={p.id}
                                                                 type="button"
                                                                 onClick={() => setForm({ ...form, taskPriority: p.id as any })}
                                                                 className={cn(
-                                                                    "px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-tighter transition-all border shrink-0",
+                                                                    "px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all border shrink-0",
                                                                     form.taskPriority === p.id
                                                                         ? cn(p.color, "text-white border-transparent shadow-md scale-105")
                                                                         : "bg-black/[0.03] text-black/40 border-black/5 hover:bg-black/[0.06]"
@@ -329,15 +331,15 @@ export function GlobalQuickAction() {
                                                         ))}
                                                     </div>
                                                 </div>
-                                                <div className="space-y-2">
+                                                <div className="space-y-2 flex-1 min-w-0">
                                                     <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Deadline</label>
                                                     <div className="relative w-full">
                                                         <input
                                                             type="date"
                                                             value={form.dueDate}
                                                             onChange={e => setForm({ ...form, dueDate: e.target.value })}
-                                                            className={cn(inputBase, "focus:ring-4 focus:ring-indigo-500/10 py-0 w-full min-w-0 border-box")}
-                                                            style={{ width: '100%' }}
+                                                            className={cn(inputBase, "focus:ring-4 focus:ring-blue-500/10 py-0 w-full min-w-0")}
+                                                            style={{ width: '100%', boxSizing: 'border-box' }}
                                                         />
                                                         <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20 pointer-events-none" />
                                                     </div>
@@ -397,7 +399,7 @@ export function GlobalQuickAction() {
                                         onClick={handleSubmit}
                                         disabled={loading || success}
                                         className={cn(
-                                            "w-full py-5 rounded-2xl text-white font-black text-[14px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 overflow-hidden relative group",
+                                            "w-full py-5 rounded-2xl text-white font-black text-[14px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 overflow-hidden relative group border-white/20 border backdrop-blur-xl shadow-xl",
                                             success ? "bg-emerald-500" :
                                                 actions.find(a => a.id === activeAction)?.color,
                                             (loading || success) && "opacity-80 scale-[0.98]"
@@ -475,8 +477,10 @@ export function GlobalQuickAction() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.9 }}
                     className={cn(
-                        "w-16 h-16 rounded-[24px] shadow-2xl flex items-center justify-center transition-all z-[320] relative overflow-hidden pointer-events-auto",
-                        isOpen ? "bg-white text-black ring-1 ring-black/5" : "bg-black text-white hover:shadow-black/20"
+                        "w-16 h-16 rounded-[24px] shadow-2xl flex items-center justify-center transition-all z-[320] relative overflow-hidden pointer-events-auto border",
+                        isOpen
+                            ? "bg-white/80 text-black backdrop-blur-xl border-black/5"
+                            : "bg-black/90 text-white border-white/10 hover:shadow-black/20 backdrop-blur-md"
                     )}
                 >
                     {isOpen ? (
