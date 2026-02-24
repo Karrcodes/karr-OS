@@ -1,10 +1,9 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, X, Receipt, CheckSquare, Clipboard, Loader2, CreditCard, ListChecks, Type, Sparkles } from 'lucide-react'
+import { Plus, X, Receipt, CheckSquare, Clipboard, Loader2, Sparkles, ListChecks } from 'lucide-react'
 import { usePockets } from '@/features/finance/hooks/usePockets'
-import { useTasks } from '@/features/tasks/hooks/useTasks'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 import { useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
@@ -14,15 +13,13 @@ type ActionType = 'spend' | 'task' | 'vault' | null
 
 export function GlobalQuickAction() {
     const pathname = usePathname()
+    const [mounted, setMounted] = useState(false)
     const [isOpen, setIsOpen] = useState(false)
     const [activeAction, setActiveAction] = useState<ActionType>(null)
     const [loading, setLoading] = useState(false)
     const [success, setSuccess] = useState(false)
 
-    // Hide in Intelligence module
-    if (pathname === '/intelligence') return null
-
-    // Data for Actions
+    // Essential hooks called UNCONDITIONALLY
     const { pockets, updatePocket } = usePockets()
     const { activeProfile } = useFinanceProfile()
 
@@ -36,6 +33,10 @@ export function GlobalQuickAction() {
         taskPriority: 'mid' as 'super' | 'high' | 'mid' | 'low',
         vaultText: ''
     })
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
 
     const resetForm = () => {
         setForm({
@@ -112,14 +113,20 @@ export function GlobalQuickAction() {
         }
     }
 
-    const actions = [
-        { id: 'spend', label: 'Log Spend', icon: Receipt, color: 'bg-gradient-to-br from-rose-500 to-rose-600', textColor: 'text-rose-500' },
-        { id: 'task', label: 'New Task', icon: CheckSquare, color: 'bg-gradient-to-br from-indigo-500 to-indigo-600', textColor: 'text-indigo-500' },
-        { id: 'vault', label: 'Vault Item', icon: Clipboard, color: 'bg-gradient-to-br from-amber-500 to-amber-600', textColor: 'text-amber-500' },
-    ]
+    const actions = useMemo(() => [
+        { id: 'spend', label: 'Log Spend', icon: Receipt, color: 'bg-gradient-to-br from-rose-500 to-rose-600' },
+        { id: 'task', label: 'New Task', icon: CheckSquare, color: 'bg-gradient-to-br from-indigo-500 to-indigo-600' },
+        { id: 'vault', label: 'Vault Item', icon: Clipboard, color: 'bg-gradient-to-br from-amber-500 to-amber-600' },
+    ], [])
+
+    // Early return for SSR and excluded routes AFTER all hook calls
+    if (!mounted || pathname === '/intelligence') return null
 
     return (
-        <div className="fixed bottom-6 right-6 md:right-8 z-[200] flex flex-col items-end gap-3 safe-bottom">
+        <div
+            className="fixed bottom-6 right-6 md:right-8 z-[200] flex flex-col items-end gap-3 pointer-events-none"
+            style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))' }}
+        >
             {/* Speed Dial Menu */}
             <AnimatePresence>
                 {isOpen && !activeAction && (
@@ -131,7 +138,7 @@ export function GlobalQuickAction() {
                             visible: { transition: { staggerChildren: 0.05, delayChildren: 0.05 } },
                             hidden: { transition: { staggerChildren: 0.05, staggerDirection: -1 } }
                         }}
-                        className="flex flex-col items-end gap-2 mb-2"
+                        className="flex flex-col items-end gap-2 mb-2 pointer-events-auto"
                     >
                         {actions.map((action) => (
                             <motion.button
@@ -146,8 +153,6 @@ export function GlobalQuickAction() {
                                 className="flex items-center gap-3 group"
                             >
                                 <motion.span
-                                    initial={{ opacity: 0, x: 10 }}
-                                    animate={{ opacity: 1, x: 0 }}
                                     className="bg-black/90 text-white backdrop-blur shadow-xl border border-white/10 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity"
                                 >
                                     {action.label}
@@ -171,16 +176,16 @@ export function GlobalQuickAction() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.9 }}
                 className={cn(
-                    "w-16 h-16 rounded-[24px] shadow-2xl flex items-center justify-center transition-all z-[210] relative overflow-hidden",
+                    "w-16 h-16 rounded-[24px] shadow-2xl flex items-center justify-center transition-all z-[210] relative overflow-hidden pointer-events-auto",
                     isOpen ? "bg-white text-black ring-1 ring-black/5" : "bg-black text-white hover:shadow-black/20"
                 )}
             >
                 {isOpen ? (
-                    <motion.div initial={{ rotate: -90 }} animate={{ rotate: 0 }} transition={{ type: 'spring', damping: 10 }}>
+                    <motion.div initial={{ rotate: -90 }} animate={{ rotate: 0 }}>
                         <X className="w-7 h-7" strokeWidth={2.5} />
                     </motion.div>
                 ) : (
-                    <motion.div initial={{ rotate: 90 }} animate={{ rotate: 0 }} transition={{ type: 'spring', damping: 10 }}>
+                    <motion.div initial={{ rotate: 90 }} animate={{ rotate: 0 }}>
                         <Plus className="w-7 h-7" strokeWidth={2.5} />
                     </motion.div>
                 )}
@@ -196,8 +201,7 @@ export function GlobalQuickAction() {
                         initial={{ opacity: 0, scale: 0.9, y: 30, filter: 'blur(10px)' }}
                         animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
                         exit={{ opacity: 0, scale: 0.9, y: 30, filter: 'blur(10px)' }}
-                        transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-                        className="fixed inset-x-4 bottom-24 md:absolute md:bottom-20 md:right-0 md:w-[320px] bg-white/80 backdrop-blur-3xl rounded-[32px] shadow-[0_32px_128px_-32px_rgba(0,0,0,0.3)] border border-black/5 overflow-hidden flex flex-col z-[220]"
+                        className="fixed inset-x-4 bottom-24 md:absolute md:bottom-20 md:right-0 md:w-[320px] bg-white/80 backdrop-blur-3xl rounded-[32px] shadow-[0_32px_128px_-32px_rgba(0,0,0,0.3)] border border-black/5 overflow-hidden flex flex-col z-[220] pointer-events-auto"
                     >
                         {/* Header */}
                         <div className="px-6 py-5 border-b border-black/5 flex items-center justify-between bg-white/40">
@@ -308,9 +312,6 @@ export function GlobalQuickAction() {
                                         success ? <><ListChecks className="w-5 h-5" /> Authorized</> :
                                             <><Sparkles className="w-4 h-4" /> Save Record</>}
                                 </span>
-                                {!success && !loading && (
-                                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                                )}
                             </button>
                         </div>
                     </motion.div>
@@ -325,15 +326,12 @@ export function GlobalQuickAction() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={() => { setIsOpen(false); setActiveAction(null); resetForm(); }}
-                        className="fixed inset-0 bg-black/10 backdrop-blur-[2px] z-[190]"
+                        className="fixed inset-0 bg-black/10 backdrop-blur-[2px] z-[190] pointer-events-auto"
                     />
                 )}
             </AnimatePresence>
 
             <style jsx global>{`
-                .safe-bottom {
-                    bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
-                }
                 .no-scrollbar::-webkit-scrollbar { display: none; }
                 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
             `}</style>
