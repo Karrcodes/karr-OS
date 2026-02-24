@@ -1453,12 +1453,6 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category, setSelected
                                     {task.strategic_category}
                                 </span>
                             )}
-                            {task.due_date && !task.is_completed && (
-                                <div className="flex items-center gap-1 text-[8px] text-black/30 font-black uppercase tracking-wider">
-                                    <Calendar className="w-2 h-2" />
-                                    <span>{new Date(task.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
-                                </div>
-                            )}
                         </div>
 
                         <div className="flex items-center gap-2">

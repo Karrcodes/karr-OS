@@ -139,8 +139,8 @@ export function GlobalQuickAction() {
     }
 
     const actions = useMemo(() => [
-        { id: 'spend', label: 'Spend', icon: Receipt, color: 'bg-rose-500', glow: 'shadow-rose-500/40' },
-        { id: 'task', label: 'Task', icon: CheckSquare, color: 'bg-indigo-500', glow: 'shadow-indigo-500/40' },
+        { id: 'spend', label: 'Spend', icon: Receipt, color: 'bg-emerald-500', glow: 'shadow-emerald-500/40' },
+        { id: 'task', label: 'Task', icon: CheckSquare, color: 'bg-blue-600', glow: 'shadow-blue-600/40' },
         { id: 'vault', label: 'Vault', icon: Clipboard, color: 'bg-amber-500', glow: 'shadow-amber-500/40' },
     ], [])
 
@@ -261,7 +261,8 @@ export function GlobalQuickAction() {
                                                         type="date"
                                                         value={form.date}
                                                         onChange={e => setForm({ ...form, date: e.target.value })}
-                                                        className={cn(inputBase, "focus:ring-4 focus:ring-rose-500/10 py-0 w-full min-w-0")}
+                                                        className={cn(inputBase, "focus:ring-4 focus:ring-rose-500/10 py-0 w-full min-w-0 border-box")}
+                                                        style={{ width: '100%' }}
                                                     />
                                                     <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20 pointer-events-none" />
                                                 </div>
@@ -310,24 +311,22 @@ export function GlobalQuickAction() {
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2">
                                                     <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Criticality</label>
-                                                    <div className={cn(inputBase, "px-2 bg-black/[0.01] border-black/10 overflow-x-auto no-scrollbar w-full")}>
-                                                        <div className="flex gap-1 items-center">
-                                                            {PRIORITY_OPTS.map(p => (
-                                                                <button
-                                                                    key={p.id}
-                                                                    type="button"
-                                                                    onClick={() => setForm({ ...form, taskPriority: p.id as any })}
-                                                                    className={cn(
-                                                                        "px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-tighter transition-all border shrink-0",
-                                                                        form.taskPriority === p.id
-                                                                            ? cn(p.color, "text-white border-transparent shadow-md scale-105")
-                                                                            : "bg-black/[0.03] text-black/40 border-black/5 hover:bg-black/[0.06]"
-                                                                    )}
-                                                                >
-                                                                    {p.label}
-                                                                </button>
-                                                            ))}
-                                                        </div>
+                                                    <div className="flex gap-1 items-center overflow-x-auto no-scrollbar py-1">
+                                                        {PRIORITY_OPTS.map(p => (
+                                                            <button
+                                                                key={p.id}
+                                                                type="button"
+                                                                onClick={() => setForm({ ...form, taskPriority: p.id as any })}
+                                                                className={cn(
+                                                                    "px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-tighter transition-all border shrink-0",
+                                                                    form.taskPriority === p.id
+                                                                        ? cn(p.color, "text-white border-transparent shadow-md scale-105")
+                                                                        : "bg-black/[0.03] text-black/40 border-black/5 hover:bg-black/[0.06]"
+                                                                )}
+                                                            >
+                                                                {p.label}
+                                                            </button>
+                                                        ))}
                                                     </div>
                                                 </div>
                                                 <div className="space-y-2">
@@ -337,7 +336,8 @@ export function GlobalQuickAction() {
                                                             type="date"
                                                             value={form.dueDate}
                                                             onChange={e => setForm({ ...form, dueDate: e.target.value })}
-                                                            className={cn(inputBase, "focus:ring-4 focus:ring-indigo-500/10 py-0 w-full min-w-0")}
+                                                            className={cn(inputBase, "focus:ring-4 focus:ring-indigo-500/10 py-0 w-full min-w-0 border-box")}
+                                                            style={{ width: '100%' }}
                                                         />
                                                         <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20 pointer-events-none" />
                                                     </div>

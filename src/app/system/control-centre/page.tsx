@@ -102,7 +102,7 @@ export default function ControlCentrePage() {
                             href="/finances"
                             className="flex items-center gap-2 px-3 py-2 bg-white border border-black/[0.06] rounded-xl hover:border-black/20 hover:bg-black/[0.02] transition-all group"
                         >
-                            <div className="w-6 h-6 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+                            <div className="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
                                 <BarChart3 className="w-3.5 h-3.5" />
                             </div>
                             <span className="text-[12px] font-bold text-black/70 group-hover:text-black">Finances</span>
@@ -111,7 +111,7 @@ export default function ControlCentrePage() {
                             href="/tasks"
                             className="flex items-center gap-2 px-3 py-2 bg-white border border-black/[0.06] rounded-xl hover:border-black/20 hover:bg-black/[0.02] transition-all group"
                         >
-                            <div className="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
+                            <div className="w-6 h-6 rounded-lg bg-blue-600/10 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
                                 <Activity className="w-3.5 h-3.5" />
                             </div>
                             <span className="text-[12px] font-bold text-black/70 group-hover:text-black">Operations</span>
