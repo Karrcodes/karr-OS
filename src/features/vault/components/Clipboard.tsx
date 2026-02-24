@@ -84,13 +84,16 @@ export function Clipboard() {
         setTimeout(() => setCopiedId(null), 2000)
     }
 
-    const isUrl = (str: string) => {
-        try {
-            new URL(str)
-            return true
-        } catch {
-            return false
-        }
+    const extractFirstUrl = (str: string) => {
+        const urlRegex = /(https?:\/\/[^\s]+)/
+        const match = str.match(urlRegex)
+        return match ? match[0] : null
+    }
+
+    const isBulletLine = (text: string) => {
+        const lines = text.split('\n')
+        const lastLine = lines[lines.length - 1]
+        return lastLine.trim().startsWith('- ') || lastLine.trim().startsWith('* ')
     }
 
     return (
@@ -105,6 +108,31 @@ export function Clipboard() {
                     onKeyDown={(e) => {
                         if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                             handleAdd()
+                        } else if (e.key === 'Enter' && !e.shiftKey) {
+                            const textarea = e.currentTarget
+                            const start = textarea.selectionStart
+                            const text = textarea.value
+                            const lines = text.substring(0, start).split('\n')
+                            const currentLine = lines[lines.length - 1]
+
+                            if (currentLine.trim().startsWith('- ')) {
+                                e.preventDefault()
+                                if (currentLine.trim() === '- ') {
+                                    // Empty bullet - clear it and exit mode
+                                    const before = text.substring(0, start - currentLine.length)
+                                    const after = text.substring(start)
+                                    setNewClip(before + after)
+                                } else {
+                                    // Continune bullet
+                                    const before = text.substring(0, start)
+                                    const after = text.substring(start)
+                                    setNewClip(before + '\n- ' + after)
+                                    // Selection needs to be handled via timeout or useEffect
+                                    setTimeout(() => {
+                                        textarea.selectionStart = textarea.selectionEnd = start + 3
+                                    }, 0)
+                                }
+                            }
                         }
                     }}
                 />
@@ -130,7 +158,10 @@ export function Clipboard() {
                                 setNewClip(before + (selected.startsWith('- ') ? selected : `- ${selected}`) + after)
                             }
                         }}
-                        className="p-1.5 text-black/40 hover:text-black hover:bg-black/5 rounded-lg transition-all"
+                        className={cn(
+                            "p-1.5 rounded-lg transition-all",
+                            isBulletLine(newClip) ? "text-blue-500 bg-blue-50" : "text-black/40 hover:text-black hover:bg-black/5"
+                        )}
                         title="Add bullet points"
                     >
                         <List className="w-4 h-4" />
@@ -166,7 +197,7 @@ export function Clipboard() {
                             copiedId={copiedId}
                             handleCopy={handleCopy}
                             handleDelete={handleDelete}
-                            isUrl={isUrl}
+                            extractFirstUrl={extractFirstUrl}
                         />
                     ))
                 )}
@@ -175,12 +206,12 @@ export function Clipboard() {
     )
 }
 
-function ClipItem({ clip, copiedId, handleCopy, handleDelete, isUrl }: {
+function ClipItem({ clip, copiedId, handleCopy, handleDelete, extractFirstUrl }: {
     clip: Clip,
     copiedId: string | null,
     handleCopy: (id: string, content: string) => void,
     handleDelete: (id: string) => void,
-    isUrl: (str: string) => boolean
+    extractFirstUrl: (str: string) => string | null
 }) {
     const [isExpanded, setIsExpanded] = useState(false)
     const [isTruncatable, setIsTruncatable] = useState(false)
@@ -212,11 +243,16 @@ function ClipItem({ clip, copiedId, handleCopy, handleDelete, isUrl }: {
                                     </div>
                                 )
                             }
+                            const url = extractFirstUrl(line)
+                            if (url) {
+                                return (
+                                    <p key={i} className="mb-1 text-blue-600 font-medium underline underline-offset-4 decoration-blue-200 break-all">
+                                        {line}
+                                    </p>
+                                )
+                            }
                             return (
-                                <p key={i} className={cn(
-                                    "mb-1",
-                                    isUrl(line.trim()) && "text-blue-600 font-medium underline underline-offset-4 decoration-blue-200 break-all"
-                                )}>
+                                <p key={i} className="mb-1">
                                     {line}
                                 </p>
                             )
@@ -232,7 +268,7 @@ function ClipItem({ clip, copiedId, handleCopy, handleDelete, isUrl }: {
                     )}
                 </div>
 
-                {isUrl(clip.content.trim()) && <LinkPreview url={clip.content.trim()} />}
+                {extractFirstUrl(clip.content) && <LinkPreview url={extractFirstUrl(clip.content)!} />}
 
                 <p className="text-[10px] text-black/30 mt-3 font-medium">
                     {new Date(clip.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} •
@@ -241,9 +277,9 @@ function ClipItem({ clip, copiedId, handleCopy, handleDelete, isUrl }: {
             </div>
 
             <div className="flex items-center gap-1 transition-all shrink-0 self-end sm:self-center">
-                {isUrl(clip.content) && (
+                {extractFirstUrl(clip.content) && (
                     <a
-                        href={clip.content}
+                        href={extractFirstUrl(clip.content)!}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
