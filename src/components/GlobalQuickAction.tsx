@@ -114,69 +114,86 @@ export function GlobalQuickAction() {
     }
 
     const actions = useMemo(() => [
-        { id: 'spend', label: 'Log Spend', icon: Receipt, color: 'bg-gradient-to-br from-rose-500 to-rose-600' },
-        { id: 'task', label: 'New Task', icon: CheckSquare, color: 'bg-gradient-to-br from-indigo-500 to-indigo-600' },
-        { id: 'vault', label: 'Vault Item', icon: Clipboard, color: 'bg-gradient-to-br from-amber-500 to-amber-600' },
+        { id: 'spend', label: 'Spend', icon: Receipt, color: 'bg-rose-500', glow: 'shadow-rose-500/40' },
+        { id: 'task', label: 'Task', icon: CheckSquare, color: 'bg-indigo-500', glow: 'shadow-indigo-500/40' },
+        { id: 'vault', label: 'Vault', icon: Clipboard, color: 'bg-amber-500', glow: 'shadow-amber-500/40' },
     ], [])
 
     // Early return for SSR and excluded routes AFTER all hook calls
     if (!mounted || pathname === '/intelligence') return null
 
+    // Radial Positioning constants
+    const radius = 95 // distance from center
+    const startAngle = 180 // starting angle in degrees (pointing left)
+    const endAngle = 270 // ending angle (pointing top)
+    const angleStep = (endAngle - startAngle) / (actions.length - 1)
+
     return (
         <div
-            className="fixed bottom-6 right-6 md:right-8 z-[200] flex flex-col items-end gap-3 pointer-events-none"
+            className="fixed bottom-6 right-6 md:right-8 z-[200] flex flex-col items-end pointer-events-none"
             style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))' }}
         >
-            {/* Speed Dial Menu */}
+            {/* Radial Speed Dial */}
             <AnimatePresence>
                 {isOpen && !activeAction && (
-                    <motion.div
-                        initial="hidden"
-                        animate="visible"
-                        exit="hidden"
-                        variants={{
-                            visible: { transition: { staggerChildren: 0.05, delayChildren: 0.05 } },
-                            hidden: { transition: { staggerChildren: 0.05, staggerDirection: -1 } }
-                        }}
-                        className="flex flex-col items-end gap-2 mb-2 pointer-events-auto"
-                    >
-                        {actions.map((action) => (
-                            <motion.button
-                                key={action.id}
-                                variants={{
-                                    hidden: { opacity: 0, scale: 0.3, y: 20 },
-                                    visible: { opacity: 1, scale: 1, y: 0 }
-                                }}
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => setActiveAction(action.id as ActionType)}
-                                className="flex items-center gap-3 group"
-                            >
-                                <motion.span
-                                    className="bg-black/90 text-white backdrop-blur shadow-xl border border-white/10 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity"
+                    <motion.div className="absolute w-full h-full pointer-events-none">
+                        {actions.map((action, i) => {
+                            const angle = startAngle + i * angleStep
+                            const radian = (angle * Math.PI) / 180
+                            const tx = radius * Math.cos(radian)
+                            const ty = radius * Math.sin(radian)
+
+                            return (
+                                <motion.button
+                                    key={action.id}
+                                    initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
+                                    animate={{
+                                        opacity: 1,
+                                        scale: 1,
+                                        x: tx,
+                                        y: ty,
+                                        transition: {
+                                            type: 'spring',
+                                            damping: 12,
+                                            stiffness: 200,
+                                            delay: i * 0.05
+                                        }
+                                    }}
+                                    exit={{
+                                        opacity: 0,
+                                        scale: 0,
+                                        x: 0,
+                                        y: 0,
+                                        transition: { duration: 0.2, delay: (actions.length - 1 - i) * 0.05 }
+                                    }}
+                                    whileHover={{ scale: 1.15, rotate: 5 }}
+                                    whileTap={{ scale: 0.9 }}
+                                    onClick={() => setActiveAction(action.id as ActionType)}
+                                    className={cn(
+                                        "absolute top-0 right-0 w-14 h-14 rounded-full flex items-center justify-center text-white shadow-2xl pointer-events-auto z-[215]",
+                                        action.color, action.glow
+                                    )}
+                                    style={{ margin: '-1.75rem -1.75rem 0 0' }} // center on the trigger which is w-14 (roughly)
                                 >
-                                    {action.label}
-                                </motion.span>
-                                <div className={cn(
-                                    "w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center text-white ring-4 ring-black/5",
-                                    action.color
-                                )}>
                                     <action.icon className="w-6 h-6" strokeWidth={2.5} />
-                                </div>
-                            </motion.button>
-                        ))}
+                                    <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[9px] font-black uppercase tracking-tighter text-black/50">
+                                        {action.label}
+                                    </span>
+                                </motion.button>
+                            )
+                        })}
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            {/* Main FAB */}
+            {/* Main FAB Trigger */}
             <motion.button
                 layout
                 onClick={toggleMenu}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.9 }}
                 className={cn(
-                    "w-16 h-16 rounded-[24px] shadow-2xl flex items-center justify-center transition-all z-[210] relative overflow-hidden pointer-events-auto",
+                    "w-16 h-16 rounded-[24px] shadow-2xl flex items-center justify-center transition-all z-[220] relative overflow-hidden pointer-events-auto",
                     isOpen ? "bg-white text-black ring-1 ring-black/5" : "bg-black text-white hover:shadow-black/20"
                 )}
             >
@@ -201,7 +218,7 @@ export function GlobalQuickAction() {
                         initial={{ opacity: 0, scale: 0.9, y: 30, filter: 'blur(10px)' }}
                         animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
                         exit={{ opacity: 0, scale: 0.9, y: 30, filter: 'blur(10px)' }}
-                        className="fixed inset-x-4 bottom-24 md:absolute md:bottom-20 md:right-0 md:w-[320px] bg-white/80 backdrop-blur-3xl rounded-[32px] shadow-[0_32px_128px_-32px_rgba(0,0,0,0.3)] border border-black/5 overflow-hidden flex flex-col z-[220] pointer-events-auto"
+                        className="fixed inset-x-4 bottom-24 md:absolute md:bottom-20 md:right-0 md:w-[320px] bg-white/90 backdrop-blur-3xl rounded-[32px] shadow-[0_32px_128px_-32px_rgba(0,0,0,0.3)] border border-black/5 overflow-hidden flex flex-col z-[230] pointer-events-auto"
                     >
                         {/* Header */}
                         <div className="px-6 py-5 border-b border-black/5 flex items-center justify-between bg-white/40">
@@ -210,7 +227,7 @@ export function GlobalQuickAction() {
                                     {actions.find(a => a.id === activeAction)?.icon && React.createElement(actions.find(a => a.id === activeAction)!.icon, { className: "w-4 h-4" })}
                                 </div>
                                 <h3 className="text-[15px] font-black text-black uppercase tracking-tighter">
-                                    {actions.find(a => a.id === activeAction)?.label}
+                                    Quick {activeAction}
                                 </h3>
                             </div>
                             <button onClick={() => setActiveAction(null)} className="w-8 h-8 rounded-full bg-black/5 flex items-center justify-center text-black/40 hover:text-black transition-colors">
@@ -318,7 +335,7 @@ export function GlobalQuickAction() {
                 )}
             </AnimatePresence>
 
-            {/* Subtle Backdrop */}
+            {/* Subtle Backdrop - Placed BELOW the dial elements in Z-space */}
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
@@ -326,7 +343,7 @@ export function GlobalQuickAction() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={() => { setIsOpen(false); setActiveAction(null); resetForm(); }}
-                        className="fixed inset-0 bg-black/10 backdrop-blur-[2px] z-[190] pointer-events-auto"
+                        className="fixed inset-0 bg-black/5 backdrop-blur-[2px] z-[190] pointer-events-auto"
                     />
                 )}
             </AnimatePresence>
