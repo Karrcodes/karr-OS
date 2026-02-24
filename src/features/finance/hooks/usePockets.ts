@@ -41,6 +41,19 @@ export function usePockets() {
     }
 
     const updatePocket = async (id: string, updates: Partial<Pocket>) => {
+        if (settings.is_demo_mode) {
+            const currentPockets = [...pockets]
+            const index = currentPockets.findIndex(p => p.id === id)
+            if (index !== -1) {
+                currentPockets[index] = { ...currentPockets[index], ...updates }
+                setPockets(currentPockets)
+                // Persistence in sessionStorage for demo mode
+                const key = activeProfile === 'business' ? 'karr_demo_business_pockets' : 'karr_demo_finance_pockets'
+                sessionStorage.setItem(key, JSON.stringify(currentPockets))
+            }
+            globalRefresh()
+            return
+        }
         const { error } = await supabase.from('fin_pockets').update(updates).eq('id', id)
         if (error) throw error
         globalRefresh()

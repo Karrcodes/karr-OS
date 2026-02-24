@@ -80,6 +80,18 @@ export function useTransactions(profileOverride?: ProfileType | 'all') {
     }
 
     const updateTransaction = async (id: string, updates: Partial<Transaction>) => {
+        if (settings.is_demo_mode) {
+            const currentTransactions = [...transactions]
+            const index = currentTransactions.findIndex(t => t.id === id)
+            if (index !== -1) {
+                currentTransactions[index] = { ...currentTransactions[index], ...updates }
+                setTransactions(currentTransactions)
+                const key = activeProfile === 'business' ? 'karr_demo_business_transactions' : 'karr_demo_finance_transactions'
+                sessionStorage.setItem(key, JSON.stringify(currentTransactions))
+            }
+            globalRefresh()
+            return
+        }
         const { error } = await supabase
             .from('fin_transactions')
             .update(updates)
@@ -90,6 +102,14 @@ export function useTransactions(profileOverride?: ProfileType | 'all') {
     }
 
     const deleteTransaction = async (id: string) => {
+        if (settings.is_demo_mode) {
+            const updated = transactions.filter(t => t.id !== id)
+            setTransactions(updated)
+            const key = activeProfile === 'business' ? 'karr_demo_business_transactions' : 'karr_demo_finance_transactions'
+            sessionStorage.setItem(key, JSON.stringify(updated))
+            globalRefresh()
+            return
+        }
         const { error } = await supabase
             .from('fin_transactions')
             .delete()

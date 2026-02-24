@@ -39,6 +39,17 @@ export function useGoals() {
     }
 
     const updateGoal = async (id: string, updates: Partial<Goal>) => {
+        if (settings.is_demo_mode) {
+            const currentGoals = [...goals]
+            const index = currentGoals.findIndex(g => g.id === id)
+            if (index !== -1) {
+                currentGoals[index] = { ...currentGoals[index], ...updates }
+                setGoals(currentGoals)
+                // Persistence... (demoData is static so we rely on state for now, 
+                // but usually we'd use sessionStorage if we wanted to survive reloads)
+            }
+            return
+        }
         const { error } = await supabase.from('fin_goals').update(updates).eq('id', id)
         if (error) throw error
         await fetchGoals()

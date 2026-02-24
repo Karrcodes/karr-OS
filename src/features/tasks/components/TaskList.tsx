@@ -882,6 +882,7 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
                                                 </button>
                                             </div>
                                         </div>
+                                    )}
                                 </div>
                             )}
                         </div>

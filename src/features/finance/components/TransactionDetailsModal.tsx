@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
 import { X, Layers, Tag, Calendar, Hash, ArrowUpRight, ArrowDownLeft, Edit2, Check, Trash2 } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 import type { Transaction, Pocket } from '../types/finance.types'
 import { useTransactions } from '../hooks/useTransactions'
+import { usePockets } from '../hooks/usePockets'
 import { FINANCE_CATEGORIES, getCategoryById } from '../constants/categories'
+import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
 
 interface TransactionDetailsModalProps {
     transaction: Transaction | null
@@ -12,7 +15,9 @@ interface TransactionDetailsModalProps {
 }
 
 export function TransactionDetailsModal({ transaction, pockets, isOpen, onClose }: TransactionDetailsModalProps) {
-    const { updateTransaction, deleteTransaction } = useTransactions()
+    const { transactions, updateTransaction, deleteTransaction } = useTransactions()
+    const { updatePocket } = usePockets()
+    const { settings } = useSystemSettings()
     const [isEditing, setIsEditing] = useState(false)
     const [editForm, setEditForm] = useState({
         description: '',
@@ -38,18 +43,144 @@ export function TransactionDetailsModal({ transaction, pockets, isOpen, onClose 
     const pocketName = pockets.find(p => p.id === transaction.pocket_id)?.name || 'General'
 
     const handleSave = async () => {
+        if (!transaction) return
+
+        const delta = editForm.amount - (transaction.amount || 0)
+        const oldPocketId = transaction.pocket_id
+        const newPocketId = editForm.pocket_id === 'general' ? null : editForm.pocket_id
+
+        // 1. Handle Pocket Balance Update
+        if (oldPocketId === newPocketId && oldPocketId && delta !== 0) {
+            // Same pocket, amount changed
+            const pocket = pockets.find(p => p.id === oldPocketId)
+            if (pocket) {
+                const modifier = (transaction.type === 'spend' || transaction.type === 'transfer') ? -1 : 1
+                const newBalance = (pocket.balance || 0) + (delta * modifier)
+                await updatePocket(oldPocketId, { balance: newBalance })
+            }
+        } else if (oldPocketId !== newPocketId) {
+            // Pocket changed
+            if (oldPocketId) {
+                // Revert old pocket
+                const oldPocket = pockets.find(p => p.id === oldPocketId)
+                if (oldPocket) {
+                    const modifier = (transaction.type === 'spend' || transaction.type === 'transfer') ? 1 : -1
+                    const revertedBalance = (oldPocket.balance || 0) + (transaction.amount * modifier)
+                    await updatePocket(oldPocketId, { balance: revertedBalance })
+                }
+            }
+            if (newPocketId) {
+                // Apply to new pocket
+                const newPocket = pockets.find(p => p.id === newPocketId)
+                if (newPocket) {
+                    const modifier = (transaction.type === 'spend' || transaction.type === 'transfer') ? -1 : 1
+                    const newBalance = (newPocket.balance || 0) + (editForm.amount * modifier)
+                    await updatePocket(newPocketId, { balance: newBalance })
+                }
+            }
+        }
+
+        // 2. Update Transaction
         await updateTransaction(transaction.id, {
             description: editForm.description,
             amount: editForm.amount,
             category: editForm.category,
-            pocket_id: editForm.pocket_id === 'general' ? null : editForm.pocket_id
+            pocket_id: newPocketId
         })
+
+        // 3. Heuristic: Seek and update paired transfer if exists
+        if (delta !== 0 && (transaction.type === 'transfer' || transaction.type === 'allocate')) {
+            const reciprocalType = transaction.type === 'transfer' ? 'allocate' : 'transfer'
+
+            let paired: Transaction | null = null
+            if (settings.is_demo_mode) {
+                paired = transactions.find(t =>
+                    t.date === transaction.date &&
+                    t.amount === transaction.amount &&
+                    t.type === reciprocalType &&
+                    t.id !== transaction.id
+                ) || null
+            } else {
+                const { data } = await supabase
+                    .from('fin_transactions')
+                    .select('*')
+                    .eq('date', transaction.date)
+                    .eq('amount', transaction.amount)
+                    .eq('type', reciprocalType)
+                    .neq('id', transaction.id)
+                    .maybeSingle()
+                paired = data
+            }
+
+            if (paired) {
+                // Update and sync its pocket
+                await updateTransaction(paired.id, { amount: editForm.amount })
+                if (paired.pocket_id) {
+                    const pairedPocket = pockets.find(p => p.id === paired.pocket_id)
+                    if (pairedPocket) {
+                        const modifier = (paired.type === 'spend' || paired.type === 'transfer') ? -1 : 1
+                        const newBalance = (pairedPocket.balance || 0) + (delta * modifier)
+                        await updatePocket(paired.pocket_id, { balance: newBalance })
+                    }
+                }
+            }
+        }
+
         setIsEditing(false)
         onClose()
     }
 
     const handleDelete = async () => {
+        if (!transaction) return
         if (confirm('Are you sure you want to delete this transaction?')) {
+            // Revert pocket balance before deletion
+            if (transaction.pocket_id) {
+                const pocket = pockets.find(p => p.id === transaction.pocket_id)
+                if (pocket) {
+                    const modifier = (transaction.type === 'spend' || transaction.type === 'transfer') ? 1 : -1
+                    const revertedBalance = (pocket.balance || 0) + (transaction.amount * modifier)
+                    await updatePocket(transaction.pocket_id, { balance: revertedBalance })
+                }
+            }
+
+            // Heuristic cleanup for transfers
+            if (transaction.type === 'transfer' || transaction.type === 'allocate') {
+                const reciprocalType = transaction.type === 'transfer' ? 'allocate' : 'transfer'
+
+                let paired: Transaction | null = null
+                if (settings.is_demo_mode) {
+                    paired = transactions.find(t =>
+                        t.date === transaction.date &&
+                        t.amount === transaction.amount &&
+                        t.type === reciprocalType &&
+                        t.id !== transaction.id
+                    ) || null
+                } else {
+                    const { data } = await supabase
+                        .from('fin_transactions')
+                        .select('*')
+                        .eq('date', transaction.date)
+                        .eq('amount', transaction.amount)
+                        .eq('type', reciprocalType)
+                        .neq('id', transaction.id)
+                        .maybeSingle()
+                    paired = data
+                }
+
+                if (paired) {
+                    // Revert paired pocket too
+                    if (paired.pocket_id) {
+                        const pairedPocket = pockets.find(p => p.id === paired.pocket_id)
+                        if (pairedPocket) {
+                            const modifier = (paired.type === 'spend' || paired.type === 'transfer') ? 1 : -1
+                            const revertedBalance = (pairedPocket.balance || 0) + (paired.amount * modifier)
+                            await updatePocket(paired.pocket_id, { balance: revertedBalance })
+                        }
+                    }
+                    await deleteTransaction(paired.id)
+                }
+            }
+
             await deleteTransaction(transaction.id)
             onClose()
         }
