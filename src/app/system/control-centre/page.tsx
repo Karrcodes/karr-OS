@@ -109,15 +109,15 @@ export default function ControlCentrePage() {
                             <Link
                                 key={btn.label}
                                 href={btn.href}
-                                className="flex items-center gap-2 px-3 py-2 bg-white/60 backdrop-blur-xl border border-black/[0.04] rounded-xl hover:border-black/20 hover:bg-white/80 transition-all group shadow-sm"
+                                className="flex items-center gap-2 px-3 py-2 bg-white border border-black/[0.06] rounded-xl hover:border-black/20 hover:bg-black/[0.02] transition-all group shadow-sm"
                             >
                                 <div className={cn(
                                     "w-6 h-6 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm",
-                                    btn.color === 'emerald' ? "bg-emerald-500/20 text-emerald-600" :
-                                        btn.color === 'blue' ? "bg-blue-600/20 text-blue-600" :
-                                            btn.color === 'purple' ? "bg-purple-500/20 text-purple-600" :
-                                                btn.color === 'amber' ? "bg-amber-500/20 text-amber-600" :
-                                                    btn.color === 'orange' ? "bg-orange-500/20 text-orange-600" :
+                                    btn.color === 'emerald' ? "bg-emerald-500/10 text-emerald-600" :
+                                        btn.color === 'blue' ? "bg-blue-600/10 text-blue-600" :
+                                            btn.color === 'purple' ? "bg-purple-500/10 text-purple-600" :
+                                                btn.color === 'amber' ? "bg-amber-500/10 text-amber-600" :
+                                                    btn.color === 'orange' ? "bg-orange-500/10 text-orange-600" :
                                                         "bg-black/5 text-black"
                                 )}>
                                     <btn.icon className="w-3.5 h-3.5" />
