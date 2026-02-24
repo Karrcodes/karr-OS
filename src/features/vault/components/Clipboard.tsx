@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Plus, Copy, Trash2, Check, ExternalLink } from 'lucide-react'
+import { Plus, Copy, Trash2, Check, ExternalLink, List } from 'lucide-react'
+import { LinkPreview } from './LinkPreview'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
@@ -95,26 +96,55 @@ export function Clipboard() {
     return (
         <div className="space-y-4">
             {/* Input Area */}
-            <form onSubmit={handleAdd} className="relative group">
+            <div className="relative group">
                 <textarea
                     value={newClip}
                     onChange={(e) => setNewClip(e.target.value)}
                     placeholder="Paste a link or message to share..."
-                    className="w-full h-24 p-4 pr-14 bg-white border border-black/[0.08] rounded-2xl resize-none outline-none focus:border-black/20 focus:ring-4 focus:ring-black/[0.02] transition-all text-[14px] leading-relaxed placeholder:text-black/20"
+                    className="w-full h-32 p-4 pb-12 pr-14 bg-white border border-black/[0.08] rounded-2xl resize-none outline-none focus:border-black/20 focus:ring-4 focus:ring-black/[0.02] transition-all text-[14px] leading-relaxed placeholder:text-black/20"
                     onKeyDown={(e) => {
                         if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                             handleAdd()
                         }
                     }}
                 />
+                <div className="absolute bottom-3 left-3 flex items-center gap-1">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            const textarea = document.querySelector('textarea')
+                            if (!textarea) return
+                            const start = textarea.selectionStart
+                            const end = textarea.selectionEnd
+                            const text = textarea.value
+                            const before = text.substring(0, start)
+                            const after = text.substring(end)
+                            const selected = text.substring(start, end)
+
+                            // If multi-line selection, bullet each line
+                            if (selected.includes('\n')) {
+                                const bulleted = selected.split('\n').map(line => line.startsWith('- ') ? line : `- ${line}`).join('\n')
+                                setNewClip(before + bulleted + after)
+                            } else {
+                                // Just insert bullet at cursor or before selection
+                                setNewClip(before + (selected.startsWith('- ') ? selected : `- ${selected}`) + after)
+                            }
+                        }}
+                        className="p-1.5 text-black/40 hover:text-black hover:bg-black/5 rounded-lg transition-all"
+                        title="Add bullet points"
+                    >
+                        <List className="w-4 h-4" />
+                    </button>
+                </div>
                 <button
-                    type="submit"
+                    onClick={() => handleAdd()}
+                    type="button"
                     disabled={adding || !newClip.trim()}
-                    className="absolute bottom-4 right-4 w-10 h-10 bg-black text-white rounded-xl shadow-lg shadow-black/10 flex items-center justify-center hover:scale-105 active:scale-95 disabled:opacity-20 disabled:scale-100 transition-all"
+                    className="absolute bottom-3 right-3 w-10 h-10 bg-black text-white rounded-xl shadow-lg shadow-black/10 flex items-center justify-center hover:scale-105 active:scale-95 disabled:opacity-20 disabled:scale-100 transition-all z-10"
                 >
                     <Plus className="w-5 h-5" />
                 </button>
-            </form>
+            </div>
 
             {/* List Area */}
             <div className="space-y-3">
@@ -169,16 +199,29 @@ function ClipItem({ clip, copiedId, handleCopy, handleDelete, isUrl }: {
         <div className="bg-white border border-black/[0.06] rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 transition-colors overflow-hidden">
             <div className="flex-1 min-w-0 w-full">
                 <div className="relative">
-                    <p
-                        ref={contentRef}
-                        className={cn(
-                            "text-[14px] leading-relaxed text-black/70 break-words",
-                            !isExpanded && "line-clamp-3",
-                            isUrl(clip.content) && "text-blue-600 font-medium underline underline-offset-4 decoration-blue-200 break-all"
-                        )}
-                    >
-                        {clip.content}
-                    </p>
+                    <div className={cn(
+                        "text-[14px] leading-relaxed text-black/70 break-words",
+                        !isExpanded && "line-clamp-6"
+                    )}>
+                        {clip.content.split('\n').map((line, i) => {
+                            if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
+                                return (
+                                    <div key={i} className="flex gap-2 mb-1 pl-1">
+                                        <span className="text-black/30 mt-1.5 w-1 h-1 rounded-full bg-black/40 shrink-0" />
+                                        <span>{line.trim().substring(2)}</span>
+                                    </div>
+                                )
+                            }
+                            return (
+                                <p key={i} className={cn(
+                                    "mb-1",
+                                    isUrl(line.trim()) && "text-blue-600 font-medium underline underline-offset-4 decoration-blue-200 break-all"
+                                )}>
+                                    {line}
+                                </p>
+                            )
+                        })}
+                    </div>
                     {isTruncatable && (
                         <button
                             onClick={() => setIsExpanded(!isExpanded)}
@@ -188,7 +231,10 @@ function ClipItem({ clip, copiedId, handleCopy, handleDelete, isUrl }: {
                         </button>
                     )}
                 </div>
-                <p className="text-[10px] text-black/30 mt-2 font-medium">
+
+                {isUrl(clip.content.trim()) && <LinkPreview url={clip.content.trim()} />}
+
+                <p className="text-[10px] text-black/30 mt-3 font-medium">
                     {new Date(clip.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} •
                     {new Date(clip.created_at).toLocaleDateString([], { day: '2-digit', month: 'short' })}
                 </p>
