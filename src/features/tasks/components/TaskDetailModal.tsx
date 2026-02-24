@@ -69,6 +69,11 @@ export function TaskDetailModal({ task, isOpen, onClose, onToggleSubtask, onTogg
                                     {task.profile === 'business' ? <Briefcase className="w-3 h-3" /> : <User className="w-3 h-3" />}
                                     {task.profile}
                                 </span>
+                                {task.strategic_category && (
+                                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold text-black/40 bg-black/5 uppercase tracking-wider">
+                                        {task.strategic_category}
+                                    </span>
+                                )}
                             </div>
 
                             <h2 className={cn(

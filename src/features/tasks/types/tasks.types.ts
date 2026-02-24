@@ -4,6 +4,7 @@ export interface Task {
     title: string
     is_completed: boolean
     category: 'todo' | 'grocery' | 'reminder'
+    strategic_category?: 'finance' | 'career' | 'health' | 'personal'
     priority: 'super' | 'high' | 'mid' | 'low'
     amount?: string
     due_date?: string

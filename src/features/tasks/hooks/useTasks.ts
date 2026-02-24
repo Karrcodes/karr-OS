@@ -86,7 +86,8 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder', profileOverr
         due_date_mode: 'on' | 'before' | 'range' = 'on',
         end_date?: string,
         recurrence_config: any = {},
-        notes?: any
+        notes?: any,
+        strategic_category?: 'finance' | 'career' | 'health' | 'personal'
     ) => {
         if (settings.is_demo_mode) {
             const allTasks = getSessionTasks() || []
@@ -100,6 +101,7 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder', profileOverr
                 recurrence_config,
                 amount,
                 notes,
+                strategic_category,
                 is_completed: false,
                 category,
                 profile: activeProfile as any,
@@ -122,6 +124,7 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder', profileOverr
             recurrence_config,
             amount,
             notes,
+            strategic_category,
             profile: activeProfile,
             position: tasks.length > 0 ? Math.max(...tasks.map((t: Task) => t.position || 0)) + 1000 : Date.now()
         })

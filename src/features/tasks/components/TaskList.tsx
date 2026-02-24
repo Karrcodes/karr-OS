@@ -26,7 +26,11 @@ import {
     LayoutList,
     Type,
     List,
-    ListChecks
+    ListChecks,
+    Wallet,
+    Heart,
+    Filter,
+    LayoutGrid
 } from 'lucide-react'
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion'
 import { useTasks } from '../hooks/useTasks'
@@ -41,6 +45,13 @@ const PRIORITY_CONFIG = {
     mid: { label: 'Mid', color: 'bg-yellow-50 text-yellow-600 border-yellow-200', sort: 2 },
     low: { label: 'Low', color: 'bg-black/5 text-black/60 border-black/10', sort: 3 }
 } as const
+
+const STRATEGIC_CATEGORIES = [
+    { id: 'finance', label: 'Finance', icon: Wallet, color: 'text-emerald-600 bg-emerald-50 border-emerald-100' },
+    { id: 'career', label: 'Career', icon: Briefcase, color: 'text-blue-600 bg-blue-50 border-blue-200' },
+    { id: 'health', label: 'Health', icon: Heart, color: 'text-rose-600 bg-rose-50 border-rose-100' },
+    { id: 'personal', label: 'Personal', icon: User, color: 'text-amber-600 bg-amber-50 border-amber-200' },
+] as const
 
 export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminder' }) {
     const { tasks, loading, createTask, toggleTask, deleteTask, clearAllTasks, clearCompletedTasks, editTask, updateTaskPositions } = useTasks(category)
@@ -66,6 +77,8 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
     const [createNotesType, setCreateNotesType] = useState<'text' | 'bullets' | 'checklist'>('text')
     const [createNotesContent, setCreateNotesContent] = useState<any>('')
     const [newCreateChecklistItem, setNewCreateChecklistItem] = useState('')
+    const [selectedStrategicCategory, setSelectedStrategicCategory] = useState<'all' | 'finance' | 'career' | 'health' | 'personal'>('all')
+    const [newStrategicCategory, setNewStrategicCategory] = useState<'finance' | 'career' | 'health' | 'personal' | undefined>(undefined)
 
     // Confirmation Modal States
     const [confirmModal, setConfirmModal] = useState<{
@@ -201,7 +214,8 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
                 dueDateMode !== 'none' && dueDateMode !== 'recurring' ? (dueDateMode as 'on' | 'before' | 'range') : undefined,
                 endDate || undefined,
                 dueDateMode === 'recurring' ? { type: recurringType, time: recurringTime || undefined, duration_minutes: recurringDuration ? parseInt(recurringDuration) : undefined, days_of_week: recurringType === 'custom' ? recurringDays : undefined } : {},
-                showCreateNotes ? { type: createNotesType, content: createNotesContent } : undefined
+                showCreateNotes ? { type: createNotesType, content: createNotesContent } : undefined,
+                newStrategicCategory
             )
             setNewTask('')
             setAmount('1')
@@ -216,6 +230,7 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
             setShowCreateNotes(false)
             setCreateNotesContent('')
             setCreateNotesType('text')
+            setNewStrategicCategory(undefined)
         } catch (err: any) {
             console.error('Operation creation failed:', err)
             alert(err.message || 'Failed to create operation. Please check your connection.')
@@ -286,8 +301,17 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
         }
     }
 
+    // Strategic Filtering
+    const filteredByStrategic = useMemo(() => {
+        return tasks.filter(task => {
+            const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase())
+            const matchesCategory = selectedStrategicCategory === 'all' || task.strategic_category === selectedStrategicCategory
+            return matchesSearch && matchesCategory
+        })
+    }, [tasks, searchQuery, selectedStrategicCategory])
+
     // Sort: Uncompleted first (sorted by manual position), Completed last (sorted by manual position).
-    const sortedTasks = [...tasks].sort((a, b) => {
+    const sortedTasks = [...filteredByStrategic].sort((a, b) => {
         if (a.is_completed !== b.is_completed) {
             return a.is_completed ? 1 : -1
         }
@@ -405,6 +429,41 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
                         </button>
                     )}
                 </div>
+            </div>
+
+            {/* Strategic Category Filter */}
+            <div className="flex items-center gap-2 mb-4 overflow-x-auto no-scrollbar pb-1">
+                <div className="flex items-center gap-1.5 px-2 py-1.5 text-[9px] font-bold uppercase tracking-widest text-black/30 border-r border-black/5 mr-1 shrink-0">
+                    <Filter className="w-3 h-3" />
+                    Filter
+                </div>
+                <button
+                    onClick={() => setSelectedStrategicCategory('all')}
+                    className={cn(
+                        "whitespace-nowrap px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all border shrink-0",
+                        selectedStrategicCategory === 'all'
+                            ? "bg-black text-white border-black shadow-sm"
+                            : "bg-black/[0.03] text-black/40 border-transparent hover:bg-black/5"
+                    )}
+                >
+                    <LayoutGrid className="w-3 h-3 inline-block mr-1.5 -mt-0.5" />
+                    All
+                </button>
+                {STRATEGIC_CATEGORIES.map((cat) => (
+                    <button
+                        key={cat.id}
+                        onClick={() => setSelectedStrategicCategory(cat.id)}
+                        className={cn(
+                            "whitespace-nowrap px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all border shrink-0 flex items-center gap-1.5",
+                            selectedStrategicCategory === cat.id
+                                ? "bg-black text-white border-black shadow-sm"
+                                : "bg-black/[0.03] text-black/40 border-transparent hover:bg-black/5"
+                        )}
+                    >
+                        <cat.icon className={cn("w-3 h-3", selectedStrategicCategory === cat.id ? "text-white" : "text-black/30")} />
+                        {cat.label}
+                    </button>
+                ))}
             </div>
 
             {showUndo && (
@@ -672,6 +731,29 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
                             </div>
                         )}
 
+                        {/* Strategic Category Selection */}
+                        <div className="flex flex-col gap-2 mt-1">
+                            <span className="text-[9px] font-bold text-black/30 uppercase tracking-widest px-1">Tactical Tag</span>
+                            <div className="flex flex-wrap gap-1.5">
+                                {STRATEGIC_CATEGORIES.map(cat => (
+                                    <button
+                                        key={cat.id}
+                                        type="button"
+                                        onClick={() => setNewStrategicCategory(newStrategicCategory === cat.id ? undefined : cat.id)}
+                                        className={cn(
+                                            "flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest border transition-all",
+                                            newStrategicCategory === cat.id
+                                                ? "bg-black text-white border-black shadow-md scale-[1.02]"
+                                                : "bg-white text-black/40 border-black/[0.08] hover:border-black/20"
+                                        )}
+                                    >
+                                        <cat.icon className={cn("w-3.5 h-3.5", newStrategicCategory === cat.id ? "text-white" : "text-black/20")} />
+                                        {cat.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
                         {/* Notes Creator */}
                         <div className="flex flex-col gap-2">
                             <button
@@ -800,7 +882,6 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
                                                 </button>
                                             </div>
                                         </div>
-                                    )}
                                 </div>
                             )}
                         </div>
@@ -874,6 +955,7 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category, setSelected
     const [editProfile, setEditProfile] = useState(task.profile)
     const [editNotesType, setEditNotesType] = useState<'text' | 'bullets' | 'checklist'>(task.notes?.type || 'text')
     const [editNotesContent, setEditNotesContent] = useState<any>(task.notes?.content || '')
+    const [editStrategicCategory, setEditStrategicCategory] = useState<'finance' | 'career' | 'health' | 'personal' | undefined>(task.strategic_category)
     const [newChecklistItem, setNewChecklistItem] = useState('')
 
     // Reset edit states to DB truth whenever editing starts
@@ -892,6 +974,7 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category, setSelected
             setEditProfile(task.profile)
             setEditNotesType(task.notes?.type || 'text')
             setEditNotesContent(task.notes?.content || (task.notes?.type === 'checklist' ? [] : ''))
+            setEditStrategicCategory(task.strategic_category)
         }
     }, [isEditing, task])
 
@@ -904,7 +987,8 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category, setSelected
             notes: {
                 type: editNotesType,
                 content: editNotesContent
-            }
+            },
+            strategic_category: editStrategicCategory
         }
         if (editAmount.trim() !== (task.amount || '')) {
             let val = editAmount.trim()
@@ -1269,6 +1353,25 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category, setSelected
                                 </button>
                             ))}
                         </div>
+                        {/* Strategic Category selection in Edit Mode */}
+                        <div className="flex gap-1 p-1 bg-black/[0.03] rounded-lg border border-black/5">
+                            {STRATEGIC_CATEGORIES.map(p => (
+                                <button
+                                    key={p.id}
+                                    type="button"
+                                    onClick={() => setEditStrategicCategory(editStrategicCategory === p.id ? undefined : p.id)}
+                                    className={cn(
+                                        "px-2 py-1 text-[9px] font-bold rounded-md border transition-all uppercase tracking-tight whitespace-nowrap flex items-center gap-1",
+                                        editStrategicCategory === p.id
+                                            ? p.color + " shadow-sm bg-white"
+                                            : "bg-transparent text-black/30 border-transparent hover:text-black/50"
+                                    )}
+                                >
+                                    <p.icon className="w-2.5 h-2.5" />
+                                    {p.label}
+                                </button>
+                            ))}
+                        </div>
                         <div className="flex items-center gap-2 ml-auto">
                             <button onClick={() => setIsEditing(false)} className="px-3 py-1.5 text-black/40 hover:text-black text-[12px] font-bold transition-colors">
                                 Cancel
@@ -1342,6 +1445,19 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category, setSelected
                                     PRIORITY_CONFIG[task.priority].color
                                 )}>
                                     {task.priority}
+                                </span>
+                            )}
+                            {task.strategic_category && (
+                                <span className={cn(
+                                    "px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider shrink-0 flex items-center gap-1",
+                                    STRATEGIC_CATEGORIES.find(c => c.id === task.strategic_category)?.color || "bg-black/5 text-black/40"
+                                )}>
+                                    {(() => {
+                                        const cat = STRATEGIC_CATEGORIES.find(c => c.id === task.strategic_category)
+                                        const Icon = cat?.icon
+                                        return Icon ? <Icon className="w-2.5 h-2.5" /> : null
+                                    })()}
+                                    {task.strategic_category}
                                 </span>
                             )}
                         </div>

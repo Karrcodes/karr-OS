@@ -74,13 +74,13 @@ export const MOCK_BUSINESS = {
 
 export const MOCK_TASKS = {
     todo: [
-        { id: 'd-t-1', title: 'Review Q1 Creative Strategy for Vertex', priority: 'high', is_completed: false, due_date: new Date().toISOString() },
-        { id: 'd-t-2', title: 'Schedule Studio session for podcast recording', priority: 'mid', is_completed: false },
-        { id: 'd-t-3', title: 'Send invoice to Aura Agency', priority: 'high', is_completed: true },
-        { id: 'd-t-4', title: 'Research specialty coffee beans for office', priority: 'low', is_completed: false },
-        { id: 'd-t-5', title: 'Update portfolio with latest photography work', priority: 'mid', is_completed: false },
-        { id: 'd-t-6', title: 'Book dentist appointment', priority: 'low', is_completed: true },
-        { id: 'd-t-7', title: 'Refactor Intelligence context builders', priority: 'super', is_completed: false },
+        { id: 'd-t-1', title: 'Review Q1 Creative Strategy for Vertex', priority: 'high', is_completed: false, due_date: new Date().toISOString(), strategic_category: 'career' },
+        { id: 'd-t-2', title: 'Schedule Studio session for podcast recording', priority: 'mid', is_completed: false, strategic_category: 'career' },
+        { id: 'd-t-3', title: 'Send invoice to Aura Agency', priority: 'high', is_completed: true, strategic_category: 'finance' },
+        { id: 'd-t-4', title: 'Research specialty coffee beans for office', priority: 'low', is_completed: false, strategic_category: 'personal' },
+        { id: 'd-t-5', title: 'Update portfolio with latest photography work', priority: 'mid', is_completed: false, strategic_category: 'career' },
+        { id: 'd-t-6', title: 'Book dentist appointment', priority: 'low', is_completed: true, strategic_category: 'health' },
+        { id: 'd-t-7', title: 'Refactor Intelligence context builders', priority: 'super', is_completed: false, strategic_category: 'career' },
     ],
     grocery: [
         { id: 'd-g-1', title: 'Oat Milk (Barista Edition)', amount: 'x2', priority: 'mid', is_completed: false },
