@@ -33,6 +33,7 @@ import { FinanceProfileProvider } from '@/features/finance/contexts/FinanceProfi
 import { SystemSettingsProvider } from '@/features/system/contexts/SystemSettingsContext'
 import { TasksProfileProvider } from '@/features/tasks/contexts/TasksProfileContext'
 import { SecurityLock } from '@/components/SecurityLock'
+import { GlobalQuickAction } from '@/components/GlobalQuickAction'
 
 export default function RootLayout({
   children,
@@ -56,6 +57,7 @@ export default function RootLayout({
                 <main className="md:ml-[220px] min-h-screen bg-white">
                   {children}
                 </main>
+                <GlobalQuickAction />
               </SecurityLock>
             </TasksProfileProvider>
           </FinanceProfileProvider>
