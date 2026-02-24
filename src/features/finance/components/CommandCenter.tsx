@@ -12,9 +12,8 @@ import { PocketsGrid } from './PocketsGrid'
 import { CalendarVisualizer } from './CalendarVisualizer'
 import { GoalsList } from './GoalsList'
 import { KarrAIChat } from './KarrAIChat'
-import { QuickActionFAB } from './QuickActionFAB'
-import { CashflowAnalytics } from './CashflowAnalytics'
 import { TransactionLedger } from './TransactionLedger'
+import { CashflowAnalytics } from './CashflowAnalytics'
 import { useFinanceProfile } from '../contexts/FinanceProfileContext'
 import { KarrFooter } from '@/components/KarrFooter'
 
@@ -209,13 +208,8 @@ export function CommandCenter() {
                             </div>
                         </div>
 
-                        {/* Floating Action Button */}
-                        <QuickActionFAB
-                            pockets={pockets}
-                            obligations={obligations}
-                            goals={goals}
-                            onSuccess={() => { refetchPockets(); refetchGoals(); refetchTransactions(); }}
-                        />
+
+                        {/* Recent Transactions & AI Chat */}
                     </div>
                 </div>
                 <KarrFooter dark />

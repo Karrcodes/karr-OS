@@ -192,7 +192,23 @@ export function GlobalQuickAction() {
                             <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto no-scrollbar">
                                 {activeAction === 'spend' && (
                                     <>
-                                        {/* Metadata Header - Pocket and Category moved ABOVE text */}
+                                        {/* Primary Input - Amount is top of the hierarchy again */}
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1 tracking-widest">Financial Value</label>
+                                            <div className="relative group">
+                                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-black/40 font-black text-lg group-focus-within:text-rose-500 transition-colors">£</span>
+                                                <input
+                                                    autoFocus
+                                                    type="number"
+                                                    value={form.amount}
+                                                    onChange={e => setForm({ ...form, amount: e.target.value })}
+                                                    placeholder="0.00"
+                                                    className={cn(inputBase, "pl-8 text-2xl font-black h-[64px] focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500/20 w-full")}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Metadata Header - Allocation and Category below amount */}
                                         <div className="grid grid-cols-2 gap-3">
                                             <div className="space-y-2">
                                                 <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Allocation</label>
@@ -227,22 +243,6 @@ export function GlobalQuickAction() {
                                             </div>
                                         </div>
 
-                                        {/* Primary Input - Amount prioritized below metadata hierarchy */}
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1 tracking-widest">Financial Value</label>
-                                            <div className="relative group">
-                                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-black/40 font-black text-lg group-focus-within:text-rose-500 transition-colors">£</span>
-                                                <input
-                                                    autoFocus
-                                                    type="number"
-                                                    value={form.amount}
-                                                    onChange={e => setForm({ ...form, amount: e.target.value })}
-                                                    placeholder="0.00"
-                                                    className={cn(inputBase, "pl-8 text-2xl font-black h-[64px] focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500/20")}
-                                                />
-                                            </div>
-                                        </div>
-
                                         {/* Bottom Contextual Layer */}
                                         <div className="grid grid-cols-2 gap-3">
                                             <div className="space-y-2">
@@ -256,12 +256,12 @@ export function GlobalQuickAction() {
                                             </div>
                                             <div className="space-y-2">
                                                 <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Date</label>
-                                                <div className="relative">
+                                                <div className="relative w-full">
                                                     <input
                                                         type="date"
                                                         value={form.date}
                                                         onChange={e => setForm({ ...form, date: e.target.value })}
-                                                        className={cn(inputBase, "focus:ring-4 focus:ring-rose-500/10 py-0")}
+                                                        className={cn(inputBase, "focus:ring-4 focus:ring-rose-500/10 py-0 w-full min-w-0")}
                                                     />
                                                     <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20 pointer-events-none" />
                                                 </div>
@@ -272,7 +272,19 @@ export function GlobalQuickAction() {
 
                                 {activeAction === 'task' && (
                                     <>
-                                        {/* Metadata Header - Priority and Category (Type) sit ABOVE text */}
+                                        {/* Primary Input - Title is top of the hierarchy again */}
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Deployment Title</label>
+                                            <input
+                                                autoFocus
+                                                value={form.taskTitle}
+                                                onChange={e => setForm({ ...form, taskTitle: e.target.value })}
+                                                placeholder="Action item details..."
+                                                className={cn(inputBase, "text-[16px] font-black bg-black/[0.03] placeholder:text-black/10 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/20 py-6 h-[56px] w-full")}
+                                            />
+                                        </div>
+
+                                        {/* Metadata Header - Type and Priority below title */}
                                         <div className="space-y-4">
                                             <div className="space-y-2">
                                                 <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Operation Type</label>
@@ -280,6 +292,7 @@ export function GlobalQuickAction() {
                                                     {(['todo', 'grocery', 'reminder'] as const).map(cat => (
                                                         <button
                                                             key={cat}
+                                                            type="button"
                                                             onClick={() => setForm({ ...form, taskCategory: cat })}
                                                             className={cn(
                                                                 "py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border",
@@ -297,11 +310,12 @@ export function GlobalQuickAction() {
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2">
                                                     <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Criticality</label>
-                                                    <div className={cn(inputBase, "px-2 bg-black/[0.01] border-black/10 overflow-x-auto no-scrollbar")}>
+                                                    <div className={cn(inputBase, "px-2 bg-black/[0.01] border-black/10 overflow-x-auto no-scrollbar w-full")}>
                                                         <div className="flex gap-1 items-center">
                                                             {PRIORITY_OPTS.map(p => (
                                                                 <button
                                                                     key={p.id}
+                                                                    type="button"
                                                                     onClick={() => setForm({ ...form, taskPriority: p.id as any })}
                                                                     className={cn(
                                                                         "px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-tighter transition-all border shrink-0",
@@ -318,29 +332,17 @@ export function GlobalQuickAction() {
                                                 </div>
                                                 <div className="space-y-2">
                                                     <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Deadline</label>
-                                                    <div className="relative">
+                                                    <div className="relative w-full">
                                                         <input
                                                             type="date"
                                                             value={form.dueDate}
                                                             onChange={e => setForm({ ...form, dueDate: e.target.value })}
-                                                            className={cn(inputBase, "focus:ring-4 focus:ring-indigo-500/10 py-0")}
+                                                            className={cn(inputBase, "focus:ring-4 focus:ring-indigo-500/10 py-0 w-full min-w-0")}
                                                         />
                                                         <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20 pointer-events-none" />
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-
-                                        {/* Primary Input - Deployment Title below metadata hierarchy */}
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Deployment Title</label>
-                                            <input
-                                                autoFocus
-                                                value={form.taskTitle}
-                                                onChange={e => setForm({ ...form, taskTitle: e.target.value })}
-                                                placeholder="Action item details..."
-                                                className={cn(inputBase, "text-[16px] font-black bg-black/[0.03] placeholder:text-black/10 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/20 py-6 h-[56px]")}
-                                            />
                                         </div>
 
                                         {/* Bottom Strategic Layer */}
@@ -350,6 +352,7 @@ export function GlobalQuickAction() {
                                                 {STRATEGIC_CATEGORIES.map(strat => (
                                                     <button
                                                         key={strat.id}
+                                                        type="button"
                                                         onClick={() => setForm({ ...form, strategicCategory: strat.id as any })}
                                                         className={cn(
                                                             "px-3 py-2.5 rounded-xl text-[10px] font-bold border transition-all flex items-center gap-2",

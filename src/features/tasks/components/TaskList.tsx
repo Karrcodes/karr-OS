@@ -1430,19 +1430,11 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category, setSelected
                         className="w-5 h-5 rounded-lg border-2 border-black/10 checked:bg-black checked:border-black transition-all cursor-pointer accent-black shrink-0"
                     />
                     <div className="flex flex-col min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                            {category === 'grocery' && task.amount && (
-                                <span className="text-[12px] font-bold text-black/40 shrink-0">{task.amount}</span>
-                            )}
-                            <span className={cn(
-                                "text-[14px] font-bold truncate transition-all",
-                                task.is_completed ? "text-black/30 line-through" : "text-black"
-                            )}>
-                                {task.title}
-                            </span>
+                        {/* Metadata First Hierarchy */}
+                        <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                             {task.priority && !task.is_completed && (
                                 <span className={cn(
-                                    "px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider shrink-0",
+                                    "px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-[0.1em] shrink-0",
                                     PRIORITY_CONFIG[task.priority].color
                                 )}>
                                     {task.priority}
@@ -1450,17 +1442,35 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category, setSelected
                             )}
                             {task.strategic_category && (
                                 <span className={cn(
-                                    "px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider shrink-0 flex items-center gap-1",
+                                    "px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-[0.1em] shrink-0 flex items-center gap-1",
                                     STRATEGIC_CATEGORIES.find(c => c.id === task.strategic_category)?.color || "bg-black/5 text-black/40"
                                 )}>
                                     {(() => {
                                         const cat = STRATEGIC_CATEGORIES.find(c => c.id === task.strategic_category)
                                         const Icon = cat?.icon
-                                        return Icon ? <Icon className="w-2.5 h-2.5" /> : null
+                                        return Icon ? <Icon className="w-2 h-2" /> : null
                                     })()}
                                     {task.strategic_category}
                                 </span>
                             )}
+                            {task.due_date && !task.is_completed && (
+                                <div className="flex items-center gap-1 text-[8px] text-black/30 font-black uppercase tracking-wider">
+                                    <Calendar className="w-2 h-2" />
+                                    <span>{new Date(task.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            {category === 'grocery' && task.amount && (
+                                <span className="text-[12px] font-bold text-black/40 shrink-0">{task.amount}</span>
+                            )}
+                            <span className={cn(
+                                "text-[14px] font-black truncate transition-all tracking-tight",
+                                task.is_completed ? "text-black/30 line-through" : "text-black"
+                            )}>
+                                {task.title}
+                            </span>
                         </div>
                         {/* Notes Teaser or Progress Bar */}
                         {!isEditing && (
