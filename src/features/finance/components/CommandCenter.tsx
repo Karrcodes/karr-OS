@@ -163,7 +163,7 @@ export function CommandCenter() {
                 <div className="p-6 pb-2 select-none flex items-center gap-2 text-[13px] font-bold text-black/40 uppercase tracking-wider">
                     Overview
                 </div>
-                <div className="px-6 pb-6 space-y-8">
+                <div className="px-6 pb-2 space-y-8">
                     {/* Summary Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <SummaryCard
@@ -232,7 +232,7 @@ export function CommandCenter() {
                                 </SectionBlock>
                             </div>
                             <div className="col-span-1 h-full min-h-[500px]">
-                                <div className="rounded-2xl border border-black/[0.08] bg-white p-5 shadow-sm h-full flex flex-col">
+                                <div className="rounded-2xl border border-black/[0.08] bg-white p-5 shadow-sm flex flex-col">
                                     <h2 className="text-[17px] font-bold text-black mb-1">Financial Co-pilot</h2>
                                     <p className="text-[12px] text-black/40 mb-4">Ask Gemini about patterns, advice, or status</p>
                                     <div className="flex-1 overflow-hidden min-h-[400px]">
@@ -248,8 +248,8 @@ export function CommandCenter() {
                             </div>
                         </div>
                     </div>
+                    <KarrFooter dark />
                 </div>
-                <KarrFooter dark />
             </div>
         </div>
     )
