@@ -163,7 +163,7 @@ export function CommandCenter() {
                 <div className="p-6 pb-2 select-none flex items-center gap-2 text-[13px] font-bold text-black/40 uppercase tracking-wider">
                     Overview
                 </div>
-                <div className="px-6 pb-6 space-y-8 flex-1 flex flex-col">
+                <div className="px-6 pb-6 space-y-8">
                     {/* Summary Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <SummaryCard
@@ -193,7 +193,7 @@ export function CommandCenter() {
                     </div>
 
                     {/* Main Layout Stack */}
-                    <div className="flex flex-col gap-6 pb-12">
+                    <div className="flex flex-col gap-6 pb-6">
                         {/* Unified Responsive Grid (Mobile -> Tablet -> Desktop) */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 items-stretch">
 
@@ -247,9 +247,6 @@ export function CommandCenter() {
                                 </div>
                             </div>
                         </div>
-
-
-                        {/* Recent Transactions & AI Chat */}
                     </div>
                 </div>
                 <KarrFooter dark />
