@@ -45,7 +45,8 @@ export function useTransactions(profileOverride?: ProfileType | 'all') {
             setLoading(false)
             return
         }
-        setLoading(true)
+        // Only show loading spinner on initial load (when there's no data yet)
+        if (transactions.length === 0) setLoading(true)
         let query = supabase
             .from('fin_transactions')
             .select('*')

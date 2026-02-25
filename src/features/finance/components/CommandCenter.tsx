@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState, useEffect } from 'react'
-import { DollarSign, TrendingDown, Wallet, RefreshCw, Eye, EyeOff } from 'lucide-react'
+import { DollarSign, TrendingDown, Wallet, RefreshCw, Eye, EyeOff, BarChart3, Receipt, Calendar, PiggyBank, Settings, CreditCard } from 'lucide-react'
 import { InfoTooltip } from './InfoTooltip'
 import { countRemainingPayments, addMonths } from '../utils/lenderLogos'
 import { usePockets } from '../hooks/usePockets'
@@ -16,6 +16,8 @@ import { TransactionLedger } from './TransactionLedger'
 import { CashflowAnalytics } from './CashflowAnalytics'
 import { useFinanceProfile } from '../contexts/FinanceProfileContext'
 import { KarrFooter } from '@/components/KarrFooter'
+import Link from 'next/link'
+import { cn } from '@/lib/utils'
 
 export function CommandCenter() {
     const { pockets, loading: pLoading, refetch: refetchPockets } = usePockets()
@@ -119,11 +121,49 @@ export function CommandCenter() {
                 </div>
             </div>
 
-            <div className="flex-1 flex flex-col min-h-0 overflow-y-auto bg-[#fafafa]">
+            <div className="flex-1 flex flex-col min-h-0 overflow-y-auto bg-[#fafafa] relative">
+                <div className="p-6 pb-2 select-none flex items-center gap-2 text-[13px] font-bold text-black/40 uppercase tracking-wider">
+                    Quick Access
+                </div>
+
+                {/* Finance Quick Actions */}
+                <div className="px-6 pb-4">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                        {[
+                            { href: "/finances/analytics", color: "blue", icon: BarChart3, label: "Analytics" },
+                            { href: "/finances/liabilities", color: "red", icon: CreditCard, label: "Liabilities" },
+                            { href: "/finances/transactions", color: "emerald", icon: Receipt, label: "Transactions" },
+                            { href: "/finances/projections", color: "purple", icon: Calendar, label: "Projections" },
+                            { href: "/finances/savings", color: "amber", icon: PiggyBank, label: "Savings" },
+                            { href: "/finances/settings", color: "orange", icon: Settings, label: "Settings" }
+                        ].map((btn) => (
+                            <Link
+                                key={btn.label}
+                                href={btn.href}
+                                className="flex items-center gap-2 px-3 py-2 bg-white border border-black/[0.06] rounded-xl hover:border-black/20 hover:bg-black/[0.02] transition-all group shadow-sm"
+                            >
+                                <div className={cn(
+                                    "w-6 h-6 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm",
+                                    btn.color === 'emerald' ? "bg-emerald-500/10 text-emerald-600" :
+                                        btn.color === 'blue' ? "bg-blue-600/10 text-blue-600" :
+                                            btn.color === 'red' ? "bg-red-500/10 text-red-600" :
+                                                btn.color === 'purple' ? "bg-purple-500/10 text-purple-600" :
+                                                    btn.color === 'amber' ? "bg-amber-500/10 text-amber-600" :
+                                                        btn.color === 'orange' ? "bg-orange-500/10 text-orange-600" :
+                                                            "bg-black/5 text-black"
+                                )}>
+                                    <btn.icon className="w-3.5 h-3.5" />
+                                </div>
+                                <span className="text-[12px] font-bold text-black/70 group-hover:text-black">{btn.label}</span>
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+
                 <div className="p-6 pb-2 select-none flex items-center gap-2 text-[13px] font-bold text-black/40 uppercase tracking-wider">
                     Overview
                 </div>
-                <div className="px-6 pb-6 space-y-8 flex-1">
+                <div className="px-6 pb-6 space-y-8 flex-1 flex flex-col">
                     {/* Summary Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <SummaryCard

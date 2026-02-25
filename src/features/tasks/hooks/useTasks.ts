@@ -7,7 +7,7 @@ import { useTasksProfile } from '@/features/tasks/contexts/TasksProfileContext'
 import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
 import { MOCK_TASKS } from '@/lib/demoData'
 
-const SESSION_STORAGE_KEY = 'karros_demo_tasks'
+const LOCAL_STORAGE_KEY = 'karros_demo_tasks'
 
 export function useTasks(category: 'todo' | 'grocery' | 'reminder', profileOverride?: string) {
     const [tasks, setTasks] = useState<Task[]>([])
@@ -19,25 +19,25 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder', profileOverr
 
     const getSessionTasks = useCallback(() => {
         try {
-            const stored = sessionStorage.getItem(SESSION_STORAGE_KEY)
+            const stored = localStorage.getItem(LOCAL_STORAGE_KEY)
             if (stored) {
                 const allTasks = JSON.parse(stored)
                 return allTasks[category] || null
             }
         } catch (e) {
-            console.error('Failed to load tasks from session storage', e)
+            console.error('Failed to load tasks from local storage', e)
         }
         return null
     }, [category])
 
     const saveSessionTasks = useCallback((newTasks: Task[]) => {
         try {
-            const stored = sessionStorage.getItem(SESSION_STORAGE_KEY)
+            const stored = localStorage.getItem(LOCAL_STORAGE_KEY)
             const allTasks = stored ? JSON.parse(stored) : {}
             allTasks[category] = newTasks
-            sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(allTasks))
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(allTasks))
         } catch (e) {
-            console.error('Failed to save tasks to session storage', e)
+            console.error('Failed to save tasks to local storage', e)
         }
     }, [category])
 
@@ -164,16 +164,21 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder', profileOverr
     }
 
     const toggleTask = async (id: string, is_completed: boolean) => {
+        // Optimistic UI update - immediately reflect the change
+        setTasks(prev => prev.map(t => t.id === id ? { ...t, is_completed } : t))
+
         if (settings.is_demo_mode) {
             const allTasks = getSessionTasks() || []
             const updated = allTasks.map((t: Task) => t.id === id ? { ...t, is_completed } : t)
             saveSessionTasks(updated)
-            await fetchTasks()
             return
         }
         const { error } = await supabase.from('fin_tasks').update({ is_completed }).eq('id', id)
-        if (error) throw error
-        await fetchTasks()
+        if (error) {
+            // Revert on error
+            setTasks(prev => prev.map(t => t.id === id ? { ...t, is_completed: !is_completed } : t))
+            throw error
+        }
     }
 
     const editTask = async (id: string, updates: Partial<Task>) => {

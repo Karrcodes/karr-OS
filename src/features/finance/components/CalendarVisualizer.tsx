@@ -226,7 +226,7 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                             >
                                 <ChevronLeft className="w-3.5 h-3.5" />
                             </button>
-                            <span className="text-[11px] font-bold text-black min-w-[80px] text-center uppercase tracking-wider">
+                            <span className="text-[11px] font-bold text-black w-[100px] text-center uppercase tracking-wider shrink-0">
                                 {calMonth.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
                             </span>
                             <button

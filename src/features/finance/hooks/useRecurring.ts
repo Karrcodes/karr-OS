@@ -17,7 +17,7 @@ export function useRecurring() {
     const fetchObligations = useCallback(async () => {
         if (settings.is_demo_mode) {
             const storageKey = `karr_os_demo_obligations_${activeProfile}`
-            const stored = sessionStorage.getItem(storageKey)
+            const stored = localStorage.getItem(storageKey)
 
             if (stored) {
                 setObligations(JSON.parse(stored))
@@ -33,12 +33,13 @@ export function useRecurring() {
                     is_active: true
                 })) as any
                 setObligations(obligations)
-                sessionStorage.setItem(storageKey, JSON.stringify(obligations))
+                localStorage.setItem(storageKey, JSON.stringify(obligations))
             }
             setLoading(false)
             return
         }
-        setLoading(true)
+        // Only show loading spinner on initial load (when there's no data yet)
+        if (obligations.length === 0) setLoading(true)
         const { data, error } = await supabase
             .from('fin_recurring')
             .select('*')
@@ -61,7 +62,7 @@ export function useRecurring() {
                 is_active: true
             } as RecurringObligation
             const updated = [...obligations, newObligation]
-            sessionStorage.setItem(storageKey, JSON.stringify(updated))
+            localStorage.setItem(storageKey, JSON.stringify(updated))
             globalRefresh()
             return
         }
@@ -74,7 +75,7 @@ export function useRecurring() {
         if (settings.is_demo_mode) {
             const storageKey = `karr_os_demo_obligations_${activeProfile}`
             const updated = obligations.map(o => o.id === id ? { ...o, ...updates } : o)
-            sessionStorage.setItem(storageKey, JSON.stringify(updated))
+            localStorage.setItem(storageKey, JSON.stringify(updated))
             globalRefresh()
             return
         }
@@ -87,7 +88,7 @@ export function useRecurring() {
         if (settings.is_demo_mode) {
             const storageKey = `karr_os_demo_obligations_${activeProfile}`
             const updated = obligations.filter(o => o.id !== id)
-            sessionStorage.setItem(storageKey, JSON.stringify(updated))
+            localStorage.setItem(storageKey, JSON.stringify(updated))
             globalRefresh()
             return
         }

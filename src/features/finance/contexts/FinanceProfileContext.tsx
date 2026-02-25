@@ -34,10 +34,13 @@ export function FinanceProfileProvider({ children }: { children: React.ReactNode
         setMounted(true)
 
         // Global Auto-Refresh: Increment trigger every 3 minutes (180,000 ms)
+        // Only refresh when the tab is visible to save resources
         const interval = setInterval(() => {
-            setRefreshTrigger(prev => prev + 1)
-            setLastRefresh(new Date())
-            console.log('KarrOS: Global financial data auto-refresh triggered.')
+            if (document.visibilityState === 'visible') {
+                setRefreshTrigger(prev => prev + 1)
+                setLastRefresh(new Date())
+                console.log('KarrOS: Global financial data auto-refresh triggered.')
+            }
         }, 180000)
 
         return () => clearInterval(interval)

@@ -21,7 +21,8 @@ export function usePockets() {
             setLoading(false)
             return
         }
-        setLoading(true)
+        // Only show loading spinner on initial load (when there's no data yet)
+        if (pockets.length === 0) setLoading(true)
         const { data, error } = await supabase
             .from('fin_pockets')
             .select('*')
