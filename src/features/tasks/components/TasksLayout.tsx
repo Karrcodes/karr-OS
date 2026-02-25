@@ -39,7 +39,9 @@ export function TasksLayout({ children }: { children: React.ReactNode }) {
 
     const isOnCalendar = pathname === '/tasks/calendar'
     const isPlanner = pathname === '/tasks/planner'
+    const isMatrix = pathname === '/tasks/matrix'
     const isGroceries = pathname === '/tasks/groceries'
+    const isSpecialView = isOnCalendar || isPlanner || isMatrix
 
     return (
         <div className="flex flex-col min-h-screen bg-[#fafafa]">
@@ -88,18 +90,36 @@ export function TasksLayout({ children }: { children: React.ReactNode }) {
                                 <span className="hidden sm:inline">Calendar</span>
                             </Link>
                         )}
+                        {/* Matrix */}
+                        {isMatrix ? (
+                            <button
+                                onClick={() => router.push('/tasks/todo')}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border bg-black text-white border-black"
+                            >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>
+                                <span className="hidden sm:inline">Matrix</span>
+                            </button>
+                        ) : (
+                            <Link
+                                href="/tasks/matrix"
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border bg-white text-black/60 border-black/[0.08] hover:border-black/20"
+                            >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>
+                                <span className="hidden sm:inline">Matrix</span>
+                            </Link>
+                        )}
                     </div>
                 </div>
-                {/* Row 2: ProfileToggle — hidden on Planner, Calendar, Groceries */}
-                {!isPlanner && !isGroceries && !isOnCalendar && (
+                {/* Row 2: ProfileToggle — hidden on special views & groceries */}
+                {!isSpecialView && !isGroceries && (
                     <div className="mt-3">
                         <ProfileToggle activeProfile={activeProfile} setActiveProfile={setActiveProfile} />
                     </div>
                 )}
             </div>
 
-            {/* Tabs — hidden on Planner + Calendar pages */}
-            {!isPlanner && !isOnCalendar && (
+            {/* Tabs — hidden on special view pages */}
+            {!isSpecialView && (
                 <div className="px-6 bg-white border-b border-black/[0.06] flex-shrink-0">
                     <div className="flex items-center gap-5 overflow-x-auto no-scrollbar pb-px">
                         {TABS.filter(tab => !(activeProfile === 'business' && tab.href.includes('groceries'))).map(tab => {
