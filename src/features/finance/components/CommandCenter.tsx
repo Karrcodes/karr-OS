@@ -76,7 +76,7 @@ export function CommandCenter() {
     const loading = pLoading || oLoading || gLoading
 
     return (
-        <div className="flex flex-col h-full bg-white">
+        <div className="flex flex-col h-dvh bg-white">
             {/* Page Header */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between px-6 py-5 border-b border-black/[0.06] bg-white flex-shrink-0 shadow-sm z-10 gap-4 lg:gap-0">
                 <div>
