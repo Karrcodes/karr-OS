@@ -1419,16 +1419,21 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category, setSelected
                     className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
                     onClick={() => setSelectedTaskForModal(task)}
                 >
-                    <input
-                        type="checkbox"
-                        id={`task-${task.id}`}
-                        checked={task.is_completed}
-                        onChange={(e) => {
-                            e.stopPropagation()
-                            toggleTask(task.id, e.target.checked)
-                        }}
-                        className="w-5 h-5 rounded-lg border-2 border-black/10 checked:bg-black checked:border-black transition-all cursor-pointer accent-black shrink-0"
-                    />
+                    {/* Checkbox — isolated from row click to prevent opening modal */}
+                    <div
+                        className="shrink-0"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <input
+                            type="checkbox"
+                            id={`task-${task.id}`}
+                            checked={task.is_completed}
+                            onChange={(e) => {
+                                toggleTask(task.id, e.target.checked)
+                            }}
+                            className="w-5 h-5 rounded-lg border-2 border-black/10 checked:bg-black checked:border-black transition-all cursor-pointer accent-black shrink-0"
+                        />
+                    </div>
                     <div className="flex flex-col min-w-0 flex-1">
                         {/* Metadata First Hierarchy */}
                         <div className="flex items-center gap-1.5 mb-1 flex-wrap">
