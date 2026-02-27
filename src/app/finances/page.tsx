@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { CommandCenter } from '@/features/finance/components/CommandCenter'
+import { Suspense } from 'react'
 
 export const metadata: Metadata = {
     title: 'Finances — KarrOS',
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 }
 
 export default function FinancesPage() {
-    return <CommandCenter />
+    return (
+        <Suspense fallback={null}>
+            <CommandCenter />
+        </Suspense>
+    )
 }
