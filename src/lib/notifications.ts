@@ -68,6 +68,19 @@ export async function subscribeToPushNotifications() {
         }
 
         console.log('Subscription saved successfully!')
+
+        // 6. Send initial test notification locally
+        try {
+            await registration.showNotification('Notifications Enabled', {
+                body: "You'll now receive real-time updates from KarrOS.",
+                icon: '/app-icon.png',
+                badge: '/app-icon.png',
+                tag: 'subscription-confirmed'
+            })
+        } catch (err) {
+            console.warn('Could not show initial notification:', err)
+        }
+
         return { success: true }
     } catch (error: any) {
         console.error('Push subscription error details:', error)

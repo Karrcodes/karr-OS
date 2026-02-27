@@ -4,6 +4,7 @@ export interface Pot {
     id: string
     name: string
     target_budget: number
+    target_amount: number // Monzo specific target
     current_balance: number
     balance: number // New dynamic cashflow balance
     sort_order: number

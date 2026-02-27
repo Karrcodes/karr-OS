@@ -310,6 +310,30 @@ export default function SettingsPage() {
                                 active={settings.notification_large_transaction}
                                 onToggle={() => toggleNotification('notification_large_transaction', settings.notification_large_transaction)}
                             />
+                            <NotificationToggle
+                                label="Monzo Transactions"
+                                description="Real-time alerts for every Monzo spend and income event."
+                                active={settings.notification_transactions}
+                                onToggle={() => toggleNotification('notification_transactions', settings.notification_transactions)}
+                            />
+                            <NotificationToggle
+                                label="Bank Sync Status"
+                                description="Get notified when a bank sync completes or has an issue."
+                                active={settings.notification_bank_sync}
+                                onToggle={() => toggleNotification('notification_bank_sync', settings.notification_bank_sync)}
+                            />
+                            <NotificationToggle
+                                label="Goal Milestones"
+                                description="Alerts when you hit major savings goal progress markers."
+                                active={settings.notification_goal_milestone}
+                                onToggle={() => toggleNotification('notification_goal_milestone', settings.notification_goal_milestone)}
+                            />
+                            <NotificationToggle
+                                label="Weekend & Daily Reminders"
+                                description="Strategic finance check-ins and routine reminders."
+                                active={settings.notification_reminders}
+                                onToggle={() => toggleNotification('notification_reminders', settings.notification_reminders)}
+                            />
                         </div>
                         <div className="p-6 bg-black/[0.02]">
                             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">

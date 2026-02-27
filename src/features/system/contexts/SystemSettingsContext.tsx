@@ -11,6 +11,8 @@ interface SystemSettings {
     notification_large_transaction: boolean
     notification_bank_sync: boolean
     notification_goal_milestone: boolean
+    notification_reminders: boolean
+    notification_transactions: boolean
     off_days: string[]
     last_reminder_sent: string
     schedule_type: 'mon-fri' | 'shift'
@@ -36,6 +38,8 @@ const defaultSettings: SystemSettings = {
     notification_large_transaction: true,
     notification_bank_sync: true,
     notification_goal_milestone: true,
+    notification_reminders: true,
+    notification_transactions: true,
     off_days: [],
     last_reminder_sent: '',
     schedule_type: 'mon-fri',

@@ -1,17 +1,40 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Trash2, Pencil, Check, X, Loader2 } from 'lucide-react'
+import { Plus, Trash2, Pencil, Check, X, Loader2, PiggyBank } from 'lucide-react'
 import { useGoals } from '@/features/finance/hooks/useGoals'
+import { usePots } from '@/features/finance/hooks/usePots'
+import { useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
 import type { Goal } from '@/features/finance/types/finance.types'
 import { Section, Spinner } from '@/features/finance/components/SharedSettingsUI'
+import { cn } from '@/lib/utils'
 
 export function SavingsManager() {
-    const { goals, loading, createGoal, updateGoal, deleteGoal } = useGoals()
+    const { goals, loading: gLoading, createGoal, updateGoal, deleteGoal } = useGoals()
+    const { pots, loading: pLoading } = usePots()
+    const { isPrivacyEnabled } = useFinanceProfile()
     const [adding, setAdding] = useState(false)
     const [editId, setEditId] = useState<string | null>(null)
     const [form, setForm] = useState<Partial<Goal>>({ current_amount: 0, is_recurring: false })
     const [saving, setSaving] = useState(false)
+
+    const loading = gLoading || pLoading
+
+    // Logic to map Monzo pots to "Goals" if they have a target or a specific name
+    const monzoGoals = pots.filter(p => p.target_amount > 0 || ['rent', 'bills', 'savings', 'holiday', 'emergency'].some(kw => p.name.toLowerCase().includes(kw)))
+
+    const allGoals = [
+        ...goals.map(g => ({ ...g, type: 'manual' as const })),
+        ...monzoGoals.map(p => ({
+            id: p.id,
+            name: `${p.name} 🏡`,
+            current_amount: p.balance,
+            target_amount: p.target_amount || p.balance, // Fallback to balance if no target set in Monzo
+            deadline: null,
+            is_recurring: p.name.toLowerCase().includes('rent') || p.name.toLowerCase().includes('bills'),
+            type: 'monzo' as const
+        }))
+    ]
 
     const handleAdd = async () => {
         if (!form.name || !form.target_amount) return
@@ -44,12 +67,16 @@ export function SavingsManager() {
         <Section title="Active Savings Goals" desc="Define long-term targets and regular allocations">
             {loading ? <Spinner /> : (
                 <div className="space-y-4">
-                    {goals.map((g) => {
+                    {allGoals.map((g) => {
                         const progress = g.target_amount > 0 ? Math.min(100, (g.current_amount / g.target_amount) * 100) : 0
+                        const isMonzo = 'type' in g && g.type === 'monzo'
 
                         return (
-                            <div key={g.id} className="flex flex-col gap-4 rounded-xl border border-black/[0.07] bg-white p-4 shadow-sm hover:shadow-md transition-shadow">
-                                {editId === g.id ? (
+                            <div key={g.id} className={cn(
+                                "flex flex-col gap-4 rounded-xl border p-4 shadow-sm transition-all",
+                                isMonzo ? "bg-emerald-50/30 border-emerald-500/10 hover:border-emerald-500/30" : "bg-white border-black/[0.07] hover:shadow-md"
+                            )}>
+                                {editId === g.id && !isMonzo ? (
                                     <div className="flex flex-wrap items-center gap-3">
                                         <input className="input-field flex-1 min-w-[120px]" value={form.name ?? ''} onChange={(e) => setForm({ ...form, name: e.target.value })} />
                                         <input className="input-field w-full sm:w-28" type="number" placeholder="Total target £" value={form.target_amount ?? 0} onChange={(e) => setForm({ ...form, target_amount: parseFloat(e.target.value) })} />
@@ -69,23 +96,30 @@ export function SavingsManager() {
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-[15px] text-black/90 font-bold">{g.name}</span>
                                                     {g.is_recurring && <span className="text-[9px] font-bold bg-black/10 text-black px-1.5 py-0.5 rounded tracking-widest uppercase">Recurring Target</span>}
+                                                    {isMonzo && <span className="text-[9px] font-bold bg-emerald-500 text-white px-1.5 py-0.5 rounded tracking-widest uppercase flex items-center gap-1"><PiggyBank className="w-2.5 h-2.5" /> Monzo</span>}
                                                 </div>
                                                 {g.deadline && <span className="text-[12px] text-black/40 mt-0.5">Deadline: {new Date(g.deadline).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>}
+                                                {isMonzo && <span className="text-[11px] text-emerald-600/60 font-medium mt-0.5 italic">Synced from bank pot</span>}
                                             </div>
-                                            <div className="flex items-center gap-1">
-                                                <button onClick={() => startEdit(g)} className="w-8 h-8 rounded-lg flex items-center justify-center text-black/20 hover:text-black/60 hover:bg-black/5 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
-                                                <button onClick={() => deleteGoal(g.id)} className="w-8 h-8 rounded-lg flex items-center justify-center text-black/20 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
-                                            </div>
+                                            {!isMonzo && (
+                                                <div className="flex items-center gap-1">
+                                                    <button onClick={() => startEdit(g as any)} className="w-8 h-8 rounded-lg flex items-center justify-center text-black/20 hover:text-black/60 hover:bg-black/5 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                                                    <button onClick={() => deleteGoal(g.id)} className="w-8 h-8 rounded-lg flex items-center justify-center text-black/20 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div>
                                             <div className="flex items-center justify-between text-[13px] mb-2">
-                                                <span className="font-bold text-black"><span className="privacy-blur">£{g.current_amount.toFixed(2)}</span> <span className="text-black/40 font-medium">saved</span></span>
-                                                <span className="text-black/40 font-medium whitespace-nowrap">of <span className="privacy-blur">£{g.target_amount.toFixed(2)}</span></span>
+                                                <span className="font-bold text-black"><span className={cn(isPrivacyEnabled && "privacy-blur")}>£{g.current_amount.toFixed(2)}</span> <span className="text-black/40 font-medium">saved</span></span>
+                                                <span className="text-black/40 font-medium whitespace-nowrap">of <span className={cn(isPrivacyEnabled && "privacy-blur")}>£{g.target_amount.toFixed(2)}</span></span>
                                             </div>
                                             <div className="h-2 w-full bg-black/[0.04] rounded-full overflow-hidden">
                                                 <div
-                                                    className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full transition-all duration-500"
+                                                    className={cn(
+                                                        "h-full rounded-full transition-all duration-500",
+                                                        isMonzo ? "bg-emerald-500" : "bg-gradient-to-r from-emerald-400 to-emerald-500"
+                                                    )}
                                                     style={{ width: `${progress}%` }}
                                                 />
                                             </div>
