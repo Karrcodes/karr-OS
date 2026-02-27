@@ -21,6 +21,7 @@ export function useIncome() {
                 amount: MOCK_FINANCE.income.net,
                 source: MOCK_FINANCE.income.label,
                 date: new Date().toISOString().split('T')[0],
+                pocket_id: null,
                 created_at: new Date().toISOString(),
                 profile: activeProfile
             }])

@@ -27,15 +27,19 @@ export async function subscribeToPushNotifications() {
         }
 
         // 2. Register/Get Service Worker
+        console.log('Registering service worker...')
         const registration = await registerServiceWorker()
         if (!registration) {
-            console.error('Service Worker registration failed or not supported')
-            throw new Error('Service Worker not supported or registration failed')
+            const isSecure = window.isSecureContext
+            console.error('Service Worker registration failed. IsSecureContext:', isSecure)
+            throw new Error(`Service Worker registration failed. (Secure Context: ${isSecure})`)
         }
 
-        // 3. Request permission explicitly (required by some browsers)
-        console.log('Requesting notification permission...')
+        // 3. Request permission explicitly
+        console.log('Requesting notification permission... Current status:', Notification.permission)
         const permission = await Notification.requestPermission()
+        console.log('Permission result:', permission)
+
         if (permission !== 'granted') {
             console.error('Notification permission denied')
             throw new Error('Permission not granted for notifications')
