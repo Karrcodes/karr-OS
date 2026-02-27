@@ -11,6 +11,10 @@ interface FinanceProfileContextType {
     refreshTrigger: number
     lastRefresh: Date
     globalRefresh: () => void
+    isSyncing: boolean
+    setSyncing: (s: boolean) => void
+    isLogging: boolean
+    setLogging: (l: boolean) => void
 }
 
 const FinanceProfileContext = createContext<FinanceProfileContextType | undefined>(undefined)
@@ -21,6 +25,8 @@ export function FinanceProfileProvider({ children }: { children: React.ReactNode
     const [mounted, setMounted] = useState(false)
     const [refreshTrigger, setRefreshTrigger] = useState(0)
     const [lastRefresh, setLastRefresh] = useState(new Date())
+    const [isSyncing, setIsSyncing] = useState(false)
+    const [isLogging, setIsLogging] = useState(false)
 
     useEffect(() => {
         const saved = localStorage.getItem('karrOS_finance_profile') as ProfileType
@@ -78,7 +84,11 @@ export function FinanceProfileProvider({ children }: { children: React.ReactNode
             globalRefresh: () => {
                 setRefreshTrigger(prev => prev + 1)
                 setLastRefresh(new Date())
-            }
+            },
+            isSyncing,
+            setSyncing: setIsSyncing,
+            isLogging,
+            setLogging: setIsLogging
         }}>
             <div className={`${mounted ? "" : "hidden"} ${isPrivacyEnabled ? 'privacy-enabled' : ''}`}>
                 {children}

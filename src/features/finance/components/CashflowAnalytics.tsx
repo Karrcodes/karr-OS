@@ -2,12 +2,13 @@
 
 import { useState, useMemo } from 'react'
 import { Activity, ArrowDownToLine, ArrowUpFromLine, BarChart2, ArrowRightLeft } from 'lucide-react'
+import { Skeleton } from './Skeleton'
 import { InfoTooltip } from './InfoTooltip'
 import { useIncome } from '../hooks/useIncome'
 import { useTransactions } from '../hooks/useTransactions'
 import { useSettings } from '../hooks/useSettings'
 
-export function CashflowAnalytics({ monthlyObligations }: { monthlyObligations: number }) {
+export function CashflowAnalytics({ monthlyObligations, isSyncing }: { monthlyObligations: number; isSyncing?: boolean }) {
     const { transactions, loading: tLoading } = useTransactions()
     const { settings, loading: sLoading } = useSettings()
     const [view, setView] = useState<'30d' | 'all-time'>('30d')
@@ -85,9 +86,9 @@ export function CashflowAnalytics({ monthlyObligations }: { monthlyObligations: 
         return shiftsThisWeek * HOURS_PER_SHIFT * BASE_RATE * (1 - DEDUCTION_RATE)
     }, [])
 
-    const loading = tLoading || sLoading
+    const showLoading = (tLoading || sLoading) && transactions.length === 0
 
-    if (loading) {
+    if (showLoading) {
         return (
             <div className="rounded-xl border border-black/[0.07] bg-white p-5 animate-pulse flex items-center justify-center min-h-[160px]">
                 <Activity className="w-5 h-5 text-black/20" />
@@ -124,8 +125,10 @@ export function CashflowAnalytics({ monthlyObligations }: { monthlyObligations: 
                     </div>
                     {view === '30d' ? (
                         <>
-                            <div className="text-[20px] font-bold tracking-tight text-black mt-1 privacy-blur">
-                                £{Math.max(0, totalIncome - totalSpent).toFixed(2)}
+                            <div className="text-[20px] font-bold tracking-tight text-black mt-1 privacy-blur leading-none">
+                                <Skeleton show={isSyncing}>
+                                    £{Math.max(0, totalIncome - totalSpent).toFixed(2)}
+                                </Skeleton>
                             </div>
                             <div className="flex items-center justify-end gap-1 text-[11px] font-semibold uppercase tracking-wider text-black/40">
                                 Net Retained
@@ -154,7 +157,11 @@ export function CashflowAnalytics({ monthlyObligations }: { monthlyObligations: 
                             <div className="flex items-center gap-1.5 text-[12px] font-semibold text-black/60">
                                 <ArrowRightLeft className="w-3.5 h-3.5 text-orange-500" /> This Week's Expected Pay
                             </div>
-                            <span className="text-[14px] font-bold text-black privacy-blur">£{currentWeekExpectedPay.toFixed(2)}</span>
+                            <span className="text-[14px] font-bold text-black privacy-blur">
+                                <Skeleton show={isSyncing}>
+                                    £{currentWeekExpectedPay.toFixed(2)}
+                                </Skeleton>
+                            </span>
                         </div>
                         <div className="w-full h-2 bg-black/[0.04] rounded-full overflow-hidden">
                             <div className="h-full bg-orange-500/80 rounded-full w-full" />
@@ -166,7 +173,11 @@ export function CashflowAnalytics({ monthlyObligations }: { monthlyObligations: 
                             <div className="flex items-center gap-1.5 text-[12px] font-semibold text-black/60">
                                 <ArrowDownToLine className="w-3.5 h-3.5 text-[#059669]" /> Inflow
                             </div>
-                            <span className="text-[14px] font-bold text-black privacy-blur">£{totalIncome.toFixed(2)}</span>
+                            <span className="text-[14px] font-bold text-black privacy-blur">
+                                <Skeleton show={isSyncing}>
+                                    £{totalIncome.toFixed(2)}
+                                </Skeleton>
+                            </span>
                         </div>
                         <div className="w-full h-2 bg-black/[0.04] rounded-full overflow-hidden">
                             <div className="h-full bg-[#059669] rounded-full w-full" />
@@ -179,7 +190,11 @@ export function CashflowAnalytics({ monthlyObligations }: { monthlyObligations: 
                             <div className="flex items-center gap-1.5 text-[12px] font-semibold text-black/60">
                                 <ArrowUpFromLine className="w-3.5 h-3.5 text-[#dc2626]" /> Outflow
                             </div>
-                            <span className="text-[14px] font-bold text-black privacy-blur">£{totalSpent.toFixed(2)}</span>
+                            <span className="text-[14px] font-bold text-black privacy-blur">
+                                <Skeleton show={isSyncing}>
+                                    £{totalSpent.toFixed(2)}
+                                </Skeleton>
+                            </span>
                         </div>
                         <div className="w-full h-2 bg-black/[0.04] rounded-full overflow-hidden">
                             <div

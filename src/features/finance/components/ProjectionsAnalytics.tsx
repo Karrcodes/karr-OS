@@ -5,7 +5,7 @@ import { Calendar as CalendarIcon, ExternalLink, Briefcase, DollarSign, ChevronL
 import { useRota } from '../hooks/useRota'
 import { usePayslips } from '../hooks/usePayslips'
 import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
-import { KarrFooter } from '@/components/KarrFooter'
+
 
 // Hardcoded anchor: User states next shift starts on "Monday". 
 // Given current date (Feb 20, 2026 - Friday), next Monday is Feb 23, 2026.
@@ -653,7 +653,7 @@ export function ProjectionsAnalytics() {
                                         </div>
                                         <button
                                             onClick={() => handleDeletePayslip(ps.id)}
-                                            className="p-2 rounded-lg text-black/20 hover:text-red-500 hover:bg-red-50 transition-all"
+                                            className="p-2 rounded-lg text-black/40 hover:text-red-500 hover:bg-red-50 transition-all"
                                             title="Delete Payslip"
                                         >
                                             <Trash2 className="w-4 h-4" />
@@ -693,7 +693,6 @@ export function ProjectionsAnalytics() {
                     </div>
                 </div>
             )}
-            <KarrFooter />
         </div >
     )
 }

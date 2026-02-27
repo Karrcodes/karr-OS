@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { useVault } from '../contexts/VaultContext'
-import { Plus, Copy, Trash2, Check, ExternalLink, List } from 'lucide-react'
+import { Plus, Copy, Trash2, Check, ExternalLink, List, X, Camera, Image as ImageIcon, ZoomIn, Maximize2 } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { LinkPreview } from './LinkPreview'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
@@ -12,6 +13,7 @@ import { MOCK_VAULT } from '@/lib/demoData'
 interface Clip {
     id: string
     content: string
+    image_url?: string
     created_at: string
 }
 
@@ -22,6 +24,11 @@ export function Clipboard() {
     const [loading, setLoading] = useState(true)
     const [adding, setAdding] = useState(false)
     const [copiedId, setCopiedId] = useState<string | null>(null)
+    const [imageFile, setImageFile] = useState<File | null>(null)
+    const [imagePreview, setImagePreview] = useState<string | null>(null)
+    const [isMounted, setIsMounted] = useState(false)
+    const [selectedImage, setSelectedImage] = useState<string | null>(null)
+    const fileInputRef = useRef<HTMLInputElement>(null)
     const { settings } = useSystemSettings()
 
     const [confirmModal, setConfirmModal] = useState<{
@@ -56,6 +63,7 @@ export function Clipboard() {
     }
 
     useEffect(() => {
+        setIsMounted(true)
         fetchClips()
         // Poll every 30 seconds for new clips from other devices (only if not in demo mode)
         let interval: any
@@ -67,18 +75,107 @@ export function Clipboard() {
 
     const handleAdd = async (e?: React.FormEvent) => {
         if (e) e.preventDefault()
-        if (!newClip.trim()) return
+        if (!newClip.trim() && !imageFile) return
 
+        console.log('[Vault] Adding clip...', { hasContent: !!newClip.trim(), hasFile: !!imageFile })
         setAdding(true)
+
+        if (settings.is_demo_mode) {
+            const demoClip: Clip = {
+                id: 'd-clip-' + Date.now(),
+                content: newClip.trim(),
+                image_url: imagePreview || undefined,
+                created_at: new Date().toISOString()
+            }
+            setClips(prev => [demoClip, ...prev])
+            setNewClip('')
+            setImageFile(null)
+            setImagePreview(null)
+            setAdding(false)
+            return
+        }
+
+        let imageUrl = null
+
+        if (imageFile) {
+            try {
+                const fileExt = imageFile.name.split('.').pop()
+                const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
+                const filePath = `clipboard/${fileName}`
+
+                console.log('[Vault] Uploading image...', filePath)
+                const { error: uploadError } = await supabase.storage
+                    .from('vault_assets')
+                    .upload(filePath, imageFile)
+
+                if (uploadError) {
+                    console.error('[Vault] Upload error:', uploadError)
+                } else {
+                    const { data: { publicUrl } } = supabase.storage
+                        .from('vault_assets')
+                        .getPublicUrl(filePath)
+                    imageUrl = publicUrl
+                    console.log('[Vault] Upload success:', imageUrl)
+                }
+            } catch (err) {
+                console.error('[Vault] Storage error:', err)
+            }
+        }
+
         const { error } = await supabase
             .from('sys_clipboard')
-            .insert({ content: newClip.trim(), profile: 'personal' })
+            .insert({
+                content: newClip.trim(),
+                image_url: imageUrl,
+                profile: 'personal'
+            })
 
         if (!error) {
+            console.log('[Vault] Clip saved successfully')
             setNewClip('')
+            setImageFile(null)
+            setImagePreview(null)
+            if (fileInputRef.current) fileInputRef.current.value = ''
             fetchClips()
+        } else {
+            console.error('[Vault] DB Insert error:', error)
+            alert('Failed to save clip: ' + error.message)
         }
         setAdding(false)
+    }
+
+    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        console.log('[Vault] File selected input change:', {
+            name: file?.name,
+            size: file?.size,
+            type: file?.type
+        })
+
+        if (file) {
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Image is too large (max 5MB)')
+                return
+            }
+
+            setImageFile(file)
+            const reader = new FileReader()
+            reader.onloadstart = () => console.log('[Vault] FileReader started')
+            reader.onloadend = () => {
+                if (reader.result) {
+                    console.log('[Vault] Preview loaded, base64 length:', (reader.result as string).length)
+                    setImagePreview(reader.result as string)
+                } else {
+                    console.warn('[Vault] FileReader produced empty result')
+                }
+            }
+            reader.onerror = (err) => console.error('[Vault] FileReader error:', err)
+            try {
+                reader.readAsDataURL(file)
+            } catch (err) {
+                console.error('[Vault] readAsDataURL failed:', err)
+            }
+        }
     }
 
     const handleDelete = async (id: string) => {
@@ -119,6 +216,8 @@ export function Clipboard() {
         return lastLine.trim().startsWith('- ') || lastLine.trim().startsWith('* ')
     }
 
+    if (!isMounted) return null
+
     return (
         <div className="space-y-4">
             {/* Input Area */}
@@ -127,6 +226,7 @@ export function Clipboard() {
                     value={newClip}
                     onChange={(e) => setNewClip(e.target.value)}
                     placeholder="Paste a link or message to share..."
+                    suppressHydrationWarning
                     className="w-full h-32 p-4 pb-12 pr-14 bg-white border border-black/[0.08] rounded-2xl resize-none outline-none focus:border-black/20 focus:ring-4 focus:ring-black/[0.02] transition-all text-[14px] leading-relaxed placeholder:text-black/20"
                     onKeyDown={(e) => {
                         if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -160,11 +260,30 @@ export function Clipboard() {
                     }}
                 />
                 <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
+                    <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        ref={fileInputRef}
+                        onChange={handleImageSelect}
+                    />
+                    <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className={cn(
+                            "p-1.5 rounded-lg transition-all",
+                            imageFile ? "text-emerald-500 bg-emerald-50" : "text-black/40 hover:text-black hover:bg-black/5"
+                        )}
+                        title="Add photo"
+                    >
+                        <ImageIcon className="w-4 h-4" />
+                    </button>
                     <button
                         type="button"
                         onClick={() => {
                             const textarea = document.querySelector('textarea')
                             if (!textarea) return
+                            // ... rest existing ...
                             const start = textarea.selectionStart
                             const end = textarea.selectionEnd
                             const text = textarea.value
@@ -202,11 +321,28 @@ export function Clipboard() {
                 <button
                     onClick={() => handleAdd()}
                     type="button"
-                    disabled={adding || !newClip.trim()}
+                    disabled={adding || (!newClip.trim() && !imageFile)}
                     className="absolute bottom-3 right-3 w-10 h-10 bg-black text-white rounded-xl shadow-lg shadow-black/10 flex items-center justify-center hover:scale-105 active:scale-95 disabled:opacity-20 disabled:scale-100 transition-all z-10"
                 >
                     <Plus className="w-5 h-5" />
                 </button>
+                {imagePreview && (
+                    <div className="absolute top-2 right-2 z-20 animate-in zoom-in-95 duration-200">
+                        <div className="group/preview relative w-14 h-14 rounded-xl overflow-hidden border-2 border-white shadow-xl ring-1 ring-black/5 bg-black/[0.02]">
+                            <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                            <button
+                                onClick={() => {
+                                    console.log('[Vault] Clearing image preview')
+                                    setImageFile(null)
+                                    setImagePreview(null)
+                                }}
+                                className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover/preview:opacity-100 transition-opacity"
+                            >
+                                <X className="w-4 h-4 text-white" />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Confirmation Modal */}
@@ -258,14 +394,47 @@ export function Clipboard() {
                             setConfirmModal={setConfirmModal}
                             extractFirstUrl={extractFirstUrl}
                             isVaultPrivate={isVaultPrivate}
+                            setSelectedImage={setSelectedImage}
                         />
                     ))
                 )}
             </div>
+
+            {/* Lightbox Modal */}
+            <AnimatePresence>
+                {selectedImage && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setSelectedImage(null)}
+                        className="fixed inset-0 z-[100] bg-black/99 backdrop-blur-sm flex items-center justify-center p-4 sm:p-8 cursor-zoom-out"
+                    >
+                        <motion.button
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="absolute top-4 right-4 sm:top-8 sm:right-8 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors shadow-2xl"
+                            onClick={() => setSelectedImage(null)}
+                        >
+                            <X className="w-6 h-6" />
+                        </motion.button>
+
+                        <motion.img
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                            src={selectedImage}
+                            alt="Full size"
+                            className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl p-4 sm:p-0"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     )
 }
-function ClipItem({ clip, copiedId, handleCopy, setConfirmModal, extractFirstUrl, isVaultPrivate }: {
+function ClipItem({ clip, copiedId, handleCopy, setConfirmModal, extractFirstUrl, isVaultPrivate, setSelectedImage }: {
     clip: Clip,
     copiedId: string | null,
     handleCopy: (id: string, content: string) => void,
@@ -276,7 +445,8 @@ function ClipItem({ clip, copiedId, handleCopy, setConfirmModal, extractFirstUrl
         id: string | null;
     }>>,
     extractFirstUrl: (str: string) => string | null,
-    isVaultPrivate: boolean
+    isVaultPrivate: boolean,
+    setSelectedImage: (url: string | null) => void
 }) {
     const [isExpanded, setIsExpanded] = useState(false)
     const [isTruncatable, setIsTruncatable] = useState(false)
@@ -299,30 +469,49 @@ function ClipItem({ clip, copiedId, handleCopy, setConfirmModal, extractFirstUrl
                         "text-[14px] leading-relaxed text-black/70 break-words",
                         !isExpanded && "line-clamp-6"
                     )}>
-                        <div className={cn(isVaultPrivate && "privacy-blur")}>
-                            {clip.content.split('\n').map((line, i) => {
-                                if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
+                        <div className={cn(isVaultPrivate && "privacy-blur", "flex flex-col sm:flex-row gap-4")}>
+                            <div className="flex-1 min-w-0">
+                                {clip.content.split('\n').map((line, i) => {
+                                    if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
+                                        return (
+                                            <div key={i} className="flex gap-2 mb-1 pl-1">
+                                                <span className="text-black/30 mt-1.5 w-1 h-1 rounded-full bg-black/40 shrink-0" />
+                                                <span>{line.trim().substring(2)}</span>
+                                            </div>
+                                        )
+                                    }
+                                    const url = extractFirstUrl(line)
+                                    if (url) {
+                                        return (
+                                            <p key={i} className="mb-1 text-blue-600 font-medium underline underline-offset-4 decoration-blue-200 break-all">
+                                                {line}
+                                            </p>
+                                        )
+                                    }
                                     return (
-                                        <div key={i} className="flex gap-2 mb-1 pl-1">
-                                            <span className="text-black/30 mt-1.5 w-1 h-1 rounded-full bg-black/40 shrink-0" />
-                                            <span>{line.trim().substring(2)}</span>
-                                        </div>
-                                    )
-                                }
-                                const url = extractFirstUrl(line)
-                                if (url) {
-                                    return (
-                                        <p key={i} className="mb-1 text-blue-600 font-medium underline underline-offset-4 decoration-blue-200 break-all">
+                                        <p key={i} className="mb-1">
                                             {line}
                                         </p>
                                     )
-                                }
-                                return (
-                                    <p key={i} className="mb-1">
-                                        {line}
-                                    </p>
-                                )
-                            })}
+                                })}
+                            </div>
+
+                            {clip.image_url && (
+                                <div
+                                    onClick={() => setSelectedImage(clip.image_url!)}
+                                    className="shrink-0 w-24 sm:w-28 aspect-video rounded-xl overflow-hidden border border-black/[0.08] bg-black/[0.02] cursor-zoom-in group/media relative hover:shadow-lg transition-all active:scale-95 self-start sm:self-center"
+                                >
+                                    <img
+                                        src={clip.image_url}
+                                        alt="Vault Media"
+                                        className="w-full h-full object-cover transition-transform duration-500 group-hover/media:scale-110"
+                                        loading="lazy"
+                                    />
+                                    <div className="absolute inset-0 bg-black/0 group-hover/media:bg-black/10 flex items-center justify-center transition-all">
+                                        <Maximize2 className="w-5 h-5 text-white opacity-0 group-hover/media:opacity-100 drop-shadow-md" />
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                     {isTruncatable && (

@@ -4,18 +4,19 @@ import { useState, useMemo } from 'react'
 import { ArrowLeft, Wallet, TrendingUp, Receipt, PieChart, FileText, Trash2 } from 'lucide-react'
 import { useTransactions } from '@/features/finance/hooks/useTransactions'
 import { usePayslips } from '@/features/finance/hooks/usePayslips'
-import { usePockets } from '@/features/finance/hooks/usePockets'
+import { usePots } from '@/features/finance/hooks/usePots'
 import { useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
 import { SpendingAnalytics } from '@/features/finance/components/SpendingAnalytics'
 import { PayslipUploader } from '@/features/finance/components/PayslipUploader'
+import { Skeleton } from '@/features/finance/components/Skeleton'
 import { cn } from '@/lib/utils'
 import { KarrFooter } from '@/components/KarrFooter'
 
 export default function FinanceAnalyticsPage() {
     const [activeTab, setActiveTab] = useState<'salary' | 'spending'>('salary')
-    const { payslips, loading: payslipsLoading, deletePayslip, refetch: refetchPayslips } = usePayslips()
+    const { payslips, loading: payslipsLoading, isLogging, deletePayslip, refetch: refetchPayslips } = usePayslips()
     const { transactions, loading: txLoading } = useTransactions()
-    const { pockets, loading: pLoading } = usePockets()
+    const { pots, loading: pLoading } = usePots()
     const { activeProfile } = useFinanceProfile()
 
     const loading = activeTab === 'salary' ? payslipsLoading : (txLoading || pLoading)
@@ -31,11 +32,22 @@ export default function FinanceAnalyticsPage() {
         const avgNet = totalNet / payslips.length
         const highestNet = Math.max(...payslips.map(p => p.net_pay))
 
-        const monthlyTrend = payslips.slice(0, 6).reverse().map(p => ({
-            month: new Date(p.date).toLocaleDateString('en-GB', { month: 'short' }),
-            net: p.net_pay,
-            gross: p.gross_pay || 0
-        }))
+        const trendMap: Record<string, { month: string, net: number, gross: number, sortKey: string }> = {}
+        payslips.forEach(p => {
+            const date = new Date(p.date)
+            const monthStr = date.toLocaleDateString('en-GB', { month: 'short' })
+            const sortKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+
+            if (!trendMap[sortKey]) {
+                trendMap[sortKey] = { month: monthStr, net: 0, gross: 0, sortKey }
+            }
+            trendMap[sortKey].net += p.net_pay
+            trendMap[sortKey].gross += (p.gross_pay || 0)
+        })
+
+        const monthlyTrend = Object.values(trendMap)
+            .sort((a, b) => a.sortKey.localeCompare(b.sortKey))
+            .slice(-6)
 
         return { totalGross, totalNet, totalTax, totalPension, avgNet, highestNet, monthlyTrend }
     }, [payslips])
@@ -113,9 +125,11 @@ export default function FinanceAnalyticsPage() {
                                                 <div className="flex items-center gap-2 text-[11px] font-bold text-black/30 uppercase tracking-widest mb-3">
                                                     <Wallet className="w-3.5 h-3.5" /> Avg. Take Home
                                                 </div>
-                                                <div className="text-[24px] font-bold text-black group flex items-baseline gap-1 privacy-blur">
-                                                    <span className="text-[18px] opacity-30">£</span>
-                                                    {salaryStats.avgNet.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                <div className="text-[24px] font-bold text-black group flex items-baseline gap-1 privacy-blur leading-none">
+                                                    <Skeleton show={isLogging} className="h-8">
+                                                        <span className="text-[18px] opacity-30">£</span>
+                                                        {salaryStats.avgNet.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                    </Skeleton>
                                                 </div>
                                             </div>
 
@@ -123,9 +137,11 @@ export default function FinanceAnalyticsPage() {
                                                 <div className="flex items-center gap-2 text-[11px] font-bold text-black/30 uppercase tracking-widest mb-3">
                                                     <TrendingUp className="w-3.5 h-3.5" /> Peak Month
                                                 </div>
-                                                <div className="text-[24px] font-bold text-[#059669] flex items-baseline gap-1 privacy-blur">
-                                                    <span className="text-[18px] opacity-30">£</span>
-                                                    {salaryStats.highestNet.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                <div className="text-[24px] font-bold text-[#059669] flex items-baseline gap-1 privacy-blur leading-none">
+                                                    <Skeleton show={isLogging} className="h-8">
+                                                        <span className="text-[18px] opacity-30">£</span>
+                                                        {salaryStats.highestNet.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                    </Skeleton>
                                                 </div>
                                             </div>
 
@@ -133,9 +149,11 @@ export default function FinanceAnalyticsPage() {
                                                 <div className="flex items-center gap-2 text-[11px] font-bold text-black/30 uppercase tracking-widest mb-3">
                                                     <Receipt className="w-3.5 h-3.5" /> Total Tax Paid
                                                 </div>
-                                                <div className="text-[24px] font-bold text-[#dc2626] flex items-baseline gap-1 privacy-blur">
-                                                    <span className="text-[18px] opacity-30">£</span>
-                                                    {salaryStats.totalTax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                <div className="text-[24px] font-bold text-[#dc2626] flex items-baseline gap-1 privacy-blur leading-none">
+                                                    <Skeleton show={isLogging} className="h-8">
+                                                        <span className="text-[18px] opacity-30">£</span>
+                                                        {salaryStats.totalTax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                    </Skeleton>
                                                 </div>
                                             </div>
 
@@ -253,7 +271,7 @@ export default function FinanceAnalyticsPage() {
                                                             </div>
                                                             <button
                                                                 onClick={() => { if (confirm('Delete record?')) deletePayslip(p.id) }}
-                                                                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-50 text-red-400 transition-all"
+                                                                className="p-1.5 rounded-lg hover:bg-red-50 text-red-400 transition-all opacity-100"
                                                             >
                                                                 <Trash2 className="w-4 h-4" />
                                                             </button>
@@ -265,7 +283,7 @@ export default function FinanceAnalyticsPage() {
                                     </>
                                 )
                             ) : (
-                                <SpendingAnalytics transactions={transactions} pockets={pockets} />
+                                <SpendingAnalytics transactions={transactions} pots={pots} />
                             )}
                         </div>
                     )}

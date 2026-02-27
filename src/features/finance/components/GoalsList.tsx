@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { Target, CalendarDays, RefreshCw, Loader2 } from 'lucide-react'
+import { Skeleton } from './Skeleton'
+import { useFinanceProfile } from '../contexts/FinanceProfileContext'
 import type { Goal } from '../types/finance.types'
 import { useGoals } from '../hooks/useGoals'
 
@@ -30,6 +32,7 @@ function daysUntil(dateStr: string | null): number | null {
 
 export function GoalsList({ goals, onRefresh }: GoalsListProps) {
     const { updateGoal } = useGoals()
+    const { isSyncing, isLogging } = useFinanceProfile()
     const [resettingId, setResettingId] = useState<string | null>(null)
 
     const handleReset = async (id: string, e: React.MouseEvent) => {
@@ -81,9 +84,9 @@ export function GoalsList({ goals, onRefresh }: GoalsListProps) {
                             </div>
                             <div className="text-right">
                                 <p className="text-[14px] font-bold text-black privacy-blur">
-                                    £{goal.current_amount.toFixed(2)}
+                                    <Skeleton as="span" show={isSyncing || isLogging}>£{goal.current_amount.toFixed(2)}</Skeleton>
                                 </p>
-                                <p className="text-[10px] text-black/35">of <span className="privacy-blur">£{goal.target_amount.toFixed(2)}</span></p>
+                                <p className="text-[10px] text-black/35">of <Skeleton as="span" show={isSyncing || isLogging}><span className="privacy-blur">£{goal.target_amount.toFixed(2)}</span></Skeleton></p>
                             </div>
                         </div>
                         <ProgressBar value={goal.current_amount} max={goal.target_amount} />

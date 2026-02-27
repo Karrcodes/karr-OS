@@ -1,6 +1,6 @@
 export type ProfileType = 'personal' | 'business'
 
-export interface Pocket {
+export interface Pot {
     id: string
     name: string
     target_budget: number
@@ -9,6 +9,8 @@ export interface Pocket {
     sort_order: number
     type: 'general' | 'savings' | 'buffer'
     profile: 'personal' | 'business'
+    monzo_id?: string | null
+    last_synced_at?: string | null
     created_at: string
 }
 
@@ -98,7 +100,7 @@ export interface FinanceSummary {
     totalLiquid: number
     totalDebt: number
     monthlyDebtObligations: number
-    pockets: Pocket[]
+    pockets: Pot[]
     debts: Debt[]
     goals: Goal[]
     weeklyIncomeBaseline: number

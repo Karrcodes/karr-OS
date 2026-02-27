@@ -2,24 +2,15 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, X, Receipt, CheckSquare, Clipboard, Loader2, Sparkles, ListChecks, Calendar, Tag, Layers, Info, ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, Clock, Zap, Wallet, Heart, Briefcase, User, Beaker, Factory, Tv, TrendingUp, Building2, User2 } from 'lucide-react'
-import { usePockets } from '@/features/finance/hooks/usePockets'
+import { Plus, X, CheckSquare, Clipboard, Loader2, Sparkles, ListChecks, Calendar, Info, Clock, Heart, Briefcase, User, Beaker, Factory, Tv, TrendingUp, Building2, User2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
-import { useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
 import { usePathname } from 'next/navigation'
-import { FINANCE_CATEGORIES } from '@/features/finance/constants/categories'
 
-type ActionType = 'finance' | 'task' | 'vault' | null
-
-const FINANCE_TYPES = [
-    { id: 'spend', label: 'Spend', icon: Receipt, color: 'text-rose-500', bg: 'bg-rose-500/10' },
-    { id: 'income', label: 'Income', icon: ArrowDownToLine, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-    { id: 'transfer', label: 'Transfer', icon: ArrowLeftRight, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
-] as const
+type ActionType = 'task' | 'vault' | null
 
 const PERSONAL_STRATEGIC = [
-    { id: 'finance', label: 'Finance', icon: Wallet, color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' },
+    { id: 'finance', label: 'Finance', icon: Heart, color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' },
     { id: 'career', label: 'Career', icon: Briefcase, color: 'text-blue-500 bg-blue-500/10 border-blue-500/20' },
     { id: 'health', label: 'Health', icon: Heart, color: 'text-rose-500 bg-rose-500/10 border-rose-500/20' },
     { id: 'personal', label: 'Personal', icon: User, color: 'text-amber-500 bg-amber-500/10 border-amber-500/20' },
@@ -47,19 +38,8 @@ export function GlobalQuickAction() {
     const [loading, setLoading] = useState(false)
     const [success, setSuccess] = useState(false)
 
-    // Essential hooks called UNCONDITIONALLY
-    const { pockets, updatePocket } = usePockets()
-    const { activeProfile } = useFinanceProfile()
-
     // Form States
     const [form, setForm] = useState({
-        financeType: 'spend' as 'spend' | 'income' | 'transfer',
-        amount: '',
-        pocketId: '',
-        toPocketId: '',
-        description: '',
-        category: 'other',
-        date: new Date().toISOString().split('T')[0],
         taskTitle: '',
         taskProfile: 'personal' as 'personal' | 'business',
         taskCategory: 'todo' as 'todo' | 'grocery' | 'reminder',
@@ -80,13 +60,6 @@ export function GlobalQuickAction() {
 
     const resetForm = () => {
         setForm({
-            financeType: 'spend',
-            amount: '',
-            pocketId: '',
-            toPocketId: '',
-            description: '',
-            category: 'other',
-            date: new Date().toISOString().split('T')[0],
             taskTitle: '',
             taskProfile: 'personal',
             taskCategory: 'todo',
@@ -117,85 +90,7 @@ export function GlobalQuickAction() {
         if (loading || success) return
         setLoading(true)
         try {
-            if (activeAction === 'finance') {
-                const amt = parseFloat(form.amount)
-                if (!amt) throw new Error('Invalid amount')
-
-                if (form.financeType === 'spend') {
-                    const pocket = pockets.find(p => p.id === form.pocketId)
-                    if (!pocket) throw new Error('Invalid pocket')
-
-                    await supabase.from('fin_transactions').insert({
-                        type: 'spend',
-                        amount: amt,
-                        pocket_id: form.pocketId,
-                        description: form.description || 'Quick Spend',
-                        date: form.date,
-                        category: form.category,
-                        emoji: FINANCE_CATEGORIES.find(c => c.id === form.category)?.emoji || '💸',
-                        profile: activeProfile
-                    })
-                    await updatePocket(form.pocketId, { balance: (pocket.balance || 0) - amt })
-                } else if (form.financeType === 'income') {
-                    const pocket = pockets.find(p => p.id === form.pocketId)
-                    if (!pocket) throw new Error('Invalid pocket')
-
-                    const { error: incomeError } = await supabase.from('fin_income').insert({
-                        amount: amt,
-                        source: form.description || 'Quick Income',
-                        date: form.date,
-                        pocket_id: form.pocketId,
-                        profile: activeProfile
-                    })
-                    if (incomeError) throw incomeError
-
-                    const { error: transError } = await supabase.from('fin_transactions').insert({
-                        type: 'income',
-                        amount: amt,
-                        pocket_id: form.pocketId,
-                        description: form.description || 'Quick Income',
-                        date: form.date,
-                        category: 'income',
-                        emoji: '💰',
-                        profile: activeProfile
-                    })
-                    if (transError) throw transError
-
-                    await updatePocket(form.pocketId, { balance: (pocket.balance || 0) + amt })
-                } else if (form.financeType === 'transfer') {
-                    if (!form.pocketId || !form.toPocketId) throw new Error('Incomplete transfer details')
-                    if (form.pocketId === form.toPocketId) throw new Error('Cannot transfer to same pocket')
-
-                    const fromPocket = pockets.find(p => p.id === form.pocketId)
-                    const toPocket = pockets.find(p => p.id === form.toPocketId)
-                    if (!fromPocket || !toPocket) throw new Error('Pocket not found')
-
-                    await supabase.from('fin_transactions').insert([
-                        {
-                            type: 'transfer',
-                            amount: amt,
-                            pocket_id: form.pocketId,
-                            description: `Transfer to ${toPocket.name}`,
-                            date: form.date,
-                            category: 'transfer',
-                            emoji: '🔄',
-                            profile: activeProfile
-                        },
-                        {
-                            type: 'allocate',
-                            amount: amt,
-                            pocket_id: form.toPocketId,
-                            description: `Transfer from ${fromPocket.name}`,
-                            date: form.date,
-                            category: 'transfer',
-                            emoji: '🔄',
-                            profile: activeProfile
-                        }
-                    ])
-                    await updatePocket(form.pocketId, { balance: (fromPocket.balance || 0) - amt })
-                    await updatePocket(form.toPocketId, { balance: (toPocket.balance || 0) + amt })
-                }
-            } else if (activeAction === 'task') {
+            if (activeAction === 'task') {
                 if (!form.taskTitle.trim()) throw new Error('Task title required')
                 const { error } = await supabase.from('fin_tasks').insert({
                     title: form.taskTitle,
@@ -236,7 +131,6 @@ export function GlobalQuickAction() {
     }
 
     const actions = useMemo(() => [
-        { id: 'finance', label: 'Finance', icon: Wallet, color: 'bg-emerald-500', glow: 'shadow-emerald-500/40' },
         { id: 'task', label: 'Task', icon: CheckSquare, color: 'bg-violet-600', glow: 'shadow-violet-600/40' },
         { id: 'vault', label: 'Vault', icon: Clipboard, color: 'bg-amber-500', glow: 'shadow-amber-500/40' },
     ], [])
@@ -248,11 +142,13 @@ export function GlobalQuickAction() {
     const radius = 90
     const startAngle = 180
     const endAngle = 270
-    const angleStep = (endAngle - startAngle) / (actions.length - 1)
+    // If only one action, it should be at the center of the arc, but here we have at least 2 usually.
+    // If we have 2, angleStep will be 90.
+    const angleStep = actions.length > 1 ? (endAngle - startAngle) / (actions.length - 1) : 0
 
     // Shared UI classes for absolute symmetry
     const inputHeight = "h-[48px]"
-    const inputBase = cn(inputHeight, "w-full bg-black/[0.03] border border-black/5 rounded-2xl px-4 text-[13px] font-bold outline-none transition-all flex items-center box-border focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/20")
+    const inputBase = cn(inputHeight, "w-full bg-black/[0.03] border border-black/5 rounded-2xl px-4 text-[13px] font-bold outline-none transition-all flex items-center box-border focus:ring-4 focus:ring-black/5 focus:border-black/10")
 
     return (
         <div
@@ -287,179 +183,6 @@ export function GlobalQuickAction() {
 
                             {/* Body */}
                             <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto no-scrollbar">
-                                {activeAction === 'finance' && (
-                                    <>
-                                        {/* Type Selector */}
-                                        <div className="bg-black/[0.03] p-1.5 rounded-2xl grid grid-cols-3 gap-1.5">
-                                            {FINANCE_TYPES.map(type => (
-                                                <button
-                                                    key={type.id}
-                                                    onClick={() => setForm(f => ({ ...f, financeType: type.id as any }))}
-                                                    className={cn(
-                                                        "flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                                                        form.financeType === type.id
-                                                            ? "bg-white shadow-sm " + type.color
-                                                            : "text-black/30 hover:text-black/60"
-                                                    )}
-                                                >
-                                                    <type.icon className="w-3.5 h-3.5" />
-                                                    {type.label}
-                                                </button>
-                                            ))}
-                                        </div>
-
-                                        {/* Primary Input - Amount is top of the hierarchy again */}
-                                        <div className="space-y-2">
-                                            <div className="relative group">
-                                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-black/40 font-black text-lg group-focus-within:text-emerald-500 transition-colors">£</span>
-                                                <input
-                                                    autoFocus
-                                                    type="number"
-                                                    value={form.amount}
-                                                    onChange={e => setForm({ ...form, amount: e.target.value })}
-                                                    placeholder="0.00"
-                                                    className={cn(inputBase, "pl-8 text-2xl font-black h-[64px]")}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        {form.financeType === 'spend' && (
-                                            <div className="grid grid-cols-2 gap-3">
-                                                <div className="space-y-2">
-                                                    <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Allocation</label>
-                                                    <div className="relative">
-                                                        <select
-                                                            value={form.pocketId}
-                                                            onChange={e => setForm({ ...form, pocketId: e.target.value })}
-                                                            className={cn(inputBase, "appearance-none cursor-pointer")}
-                                                        >
-                                                            <option value="">Pocket...</option>
-                                                            {pockets.map(p => (
-                                                                <option key={p.id} value={p.id}>{p.name}</option>
-                                                            ))}
-                                                        </select>
-                                                        <Layers className="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-black/20 pointer-events-none" />
-                                                    </div>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Category</label>
-                                                    <div className="relative">
-                                                        <select
-                                                            value={form.category}
-                                                            onChange={e => setForm({ ...form, category: e.target.value })}
-                                                            className={cn(inputBase, "appearance-none cursor-pointer")}
-                                                        >
-                                                            {FINANCE_CATEGORIES.map(c => (
-                                                                <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>
-                                                            ))}
-                                                        </select>
-                                                        <Tag className="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-black/20 pointer-events-none" />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {form.financeType === 'transfer' && (
-                                            <div className="grid grid-cols-2 gap-3">
-                                                <div className="space-y-2">
-                                                    <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">From</label>
-                                                    <div className="relative">
-                                                        <select
-                                                            value={form.pocketId}
-                                                            onChange={e => setForm({ ...form, pocketId: e.target.value })}
-                                                            className={cn(inputBase, "appearance-none cursor-pointer")}
-                                                        >
-                                                            <option value="">Pocket...</option>
-                                                            {pockets.map(p => (
-                                                                <option key={p.id} value={p.id}>{p.name}</option>
-                                                            ))}
-                                                        </select>
-                                                        <ArrowUpFromLine className="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-black/20 pointer-events-none" />
-                                                    </div>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">To</label>
-                                                    <div className="relative">
-                                                        <select
-                                                            value={form.toPocketId}
-                                                            onChange={e => setForm({ ...form, toPocketId: e.target.value })}
-                                                            className={cn(inputBase, "appearance-none cursor-pointer")}
-                                                        >
-                                                            <option value="">Pocket...</option>
-                                                            {pockets.map(p => (
-                                                                <option key={p.id} value={p.id}>{p.name}</option>
-                                                            ))}
-                                                        </select>
-                                                        <ArrowDownToLine className="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-black/20 pointer-events-none" />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">
-                                                    {form.financeType === 'income' ? 'Source' : 'Description'}
-                                                </label>
-                                                <input
-                                                    value={form.description}
-                                                    onChange={e => setForm({ ...form, description: e.target.value })}
-                                                    placeholder={form.financeType === 'income' ? "Employer..." : "Details..."}
-                                                    className={cn(inputBase)}
-                                                />
-                                            </div>
-                                            {form.financeType === 'income' ? (
-                                                <div className="space-y-2">
-                                                    <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Deposit To</label>
-                                                    <div className="relative">
-                                                        <select
-                                                            value={form.pocketId}
-                                                            onChange={e => setForm({ ...form, pocketId: e.target.value })}
-                                                            className={cn(inputBase, "appearance-none cursor-pointer")}
-                                                        >
-                                                            <option value="">Pocket...</option>
-                                                            {pockets.map(p => (
-                                                                <option key={p.id} value={p.id}>{p.name}</option>
-                                                            ))}
-                                                        </select>
-                                                        <Layers className="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-black/20 pointer-events-none" />
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="space-y-2 flex-1 min-w-0">
-                                                    <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Date</label>
-                                                    <div className={cn(inputBase, "relative w-full")}>
-                                                        <input
-                                                            type="date"
-                                                            value={form.date}
-                                                            onChange={e => setForm({ ...form, date: e.target.value })}
-                                                            className="w-full bg-transparent border-none outline-none py-0 text-[13px] font-bold"
-                                                            style={{ minWidth: 0 }}
-                                                        />
-                                                        <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20 pointer-events-none" />
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {form.financeType === 'income' && (
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Date</label>
-                                                <div className={cn(inputBase, "relative w-full")}>
-                                                    <input
-                                                        type="date"
-                                                        value={form.date}
-                                                        onChange={e => setForm({ ...form, date: e.target.value })}
-                                                        className="w-full bg-transparent border-none outline-none py-0 text-[13px] font-bold"
-                                                        style={{ minWidth: 0 }}
-                                                    />
-                                                    <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20 pointer-events-none" />
-                                                </div>
-                                            </div>
-                                        )}
-                                    </>
-                                )}
-
                                 {activeAction === 'task' && (
                                     <>
                                         {/* Primary Input - Title is top of the hierarchy again */}
@@ -713,10 +436,7 @@ export function GlobalQuickAction() {
                 )}
             </AnimatePresence>
 
-            {/* Anchor Div for Center-Alignment of Dial nodes */}
             <div className="relative w-16 h-16 flex items-center justify-center pointer-events-none">
-
-                {/* Radial Speed Dial */}
                 <AnimatePresence>
                     {isOpen && !activeAction && (
                         <>
@@ -765,7 +485,6 @@ export function GlobalQuickAction() {
                     )}
                 </AnimatePresence>
 
-                {/* Main FAB Trigger */}
                 <motion.button
                     layout
                     onClick={toggleMenu}
@@ -791,7 +510,6 @@ export function GlobalQuickAction() {
                 </motion.button>
             </div>
 
-            {/* Subtle Backdrop - Placed BELOW the dial elements in Z-space */}
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
@@ -807,7 +525,6 @@ export function GlobalQuickAction() {
             <style jsx global>{`
                 .no-scrollbar::-webkit-scrollbar { display: none; }
                 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-                /* Standardize date picker inner heights for Safari/Chrome */
                 input[type="date"]::-webkit-calendar-picker-indicator {
                     opacity: 0;
                     position: absolute;

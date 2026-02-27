@@ -3,15 +3,18 @@
 import { useState } from 'react'
 import { useTransactions } from '../hooks/useTransactions'
 import { ArrowUpRight, ArrowDownLeft, RefreshCw, Layers } from 'lucide-react'
+import { Skeleton } from './Skeleton'
+import { useFinanceProfile } from '../contexts/FinanceProfileContext'
 import { useBank } from '../hooks/useBank'
-import { usePockets } from '../hooks/usePockets'
+import { usePots } from '../hooks/usePots'
 import { TransactionDetailsModal } from './TransactionDetailsModal'
 import { getCategoryById } from '../constants/categories'
 import type { Transaction } from '../types/finance.types'
 
 export function TransactionLedger() {
     const { transactions, loading, refetch, clearTransactions } = useTransactions()
-    const { pockets, loading: pocketsLoading } = usePockets()
+    const { pots, loading: potsLoading } = usePots()
+    const { isSyncing } = useFinanceProfile()
     const { syncTransactions, startConnection, loading: bankSyncLoading } = useBank()
     const [selectedTx, setSelectedTx] = useState<Transaction | null>(null)
 
@@ -25,7 +28,7 @@ export function TransactionLedger() {
         }
     }
 
-    if (loading || pocketsLoading) {
+    if (loading || potsLoading) {
         return (
             <div className="space-y-3 animate-pulse">
                 {[1, 2, 3].map(i => (
@@ -60,27 +63,11 @@ export function TransactionLedger() {
                     <a href="/finances/transactions" className="text-[10px] font-bold text-black/40 hover:text-black hover:underline transition-colors">See All</a>
                 </div>
 
-                <div className="flex gap-2">
-                    <button
-                        onClick={startConnection}
-                        className="text-[10px] font-bold text-black/40 hover:text-black transition-colors bg-black/[0.03] px-2 py-1 rounded-lg border border-black/[0.05]"
-                    >
-                        Connect Bank
-                    </button>
-                    <button
-                        onClick={handleSync}
-                        disabled={bankSyncLoading}
-                        className="flex items-center gap-1.5 text-[10px] font-bold text-black/40 hover:text-black transition-colors bg-black/[0.03] px-2 py-1 rounded-lg border border-black/[0.05] disabled:opacity-50"
-                    >
-                        {bankSyncLoading ? <RefreshCw className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-                        Sync
-                    </button>
-                </div>
             </div>
 
             <div className="space-y-2">
                 {recentTransactions.map((t) => {
-                    const pocketName = pockets.find(p => p.id === t.pocket_id)?.name || 'General'
+                    const potName = pots.find(p => p.id === t.pocket_id)?.name || 'General'
                     return (
                         <button
                             key={t.id}
@@ -105,12 +92,14 @@ export function TransactionLedger() {
                                         )}
                                     </div>
                                     <p className={`text-[13px] font-bold ${t.type === 'spend' ? 'text-black' : 'text-[#059669]'} privacy-blur`}>
-                                        {t.type === 'spend' ? '-' : '+'}£{t.amount.toFixed(2)}
+                                        <Skeleton as="span" show={loading || isSyncing}>
+                                            {t.type === 'spend' ? '-' : '+'}£{t.amount.toFixed(2)}
+                                        </Skeleton>
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-2 mt-0.5">
                                     <p className="text-[10px] uppercase font-bold tracking-wider text-black/30">
-                                        {t.category || 'other'}
+                                        {t.category ? getCategoryById(t.category).label : 'other'}
                                     </p>
                                     <span className="w-1 h-1 rounded-full bg-black/10" />
                                     <p className="text-[10px] font-medium text-black/25">
@@ -131,7 +120,7 @@ export function TransactionLedger() {
 
             <TransactionDetailsModal
                 transaction={selectedTx}
-                pockets={pockets}
+                pots={pots}
                 isOpen={!!selectedTx}
                 onClose={() => setSelectedTx(null)}
             />

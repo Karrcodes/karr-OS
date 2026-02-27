@@ -18,10 +18,12 @@ export default function ProjectionsPage() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto">
-                    <div className="p-6">
-                        <ProjectionsAnalytics />
+                    <div className="flex-1 flex flex-col">
+                        <div className="p-6">
+                            <ProjectionsAnalytics />
+                        </div>
                     </div>
-                    <KarrFooter dark />
+                    <KarrFooter />
                 </div>
             </div>
         </FinanceProfileProvider>

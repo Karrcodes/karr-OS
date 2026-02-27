@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { ArrowLeft, ArrowUpRight, ArrowDownLeft, FileText, Search, Filter, RefreshCw, Trash2 } from 'lucide-react'
 import { useTransactions } from '@/features/finance/hooks/useTransactions'
-import { usePockets } from '@/features/finance/hooks/usePockets'
+import { usePots } from '@/features/finance/hooks/usePots'
 import { useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
 import { KarrFooter } from '@/components/KarrFooter'
 import { TransactionDetailsModal } from '@/features/finance/components/TransactionDetailsModal'
@@ -14,12 +14,12 @@ import type { Transaction } from '@/features/finance/types/finance.types'
 
 export default function TransactionsPage() {
     const { transactions, loading, refetch, clearTransactions } = useTransactions()
-    const { pockets } = usePockets()
+    const { pots } = usePots()
     const { loading: bankSyncLoading } = useBank()
     const { activeProfile, setProfile: setActiveProfile } = useFinanceProfile()
     const [search, setSearch] = useState('')
     const [selectedCategory, setSelectedCategory] = useState<string>('all')
-    const [selectedPocket, setSelectedPocket] = useState<string>('all')
+    const [selectedPot, setSelectedPot] = useState<string>('all')
     const [timeFilter, setTimeFilter] = useState<string>('all')
     const [selectedTx, setSelectedTx] = useState<Transaction | null>(null)
     const [isImportModalOpen, setIsImportModalOpen] = useState(false)
@@ -34,8 +34,8 @@ export default function TransactionsPage() {
             t.category?.toLowerCase().includes(search.toLowerCase()) || false
 
         const matchesCat = selectedCategory === 'all' || t.category === selectedCategory
-        const matchesPocket = selectedPocket === 'all' ||
-            (selectedPocket === 'null' ? t.pocket_id === null : t.pocket_id === selectedPocket)
+        const matchesPot = selectedPot === 'all' ||
+            (selectedPot === 'null' ? t.pocket_id === null : t.pocket_id === selectedPot)
 
         let matchesTime = true
         if (timeFilter !== 'all') {
@@ -50,7 +50,7 @@ export default function TransactionsPage() {
             if (timeFilter === '1year') matchesTime = diffDays <= 365
         }
 
-        return matchesSearch && matchesCat && matchesPocket && matchesTime
+        return matchesSearch && matchesCat && matchesPot && matchesTime
     })
 
     return (
@@ -124,12 +124,12 @@ export default function TransactionsPage() {
                                     <option value="1year">Last 1 Year</option>
                                 </select>
                                 <select
-                                    value={selectedPocket}
-                                    onChange={e => setSelectedPocket(e.target.value)}
+                                    value={selectedPot}
+                                    onChange={e => setSelectedPot(e.target.value)}
                                     className="bg-black/[0.03] border border-black/[0.06] rounded-xl px-3 py-2 text-[13px] outline-none focus:border-black/30 transition-colors w-full cursor-pointer font-bold text-black/60"
                                 >
-                                    <option value="all">All Pockets</option>
-                                    {pockets.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                    <option value="all">All Pots</option>
+                                    {pots.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                     <option value="null">Unassigned</option>
                                 </select>
                                 <select
@@ -206,8 +206,8 @@ export default function TransactionsPage() {
                                                 <p className="text-[11px] font-bold text-black/40 truncate text-right ml-1 shrink-0 max-w-[100px]">
                                                     {(() => {
                                                         if (!t.pocket_id) return 'Unassigned'
-                                                        const pocket = pockets.find(p => p.id === t.pocket_id)
-                                                        return pocket ? pocket.name : 'Unknown'
+                                                        const pot = pots.find(p => p.id === t.pocket_id)
+                                                        return pot ? pot.name : 'Unknown'
                                                     })()}
                                                 </p>
                                             </div>
@@ -220,7 +220,7 @@ export default function TransactionsPage() {
 
                     <TransactionDetailsModal
                         transaction={selectedTx}
-                        pockets={pockets}
+                        pots={pots}
                         isOpen={!!selectedTx}
                         onClose={() => setSelectedTx(null)}
                     />

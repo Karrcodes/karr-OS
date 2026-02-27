@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import type { Pocket } from '../types/finance.types'
+import type { Pot } from '../types/finance.types'
 import { useFinanceProfile } from '../contexts/FinanceProfileContext'
 import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
 import { MOCK_FINANCE, MOCK_BUSINESS } from '@/lib/demoData'
@@ -10,22 +10,38 @@ import { MOCK_FINANCE, MOCK_BUSINESS } from '@/lib/demoData'
 // Module-level locks to prevent race conditions across multiple hook instances
 const ensuringProfiles = new Set<string>()
 
-export function usePockets() {
-    const [pockets, setPockets] = useState<Pocket[]>([])
+export function usePots() {
+    const [pots, setPots] = useState<Pot[]>([])
     const [loading, setLoading] = useState(true)
+    const [isMonzoConnected, setIsMonzoConnected] = useState(false)
     const [error, setError] = useState<string | null>(null)
-    const { activeProfile, refreshTrigger, globalRefresh } = useFinanceProfile()
+    const { activeProfile, refreshTrigger, globalRefresh, isSyncing, setSyncing } = useFinanceProfile()
     const { settings } = useSystemSettings()
 
-    const fetchPockets = async () => {
+    const checkMonzoConnection = async () => {
+        const { data, error } = await supabase
+            .from('fin_secrets')
+            .select('service')
+            .eq('user_id', 'karr')
+            .eq('service', 'monzo')
+            .single()
+
+        setIsMonzoConnected(!!data && !error)
+    }
+
+    const fetchPots = async () => {
         if (settings.is_demo_mode) {
             const mockData = activeProfile === 'business' ? MOCK_BUSINESS.pockets : MOCK_FINANCE.pockets
-            setPockets(mockData as any)
+            setPots(mockData as any)
             setLoading(false)
             return
         }
         // Only show loading spinner on initial load (when there's no data yet)
-        if (pockets.length === 0) setLoading(true)
+        if (pots.length === 0) setLoading(true)
+
+        // Also check connection status whenever we fetch pots
+        checkMonzoConnection()
+
         const { data, error } = await supabase
             .from('fin_pockets')
             .select('*')
@@ -34,26 +50,26 @@ export function usePockets() {
             .order('created_at', { ascending: true })
 
         if (error) setError(error.message)
-        else setPockets(data ?? [])
+        else setPots(data ?? [])
         setLoading(false)
     }
 
-    const createPocket = async (pocket: Omit<Pocket, 'id' | 'created_at' | 'profile'>) => {
-        const { error } = await supabase.from('fin_pockets').insert({ ...pocket, profile: activeProfile })
+    const createPot = async (pot: Omit<Pot, 'id' | 'created_at' | 'profile'>) => {
+        const { error } = await supabase.from('fin_pockets').insert({ ...pot, profile: activeProfile })
         if (error) throw error
         globalRefresh()
     }
 
-    const updatePocket = async (id: string, updates: Partial<Pocket>) => {
+    const updatePot = async (id: string, updates: Partial<Pot>) => {
         if (settings.is_demo_mode) {
-            const currentPockets = [...pockets]
-            const index = currentPockets.findIndex(p => p.id === id)
+            const currentPots = [...pots]
+            const index = currentPots.findIndex(p => p.id === id)
             if (index !== -1) {
-                currentPockets[index] = { ...currentPockets[index], ...updates }
-                setPockets(currentPockets)
+                currentPots[index] = { ...currentPots[index], ...updates }
+                setPots(currentPots)
                 // Persistence in sessionStorage for demo mode
                 const key = activeProfile === 'business' ? 'karr_demo_business_pockets' : 'karr_demo_finance_pockets'
-                sessionStorage.setItem(key, JSON.stringify(currentPockets))
+                sessionStorage.setItem(key, JSON.stringify(currentPots))
             }
             globalRefresh()
             return
@@ -63,17 +79,17 @@ export function usePockets() {
         globalRefresh()
     }
 
-    const deletePocket = async (id: string) => {
-        const pocket = pockets.find(p => p.id === id)
-        if (pocket) {
+    const deletePot = async (id: string) => {
+        const pot = pots.find(p => p.id === id)
+        if (pot) {
             const systemKeywords = ['general', 'liabilities']
-            const nameLower = pocket.name.toLowerCase()
+            const nameLower = pot.name.toLowerCase()
             const keyword = systemKeywords.find(key => nameLower.includes(key))
 
             if (keyword) {
-                const count = pockets.filter(p => p.name.toLowerCase().includes(keyword)).length
+                const count = pots.filter(p => p.name.toLowerCase().includes(keyword)).length
                 if (count <= 1) {
-                    throw new Error(`The "${pocket.name}" pocket is your only ${keyword} pocket and cannot be deleted.`)
+                    throw new Error(`The "${pot.name}" pot is your only ${keyword} pot and cannot be deleted.`)
                 }
             }
         }
@@ -82,7 +98,7 @@ export function usePockets() {
         globalRefresh()
     }
 
-    const updatePocketsOrder = async (updates: { id: string; sort_order: number }[]) => {
+    const updatePotsOrder = async (updates: { id: string; sort_order: number }[]) => {
         // Run updates sequentially to avoid complex batching for now
         for (const update of updates) {
             await supabase.from('fin_pockets').update({ sort_order: update.sort_order }).eq('id', update.id)
@@ -90,21 +106,21 @@ export function usePockets() {
         globalRefresh()
     }
 
-    const ensureSystemPockets = async () => {
+    const ensureSystemPots = async () => {
         if (settings.is_demo_mode || !activeProfile || ensuringProfiles.has(activeProfile)) return
 
         // Prevent other instances from running this concurrently for this profile
         ensuringProfiles.add(activeProfile)
 
         try {
-            const systemPockets = [
+            const systemPots = [
                 { name: 'General', type: 'general' as const, sort_order: 0 },
                 { name: 'Liabilities', type: 'buffer' as const, sort_order: 99 }
             ]
 
-            for (const sp of systemPockets) {
+            for (const sp of systemPots) {
                 // Check local state first
-                const existsLocally = pockets.some(p => p.name.toLowerCase().includes(sp.name.toLowerCase()))
+                const existsLocally = pots.some(p => p.name.toLowerCase().includes(sp.name.toLowerCase()))
 
                 if (!existsLocally && !loading) {
                     // Double check with DB to be absolutely sure before inserting
@@ -133,13 +149,43 @@ export function usePockets() {
     }
 
     useEffect(() => {
-        fetchPockets()
+        fetchPots()
     }, [activeProfile, refreshTrigger, settings.is_demo_mode])
 
     useEffect(() => {
         // Run ensure logic whenever loading finishes or profile changes
-        if (!loading) ensureSystemPockets()
-    }, [loading, activeProfile])
+        if (!loading) {
+            ensureSystemPots()
 
-    return { pockets, loading, error, createPocket, updatePocket, deletePocket, updatePocketsOrder, refetch: fetchPockets }
+            // Auto-Sync: If any pot has a Monzo ID and last sync was > 5 mins ago, trigger sync
+            // This makes it feel "automatic" without a server cron.
+            const now = new Date().getTime()
+            const fiveMins = 5 * 60 * 1000
+            const needsSync = pots.some(p => p.monzo_id && p.last_synced_at && (now - new Date(p.last_synced_at).getTime() > fiveMins))
+            const neverSynced = pots.some(p => p.monzo_id && !p.last_synced_at)
+
+            if ((needsSync || neverSynced) && isMonzoConnected && !loading) {
+                console.log('KarrOS: Auto-syncing Monzo data...')
+                syncMonzo()
+            }
+        }
+    }, [loading, activeProfile, isMonzoConnected])
+
+    const syncMonzo = async () => {
+        setSyncing(true)
+        try {
+            const res = await fetch('/api/finance/monzo/sync', { method: 'POST' })
+            const data = await res.json()
+            if (data.error) throw new Error(data.error)
+            await fetchPots()
+            globalRefresh()
+        } catch (err: any) {
+            setError(err.message)
+            throw err
+        } finally {
+            setSyncing(false)
+        }
+    }
+
+    return { pots, loading, isSyncing, isMonzoConnected, error, createPot, updatePot, deletePot, updatePotsOrder, refetch: fetchPots, syncMonzo }
 }

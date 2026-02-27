@@ -2,12 +2,12 @@
 
 import { useMemo, useState } from 'react'
 import { PieChart, ArrowDownLeft, ArrowUpRight, ArrowLeft } from 'lucide-react'
-import type { Transaction, Pocket } from '../types/finance.types'
+import type { Transaction, Pot } from '../types/finance.types'
 import { getCategoryById } from '../constants/categories'
 
 interface SpendingAnalyticsProps {
     transactions: Transaction[]
-    pockets: Pocket[]
+    pots: Pot[]
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -21,9 +21,9 @@ const CATEGORY_COLORS: Record<string, string> = {
     'other': '#64748b'
 }
 
-export function SpendingAnalytics({ transactions, pockets }: SpendingAnalyticsProps) {
+export function SpendingAnalytics({ transactions, pots }: SpendingAnalyticsProps) {
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-    const [groupBy, setGroupBy] = useState<'pocket' | 'category'>('pocket')
+    const [groupBy, setGroupBy] = useState<'pot' | 'category'>('pot')
     const [timeFilter, setTimeFilter] = useState<string>('all')
 
     const stats = useMemo(() => {
@@ -75,13 +75,13 @@ export function SpendingAnalytics({ transactions, pockets }: SpendingAnalyticsPr
                         label = 'General / Unassigned'
                         emoji = '💰'
                     } else {
-                        const pocket = pockets.find(p => p.id === key)
-                        if (pocket) {
-                            name = pocket.id
-                            label = pocket.name
+                        const pot = pots.find(p => p.id === key)
+                        if (pot) {
+                            name = pot.id
+                            label = pot.name
                             emoji = '💰'
                         } else {
-                            label = 'Unknown Pocket'
+                            label = 'Unknown Pot'
                             emoji = '❓'
                         }
                     }
@@ -99,7 +99,7 @@ export function SpendingAnalytics({ transactions, pockets }: SpendingAnalyticsPr
             .sort((a, b) => b.amount - a.amount)
 
         return { totalSpend, sortedGroups }
-    }, [transactions, pockets, groupBy, timeFilter])
+    }, [transactions, pots, groupBy, timeFilter])
 
     if (transactions.length === 0) {
         return (
@@ -201,10 +201,10 @@ export function SpendingAnalytics({ transactions, pockets }: SpendingAnalyticsPr
 
                     <div className="flex bg-black/[0.03] p-1 rounded-xl">
                         <button
-                            onClick={() => setGroupBy('pocket')}
-                            className={`px-3 py-1 rounded-lg text-[12px] font-bold transition-all ${groupBy === 'pocket' ? 'bg-white text-black shadow-sm' : 'text-black/30 hover:text-black/50'}`}
+                            onClick={() => setGroupBy('pot')}
+                            className={`px-3 py-1 rounded-lg text-[12px] font-bold transition-all ${groupBy === 'pot' ? 'bg-white text-black shadow-sm' : 'text-black/30 hover:text-black/50'}`}
                         >
-                            Pockets
+                            Pots
                         </button>
                         <button
                             onClick={() => setGroupBy('category')}

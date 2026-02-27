@@ -13,12 +13,18 @@ if (supabaseUrl && supabaseAnonKey) {
     // Stub client that returns empty arrays/null — prevents crashes during dev setup
     supabaseInstance = {
         from: () => ({
-            select: () => ({ order: () => ({ data: [], error: null }), data: [], error: null }),
-            insert: async () => ({ error: null }),
+            select: () => ({ order: () => ({ data: [], error: null }), data: [], error: null, single: () => ({ data: null, error: null }) }),
+            insert: () => ({ select: () => ({ single: async () => ({ data: {}, error: null }) }), error: null }),
             update: () => ({ eq: async () => ({ error: null }) }),
             delete: () => ({ eq: async () => ({ error: null }) }),
             upsert: async () => ({ error: null }),
         }),
+        storage: {
+            from: () => ({
+                upload: async () => ({ data: {}, error: null }),
+                getPublicUrl: () => ({ data: { publicUrl: '/placeholder-image.png' } }),
+            })
+        }
     } as unknown as SupabaseClient
 }
 

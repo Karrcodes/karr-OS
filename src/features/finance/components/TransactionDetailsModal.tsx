@@ -1,22 +1,22 @@
 import { useState, useEffect } from 'react'
 import { X, Layers, Tag, Calendar, Hash, ArrowUpRight, ArrowDownLeft, Edit2, Check, Trash2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import type { Transaction, Pocket } from '../types/finance.types'
+import type { Transaction, Pot } from '../types/finance.types'
 import { useTransactions } from '../hooks/useTransactions'
-import { usePockets } from '../hooks/usePockets'
+import { usePots } from '../hooks/usePots'
 import { FINANCE_CATEGORIES, getCategoryById } from '../constants/categories'
 import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
 
 interface TransactionDetailsModalProps {
     transaction: Transaction | null
-    pockets: Pocket[]
+    pots: Pot[]
     isOpen: boolean
     onClose: () => void
 }
 
-export function TransactionDetailsModal({ transaction, pockets, isOpen, onClose }: TransactionDetailsModalProps) {
+export function TransactionDetailsModal({ transaction, pots, isOpen, onClose }: TransactionDetailsModalProps) {
     const { transactions, updateTransaction, deleteTransaction } = useTransactions()
-    const { updatePocket } = usePockets()
+    const { updatePot } = usePots()
     const { settings } = useSystemSettings()
     const [isEditing, setIsEditing] = useState(false)
     const [editForm, setEditForm] = useState({
@@ -40,7 +40,7 @@ export function TransactionDetailsModal({ transaction, pockets, isOpen, onClose 
 
     if (!isOpen || !transaction) return null
 
-    const pocketName = pockets.find(p => p.id === transaction.pocket_id)?.name || 'General'
+    const potName = pots.find(p => p.id === transaction.pocket_id)?.name || 'General'
 
     const handleSave = async () => {
         if (!transaction) return
@@ -49,33 +49,33 @@ export function TransactionDetailsModal({ transaction, pockets, isOpen, onClose 
         const oldPocketId = transaction.pocket_id
         const newPocketId = editForm.pocket_id === 'general' ? null : editForm.pocket_id
 
-        // 1. Handle Pocket Balance Update
+        // 1. Handle Pot Balance Update
         if (oldPocketId === newPocketId && oldPocketId && delta !== 0) {
-            // Same pocket, amount changed
-            const pocket = pockets.find(p => p.id === oldPocketId)
-            if (pocket) {
+            // Same pot, amount changed
+            const pot = pots.find(p => p.id === oldPocketId)
+            if (pot) {
                 const modifier = (transaction.type === 'spend' || transaction.type === 'transfer') ? -1 : 1
-                const newBalance = (pocket.balance || 0) + (delta * modifier)
-                await updatePocket(oldPocketId, { balance: newBalance })
+                const newBalance = (pot.balance || 0) + (delta * modifier)
+                await updatePot(oldPocketId, { balance: newBalance })
             }
         } else if (oldPocketId !== newPocketId) {
-            // Pocket changed
+            // Pot changed
             if (oldPocketId) {
-                // Revert old pocket
-                const oldPocket = pockets.find(p => p.id === oldPocketId)
-                if (oldPocket) {
+                // Revert old pot
+                const oldPot = pots.find(p => p.id === oldPocketId)
+                if (oldPot) {
                     const modifier = (transaction.type === 'spend' || transaction.type === 'transfer') ? 1 : -1
-                    const revertedBalance = (oldPocket.balance || 0) + (transaction.amount * modifier)
-                    await updatePocket(oldPocketId, { balance: revertedBalance })
+                    const revertedBalance = (oldPot.balance || 0) + (transaction.amount * modifier)
+                    await updatePot(oldPocketId, { balance: revertedBalance })
                 }
             }
             if (newPocketId) {
-                // Apply to new pocket
-                const newPocket = pockets.find(p => p.id === newPocketId)
-                if (newPocket) {
+                // Apply to new pot
+                const newPot = pots.find(p => p.id === newPocketId)
+                if (newPot) {
                     const modifier = (transaction.type === 'spend' || transaction.type === 'transfer') ? -1 : 1
-                    const newBalance = (newPocket.balance || 0) + (editForm.amount * modifier)
-                    await updatePocket(newPocketId, { balance: newBalance })
+                    const newBalance = (newPot.balance || 0) + (editForm.amount * modifier)
+                    await updatePot(newPocketId, { balance: newBalance })
                 }
             }
         }
@@ -113,14 +113,14 @@ export function TransactionDetailsModal({ transaction, pockets, isOpen, onClose 
             }
 
             if (paired) {
-                // Update and sync its pocket
+                // Update and sync its pot
                 await updateTransaction(paired.id, { amount: editForm.amount })
                 if (paired.pocket_id) {
-                    const pairedPocket = pockets.find(p => p.id === paired.pocket_id)
-                    if (pairedPocket) {
+                    const pairedPot = pots.find(p => p.id === paired.pocket_id)
+                    if (pairedPot) {
                         const modifier = (paired.type === 'spend' || paired.type === 'transfer') ? -1 : 1
-                        const newBalance = (pairedPocket.balance || 0) + (delta * modifier)
-                        await updatePocket(paired.pocket_id, { balance: newBalance })
+                        const newBalance = (pairedPot.balance || 0) + (delta * modifier)
+                        await updatePot(paired.pocket_id, { balance: newBalance })
                     }
                 }
             }
@@ -133,13 +133,13 @@ export function TransactionDetailsModal({ transaction, pockets, isOpen, onClose 
     const handleDelete = async () => {
         if (!transaction) return
         if (confirm('Are you sure you want to delete this transaction?')) {
-            // Revert pocket balance before deletion
+            // Revert pot balance before deletion
             if (transaction.pocket_id) {
-                const pocket = pockets.find(p => p.id === transaction.pocket_id)
-                if (pocket) {
+                const pot = pots.find(p => p.id === transaction.pocket_id)
+                if (pot) {
                     const modifier = (transaction.type === 'spend' || transaction.type === 'transfer') ? 1 : -1
-                    const revertedBalance = (pocket.balance || 0) + (transaction.amount * modifier)
-                    await updatePocket(transaction.pocket_id, { balance: revertedBalance })
+                    const revertedBalance = (pot.balance || 0) + (transaction.amount * modifier)
+                    await updatePot(transaction.pocket_id, { balance: revertedBalance })
                 }
             }
 
@@ -168,13 +168,13 @@ export function TransactionDetailsModal({ transaction, pockets, isOpen, onClose 
                 }
 
                 if (paired) {
-                    // Revert paired pocket too
+                    // Revert paired pot too
                     if (paired.pocket_id) {
-                        const pairedPocket = pockets.find(p => p.id === paired.pocket_id)
-                        if (pairedPocket) {
+                        const pairedPot = pots.find(p => p.id === paired.pocket_id)
+                        if (pairedPot) {
                             const modifier = (paired.type === 'spend' || paired.type === 'transfer') ? 1 : -1
-                            const revertedBalance = (pairedPocket.balance || 0) + (paired.amount * modifier)
-                            await updatePocket(paired.pocket_id, { balance: revertedBalance })
+                            const revertedBalance = (pairedPot.balance || 0) + (paired.amount * modifier)
+                            await updatePot(paired.pocket_id, { balance: revertedBalance })
                         }
                     }
                     await deleteTransaction(paired.id)
@@ -270,12 +270,12 @@ export function TransactionDetailsModal({ transaction, pockets, isOpen, onClose 
                                     className="text-[14px] font-semibold text-black bg-transparent w-full outline-none"
                                 >
                                     <option value="general">General</option>
-                                    {pockets.map(p => (
+                                    {pots.map(p => (
                                         <option key={p.id} value={p.id}>{p.name}</option>
                                     ))}
                                 </select>
                             ) : (
-                                <p className="text-[14px] font-semibold text-black truncate">{pocketName}</p>
+                                <p className="text-[14px] font-semibold text-black truncate">{potName}</p>
                             )}
                         </div>
                     </div>
@@ -298,7 +298,7 @@ export function TransactionDetailsModal({ transaction, pockets, isOpen, onClose 
                                 </select>
                             ) : (
                                 <div className="flex items-center gap-2">
-                                    <p className="text-[14px] font-semibold text-black capitalize">{transaction.category || 'Other'}</p>
+                                    <p className="text-[14px] font-semibold text-black">{transaction.category ? getCategoryById(transaction.category).label : 'Other'}</p>
                                     {transaction.provider === 'apple_pay' && (
                                         <span className="text-[9px] font-bold text-black/40 bg-black/5 px-1.5 py-0.5 rounded border border-black/10 tracking-widest uppercase">AI Deduced</span>
                                     )}

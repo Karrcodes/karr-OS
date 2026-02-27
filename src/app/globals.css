@@ -139,4 +139,33 @@
     user-select: none;
     pointer-events: none;
   }
+
+  /* Skeleton Shimmer Effect */
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  .skeleton-shimmer {
+    background: linear-gradient(90deg,
+        rgba(0, 0, 0, 0.04) 25%,
+        rgba(0, 0, 0, 0.12) 50%,
+        rgba(0, 0, 0, 0.04) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.8s infinite linear;
+    border-radius: 6px;
+    color: transparent !important;
+    display: inline-block;
+    line-height: 1;
+    vertical-align: middle;
+    min-width: 40px;
+    min-height: 1em;
+    user-select: none !important;
+    pointer-events: none !important;
+  }
 }

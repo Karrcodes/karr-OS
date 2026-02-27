@@ -98,29 +98,29 @@ export function useRecurring() {
     }
 
     const markObligationAsPaid = async (obligation: RecurringObligation) => {
-        // 1. Logic for Liability Pocket subtraction and Transaction logging
-        const { data: pocketData } = await supabase
+        // 1. Logic for Liability Pot subtraction and Transaction logging
+        const { data: potData } = await supabase
             .from('fin_pockets')
             .select('*')
             .eq('profile', activeProfile)
             .or(`name.ilike.%Liabilities%,type.eq.buffer`)
             .limit(1)
 
-        const pocket = pocketData?.[0]
+        const pot = potData?.[0]
 
-        if (pocket) {
-            console.log(`KarrOS: Found Liabilities pocket "${pocket.name}" (ID: ${pocket.id}, Balance: ${pocket.balance}). Deducting £${obligation.amount}.`)
-            // Deduct from pocket (Liabilities pocket can go negative)
+        if (pot) {
+            console.log(`KarrOS: Found Liabilities pot "${pot.name}" (ID: ${pot.id}, Balance: ${pot.balance}). Deducting £${obligation.amount}.`)
+            // Deduct from pot (Liabilities pot can go negative)
             await supabase.from('fin_pockets').update({
-                balance: (pocket.balance || 0) - obligation.amount,
-                current_balance: (pocket.current_balance || 0) - obligation.amount
-            }).eq('id', pocket.id)
+                balance: (pot.balance || 0) - obligation.amount,
+                current_balance: (pot.current_balance || 0) - obligation.amount
+            }).eq('id', pot.id)
 
             // Create tracking transaction
             await supabase.from('fin_transactions').insert({
                 type: 'spend',
                 amount: obligation.amount,
-                pocket_id: pocket.id,
+                pocket_id: pot.id,
                 description: `[Liability] ${obligation.name}`,
                 date: new Date().toISOString().split('T')[0],
                 category: obligation.category || 'bills',

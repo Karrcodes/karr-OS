@@ -57,23 +57,15 @@ export function PayslipUploader({ onSuccess }: PayslipUploaderProps) {
                     continue
                 }
 
-                await Promise.all([
-                    logIncome({
-                        amount: parseFloat(data.netPay),
-                        source: data.employer || 'Salary',
-                        date: data.date,
-                        pocket_id: null
-                    }),
-                    logPayslip({
-                        date: data.date,
-                        employer: data.employer || 'Salary',
-                        net_pay: parseFloat(data.netPay),
-                        gross_pay: data.grossPay ? parseFloat(data.grossPay) : null,
-                        tax_paid: data.tax ? parseFloat(data.tax) : null,
-                        pension_contributions: data.pension ? parseFloat(data.pension) : null,
-                        student_loan: data.studentLoan ? parseFloat(data.studentLoan) : null,
-                    })
-                ])
+                await logPayslip({
+                    date: data.date,
+                    employer: data.employer || 'Salary',
+                    net_pay: parseFloat(data.netPay),
+                    gross_pay: data.grossPay ? parseFloat(data.grossPay) : null,
+                    tax_paid: data.tax ? parseFloat(data.tax) : null,
+                    pension_contributions: data.pension ? parseFloat(data.pension) : null,
+                    student_loan: data.studentLoan ? parseFloat(data.studentLoan) : null,
+                }, true)
 
                 newResults.push({ file: file.name, status: 'ok', message: `£${parseFloat(data.netPay).toFixed(2)} net · ${data.date}` })
             } catch (err: any) {

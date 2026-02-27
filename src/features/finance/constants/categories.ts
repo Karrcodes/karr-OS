@@ -5,18 +5,23 @@ export interface Category {
 }
 
 export const FINANCE_CATEGORIES: Category[] = [
+    { id: 'bills', label: 'Bills', emoji: '💡' },
+    { id: 'charity', label: 'Charity', emoji: '🎗️' },
+    { id: 'eating_out', label: 'Eating out', emoji: '🍴' },
+    { id: 'entertainment', label: 'Entertainment', emoji: '🎭' },
+    { id: 'expenses', label: 'Expenses', emoji: '📄' },
+    { id: 'family', label: 'Family', emoji: '🏠' },
+    { id: 'finances', label: 'Finances', emoji: '💰' },
+    { id: 'general', label: 'General', emoji: '⚪' },
+    { id: 'gifts', label: 'Gifts', emoji: '🎁' },
     { id: 'groceries', label: 'Groceries', emoji: '🛒' },
-    { id: 'food_drink', label: 'Food & Drink', emoji: '🍔' },
-    { id: 'transport', label: 'Transport', emoji: '🚇' },
-    { id: 'shopping', label: 'Shopping', emoji: '🛍️' },
-    { id: 'entertainment', label: 'Entertainment', emoji: '🎉' },
-    { id: 'housing', label: 'Housing', emoji: '🏠' },
-    { id: 'bills', label: 'Bills & Utilities', emoji: '⚡' },
-    { id: 'health', label: 'Health', emoji: '🏥' },
-    { id: 'travel', label: 'Travel', emoji: '✈️' },
-    { id: 'business', label: 'Business', emoji: '💼' },
+    { id: 'holidays', label: 'Holidays', emoji: '🏖️' },
     { id: 'income', label: 'Income', emoji: '💰' },
-    { id: 'transfer', label: 'Transfer', emoji: '🔄' },
+    { id: 'personal_care', label: 'Personal care', emoji: '❤️' },
+    { id: 'savings', label: 'Savings', emoji: '🌱' },
+    { id: 'shopping', label: 'Shopping', emoji: '🛍️' },
+    { id: 'transfers', label: 'Transfers', emoji: '🔄' },
+    { id: 'transport', label: 'Transport', emoji: '🚌' },
     { id: 'other', label: 'Other', emoji: '💸' },
 ]
 
