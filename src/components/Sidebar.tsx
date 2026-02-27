@@ -48,10 +48,9 @@ const navItems = [
             { label: 'Settings', href: '/finances/settings', icon: SlidersHorizontal, caps: ['P', 'B'] }
         ],
     },
-    { label: 'Create', href: '/create', icon: Sparkles, disabled: true },
-    { label: 'Goals', href: '/goals', icon: Target },
-    { label: 'Health & Wellbeing', href: '/health', icon: Heart, disabled: true },
-    { label: 'Wishlist', href: '/wishlist', icon: Gift, disabled: true },
+    { label: 'Studio', href: '/create', icon: Sparkles, disabled: true },
+    { label: 'Manifest', href: '/goals', icon: Target },
+    { label: 'Wellbeing', href: '/health', icon: Heart, disabled: true },
 ]
 
 function CapBadge({ cap }: { cap: 'P' | 'B' }) {
@@ -148,11 +147,14 @@ function ProfileMenu() {
     )
 }
 
+import { useVault } from '@/features/vault/contexts/VaultContext'
+
 export function Sidebar() {
     const pathname = usePathname()
     const [mobileOpen, setMobileOpen] = useState(false)
     const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({})
     const { isPrivacyEnabled } = useFinanceProfile()
+    const { isVaultPrivate } = useVault()
 
     const [orderedTabs, setOrderedTabs] = useState(navItems.map(item => item.label))
     const [orderedFinanceSubTabs, setOrderedFinanceSubTabs] = useState<string[]>([])
@@ -326,6 +328,10 @@ export function Sidebar() {
                         >
                             <Icon className={cn('w-4 h-4', isActive ? 'text-black' : 'text-black/35')} />
                             <span className="text-[13px] font-medium pointer-events-none">{item.label}</span>
+
+                            {item.label === 'Vault' && isVaultPrivate && (
+                                <EyeOff className="w-3.5 h-3.5 text-blue-500 ml-1.5 animate-pulse" />
+                            )}
 
                             {item.label === 'Finances' && isPrivacyEnabled && (
                                 <EyeOff className="w-3.5 h-3.5 text-emerald-500 ml-1.5 animate-pulse" />

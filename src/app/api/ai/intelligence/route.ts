@@ -108,7 +108,7 @@ const tools = [
                         action: { type: "STRING", enum: ["create", "update", "delete"] },
                         id: { type: "STRING", description: "Task UUID (required for update/delete)" },
                         title: { type: "STRING", description: "Task title" },
-                        priority: { type: "STRING", enum: ["low", "mid", "high", "super"] },
+                        priority: { type: "STRING", enum: ["low", "mid", "high", "urgent"] },
                         category: { type: "STRING", enum: ["todo", "grocery", "reminder"] },
                         due_date: { type: "STRING", description: "ISO date string (YYYY-MM-DD)" },
                         is_completed: { type: "BOOLEAN" }

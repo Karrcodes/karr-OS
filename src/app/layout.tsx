@@ -32,6 +32,7 @@ export const viewport: Viewport = {
 import { FinanceProfileProvider } from '@/features/finance/contexts/FinanceProfileContext'
 import { SystemSettingsProvider } from '@/features/system/contexts/SystemSettingsContext'
 import { TasksProfileProvider } from '@/features/tasks/contexts/TasksProfileContext'
+import { VaultProvider } from '@/features/vault/contexts/VaultContext'
 import { SecurityLock } from '@/components/SecurityLock'
 import { GlobalQuickAction } from '@/components/GlobalQuickAction'
 
@@ -51,14 +52,16 @@ export default function RootLayout({
         <SystemSettingsProvider>
           <FinanceProfileProvider>
             <TasksProfileProvider>
-              <SecurityLock>
-                <Sidebar />
-                {/* md:ml-[220px] — full width on mobile (sidebar is a drawer), shifted on desktop */}
-                <main className="md:ml-[220px] min-h-screen bg-white">
-                  {children}
-                </main>
-                <GlobalQuickAction />
-              </SecurityLock>
+              <VaultProvider>
+                <SecurityLock>
+                  <Sidebar />
+                  {/* md:ml-[220px] — full width on mobile (sidebar is a drawer), shifted on desktop */}
+                  <main className="md:ml-[220px] min-h-screen bg-white">
+                    {children}
+                  </main>
+                  <GlobalQuickAction />
+                </SecurityLock>
+              </VaultProvider>
             </TasksProfileProvider>
           </FinanceProfileProvider>
         </SystemSettingsProvider>

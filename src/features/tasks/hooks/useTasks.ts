@@ -78,30 +78,27 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder', profileOverr
         setLoading(false)
     }, [activeProfile, category, settings.is_demo_mode, getSessionTasks, saveSessionTasks])
 
-    const createTask = async (
-        title: string,
-        priority: 'super' | 'high' | 'mid' | 'low' = 'low',
-        due_date?: string,
-        amount?: string,
-        due_date_mode: 'on' | 'before' | 'range' = 'on',
-        end_date?: string,
-        recurrence_config: any = {},
-        notes?: any,
-        strategic_category?: 'finance' | 'career' | 'health' | 'personal'
-    ) => {
+    const createTask = async (taskData: Partial<Task>) => {
         if (settings.is_demo_mode) {
             const allTasks = getSessionTasks() || []
             const newTask: Task = {
                 id: `demo-${Date.now()}`,
-                title,
-                priority,
-                due_date,
-                due_date_mode,
-                end_date,
-                recurrence_config,
-                amount,
-                notes,
-                strategic_category,
+                title: taskData.title || 'Untitled',
+                priority: taskData.priority || 'low',
+                due_date: taskData.due_date,
+                due_date_mode: taskData.due_date_mode || 'on',
+                end_date: taskData.end_date,
+                recurrence_config: taskData.recurrence_config || null,
+                amount: taskData.amount,
+                notes: taskData.notes,
+                strategic_category: taskData.strategic_category,
+                estimated_duration: taskData.estimated_duration,
+                impact_score: taskData.impact_score,
+                travel_to_duration: taskData.travel_to_duration,
+                travel_from_duration: taskData.travel_from_duration,
+                start_time: taskData.start_time,
+                location: taskData.location,
+                origin_location: taskData.origin_location,
                 is_completed: false,
                 category,
                 profile: activeProfile as any,
@@ -115,18 +112,10 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder', profileOverr
         }
 
         const { error } = await supabase.from('fin_tasks').insert({
-            title,
+            ...taskData,
             category,
-            priority,
-            due_date,
-            due_date_mode,
-            end_date,
-            recurrence_config,
-            amount,
-            notes,
-            strategic_category,
             profile: activeProfile,
-            position: tasks.length > 0 ? Math.max(...tasks.map((t: Task) => t.position || 0)) + 1000 : Date.now()
+            position: tasks.length > 0 ? Math.max(...tasks.map((t: Task) => t.position || 0)) + 1000 : Date.now(),
         })
         if (error) throw error
         await fetchTasks()
@@ -242,7 +231,30 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder', profileOverr
 
     useEffect(() => {
         fetchTasks()
-    }, [fetchTasks])
+
+        if (settings.is_demo_mode) return
+
+        // Real-time subscription
+        const channel = supabase
+            .channel('tasks-changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'fin_tasks',
+                    filter: `category=eq.${category}`
+                },
+                () => {
+                    fetchTasks()
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    }, [fetchTasks, category, settings.is_demo_mode])
 
     return {
         tasks,

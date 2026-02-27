@@ -80,7 +80,7 @@ export const MOCK_TASKS = {
         { id: 'd-t-4', title: 'Research specialty coffee beans for office', priority: 'low', is_completed: false, strategic_category: 'personal' },
         { id: 'd-t-5', title: 'Update portfolio with latest photography work', priority: 'mid', is_completed: false, strategic_category: 'career' },
         { id: 'd-t-6', title: 'Book dentist appointment', priority: 'low', is_completed: true, strategic_category: 'health' },
-        { id: 'd-t-7', title: 'Refactor Intelligence context builders', priority: 'super', is_completed: false, strategic_category: 'career' },
+        { id: 'd-t-7', title: 'Refactor Intelligence context builders', priority: 'urgent', is_completed: false, strategic_category: 'career' },
     ],
     grocery: [
         { id: 'd-g-1', title: 'Oat Milk (Barista Edition)', amount: 'x2', priority: 'mid', is_completed: false },
@@ -91,7 +91,7 @@ export const MOCK_TASKS = {
         { id: 'd-g-6', title: 'Sea Salt Dark Chocolate', amount: 'x1', priority: 'low', is_completed: false },
     ],
     reminder: [
-        { id: 'd-r-1', title: 'Submit Self-Assessment Tax Return', priority: 'super', is_completed: false, due_date: '2026-01-31' },
+        { id: 'd-r-1', title: 'Submit Self-Assessment Tax Return', priority: 'urgent', is_completed: false, due_date: '2026-01-31' },
         { id: 'd-r-2', title: 'Renew Apartment Insurance', priority: 'high', is_completed: false, due_date: new Date(Date.now() + 86400000 * 5).toISOString() },
         { id: 'd-r-3', title: 'Quarterly review with financial advisor', priority: 'mid', is_completed: false },
     ]
@@ -126,7 +126,7 @@ export const MOCK_GOALS = [
         description: 'Save £50k for a first-time buyer deposit in South London.',
         category: 'finance',
         status: 'active',
-        priority: 'super',
+        priority: 'urgent',
         timeframe: 'long',
         vision_image_url: '/brain/c60f96e1-94d9-4b29-a7b7-916a20d17ee8/karr_apartment_vision_1771863229585.png',
         target_date: '2027-12-31',

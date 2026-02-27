@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
+import { useVault } from '../contexts/VaultContext'
 import { Plus, Copy, Trash2, Check, ExternalLink, List } from 'lucide-react'
 import { LinkPreview } from './LinkPreview'
 import { supabase } from '@/lib/supabase'
@@ -15,6 +16,7 @@ interface Clip {
 }
 
 export function Clipboard() {
+    const { isVaultPrivate } = useVault()
     const [clips, setClips] = useState<Clip[]>([])
     const [newClip, setNewClip] = useState('')
     const [loading, setLoading] = useState(true)
@@ -255,6 +257,7 @@ export function Clipboard() {
                             handleCopy={handleCopy}
                             setConfirmModal={setConfirmModal}
                             extractFirstUrl={extractFirstUrl}
+                            isVaultPrivate={isVaultPrivate}
                         />
                     ))
                 )}
@@ -262,8 +265,7 @@ export function Clipboard() {
         </div>
     )
 }
-
-function ClipItem({ clip, copiedId, handleCopy, setConfirmModal, extractFirstUrl }: {
+function ClipItem({ clip, copiedId, handleCopy, setConfirmModal, extractFirstUrl, isVaultPrivate }: {
     clip: Clip,
     copiedId: string | null,
     handleCopy: (id: string, content: string) => void,
@@ -273,7 +275,8 @@ function ClipItem({ clip, copiedId, handleCopy, setConfirmModal, extractFirstUrl
         message: string;
         id: string | null;
     }>>,
-    extractFirstUrl: (str: string) => string | null
+    extractFirstUrl: (str: string) => string | null,
+    isVaultPrivate: boolean
 }) {
     const [isExpanded, setIsExpanded] = useState(false)
     const [isTruncatable, setIsTruncatable] = useState(false)
@@ -296,29 +299,31 @@ function ClipItem({ clip, copiedId, handleCopy, setConfirmModal, extractFirstUrl
                         "text-[14px] leading-relaxed text-black/70 break-words",
                         !isExpanded && "line-clamp-6"
                     )}>
-                        {clip.content.split('\n').map((line, i) => {
-                            if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
+                        <div className={cn(isVaultPrivate && "privacy-blur")}>
+                            {clip.content.split('\n').map((line, i) => {
+                                if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
+                                    return (
+                                        <div key={i} className="flex gap-2 mb-1 pl-1">
+                                            <span className="text-black/30 mt-1.5 w-1 h-1 rounded-full bg-black/40 shrink-0" />
+                                            <span>{line.trim().substring(2)}</span>
+                                        </div>
+                                    )
+                                }
+                                const url = extractFirstUrl(line)
+                                if (url) {
+                                    return (
+                                        <p key={i} className="mb-1 text-blue-600 font-medium underline underline-offset-4 decoration-blue-200 break-all">
+                                            {line}
+                                        </p>
+                                    )
+                                }
                                 return (
-                                    <div key={i} className="flex gap-2 mb-1 pl-1">
-                                        <span className="text-black/30 mt-1.5 w-1 h-1 rounded-full bg-black/40 shrink-0" />
-                                        <span>{line.trim().substring(2)}</span>
-                                    </div>
-                                )
-                            }
-                            const url = extractFirstUrl(line)
-                            if (url) {
-                                return (
-                                    <p key={i} className="mb-1 text-blue-600 font-medium underline underline-offset-4 decoration-blue-200 break-all">
+                                    <p key={i} className="mb-1">
                                         {line}
                                     </p>
                                 )
-                            }
-                            return (
-                                <p key={i} className="mb-1">
-                                    {line}
-                                </p>
-                            )
-                        })}
+                            })}
+                        </div>
                     </div>
                     {isTruncatable && (
                         <button
@@ -330,7 +335,7 @@ function ClipItem({ clip, copiedId, handleCopy, setConfirmModal, extractFirstUrl
                     )}
                 </div>
 
-                {extractFirstUrl(clip.content) && <LinkPreview url={extractFirstUrl(clip.content)!} />}
+                {!isVaultPrivate && extractFirstUrl(clip.content) && <LinkPreview url={extractFirstUrl(clip.content)!} />}
 
                 <p className="text-[10px] text-black/30 mt-3 font-medium">
                     {new Date(clip.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} •
@@ -339,7 +344,7 @@ function ClipItem({ clip, copiedId, handleCopy, setConfirmModal, extractFirstUrl
             </div>
 
             <div className="flex items-center gap-1 transition-all shrink-0 self-end sm:self-center">
-                {extractFirstUrl(clip.content) && (
+                {!isVaultPrivate && extractFirstUrl(clip.content) && (
                     <a
                         href={extractFirstUrl(clip.content)!}
                         target="_blank"
@@ -349,15 +354,17 @@ function ClipItem({ clip, copiedId, handleCopy, setConfirmModal, extractFirstUrl
                         <ExternalLink className="w-4 h-4" />
                     </a>
                 )}
-                <button
-                    onClick={() => handleCopy(clip.id, clip.content)}
-                    className={cn(
-                        "p-2 rounded-lg transition-all",
-                        copiedId === clip.id ? "text-emerald-500 bg-emerald-50" : "text-black/40 hover:bg-black/5"
-                    )}
-                >
-                    {copiedId === clip.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                </button>
+                {!isVaultPrivate && (
+                    <button
+                        onClick={() => handleCopy(clip.id, clip.content)}
+                        className={cn(
+                            "p-2 rounded-lg transition-all",
+                            copiedId === clip.id ? "text-emerald-500 bg-emerald-50" : "text-black/40 hover:bg-black/5"
+                        )}
+                    >
+                        {copiedId === clip.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                )}
                 <button
                     onClick={() => setConfirmModal({
                         open: true,

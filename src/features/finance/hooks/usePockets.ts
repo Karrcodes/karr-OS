@@ -7,6 +7,9 @@ import { useFinanceProfile } from '../contexts/FinanceProfileContext'
 import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
 import { MOCK_FINANCE, MOCK_BUSINESS } from '@/lib/demoData'
 
+// Module-level locks to prevent race conditions across multiple hook instances
+const ensuringProfiles = new Set<string>()
+
 export function usePockets() {
     const [pockets, setPockets] = useState<Pocket[]>([])
     const [loading, setLoading] = useState(true)
@@ -61,6 +64,19 @@ export function usePockets() {
     }
 
     const deletePocket = async (id: string) => {
+        const pocket = pockets.find(p => p.id === id)
+        if (pocket) {
+            const systemKeywords = ['general', 'liabilities']
+            const nameLower = pocket.name.toLowerCase()
+            const keyword = systemKeywords.find(key => nameLower.includes(key))
+
+            if (keyword) {
+                const count = pockets.filter(p => p.name.toLowerCase().includes(keyword)).length
+                if (count <= 1) {
+                    throw new Error(`The "${pocket.name}" pocket is your only ${keyword} pocket and cannot be deleted.`)
+                }
+            }
+        }
         const { error } = await supabase.from('fin_pockets').delete().eq('id', id)
         if (error) throw error
         globalRefresh()
@@ -74,7 +90,56 @@ export function usePockets() {
         globalRefresh()
     }
 
-    useEffect(() => { fetchPockets() }, [activeProfile, refreshTrigger, settings.is_demo_mode])
+    const ensureSystemPockets = async () => {
+        if (settings.is_demo_mode || !activeProfile || ensuringProfiles.has(activeProfile)) return
+
+        // Prevent other instances from running this concurrently for this profile
+        ensuringProfiles.add(activeProfile)
+
+        try {
+            const systemPockets = [
+                { name: 'General', type: 'general' as const, sort_order: 0 },
+                { name: 'Liabilities', type: 'buffer' as const, sort_order: 99 }
+            ]
+
+            for (const sp of systemPockets) {
+                // Check local state first
+                const existsLocally = pockets.some(p => p.name.toLowerCase().includes(sp.name.toLowerCase()))
+
+                if (!existsLocally && !loading) {
+                    // Double check with DB to be absolutely sure before inserting
+                    const { data: dbCheck } = await supabase
+                        .from('fin_pockets')
+                        .select('id')
+                        .eq('profile', activeProfile)
+                        .ilike('name', `%${sp.name}%`)
+                        .limit(1)
+
+                    if (!dbCheck || dbCheck.length === 0) {
+                        await supabase.from('fin_pockets').insert({
+                            ...sp,
+                            balance: 0,
+                            current_balance: 0,
+                            target_budget: 0,
+                            profile: activeProfile
+                        })
+                    }
+                }
+            }
+        } finally {
+            // Give some time for DB to propagate before allowing another check
+            setTimeout(() => ensuringProfiles.delete(activeProfile!), 5000)
+        }
+    }
+
+    useEffect(() => {
+        fetchPockets()
+    }, [activeProfile, refreshTrigger, settings.is_demo_mode])
+
+    useEffect(() => {
+        // Run ensure logic whenever loading finishes or profile changes
+        if (!loading) ensureSystemPockets()
+    }, [loading, activeProfile])
 
     return { pockets, loading, error, createPocket, updatePocket, deletePocket, updatePocketsOrder, refetch: fetchPockets }
 }

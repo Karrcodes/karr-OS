@@ -72,6 +72,24 @@ export function TasksLayout({ children }: { children: React.ReactNode }) {
                                 <span className="hidden sm:inline">Planner</span>
                             </Link>
                         )}
+                        {/* Matrix */}
+                        {isMatrix ? (
+                            <button
+                                onClick={() => router.push('/tasks/todo')}
+                                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border bg-black text-white border-black"
+                            >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>
+                                <span className="hidden sm:inline">Matrix</span>
+                            </button>
+                        ) : (
+                            <Link
+                                href="/tasks/matrix"
+                                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border bg-white text-black/60 border-black/[0.08] hover:border-black/20"
+                            >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>
+                                <span className="hidden sm:inline">Matrix</span>
+                            </Link>
+                        )}
                         {/* Calendar: go to ops page if currently on calendar, otherwise navigate to calendar */}
                         {isOnCalendar ? (
                             <button
@@ -90,28 +108,10 @@ export function TasksLayout({ children }: { children: React.ReactNode }) {
                                 <span className="hidden sm:inline">Calendar</span>
                             </Link>
                         )}
-                        {/* Matrix */}
-                        {isMatrix ? (
-                            <button
-                                onClick={() => router.push('/tasks/todo')}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border bg-black text-white border-black"
-                            >
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>
-                                <span className="hidden sm:inline">Matrix</span>
-                            </button>
-                        ) : (
-                            <Link
-                                href="/tasks/matrix"
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border bg-white text-black/60 border-black/[0.08] hover:border-black/20"
-                            >
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>
-                                <span className="hidden sm:inline">Matrix</span>
-                            </Link>
-                        )}
                     </div>
                 </div>
-                {/* Row 2: ProfileToggle — hidden on special views & groceries */}
-                {!isSpecialView && !isGroceries && (
+                {/* Row 2: ProfileToggle — hidden on planner/calendar & groceries but VISIBLE on Matrix */}
+                {!isOnCalendar && !isPlanner && !isGroceries && (
                     <div className="mt-3">
                         <ProfileToggle activeProfile={activeProfile} setActiveProfile={setActiveProfile} />
                     </div>
@@ -146,9 +146,9 @@ export function TasksLayout({ children }: { children: React.ReactNode }) {
             )}
 
             {/* Main content — ensured to fill screen so footer is pinned to absolute bottom */}
-            <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
-                <div className="flex-1 p-6">
-                    <div className="max-w-3xl mx-auto w-full">
+            <div className="flex-1 flex flex-col min-h-0 overflow-y-auto w-full">
+                <div className="flex-1 p-6 flex flex-col w-full">
+                    <div className={cn("mx-auto w-full flex-1 flex flex-col", isMatrix ? "max-w-6xl" : "max-w-3xl")}>
                         {children}
                     </div>
                 </div>

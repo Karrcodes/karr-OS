@@ -79,10 +79,10 @@ export default function GoalsMatrix({ goals, onGoalClick }: GoalsMatrixProps) {
 }
 
 const PRIORITY_CONFIG: Record<string, { label: string, color: string, pulse?: boolean }> = {
-    super: { label: 'Super Priority', color: 'bg-amber-500/10 text-amber-600', pulse: true },
-    high: { label: 'High Priority', color: 'bg-rose-500/10 text-rose-600' },
-    mid: { label: 'Mid Priority', color: 'bg-blue-500/10 text-blue-600' },
-    low: { label: 'Low Priority', color: 'bg-black/[0.04] text-black/40' }
+    urgent: { label: 'Urgent Priority', color: 'bg-purple-600/10 text-purple-600', pulse: true },
+    high: { label: 'High Priority', color: 'bg-red-500/10 text-red-600' },
+    mid: { label: 'Mid Priority', color: 'bg-amber-500/10 text-amber-600' },
+    low: { label: 'Low Priority', color: 'bg-black/[0.04] text-black/30' }
 }
 
 function GoalMatrixCard({ goal, index, onClick }: { goal: Goal, index: number, onClick: () => void }) {
@@ -123,11 +123,13 @@ function GoalMatrixCard({ goal, index, onClick }: { goal: Goal, index: number, o
                         <config.icon className="w-4 h-4" />
                     </div>
                     <div className={cn(
-                        "px-1.5 xs:px-2 py-0.5 rounded-full text-[8px] xs:text-[9px] font-bold uppercase tracking-wider",
-                        priority.color,
-                        priority.pulse && "animate-pulse"
+                        "px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider",
+                        goal.priority === 'urgent' ? "bg-purple-600/10 text-purple-600 animate-pulse" :
+                            goal.priority === 'high' ? "bg-red-500/10 text-red-600" :
+                                goal.priority === 'mid' ? "bg-amber-500/10 text-amber-600" :
+                                    "bg-black/[0.04] text-black/30"
                     )}>
-                        {priority.label}
+                        {goal.priority || 'mid'}
                     </div>
                 </div>
 

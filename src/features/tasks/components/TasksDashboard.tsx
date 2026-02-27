@@ -8,8 +8,8 @@ import type { Task } from '../types/tasks.types'
 import { KarrFooter } from '@/components/KarrFooter'
 
 const PRIORITY_CONFIG = {
-    super: { label: 'Super', color: 'bg-blue-50 text-blue-600 border-blue-200', sort: 0 },
-    high: { label: 'High', color: 'bg-orange-50 text-orange-600 border-orange-200', sort: 1 },
+    urgent: { label: 'Urgent', color: 'bg-purple-50 text-purple-600 border-purple-200', sort: 0 },
+    high: { label: 'High', color: 'bg-red-50 text-red-600 border-red-200', sort: 1 },
     mid: { label: 'Mid', color: 'bg-yellow-50 text-yellow-600 border-yellow-200', sort: 2 },
     low: { label: 'Low', color: 'bg-black/5 text-black/60 border-black/10', sort: 3 }
 } as const
@@ -17,7 +17,7 @@ const PRIORITY_CONFIG = {
 function TaskList({ category, title, icon: Icon }: { category: 'todo' | 'grocery', title: string, icon: any }) {
     const { tasks, loading, createTask, toggleTask, deleteTask, clearAllTasks } = useTasks(category)
     const [newTask, setNewTask] = useState('')
-    const [priority, setPriority] = useState<'super' | 'high' | 'mid' | 'low'>('low')
+    const [priority, setPriority] = useState<'urgent' | 'high' | 'mid' | 'low'>('low')
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -96,7 +96,7 @@ function TaskList({ category, title, icon: Icon }: { category: 'todo' | 'grocery
                 </div>
                 {category === 'todo' && newTask.trim().length > 0 && (
                     <div className="flex gap-1.5 animate-in slide-in-from-top-1 fade-in duration-200">
-                        {(['super', 'high', 'mid', 'low'] as const).map(p => (
+                        {(['urgent', 'high', 'mid', 'low'] as const).map(p => (
                             <button
                                 key={p}
                                 type="button"
@@ -160,9 +160,9 @@ function TaskRow({ task, toggleTask, deleteTask, category }: { task: Task, toggl
                     {category === 'todo' && !task.is_completed && task.priority && task.priority !== 'low' && PRIORITY_CONFIG[task.priority] && (
                         <span className={cn(
                             "text-[10px] w-fit px-1.5 py-0.5 rounded uppercase font-bold tracking-wider mt-1 border",
-                            PRIORITY_CONFIG[task.priority].color
+                            (PRIORITY_CONFIG[task.priority as keyof typeof PRIORITY_CONFIG] || PRIORITY_CONFIG.urgent).color
                         )}>
-                            {PRIORITY_CONFIG[task.priority].label} Priority
+                            {(PRIORITY_CONFIG[task.priority as keyof typeof PRIORITY_CONFIG] || PRIORITY_CONFIG.urgent).label} Priority
                         </span>
                     )}
                 </div>

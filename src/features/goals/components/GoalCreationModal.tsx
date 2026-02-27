@@ -28,7 +28,7 @@ const PRIORITIES: { value: GoalPriority; label: string }[] = [
     { value: 'low', label: 'Low' },
     { value: 'mid', label: 'Mid' },
     { value: 'high', label: 'High' },
-    { value: 'super', label: 'Super' },
+    { value: 'urgent', label: 'Urgent' },
 ]
 
 export default function GoalCreationModal({ isOpen, onClose, onSave, initialGoal }: GoalCreationModalProps) {
@@ -42,7 +42,7 @@ export default function GoalCreationModal({ isOpen, onClose, onSave, initialGoal
     const [imageFile, setImageFile] = useState<File | null>(null)
     const [imagePreview, setImagePreview] = useState<string | null>(null)
     const [targetDate, setTargetDate] = useState('')
-    const [milestones, setMilestones] = useState<{ id: string, text: string }[]>([{ id: 'initial', text: '' }])
+    const [milestones, setMilestones] = useState<{ id: string, text: string, is_completed: boolean }[]>([{ id: 'initial', text: '', is_completed: false }])
     const [saving, setSaving] = useState(false)
     const [aiLoading, setAiLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -61,7 +61,11 @@ export default function GoalCreationModal({ isOpen, onClose, onSave, initialGoal
             setTimeframe(initialGoal.timeframe)
             setVisionImageUrl(initialGoal.vision_image_url || '')
             setTargetDate(initialGoal.target_date || '')
-            setMilestones(initialGoal.milestones?.map(m => ({ id: m.id || Math.random().toString(36).substring(2, 9), text: m.title })) || [{ id: Math.random().toString(36).substring(2, 9), text: '' }])
+            setMilestones(initialGoal.milestones?.map(m => ({
+                id: m.id || Math.random().toString(36).substring(2, 9),
+                text: m.title,
+                is_completed: m.is_completed
+            })) || [{ id: Math.random().toString(36).substring(2, 9), text: '', is_completed: false }])
             setImagePreview(null)
             setImageFile(null)
             setAiUsed(false)
@@ -70,17 +74,17 @@ export default function GoalCreationModal({ isOpen, onClose, onSave, initialGoal
             // Reset for new goal
             setTitle(''); setDescription(''); setCategory('personal'); setStatus('active')
             setPriority('mid'); setTimeframe('short'); setVisionImageUrl(''); setTargetDate('')
-            setMilestones([{ id: 'initial', text: '' }]); setImagePreview(null); setImageFile(null); setAiUsed(false); setError(null)
+            setMilestones([{ id: 'initial', text: '', is_completed: false }]); setImagePreview(null); setImageFile(null); setAiUsed(false); setError(null)
         }
     }, [initialGoal, isOpen])
 
     // ── helpers ──────────────────────────────────────────────
     const addMilestone = () => {
         console.log('Adding milestone...')
-        setMilestones([...milestones, { id: Math.random().toString(36).substring(2, 9), text: '' }])
+        setMilestones([...milestones, { id: Math.random().toString(36).substring(2, 9), text: '', is_completed: false }])
     }
     const removeMilestone = (id: string) => {
-        if (milestones.length === 1) { setMilestones([{ id: Math.random().toString(36).substr(2, 9), text: '' }]); return }
+        if (milestones.length === 1) { setMilestones([{ id: Math.random().toString(36).substring(2, 9), text: '', is_completed: false }]); return }
         setMilestones(milestones.filter(m => m.id !== id))
     }
     const updateMilestone = (id: string, text: string) => {
@@ -117,7 +121,7 @@ export default function GoalCreationModal({ isOpen, onClose, onSave, initialGoal
             if (data.priority) setPriority(data.priority)
             if (data.timeframe) setTimeframe(data.timeframe)
             if (data.target_date) setTargetDate(data.target_date)
-            if (data.milestones?.length) setMilestones(data.milestones.map((m: string) => ({ id: Math.random().toString(36).substr(2, 9), text: m })))
+            if (data.milestones?.length) setMilestones(data.milestones.map((m: string) => ({ id: Math.random().toString(36).substring(2, 9), text: m, is_completed: false })))
             setAiUsed(true)
         } catch (e: any) {
             setError('AI assist failed. Fill in manually.')
@@ -142,7 +146,9 @@ export default function GoalCreationModal({ isOpen, onClose, onSave, initialGoal
                 timeframe,
                 vision_image_url: visionImageUrl, // Pass the actual state (empty string means removal)
                 target_date: targetDate || undefined,
-                milestones: milestones.map(m => m.text).filter(m => m.trim() !== '')
+                milestones: milestones
+                    .filter(m => m.text.trim() !== '')
+                    .map(m => ({ title: m.text, is_completed: m.is_completed }))
             }, imageFile || undefined, initialGoal?.id)
 
             onClose()
@@ -326,7 +332,12 @@ export default function GoalCreationModal({ isOpen, onClose, onSave, initialGoal
                                                         onClick={() => setPriority(p.value)}
                                                         className={cn(
                                                             "flex-1 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all",
-                                                            priority === p.value ? "bg-white text-black shadow-sm" : "text-black/30 hover:text-black/60"
+                                                            priority === p.value
+                                                                ? p.value === 'urgent' ? "bg-purple-600 text-white shadow-lg shadow-purple-600/20" :
+                                                                    p.value === 'high' ? "bg-red-500 text-white shadow-lg shadow-red-500/20" :
+                                                                        p.value === 'mid' ? "bg-amber-500 text-white shadow-lg shadow-amber-500/20" :
+                                                                            "bg-black text-white shadow-sm"
+                                                                : "text-black/30 hover:text-black/60"
                                                         )}
                                                     >
                                                         {p.label}

@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Calendar, Briefcase, User, CheckSquare, Clock, AlertCircle } from 'lucide-react'
+import { X, Calendar, Briefcase, User, CheckSquare, Clock, AlertCircle, Zap, Car, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Task } from '../types/tasks.types'
 
@@ -12,22 +12,55 @@ interface TaskDetailModalProps {
     onClose: () => void
     onToggleSubtask: (taskId: string, index: number) => Promise<void>
     onToggleComplete: (taskId: string, completed: boolean) => Promise<void>
+    onEditTask?: (taskId: string, updates: Partial<Task>) => Promise<void>
 }
 
 const PRIORITY_CONFIG = {
-    super: { label: 'Super', color: 'bg-blue-50 text-blue-600 border-blue-200 shadow-blue-100/50' },
-    high: { label: 'High', color: 'bg-orange-50 text-orange-600 border-orange-200 shadow-orange-100/50' },
+    urgent: { label: 'Urgent', color: 'bg-purple-50 text-purple-600 border-purple-200 shadow-purple-100/50' },
+    high: { label: 'High', color: 'bg-red-50 text-red-600 border-red-200 shadow-red-100/50' },
     mid: { label: 'Mid', color: 'bg-yellow-50 text-yellow-600 border-yellow-200 shadow-yellow-100/50' },
     low: { label: 'Low', color: 'bg-black/5 text-black/60 border-black/10' }
 }
 
-export function TaskDetailModal({ task, isOpen, onClose, onToggleSubtask, onToggleComplete }: TaskDetailModalProps) {
+export function TaskDetailModal({ task, isOpen, onClose, onToggleSubtask, onToggleComplete, onEditTask }: TaskDetailModalProps) {
+    const [isEditing, setIsEditing] = React.useState(false)
+    const [editTitle, setEditTitle] = React.useState('')
+    const [editPriority, setEditPriority] = React.useState(task?.priority || 'mid')
+    const [editStrategicCategory, setEditStrategicCategory] = React.useState(task?.strategic_category || 'personal')
+    const [editDuration, setEditDuration] = React.useState('')
+    const [editTravelDuration, setEditTravelDuration] = React.useState('')
+    const [editImpact, setEditImpact] = React.useState('')
+    const [editStartTime, setEditStartTime] = React.useState('')
+    const [editLocation, setEditLocation] = React.useState('')
+    const [editOriginLocation, setEditOriginLocation] = React.useState('')
+
+    React.useEffect(() => {
+        if (task && isOpen) {
+            setEditTitle(task.title)
+            setEditPriority(task.priority || 'mid')
+            setEditStrategicCategory(task.strategic_category || 'personal')
+            setEditDuration(task.estimated_duration?.toString() || '30')
+            setEditTravelDuration(task.travel_to_duration?.toString() || '0')
+            setEditImpact(task.impact_score?.toString() || '5')
+            setEditStartTime(task.start_time || '')
+            setEditLocation(task.location || '')
+            setEditOriginLocation(task.origin_location || '')
+        }
+    }, [task, isOpen])
+
     if (!task) return null
 
     const checklistItems = task.notes?.type === 'checklist' ? (task.notes.content as any[]) : []
     const completedSubtasks = checklistItems.filter(i => i.completed).length
     const totalSubtasks = checklistItems.length
     const progress = totalSubtasks > 0 ? (completedSubtasks / totalSubtasks) * 100 : 0
+
+    const STRATEGIC_CATEGORIES = [
+        { id: 'finance', label: 'Finance' },
+        { id: 'career', label: 'Career' },
+        { id: 'health', label: 'Health' },
+        { id: 'personal', label: 'Personal' },
+    ] as const
 
     return (
         <AnimatePresence>
@@ -61,9 +94,9 @@ export function TaskDetailModal({ task, isOpen, onClose, onToggleSubtask, onTogg
                             <div className="flex items-center gap-2 mb-4">
                                 <span className={cn(
                                     "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border shadow-sm",
-                                    PRIORITY_CONFIG[task.priority || 'low'].color
+                                    (PRIORITY_CONFIG[task.priority as keyof typeof PRIORITY_CONFIG] || PRIORITY_CONFIG.urgent).color
                                 )}>
-                                    {task.priority || 'low'}
+                                    {(PRIORITY_CONFIG[task.priority as keyof typeof PRIORITY_CONFIG] || PRIORITY_CONFIG.urgent).label}
                                 </span>
                                 <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold text-black/40 bg-black/5 uppercase tracking-wider">
                                     {task.profile === 'business' ? <Briefcase className="w-3 h-3" /> : <User className="w-3 h-3" />}
@@ -74,14 +107,41 @@ export function TaskDetailModal({ task, isOpen, onClose, onToggleSubtask, onTogg
                                         {task.strategic_category}
                                     </span>
                                 )}
+                                {task.estimated_duration && (
+                                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 uppercase tracking-wider">
+                                        <Clock className="w-3 h-3" />
+                                        {task.estimated_duration}m
+                                    </span>
+                                )}
+                                {task.impact_score && (
+                                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-100 uppercase tracking-wider">
+                                        <Zap className="w-3 h-3" />
+                                        {task.impact_score}/10
+                                    </span>
+                                )}
+                                {(task.travel_to_duration || 0) > 0 && (
+                                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold text-amber-500 bg-amber-50 border border-amber-100 uppercase tracking-wider">
+                                        <Car className="w-3 h-3" />
+                                        {task.travel_to_duration || 0}{task.travel_from_duration !== task.travel_to_duration ? `+${task.travel_from_duration || 0}` : ''}m
+                                    </span>
+                                )}
                             </div>
 
-                            <h2 className={cn(
-                                "text-2xl font-bold tracking-tight mb-2",
-                                task.is_completed ? "text-black/30 line-through" : "text-black"
-                            )}>
-                                {task.title}
-                            </h2>
+                            {isEditing ? (
+                                <input
+                                    autoFocus
+                                    value={editTitle}
+                                    onChange={(e) => setEditTitle(e.target.value)}
+                                    className="w-full text-2xl font-bold tracking-tight mb-2 bg-black/[0.03] border border-black/5 rounded-xl px-3 py-1 outline-none focus:bg-white transition-all"
+                                />
+                            ) : (
+                                <h2 className={cn(
+                                    "text-2xl font-bold tracking-tight mb-2",
+                                    task.is_completed ? "text-black/30 line-through" : "text-black"
+                                )}>
+                                    {task.title}
+                                </h2>
+                            )}
 
                             {task.due_date && (
                                 <div className="flex items-center gap-2 text-[12px] font-bold text-black/40 uppercase tracking-widest mt-2">
@@ -92,6 +152,23 @@ export function TaskDetailModal({ task, isOpen, onClose, onToggleSubtask, onTogg
                                         {new Date(task.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
                                         {task.due_date_mode === 'range' && task.end_date && ` → ${new Date(task.end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}`}
                                     </span>
+                                </div>
+                            )}
+
+                            {(task.start_time || task.location) && (
+                                <div className="flex flex-wrap gap-4 mt-3">
+                                    {task.start_time && (
+                                        <div className="flex items-center gap-2 text-[12px] font-bold text-black/60 bg-black/5 px-3 py-1.5 rounded-xl uppercase tracking-widest">
+                                            <Clock className="w-3.5 h-3.5" />
+                                            <span>Starts at {task.start_time}</span>
+                                        </div>
+                                    )}
+                                    {task.location && (
+                                        <div className="flex items-center gap-2 text-[12px] font-bold text-black/60 bg-black/5 px-3 py-1.5 rounded-xl uppercase tracking-widest">
+                                            <MapPin className="w-3.5 h-3.5" />
+                                            <span>{task.location}</span>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -156,10 +233,126 @@ export function TaskDetailModal({ task, isOpen, onClose, onToggleSubtask, onTogg
                                 </div>
                             )}
 
-                            {!task.notes?.content && (
+                            {!task.notes?.content && !isEditing && (
                                 <div className="flex flex-col items-center justify-center py-12 text-black/20 italic">
                                     <AlertCircle className="w-8 h-8 mb-2 opacity-20" />
                                     <p className="text-[13px]">No additional notes for this task.</p>
+                                </div>
+                            )}
+
+                            {isEditing && (
+                                <div className="space-y-6 pt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                    <h3 className="text-[11px] font-bold text-black/30 uppercase tracking-[0.2em]">Task Configuration</h3>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-bold text-black/40 uppercase tracking-widest px-1">Priority</label>
+                                            <select
+                                                value={editPriority}
+                                                onChange={(e) => setEditPriority(e.target.value as any)}
+                                                className="w-full bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] text-black outline-none focus:border-black/20 focus:bg-white transition-all appearance-none cursor-pointer"
+                                            >
+                                                {Object.entries(PRIORITY_CONFIG).map(([key, config]) => (
+                                                    <option key={key} value={key}>{config.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-bold text-black/40 uppercase tracking-widest px-1">Strategic Category</label>
+                                            <select
+                                                value={editStrategicCategory}
+                                                onChange={(e) => setEditStrategicCategory(e.target.value as any)}
+                                                className="w-full bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] text-black outline-none focus:border-black/20 focus:bg-white transition-all appearance-none cursor-pointer"
+                                            >
+                                                {STRATEGIC_CATEGORIES.map(cat => (
+                                                    <option key={cat.id} value={cat.id}>{cat.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-bold text-black/40 uppercase tracking-widest px-1 flex items-center gap-1">
+                                                <Clock className="w-3.5 h-3.5" /> Duration
+                                            </label>
+                                            <select
+                                                value={editDuration}
+                                                onChange={(e) => setEditDuration(e.target.value)}
+                                                className="w-full bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] text-black outline-none focus:border-black/20 focus:bg-white transition-all appearance-none cursor-pointer"
+                                            >
+                                                {Array.from({ length: 16 }, (_, i) => (i + 1) * 15).map(mins => (
+                                                    <option key={mins} value={mins}>
+                                                        {mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60 > 0 ? `${mins % 60}m` : ''}` : `${mins}m`}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-bold text-black/40 uppercase tracking-widest px-1 flex items-center gap-1">
+                                                <Car className="w-3.5 h-3.5" /> Travel (mins)
+                                            </label>
+                                            <select
+                                                value={editTravelDuration}
+                                                onChange={(e) => setEditTravelDuration(e.target.value)}
+                                                className="w-full bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] text-black outline-none focus:border-black/20 focus:bg-white transition-all appearance-none cursor-pointer"
+                                            >
+                                                <option value="0">None</option>
+                                                {Array.from({ length: 8 }, (_, i) => (i + 1) * 15).map(mins => (
+                                                    <option key={mins} value={mins}>
+                                                        {mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60 > 0 ? `${mins % 60}m` : ''}` : `${mins}m`}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-bold text-black/40 uppercase tracking-widest px-1 flex items-center gap-1">
+                                                <Zap className="w-3.5 h-3.5" /> Impact Score ({editImpact}/10)
+                                            </label>
+                                            <div className="flex items-center gap-3 bg-black/[0.03] border border-black/5 rounded-xl px-4 py-2.5 h-[50px]">
+                                                <input
+                                                    type="range"
+                                                    min="1"
+                                                    max="10"
+                                                    value={editImpact}
+                                                    onChange={(e) => setEditImpact(e.target.value)}
+                                                    className="flex-1 accent-black h-1 bg-black/10 rounded-lg appearance-none cursor-pointer"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4 pt-2">
+                                        <div className="bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 flex items-center justify-between">
+                                            <label className="text-[11px] font-bold text-black/40 uppercase tracking-widest">Appointment Time</label>
+                                            <input
+                                                type="time"
+                                                value={editStartTime}
+                                                onChange={(e) => setEditStartTime(e.target.value)}
+                                                className="bg-transparent text-[14px] font-black text-black outline-none"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-[11px] font-bold text-black/40 uppercase tracking-widest px-1">Location Details</label>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Destination..."
+                                                    value={editLocation}
+                                                    onChange={(e) => setEditLocation(e.target.value)}
+                                                    className="w-full bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] text-black outline-none focus:border-black/20 focus:bg-white transition-all"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Origin..."
+                                                    value={editOriginLocation}
+                                                    onChange={(e) => setEditOriginLocation(e.target.value)}
+                                                    className="w-full bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] text-black outline-none focus:border-black/20 focus:bg-white transition-all"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -181,10 +374,30 @@ export function TaskDetailModal({ task, isOpen, onClose, onToggleSubtask, onTogg
                             </div>
 
                             <button
-                                onClick={onClose}
+                                onClick={async () => {
+                                    if (isEditing && onEditTask) {
+                                        await onEditTask(task.id, {
+                                            title: editTitle,
+                                            priority: editPriority,
+                                            strategic_category: editStrategicCategory,
+                                            estimated_duration: parseInt(editDuration),
+                                            impact_score: parseInt(editImpact),
+                                            travel_to_duration: parseInt(editTravelDuration),
+                                            travel_from_duration: parseInt(editTravelDuration),
+                                            start_time: editStartTime || undefined,
+                                            location: editLocation || undefined,
+                                            origin_location: editOriginLocation || undefined
+                                        })
+                                        setIsEditing(false)
+                                    } else if (!isEditing) {
+                                        setIsEditing(true)
+                                    } else {
+                                        onClose()
+                                    }
+                                }}
                                 className="px-6 py-2.5 bg-black text-white text-[12px] font-bold rounded-xl hover:bg-neutral-800 transition-all shadow-lg shadow-black/10 active:scale-95"
                             >
-                                Done
+                                {isEditing ? 'Save Changes' : 'Edit Details'}
                             </button>
                         </div>
                     </motion.div>

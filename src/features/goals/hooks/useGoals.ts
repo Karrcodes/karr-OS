@@ -69,8 +69,8 @@ export function useGoals() {
                     milestones: data.milestones?.map((m, idx) => ({
                         id: Math.random().toString(36).substring(2, 9),
                         goal_id: 'new-id',
-                        title: m,
-                        is_completed: false,
+                        title: m.title,
+                        is_completed: m.is_completed || false,
                         position: idx,
                         created_at: new Date().toISOString()
                     }))
@@ -128,7 +128,8 @@ export function useGoals() {
             if (data.milestones && data.milestones.length > 0) {
                 const milestones = data.milestones.map((m, idx) => ({
                     goal_id: goal.id,
-                    title: m,
+                    title: m.title,
+                    is_completed: m.is_completed || false,
                     position: idx
                 }))
                 await supabase.from('sys_milestones').insert(milestones)
@@ -154,8 +155,8 @@ export function useGoals() {
                             milestones: updates.milestones ? updates.milestones.map((m, idx) => ({
                                 id: Math.random().toString(36).substring(2, 9),
                                 goal_id: id,
-                                title: m,
-                                is_completed: false,
+                                title: m.title,
+                                is_completed: m.is_completed || false,
                                 position: idx,
                                 created_at: new Date().toISOString()
                             })) : g.milestones
@@ -217,7 +218,8 @@ export function useGoals() {
                 if (updates.milestones.length > 0) {
                     const milestonesToInsert = updates.milestones.map((m, idx) => ({
                         goal_id: id,
-                        title: m,
+                        title: m.title,
+                        is_completed: m.is_completed || false,
                         position: idx
                     }))
                     await supabase.from('sys_milestones').insert(milestonesToInsert)

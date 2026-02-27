@@ -15,7 +15,7 @@ Generate intelligent suggestions for this goal in exactly this JSON format (no m
 {
   "description": "A clear, motivating 1-2 sentence description of what achieving this goal would look like in practice",
   "category": "one of: finance, health, career, personal",
-  "priority": "one of: low, mid, high, super",
+  "priority": "one of: low, mid, high, urgent",
   "timeframe": "one of: short, medium, long (short=3-6 months, medium=1-2 years, long=strategic/legacy)",
   "target_date": "a realistic YYYY-MM-DD date string based on the timeframe",
   "milestones": ["3-5 concise, actionable milestone titles that break this goal down", "each one should be a specific, measurable step"],

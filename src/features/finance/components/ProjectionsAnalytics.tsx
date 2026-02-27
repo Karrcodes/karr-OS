@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Calendar as CalendarIcon, ExternalLink, Briefcase, DollarSign, ChevronLeft, ChevronRight, Info, Check, X, Trash2, Clock, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Calendar as CalendarIcon, ExternalLink, Briefcase, DollarSign, ChevronLeft, ChevronRight, Info, Check, X, Trash2, Clock, CheckCircle2, AlertCircle, Receipt } from 'lucide-react'
 import { useRota } from '../hooks/useRota'
 import { usePayslips } from '../hooks/usePayslips'
 import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
@@ -37,7 +37,7 @@ export function ProjectionsAnalytics() {
     const { overrides: bookedOverrides, saveOverrides, deleteOverrideByDate, updateOverrideStatus } = useRota()
 
     // Actual payslips for confirming past paydays
-    const { payslips } = usePayslips()
+    const { payslips, deletePayslip } = usePayslips()
     const payslipByDate = useMemo(() => {
         const map: Record<string, number> = {}
         payslips.forEach(p => { map[p.date] = p.net_pay })
@@ -284,6 +284,16 @@ export function ProjectionsAnalytics() {
         setApprovalModalOpen(true)
     }
 
+    const handleDeletePayslip = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this payslip? This will affect your income analytics and total liquidity.')) return
+        try {
+            await deletePayslip(id)
+        } catch (err) {
+            console.error(err)
+            alert('Failed to delete payslip.')
+        }
+    }
+
     const confirmApproval = async () => {
         if (!itemToApprove) return
         try {
@@ -483,16 +493,16 @@ export function ProjectionsAnalytics() {
                                         </div>
                                         {isPayday && (() => {
                                             const today = new Date(); today.setHours(0, 0, 0, 0)
-                                            const isPast = d.date < today
+                                            const isPastOrToday = d.date <= today
                                             const confirmedPay = payslipByDate[dateStr]
-                                            const displayAmt = (isPast && confirmedPay != null) ? confirmedPay : (weeklyPayMap[dateStr] || 0)
+                                            const displayAmt = (isPastOrToday && confirmedPay != null) ? confirmedPay : (weeklyPayMap[dateStr] || 0)
                                             return (
                                                 <div className="hidden sm:flex flex-col items-end gap-0.5">
-                                                    <span className={`font-bold text-[10px] sm:text-[11px] opacity-90 privacy-blur ${isPast && confirmedPay != null ? 'text-emerald-700' : isPast ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                                    <span className={`font-bold text-[10px] sm:text-[11px] opacity-90 privacy-blur ${isPastOrToday && confirmedPay != null ? 'text-emerald-700' : isPastOrToday ? 'text-amber-600' : 'text-emerald-600'}`}>
                                                         £{displayAmt.toFixed(0)}
                                                     </span>
-                                                    {isPast && confirmedPay != null && <CheckCircle2 className="w-3 h-3 text-emerald-500" />}
-                                                    {isPast && confirmedPay == null && <AlertCircle className="w-3 h-3 text-amber-400" />}
+                                                    {isPastOrToday && confirmedPay != null && <CheckCircle2 className="w-3 h-3 text-emerald-500" />}
+                                                    {isPastOrToday && confirmedPay == null && <AlertCircle className="w-3 h-3 text-amber-400" />}
                                                 </div>
                                             )
                                         })()}
@@ -602,7 +612,59 @@ export function ProjectionsAnalytics() {
                 </div>
             )}
 
-            {/* Approval Confirmation Modal */}
+            {/* Payslip History section */}
+            <div className="bg-white rounded-2xl border border-black/[0.06] shadow-sm overflow-hidden">
+                <div className="p-5 border-b border-black/[0.04] flex items-center justify-between bg-black/[0.01]">
+                    <h2 className="text-[16px] font-bold text-black flex items-center gap-2">
+                        <Receipt className="w-5 h-5 text-emerald-500" /> Payslip History
+                    </h2>
+                </div>
+                <div className="p-5">
+                    {payslips.length === 0 ? (
+                        <div className="text-center py-10">
+                            <Receipt className="w-10 h-10 text-black/5 mx-auto mb-3" />
+                            <p className="text-[13px] font-medium text-black/30">No payslips logged yet.</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {payslips.map(ps => (
+                                <div key={ps.id} className="flex items-center justify-between p-4 rounded-xl border border-black/[0.04] bg-black/[0.01] hover:bg-black/[0.02] transition-all group">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-[12px]">
+                                            {new Date(ps.date).getDate()}
+                                        </div>
+                                        <div>
+                                            <p className="text-[14px] font-bold text-black">{ps.employer || 'Salary'}</p>
+                                            <p className="text-[11px] text-black/40 font-medium">
+                                                {new Date(ps.date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-6">
+                                        <div className="text-right">
+                                            <p className="text-[16px] font-black text-black privacy-blur">
+                                                £{ps.net_pay.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            </p>
+                                            {ps.gross_pay && (
+                                                <p className="text-[10px] text-black/30 font-bold uppercase tracking-wider">
+                                                    Gross: £{ps.gross_pay.toLocaleString()}
+                                                </p>
+                                            )}
+                                        </div>
+                                        <button
+                                            onClick={() => handleDeletePayslip(ps.id)}
+                                            className="p-2 rounded-lg text-black/20 hover:text-red-500 hover:bg-red-50 transition-all"
+                                            title="Delete Payslip"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
             {approvalModalOpen && (
                 <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setApprovalModalOpen(false)} />

@@ -58,7 +58,12 @@ export function PayslipUploader({ onSuccess }: PayslipUploaderProps) {
                 }
 
                 await Promise.all([
-                    logIncome({ amount: parseFloat(data.netPay), source: data.employer || 'Salary', date: data.date }),
+                    logIncome({
+                        amount: parseFloat(data.netPay),
+                        source: data.employer || 'Salary',
+                        date: data.date,
+                        pocket_id: null
+                    }),
                     logPayslip({
                         date: data.date,
                         employer: data.employer || 'Salary',

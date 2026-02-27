@@ -1,7 +1,9 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
-import { Eye, EyeOff, Copy, Trash2, Plus, Key, User, Globe, FileText, Loader2, Check } from 'lucide-react'
+import { Eye, EyeOff, Copy, Trash2, Plus, Key, User, Globe, FileText, Loader2, Check, X } from 'lucide-react'
+import { useVault } from '../contexts/VaultContext'
+import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
 import { MOCK_VAULT } from '@/lib/demoData'
@@ -16,15 +18,24 @@ interface Secret {
 }
 
 export function SecretsManager() {
+    const { isVaultPrivate } = useVault()
     const [secrets, setSecrets] = useState<Secret[]>([])
     const [loading, setLoading] = useState(true)
     const [adding, setAdding] = useState(false)
+    const [editingId, setEditingId] = useState<string | null>(null)
     const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({})
     const [copiedId, setCopiedId] = useState<string | null>(null)
     const { settings } = useSystemSettings()
 
-    // Form state
+    // Form states
     const [newSecret, setNewSecret] = useState({
+        service: '',
+        username: '',
+        password: '',
+        notes: ''
+    })
+
+    const [editSecret, setEditSecret] = useState({
         service: '',
         username: '',
         password: '',
@@ -74,6 +85,26 @@ export function SecretsManager() {
         }
     }
 
+    const handleUpdate = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!editingId || !editSecret.service || !editSecret.password) return
+
+        const { error } = await supabase
+            .from('sys_secrets')
+            .update({
+                service: editSecret.service,
+                username: editSecret.username || null,
+                password: editSecret.password,
+                notes: editSecret.notes || null,
+            })
+            .eq('id', editingId)
+
+        if (!error) {
+            setEditingId(null)
+            fetchSecrets()
+        }
+    }
+
     const handleDelete = async (id: string) => {
         const { error } = await supabase
             .from('sys_secrets')
@@ -83,6 +114,16 @@ export function SecretsManager() {
         if (!error) {
             fetchSecrets()
         }
+    }
+
+    const startEditing = (secret: Secret) => {
+        setEditingId(secret.id)
+        setEditSecret({
+            service: secret.service,
+            username: secret.username || '',
+            password: secret.password,
+            notes: secret.notes || ''
+        })
     }
 
     const togglePassword = (id: string) => {
@@ -189,106 +230,193 @@ export function SecretsManager() {
                 </div>
             )}
 
-            <div className="bg-white border border-black/[0.08] rounded-2xl overflow-hidden shadow-sm">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="border-b border-black/[0.04] bg-black/[0.01]">
-                                <th className="px-5 py-4 text-[11px] font-bold text-black/30 uppercase tracking-widest w-1/4">Service</th>
-                                <th className="px-5 py-4 text-[11px] font-bold text-black/30 uppercase tracking-widest w-1/4">User/Email</th>
-                                <th className="px-5 py-4 text-[11px] font-bold text-black/30 uppercase tracking-widest w-1/4">Password</th>
-                                <th className="px-5 py-4 text-[11px] font-bold text-black/30 uppercase tracking-widest w-1/4 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-black/[0.03]">
-                            {loading ? (
-                                <tr>
-                                    <td colSpan={4} className="px-5 py-12 text-center">
-                                        <div className="flex flex-col items-center gap-3">
-                                            <Loader2 className="w-6 h-6 animate-spin text-black/20" />
-                                            <p className="text-[13px] font-medium text-black/30">Loading your secrets...</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : secrets.length === 0 ? (
-                                <tr>
-                                    <td colSpan={4} className="px-5 py-12 text-center">
-                                        <div className="flex flex-col items-center gap-3">
-                                            <div className="w-12 h-12 rounded-full bg-black/[0.03] flex items-center justify-center">
-                                                <Key className="w-6 h-6 text-black/10" />
-                                            </div>
-                                            <p className="text-[13px] font-medium text-black/30">No secrets stored yet.</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : (
-                                secrets.map(secret => (
-                                    <tr key={secret.id} className="group hover:bg-black/[0.01] transition-colors">
-                                        <td className="px-5 py-4">
-                                            <div className="flex items-center gap-2.5">
-                                                <div className="w-8 h-8 rounded-lg bg-black/[0.04] flex items-center justify-center text-[14px]">
-                                                    {secret.service[0]?.toUpperCase()}
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className="text-[14px] font-bold text-black">{secret.service}</span>
-                                                    {secret.notes && <span className="text-[11px] text-black/35 truncate max-w-[150px]">{secret.notes}</span>}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-5 py-4">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-[13px] font-medium text-black/60 truncate max-w-[180px]">
-                                                    {secret.username || '—'}
-                                                </span>
-                                                {secret.username && (
-                                                    <button
-                                                        onClick={() => copyToClipboard(secret.username!, secret.id, 'user')}
-                                                        className="p-1.5 rounded-md hover:bg-black/[0.05] text-black/20 hover:text-black transition-all"
-                                                        title="Copy Username"
-                                                    >
-                                                        {copiedId === `${secret.id}-user` ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="px-5 py-4">
-                                            <div className="flex items-center gap-2">
-                                                <span className={`text-[13px] font-mono tracking-wider ${visiblePasswords[secret.id] ? 'text-black' : 'text-black/20'}`}>
-                                                    {visiblePasswords[secret.id] ? secret.password : '••••••••••••'}
-                                                </span>
-                                                <div className="flex items-center gap-0.5 ml-auto">
-                                                    <button
-                                                        onClick={() => togglePassword(secret.id)}
-                                                        className="p-1.5 rounded-md hover:bg-black/[0.05] text-black/20 hover:text-black transition-all"
-                                                        title={visiblePasswords[secret.id] ? "Hide Password" : "Show Password"}
-                                                    >
-                                                        {visiblePasswords[secret.id] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                                                    </button>
-                                                    <button
-                                                        onClick={() => copyToClipboard(secret.password, secret.id, 'pass')}
-                                                        className="p-1.5 rounded-md hover:bg-black/[0.05] text-black/20 hover:text-black transition-all"
-                                                        title="Copy Password"
-                                                    >
-                                                        {copiedId === `${secret.id}-pass` ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-5 py-4 text-right">
-                                            <button
-                                                onClick={() => handleDelete(secret.id)}
-                                                className="p-2 rounded-lg text-red-500/30 hover:text-red-500 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100"
-                                                title="Delete Secret"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+            <div className="space-y-4">
+                {loading ? (
+                    <div className="bg-white border border-black/[0.08] rounded-2xl p-12 text-center shadow-sm">
+                        <div className="flex flex-col items-center gap-3">
+                            <Loader2 className="w-6 h-6 animate-spin text-black/20" />
+                            <p className="text-[13px] font-medium text-black/30">Loading your secrets...</p>
+                        </div>
+                    </div>
+                ) : secrets.length === 0 ? (
+                    <div className="bg-white border border-black/[0.08] rounded-2xl p-12 text-center shadow-sm">
+                        <div className="flex flex-col items-center gap-3">
+                            <div className="w-12 h-12 rounded-full bg-black/[0.03] flex items-center justify-center">
+                                <Key className="w-6 h-6 text-black/10" />
+                            </div>
+                            <p className="text-[13px] font-medium text-black/30">No secrets stored yet.</p>
+                        </div>
+                    </div>
+                ) : (
+                    Object.entries(
+                        secrets.reduce((acc, secret) => {
+                            const key = secret.service.toLowerCase().trim();
+                            if (!acc[key]) acc[key] = [];
+                            acc[key].push(secret);
+                            return acc;
+                        }, {} as Record<string, Secret[]>)
+                    ).map(([serviceKey, serviceSecrets]) => (
+                        <div key={serviceKey} className="bg-white border border-black/[0.08] rounded-2xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
+                            <div className="px-5 py-3.5 bg-black/[0.01] border-b border-black/[0.03] flex items-center justify-between">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-7 h-7 rounded-lg bg-black text-white flex items-center justify-center text-[11px] font-black">
+                                        {serviceSecrets[0].service[0]?.toUpperCase()}
+                                    </div>
+                                    <h3 className="text-[12px] font-black text-black uppercase tracking-widest">{serviceSecrets[0].service}</h3>
+                                    <span className="px-1.5 py-0.5 rounded-md bg-black/[0.04] text-[9px] font-bold text-black/40">
+                                        {serviceSecrets.length} {serviceSecrets.length === 1 ? 'account' : 'accounts'}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="bg-black/[0.005]">
+                                            <th className="pl-5 pr-4 py-3 text-[10px] font-bold text-black/25 uppercase tracking-widest w-1/3">Username / Email</th>
+                                            <th className="px-4 py-3 text-[10px] font-bold text-black/25 uppercase tracking-widest w-1/3">Password</th>
+                                            <th className="pl-4 pr-5 py-3 text-[10px] font-bold text-black/25 uppercase tracking-widest text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-black/[0.03]">
+                                        {serviceSecrets.map((secret) => {
+                                            const isEditing = editingId === secret.id;
+                                            return (
+                                                <tr key={secret.id} className={cn(
+                                                    "group transition-colors",
+                                                    isEditing ? "bg-black/[0.04]" : "hover:bg-black/[0.01]"
+                                                )}>
+                                                    <td className="pl-5 pr-4 py-4">
+                                                        {isEditing ? (
+                                                            <div className="space-y-2">
+                                                                <input
+                                                                    type="text"
+                                                                    placeholder="Service Name"
+                                                                    value={editSecret.service}
+                                                                    onChange={e => setEditSecret({ ...editSecret, service: e.target.value })}
+                                                                    className="w-full bg-white border border-black/[0.1] rounded-lg px-2 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-black/5 font-bold"
+                                                                />
+                                                                <input
+                                                                    type="text"
+                                                                    placeholder="Username"
+                                                                    value={editSecret.username}
+                                                                    onChange={e => setEditSecret({ ...editSecret, username: e.target.value })}
+                                                                    className="w-full bg-white border border-black/[0.1] rounded-lg px-2 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-black/5"
+                                                                />
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex flex-col">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className={cn(
+                                                                        "text-[13px] font-bold text-black/70 truncate max-w-[200px]",
+                                                                        isVaultPrivate && "privacy-blur"
+                                                                    )}>
+                                                                        {secret.username || '—'}
+                                                                    </span>
+                                                                    {!isVaultPrivate && secret.username && (
+                                                                        <button
+                                                                            onClick={() => copyToClipboard(secret.username!, secret.id, 'user')}
+                                                                            className="p-1 rounded-md hover:bg-black/[0.05] text-black/20 hover:text-black transition-all"
+                                                                            title="Copy Username"
+                                                                        >
+                                                                            {copiedId === `${secret.id}-user` ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                                {!isVaultPrivate && secret.notes && (
+                                                                    <span className="text-[11px] text-black/30 italic font-medium mt-1 truncate max-w-[180px]">
+                                                                        " {secret.notes} "
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        {isEditing ? (
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Password"
+                                                                value={editSecret.password}
+                                                                onChange={e => setEditSecret({ ...editSecret, password: e.target.value })}
+                                                                className="w-full bg-white border border-black/[0.1] rounded-lg px-2 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-black/5 font-mono"
+                                                            />
+                                                        ) : (
+                                                            <div className="flex items-center gap-2">
+                                                                <span className={cn(
+                                                                    "text-[13px] font-mono tracking-wider",
+                                                                    (visiblePasswords[secret.id] && !isVaultPrivate) ? 'text-black' : 'text-black/15'
+                                                                )}>
+                                                                    {(visiblePasswords[secret.id] && !isVaultPrivate) ? secret.password : '••••••••••••'}
+                                                                </span>
+                                                                <div className="flex items-center gap-0.5 ml-auto">
+                                                                    {!isVaultPrivate && (
+                                                                        <>
+                                                                            <button
+                                                                                onClick={() => togglePassword(secret.id)}
+                                                                                className="p-1.5 rounded-md hover:bg-black/[0.05] text-black/20 hover:text-black transition-all"
+                                                                                title={visiblePasswords[secret.id] ? "Hide Password" : "Show Password"}
+                                                                            >
+                                                                                {visiblePasswords[secret.id] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => copyToClipboard(secret.password, secret.id, 'pass')}
+                                                                                className="p-1.5 rounded-md hover:bg-black/[0.05] text-black/20 hover:text-black transition-all"
+                                                                                title="Copy Password"
+                                                                            >
+                                                                                {copiedId === `${secret.id}-pass` ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                                                                            </button>
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </td>
+                                                    <td className="pl-4 pr-5 py-4 text-right">
+                                                        <div className="flex items-center justify-end gap-1">
+                                                            {isEditing ? (
+                                                                <div className="flex items-center gap-2">
+                                                                    <button
+                                                                        onClick={handleUpdate}
+                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-[11px] font-bold hover:bg-emerald-600 transition-all"
+                                                                    >
+                                                                        <Check className="w-3.5 h-3.5" />
+                                                                        <span>Save</span>
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => setEditingId(null)}
+                                                                        className="p-1.5 rounded-lg text-black/30 hover:bg-black/5 transition-all"
+                                                                    >
+                                                                        <X className="w-4 h-4" />
+                                                                    </button>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                    <button
+                                                                        onClick={() => startEditing(secret)}
+                                                                        className="p-1.5 rounded-lg text-black/20 hover:text-black hover:bg-black/[0.03] transition-all"
+                                                                        title="Edit Secret"
+                                                                    >
+                                                                        <FileText className="w-4 h-4" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleDelete(secret.id)}
+                                                                        className="p-1.5 rounded-lg text-red-500/30 hover:text-red-500 hover:bg-red-50 transition-all"
+                                                                        title="Delete Secret"
+                                                                    >
+                                                                        <Trash2 className="w-4 h-4" />
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    ))
+                )}
             </div>
         </div>
     )

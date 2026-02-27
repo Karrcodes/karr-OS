@@ -299,7 +299,12 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
 
                     if (data.netPay && data.date) {
                         await Promise.all([
-                            logIncome({ amount: parseFloat(data.netPay), source: data.employer || 'Salary', date: data.date }),
+                            logIncome({
+                                amount: parseFloat(data.netPay),
+                                source: data.employer || 'Salary',
+                                date: data.date,
+                                pocket_id: null
+                            }),
                             logPayslip({
                                 date: data.date, employer: data.employer || 'Salary', net_pay: parseFloat(data.netPay),
                                 gross_pay: data.grossPay ? parseFloat(data.grossPay) : null, tax_paid: data.tax ? parseFloat(data.tax) : null,
@@ -329,30 +334,49 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
         try {
             const amt = parseFloat(amount)
             await Promise.all([
-                logIncome({ amount: amt, source: description, date: date }),
+                logIncome({
+                    amount: amt,
+                    source: description,
+                    date: date,
+                    pocket_id: null
+                }),
                 logPayslip({
                     date: date, employer: description, net_pay: amt,
                     gross_pay: grossPay ? parseFloat(grossPay) : null,
                     tax_paid: taxPaid ? parseFloat(taxPaid) : null,
                     pension_contributions: pension ? parseFloat(pension) : null,
                     student_loan: studentLoan ? parseFloat(studentLoan) : null
-                })
+                }, true) // Skip automatic routing, we handle it below
             ])
 
             const transactionPromises: any[] = []
             const pocketUpdatePromises: any[] = []
 
+            // Find General pocket for unallocated remainder
+            const generalPocket = pockets.find(p => p.type === 'general') || pockets.find(p => p.name.toLowerCase().includes('general'))
+            const handledIds = new Set<string>()
+
             for (const [itemId, allocAmt] of Object.entries(allocations)) {
                 if (allocAmt > 0) {
                     const pocket = pockets.find(p => p.id === itemId)
                     if (pocket) {
+                        let finalAlloc = allocAmt
+                        // If this is the general pocket, add the unallocated remainder to it
+                        if (generalPocket && itemId === generalPocket.id) {
+                            finalAlloc += unallocated
+                            handledIds.add(itemId)
+                        }
+
                         transactionPromises.push(
                             supabase.from('fin_transactions').insert({
-                                type: 'allocate', amount: allocAmt, pocket_id: itemId, description: `Payday allocation (${description})`, date: date, profile: activeProfile
+                                type: 'allocate', amount: finalAlloc, pocket_id: itemId, description: `Payday allocation (${description})`, date: date, profile: activeProfile
                             }).then(res => res)
                         )
                         pocketUpdatePromises.push(
-                            supabase.from('fin_pockets').update({ balance: pocket.balance + allocAmt }).eq('id', itemId).then(res => res)
+                            supabase.from('fin_pockets').update({
+                                balance: (pocket.balance ?? 0) + finalAlloc,
+                                current_balance: (pocket.current_balance ?? pocket.balance ?? 0) + finalAlloc
+                            }).eq('id', itemId).then(res => res)
                         )
                     } else if (goals && Array.isArray(goals)) {
                         const goal = goals.find(g => g.id === itemId)
@@ -363,6 +387,21 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
                         }
                     }
                 }
+            }
+
+            // If general pocket wasn't in allocations but there is unallocated money
+            if (generalPocket && !handledIds.has(generalPocket.id) && unallocated > 0) {
+                transactionPromises.push(
+                    supabase.from('fin_transactions').insert({
+                        type: 'allocate', amount: unallocated, pocket_id: generalPocket.id, description: `Payday remainder (${description})`, date: date, profile: activeProfile
+                    }).then(res => res)
+                )
+                pocketUpdatePromises.push(
+                    supabase.from('fin_pockets').update({
+                        balance: (generalPocket.balance ?? 0) + unallocated,
+                        current_balance: (generalPocket.current_balance ?? generalPocket.balance ?? 0) + unallocated
+                    }).eq('id', generalPocket.id).then(res => res)
+                )
             }
 
             await Promise.all([...transactionPromises, ...pocketUpdatePromises])
@@ -380,7 +419,12 @@ export function QuickActionFAB({ pockets = [], goals = [], onSuccess }: QuickAct
 
         try {
             await Promise.all([
-                logIncome({ amount: amt, source: description, date: date }),
+                logIncome({
+                    amount: amt,
+                    source: description,
+                    date: date,
+                    pocket_id: null
+                }),
                 logPayslip({
                     date: date, employer: description, net_pay: amt,
                     gross_pay: grossPay ? parseFloat(grossPay) : null, tax_paid: taxPaid ? parseFloat(taxPaid) : null,

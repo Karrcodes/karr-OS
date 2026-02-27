@@ -28,6 +28,7 @@ export interface Income {
     amount: number
     source: string
     date: string
+    pocket_id: string | null
     profile: 'personal' | 'business'
     created_at: string
 }

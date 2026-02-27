@@ -98,6 +98,37 @@ export function useRecurring() {
     }
 
     const markObligationAsPaid = async (obligation: RecurringObligation) => {
+        // 1. Logic for Liability Pocket subtraction and Transaction logging
+        const { data: pocketData } = await supabase
+            .from('fin_pockets')
+            .select('*')
+            .eq('profile', activeProfile)
+            .or(`name.ilike.%Liabilities%,type.eq.buffer`)
+            .limit(1)
+
+        const pocket = pocketData?.[0]
+
+        if (pocket) {
+            console.log(`KarrOS: Found Liabilities pocket "${pocket.name}" (ID: ${pocket.id}, Balance: ${pocket.balance}). Deducting £${obligation.amount}.`)
+            // Deduct from pocket (Liabilities pocket can go negative)
+            await supabase.from('fin_pockets').update({
+                balance: (pocket.balance || 0) - obligation.amount,
+                current_balance: (pocket.current_balance || 0) - obligation.amount
+            }).eq('id', pocket.id)
+
+            // Create tracking transaction
+            await supabase.from('fin_transactions').insert({
+                type: 'spend',
+                amount: obligation.amount,
+                pocket_id: pocket.id,
+                description: `[Liability] ${obligation.name}`,
+                date: new Date().toISOString().split('T')[0],
+                category: obligation.category || 'bills',
+                emoji: obligation.emoji || '💸',
+                profile: activeProfile
+            })
+        }
+
         if (obligation.payments_left === 1) {
             await deleteObligation(obligation.id)
             return
@@ -105,7 +136,6 @@ export function useRecurring() {
 
         const currentNextDue = new Date(obligation.next_due_date)
         let newNextDue = new Date(currentNextDue)
-
         if (obligation.frequency === 'monthly') {
             const targetMonth = newNextDue.getMonth() + 1
             newNextDue.setMonth(targetMonth)

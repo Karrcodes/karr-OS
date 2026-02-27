@@ -134,9 +134,9 @@ export default function GoalsTimeline({ goals, onGoalClick }: GoalsTimelineProps
                                                 )}
                                                 <div className={cn(
                                                     "px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider",
-                                                    goal.priority === 'super' ? "bg-amber-500/10 text-amber-600 animate-pulse" :
-                                                        goal.priority === 'high' ? "bg-rose-500/10 text-rose-600" :
-                                                            goal.priority === 'mid' ? "bg-blue-500/10 text-blue-600" :
+                                                    goal.priority === 'urgent' ? "bg-purple-600/10 text-purple-600 animate-pulse" :
+                                                        goal.priority === 'high' ? "bg-red-500/10 text-red-600" :
+                                                            goal.priority === 'mid' ? "bg-amber-500/10 text-amber-600" :
                                                                 "bg-black/[0.04] text-black/30"
                                                 )}>
                                                     {goal.priority || 'mid'}

@@ -35,7 +35,8 @@ export function CashflowAnalytics({ monthlyObligations }: { monthlyObligations: 
         const salaryTransactions = transactions.filter(t =>
             t.type === 'income' &&
             (t.description?.toLowerCase().includes('payment from u u k') ||
-                t.description === 'Work Portal Payment')
+                t.description === 'Work Portal Payment' ||
+                t.description?.startsWith('Payslip:'))
         )
 
         salaryTransactions.forEach(i => {

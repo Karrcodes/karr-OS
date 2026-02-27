@@ -5,7 +5,7 @@ export interface Task {
     is_completed: boolean
     category: 'todo' | 'grocery' | 'reminder'
     strategic_category?: 'finance' | 'career' | 'health' | 'personal'
-    priority: 'super' | 'high' | 'mid' | 'low'
+    priority: 'urgent' | 'high' | 'mid' | 'low'
     amount?: string
     due_date?: string
     due_date_mode?: 'on' | 'before' | 'range'
@@ -19,13 +19,29 @@ export interface Task {
         interval?: number
         target?: 'on_days' | 'off_days'
         constraint?: 'within_window'
-    }
+    } | null
     created_at: string
     position: number
     notes?: {
         type: 'text' | 'bullets' | 'checklist'
         content: any // string for 'text'/'bullets', Array of items for 'checklist'
     }
+    ai_position_x?: number
+    ai_position_y?: number
+
+    // Algorithmic scheduling parameters
+    estimated_duration?: number // In minutes
+    time_bound?: boolean
+    deadline_type?: 'hard' | 'soft'
+    recurrence_type?: 'habit' | 'task'
+    energy_requirement?: 'high' | 'medium' | 'low'
+    impact_score?: number
+    project_id?: string
+    travel_to_duration?: number // In minutes
+    travel_from_duration?: number // In minutes
+    start_time?: string // "HH:MM" fixed appointment time
+    location?: string
+    origin_location?: string
 }
 
 export interface DayPlannerSettings {
@@ -42,4 +58,50 @@ export interface DayPlannerSettings {
     workout_duration: number
     shower_duration: number
     meal_prep_duration: number
+
+    // Planner Overhaul Extensions
+    roster_config?: {
+        type: '3-on-3-off'
+        anchor_date: string
+        shift_start: string
+        shift_end: string
+    }
+    routine_defaults?: {
+        gym: { duration: number, preferred_window: [string, string] }
+        walk: { duration: number, auto_inject: boolean }
+        meal_prep: { duration: number, required: boolean }
+    }
+    evening_constraints?: {
+        allowed_categories: string[]
+        max_duration_minutes: number
+    }
+    chill_mode_active?: boolean
+}
+
+export interface PlannerInitialization {
+    date: string
+    t_zero: string // ISO timestamp
+    created_at: string
+}
+
+export interface TaskTemplate {
+    id: string
+    profile: 'personal' | 'business'
+    title: string
+    category: 'todo' | 'grocery' | 'reminder'
+    priority: 'urgent' | 'high' | 'mid' | 'low'
+    strategic_category?: 'finance' | 'career' | 'health' | 'personal'
+    amount?: string
+    due_date_mode?: 'on' | 'before' | 'range'
+    recurrence_config?: Task['recurrence_config']
+    estimated_duration?: number
+    travel_to_duration?: number
+    travel_from_duration?: number
+    impact_score?: number
+    start_time?: string
+    location?: string
+    origin_location?: string
+    notes?: Task['notes']
+    created_at: string
+    updated_at: string
 }

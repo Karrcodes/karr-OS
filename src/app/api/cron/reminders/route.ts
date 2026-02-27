@@ -102,10 +102,12 @@ export async function GET(req: Request) {
 
             // 4. Reset recurring tasks completion status
             // This ensures routines like "Gym" appear fresh the next day
+            // We ignore tasks where recurrence_config->type is 'none'
             const { error: resetError } = await supabase
                 .from('fin_tasks')
                 .update({ is_completed: false })
                 .not('recurrence_config', 'is', null)
+                .neq('recurrence_config->>type', 'none')
 
             if (resetError) console.error('Failed to reset recurring tasks:', resetError)
 
@@ -119,6 +121,7 @@ export async function GET(req: Request) {
                 .from('fin_tasks')
                 .update({ is_completed: false })
                 .not('recurrence_config', 'is', null)
+                .neq('recurrence_config->>type', 'none')
 
             await supabase
                 .from('sys_settings')

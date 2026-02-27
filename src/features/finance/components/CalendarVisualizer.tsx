@@ -219,7 +219,7 @@ export function CalendarVisualizer({ obligations }: { obligations: RecurringObli
                     </h2>
 
                     {view === 'calendar' && (
-                        <div className="flex items-center gap-1 bg-black/[0.04] p-0.5 rounded-lg ml-2">
+                        <div className="flex items-center justify-center gap-1 bg-black/[0.04] p-0.5 rounded-lg sm:ml-2">
                             <button
                                 onClick={() => setCalMonth(m => { const n = new Date(m); n.setMonth(n.getMonth() - 1); return n })}
                                 className="p-1 rounded-md hover:bg-white hover:shadow-sm text-black/60 transition-all"

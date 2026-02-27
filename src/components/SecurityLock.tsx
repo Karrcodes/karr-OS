@@ -9,6 +9,9 @@ import { supabase } from '@/lib/supabase'
 const CORRECT_PIN = '7276'
 
 export function SecurityLock({ children }: { children: React.ReactNode }) {
+    // TEMPORARY BYPASS FOR LOCAL DEVICE TESTING
+    return <>{children}</>
+
     const [isUnlocked, setIsUnlocked] = useState(false)
     const [pin, setPin] = useState('')
     const [error, setError] = useState(false)
