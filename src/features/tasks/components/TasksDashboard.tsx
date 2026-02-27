@@ -24,7 +24,10 @@ function TaskList({ category, title, icon: Icon }: { category: 'todo' | 'grocery
         if (!newTask.trim()) return
 
         try {
-            await createTask(newTask.trim(), priority)
+            await createTask({
+                title: newTask.trim(),
+                priority
+            })
             setNewTask('')
             setPriority('low')
         } catch (err: any) {

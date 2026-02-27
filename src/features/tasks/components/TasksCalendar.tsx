@@ -56,7 +56,11 @@ export function TasksCalendar() {
         if (!quickAddTitle.trim() || !selectedQuickAdd) return
 
         try {
-            await createTask(quickAddTitle.trim(), 'low', selectedQuickAdd.date.toISOString().split('T')[0])
+            await createTask({
+                title: quickAddTitle.trim(),
+                priority: 'low',
+                due_date: selectedQuickAdd.date.toISOString().split('T')[0]
+            })
             setQuickAddTitle('')
             setSelectedQuickAdd(null)
         } catch (err) {
