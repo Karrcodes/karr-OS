@@ -12,6 +12,12 @@ export async function POST(request: Request) {
         const body = await request.json()
         const { type, data } = body
 
+        // Heartbeat log for debugging
+        await supabase.from('sys_notification_logs').insert({
+            title: 'DEBUG: Webhook Hit',
+            body: `Type: ${type}, Monzo ID: ${data?.id || 'N/A'}`
+        })
+
         if (type !== 'transaction.created') {
             return NextResponse.json({ success: true, message: 'Ignored event type' })
         }
