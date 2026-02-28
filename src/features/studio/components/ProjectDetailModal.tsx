@@ -209,16 +209,19 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                                                     </div>
                                                 </div>
 
-                                                <div className="space-y-2">
-                                                    <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Target Date</label>
-                                                    <div className="relative">
-                                                        <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
-                                                        <input
-                                                            type="date"
-                                                            value={editedData.target_date ?? project.target_date ?? ''}
-                                                            onChange={(e) => setEditedData(prev => ({ ...prev, target_date: e.target.value }))}
-                                                            className="w-full pl-11 pr-4 py-3 bg-black/[0.02] border border-black/[0.1] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-orange-500"
-                                                        />
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div />
+                                                    <div className="space-y-2">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Target Date</label>
+                                                        <div className="relative">
+                                                            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
+                                                            <input
+                                                                type="date"
+                                                                value={editedData.target_date ?? project.target_date ?? ''}
+                                                                onChange={(e) => setEditedData(prev => ({ ...prev, target_date: e.target.value }))}
+                                                                className="w-full pl-11 pr-4 py-3 bg-black/[0.02] border border-black/[0.1] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-orange-500"
+                                                            />
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>

@@ -38,7 +38,11 @@ export default function ContentDetailModal({ isOpen, onClose, item }: ContentDet
         }
 
         try {
-            await updateContent(item.id, editedData)
+            const submissionData = { ...editedData }
+            if ('project_id' in submissionData && !submissionData.project_id) {
+                submissionData.project_id = null as any
+            }
+            await updateContent(item.id, submissionData)
             setIsEditing(false)
         } catch (err: any) {
             alert(`Failed to save changes: ${err.message}`)

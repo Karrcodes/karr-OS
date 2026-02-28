@@ -35,7 +35,11 @@ export default function CreateContentModal({ isOpen, onClose }: CreateContentMod
 
         try {
             setLoading(true)
-            await addContent(formData)
+            const submissionData = {
+                ...formData,
+                project_id: formData.project_id || null
+            }
+            await addContent(submissionData)
             onClose()
             setFormData({
                 title: '',
