@@ -180,6 +180,21 @@ export default function SettingsPage() {
         }
     }
 
+    const clearPushSubscriptions = async () => {
+        if (!confirm('Are you sure? This will stop notifications on ALL your devices until you re-enable them.')) return
+        setIsSaving(true)
+        try {
+            const { error } = await supabase.from('sys_push_subscriptions').delete().eq('user_id', 'karr')
+            if (error) throw error
+            setIsSubscribed(false)
+            alert('All devices cleared. Please re-enable notifications on this device if needed.')
+        } catch (err: any) {
+            alert(`Failed to clear: ${err.message}`)
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
     if (contextLoading) {
         return (
             <div className="h-screen flex items-center justify-center bg-[#fafafa]">
@@ -363,6 +378,15 @@ export default function SettingsPage() {
                                 >
                                     {isSubscribed ? 'Enabled' : 'Enable'}
                                 </button>
+                                {isSubscribed && (
+                                    <button
+                                        onClick={clearPushSubscriptions}
+                                        disabled={isSaving}
+                                        className="px-4 py-2 rounded-xl text-[11px] font-bold text-red-500 hover:bg-red-50 transition-all border border-transparent"
+                                    >
+                                        Clear All Devices
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </section>
@@ -544,8 +568,8 @@ export default function SettingsPage() {
                     </section>
                 </div>
                 <KarrFooter />
-            </div>
-        </div>
+            </div >
+        </div >
     )
 }
 

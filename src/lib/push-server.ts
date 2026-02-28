@@ -10,6 +10,22 @@ const supabase = createClient(
 export async function sendPushNotification(title: string, body: string, url: string = '/') {
     try {
         console.log('Sending push notification:', { title, body, url });
+
+        // 1. Deduplication Check: Skip if identical notification sent in last 10s
+        const tenSecondsAgo = new Date(Date.now() - 10000).toISOString()
+        const { data: recentLogs } = await supabase
+            .from('sys_notification_logs')
+            .select('id')
+            .eq('title', title)
+            .eq('body', body)
+            .gt('created_at', tenSecondsAgo)
+            .limit(1)
+
+        if (recentLogs && recentLogs.length > 0) {
+            console.log('[PushServer] Duplicate notification suppressed (cooldown active)');
+            return { success: true, message: 'Duplicate suppressed' }
+        }
+
         const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
         const privateKey = process.env.VAPID_PRIVATE_KEY;
 
@@ -31,7 +47,12 @@ export async function sendPushNotification(title: string, body: string, url: str
             .eq('user_id', 'karr')
 
         if (error) throw error
-        if (!subs || subs.length === 0) return { success: true, message: 'No subscriptions found' }
+        if (!subs || subs.length === 0) {
+            console.log('No active push subscriptions found for user: karr');
+            return { success: true, message: 'No subscriptions found' }
+        }
+
+        console.log(`Messaging ${subs.length} active push subscription(s) for user: karr`);
 
         const results = await Promise.all(subs.map(async (s) => {
             try {

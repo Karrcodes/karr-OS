@@ -23,6 +23,18 @@ export async function POST(request: Request) {
         const monzoTxId = data.id
         const potId = data.metadata?.pot_id // Monzo Pot ID if applicable
 
+        // 0. Idempotency Check: Skip if transaction already exists
+        const { data: existingTx } = await supabase
+            .from('fin_transactions')
+            .select('id')
+            .eq('provider_tx_id', monzoTxId)
+            .single()
+
+        if (existingTx) {
+            console.log(`[MonzoWebhook] Transaction ${monzoTxId} already exists. Skipping notification.`)
+            return NextResponse.json({ success: true, message: 'Existing transaction' })
+        }
+
         // 1. Find the pocket in KarrOS
         // We look for any pocket where monzo_id matches either the pot_id or the account_id
         const targetMonzoId = potId || data.account_id
@@ -81,13 +93,18 @@ export async function POST(request: Request) {
         }
 
         // 4. Send Notification
-        const emoji = isTransfer ? '🔄' : (isSpend ? '💸' : '💰')
-        const title = isTransfer ? 'Monzo Transfer' : (isSpend ? `${emoji} Monzo Spend` : `${emoji} Monzo Received`)
-        const bodyText = isSpend
-            ? `Spent £${amount.toFixed(2)} from ${pocketName}: ${finalDescription}`
-            : `Received £${amount.toFixed(2)} in ${pocketName}: ${finalDescription}`
+        // Dedup: For internal transfers, only notify once (on the outgoing side)
+        const shouldNotify = !isTransfer || isSpend
 
-        await sendPushNotification(title, bodyText, '/finances/transactions')
+        if (shouldNotify) {
+            const emoji = isTransfer ? '🔄' : (isSpend ? '💸' : '💰')
+            const title = isTransfer ? 'Monzo Transfer' : (isSpend ? `${emoji} Monzo Spend` : `${emoji} Monzo Received`)
+            const bodyText = isSpend
+                ? `Spent £${amount.toFixed(2)} from ${pocketName}: ${finalDescription}`
+                : `Received £${amount.toFixed(2)} in ${pocketName}: ${finalDescription}`
+
+            await sendPushNotification(title, bodyText, '/finances/transactions')
+        }
 
         return NextResponse.json({ success: true })
     } catch (err: any) {
