@@ -41,6 +41,42 @@ export default function SparkDetailModal({ isOpen, onClose, spark, projects }: S
 
     const linkedProject = projects.find(p => p.id === spark.project_id)
 
+    const handleSave = async () => {
+        try {
+            await updateSpark(spark.id, { notes: editedNotes })
+            setIsEditing(false)
+        } catch (err: any) {
+            alert(`Failed to save spark: ${err.message}`)
+        }
+    }
+
+    const handleDelete = async () => {
+        if (!confirm('Are you sure you want to delete this spark?')) return
+        try {
+            await deleteSpark(spark.id)
+            onClose()
+        } catch (err: any) {
+            alert(`Failed to delete spark: ${err.message}`)
+        }
+    }
+
+    const handleConvertToProject = async () => {
+        try {
+            const project = await addProject({
+                title: spark.title,
+                tagline: spark.notes?.slice(0, 100),
+                status: 'idea',
+                type: 'other'
+            })
+            // Link spark to the new project
+            await updateSpark(spark.id, { project_id: project.id })
+            alert('Sucessfully converted spark to a new project! You can find it in your pipeline.')
+            onClose()
+        } catch (err: any) {
+            alert(`Failed to convert: ${err.message}`)
+        }
+    }
+
     const typeEmoji = {
         idea: '💡',
         tool: '🛠️',
