@@ -141,7 +141,7 @@ export default function CreateContentModal({ isOpen, onClose }: CreateContentMod
                         <div className="relative">
                             <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
                             <select
-                                value={formData.project_id}
+                                value={formData.project_id || ''}
                                 onChange={e => setFormData(prev => ({ ...prev, project_id: e.target.value }))}
                                 className="w-full pl-11 pr-4 py-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-blue-200 appearance-none"
                             >

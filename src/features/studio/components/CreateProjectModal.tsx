@@ -109,6 +109,16 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                                 />
                             </div>
                             <div className="relative">
+                                <AlignLeft className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
+                                <input
+                                    type="text"
+                                    placeholder="Project Tagline"
+                                    value={formData.tagline}
+                                    onChange={e => setFormData(prev => ({ ...prev, tagline: e.target.value }))}
+                                    className="w-full pl-11 pr-4 py-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[13px] font-medium focus:outline-none focus:border-orange-200 transition-all"
+                                />
+                            </div>
+                            <div className="relative">
                                 <Plus className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
                                 <div className="flex gap-2">
                                     <input

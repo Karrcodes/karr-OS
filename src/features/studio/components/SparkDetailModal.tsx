@@ -26,55 +26,20 @@ export default function SparkDetailModal({ isOpen, onClose, spark, projects }: S
     const { updateSpark, deleteSpark, addProject, loading } = useStudio()
     const [isEditing, setIsEditing] = useState(false)
     const [editedNotes, setEditedNotes] = useState('')
+    const [imgError, setImgError] = useState(false)
 
     // Reset state when spark changes to prevent "leaking" notes between different sparks
     useEffect(() => {
         if (spark) {
             setEditedNotes(spark.notes || '')
             setIsEditing(false)
+            setImgError(false)
         }
     }, [spark])
 
     if (!isOpen || !spark) return null
 
     const linkedProject = projects.find(p => p.id === spark.project_id)
-    const [imgError, setImgError] = useState(false)
-
-    const handleSave = async () => {
-        try {
-            await updateSpark(spark.id, { notes: editedNotes })
-            setIsEditing(false)
-        } catch (err: any) {
-            alert(`Failed to save spark: ${err.message}`)
-        }
-    }
-
-    const handleDelete = async () => {
-        if (!confirm('Are you sure you want to delete this spark?')) return
-        try {
-            await deleteSpark(spark.id)
-            onClose()
-        } catch (err: any) {
-            alert(`Failed to delete spark: ${err.message}`)
-        }
-    }
-
-    const handleConvertToProject = async () => {
-        try {
-            const project = await addProject({
-                title: spark.title,
-                tagline: spark.notes?.slice(0, 100),
-                status: 'idea',
-                type: 'other'
-            })
-            // Link spark to the new project
-            await updateSpark(spark.id, { project_id: project.id })
-            alert('Sucessfully converted spark to a new project! You can find it in your pipeline.')
-            onClose()
-        } catch (err: any) {
-            alert(`Failed to convert: ${err.message}`)
-        }
-    }
 
     const typeEmoji = {
         idea: '💡',
@@ -82,7 +47,8 @@ export default function SparkDetailModal({ isOpen, onClose, spark, projects }: S
         item: '🛒',
         resource: '🔗',
         event: '📅',
-        person: '👤'
+        person: '👤',
+        platform: '📱'
     }[spark.type] || '✨'
 
     return (

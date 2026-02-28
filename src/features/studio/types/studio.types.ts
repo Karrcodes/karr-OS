@@ -41,7 +41,7 @@ export type ContentStatus = 'idea' | 'scripted' | 'filmed' | 'edited' | 'schedul
 
 export interface StudioContent {
     id: string;
-    project_id?: string;
+    project_id?: string | null;
     platform: Platform;
     type?: string;
     title: string;
