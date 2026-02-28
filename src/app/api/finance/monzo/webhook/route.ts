@@ -62,8 +62,25 @@ export async function POST(request: Request) {
 
         // 2. Improve description for transfers/pots
         let finalDescription = description
-        if (description.startsWith('pot_') && pocket) {
-            finalDescription = isSpend ? `Transfer to ${pocketName}` : `Top up from ${pocketName}`
+        if (isTransfer) {
+            // Try to find the "partner" pocket name from notes or pot_id
+            const notes = data.notes || ''
+            const partnerMatch = notes.match(/Transfer (?:from|to) (.*?)(?:\s+🍔|\s+🛍️|\s+💰|$)/)
+            const partnerName = partnerMatch ? partnerMatch[1].trim() : (isSpend ? 'Pockets' : 'Main Account')
+
+            if (isSpend) {
+                // Moving money INTO this pocket
+                finalDescription = `Transferred into ${pocketName}`
+                if (partnerName && partnerName !== pocketName) {
+                    finalDescription = `Transferred from ${partnerName} to ${pocketName}`
+                }
+            } else {
+                // Moving money OUT of this pocket
+                finalDescription = `Transferred from ${pocketName}`
+                if (partnerName && partnerName !== pocketName) {
+                    finalDescription = `Transferred from ${pocketName} to ${partnerName}`
+                }
+            }
         }
 
         // 3. Process Transaction Atomically (Deduplication + Insert)
