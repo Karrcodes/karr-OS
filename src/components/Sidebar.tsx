@@ -48,7 +48,18 @@ const navItems = [
             { label: 'Settings', href: '/finances/settings', icon: SlidersHorizontal, caps: ['P', 'B'] }
         ],
     },
-    { label: 'Studio', href: '/create', icon: Sparkles, disabled: true },
+    {
+        label: 'Studio',
+        href: '/create',
+        icon: Sparkles,
+        sub: [
+            { label: 'Projects', href: '/create/projects', icon: Briefcase },
+            { label: 'Sparks', href: '/create/sparks', icon: Target },
+            { label: 'Content', href: '/create/content', icon: LayoutDashboard },
+            { label: 'Network', href: '/create/network', icon: Activity },
+            { label: 'Portfolio', href: '/create/portfolio', icon: Shield }
+        ]
+    },
     { label: 'Manifest', href: '/goals', icon: Target },
     { label: 'Wellbeing', href: '/health', icon: Heart, disabled: true },
 ]
@@ -349,18 +360,23 @@ export function Sidebar() {
                             )}
                         </Link>
 
-                        {'sub' in item && item.sub && expandedFolders[item.href] && label === 'Finances' && (
+                        {'sub' in item && item.sub && expandedFolders[item.href] && (label === 'Finances' || label === 'Studio') && (
                             <div className="ml-5 mt-0.5 space-y-0.5 border-l border-black/[0.07] pl-3">
                                 {isReorderable ? (
-                                    <Reorder.Group axis="y" values={orderedFinanceSubTabs} onReorder={handleSubReorder} className="list-none m-0 p-0 space-y-0.5">
-                                        {orderedFinanceSubTabs.map((subLabel) => {
+                                    <Reorder.Group
+                                        axis="y"
+                                        values={label === 'Finances' ? orderedFinanceSubTabs : item.sub.map(s => s.label)}
+                                        onReorder={label === 'Finances' ? handleSubReorder : () => { }}
+                                        className="list-none m-0 p-0 space-y-0.5"
+                                    >
+                                        {(label === 'Finances' ? orderedFinanceSubTabs : item.sub.map(s => s.label)).map((subLabel) => {
                                             const subItem = item.sub?.find(s => s.label === subLabel)
                                             if (!subItem) return null
                                             const SubIcon = subItem.icon
                                             const subActive = pathname === subItem.href
                                             const isDisabled = (subItem as any).disabled
                                             return (
-                                                <Reorder.Item key={subLabel} value={subLabel} className="cursor-grab active:cursor-grabbing">
+                                                <Reorder.Item key={subLabel} value={subLabel} className={cn("cursor-grab active:cursor-grabbing", isDisabled && "cursor-not-allowed")}>
                                                     {isDisabled ? (
                                                         <div className="flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] opacity-35 cursor-not-allowed grayscale select-none">
                                                             <SubIcon className="w-3 h-3 shrink-0" />
@@ -391,14 +407,12 @@ export function Sidebar() {
                                     </Reorder.Group>
                                 ) : (
                                     <div className="list-none m-0 p-0 space-y-0.5">
-                                        {orderedFinanceSubTabs.map((subLabel) => {
-                                            const subItem = item.sub?.find(s => s.label === subLabel)
-                                            if (!subItem) return null
+                                        {item.sub.map((subItem) => {
                                             const SubIcon = subItem.icon
                                             const subActive = pathname === subItem.href
                                             const isDisabled = (subItem as any).disabled
                                             return (
-                                                <div key={subLabel}>
+                                                <div key={subItem.label}>
                                                     {isDisabled ? (
                                                         <div className="flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] opacity-35 cursor-not-allowed grayscale select-none">
                                                             <SubIcon className="w-3 h-3 shrink-0" />
