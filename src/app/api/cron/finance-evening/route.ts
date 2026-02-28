@@ -23,13 +23,14 @@ export async function GET(req: Request) {
         todayStart.setUTCHours(0, 0, 0, 0)
 
         // 1. Today's spending from fin_transactions
+        // Exclude: transfers (pot movements), bills (rent/standing orders), savings
         const { data: transactions } = await supabase
             .from('fin_transactions')
             .select('amount, description, category')
             .eq('type', 'spend')
             .eq('profile', 'personal')
             .gte('date', todayStart.toISOString())
-            .neq('category', 'transfers') // Exclude pot transfers
+            .not('category', 'in', '("transfers","bills","savings")')
 
         const todaySpend = (transactions || []).reduce((sum, t) => sum + (t.amount || 0), 0)
 
