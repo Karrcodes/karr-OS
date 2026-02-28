@@ -46,8 +46,9 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                 status: 'idea',
                 gtv_featured: false
             })
-        } catch (err) {
+        } catch (err: any) {
             console.error('Failed to create project:', err)
+            alert(`Error: ${err.message || 'Failed to create project'}`)
         } finally {
             setLoading(false)
         }
@@ -140,7 +141,13 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                                             )}
                                             title={p.charAt(0).toUpperCase() + p.slice(1)}
                                         >
-                                            <PlatformIcon platform={p} className="w-3 h-3 text-black/60 group-hover:text-orange-600 transition-colors" />
+                                            <PlatformIcon
+                                                platform={p}
+                                                className={cn(
+                                                    "w-3 h-3 transition-colors",
+                                                    formData.platforms.includes(p) ? "text-white" : "text-black/60 group-hover:text-orange-600"
+                                                )}
+                                            />
                                         </button>
                                     ))}
                                 </div>

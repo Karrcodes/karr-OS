@@ -9,7 +9,7 @@ import CreateProjectModal from './CreateProjectModal'
 import CreateSparkModal from './CreateSparkModal'
 
 export default function StudioDashboard() {
-    const { projects, sparks, loading } = useStudio()
+    const { projects, sparks, loading, error } = useStudio()
     const [daysUntilGTV, setDaysUntilGTV] = useState(0)
     const [isProjectModalOpen, setIsProjectModalOpen] = useState(false)
     const [isSparkModalOpen, setIsSparkModalOpen] = useState(false)
@@ -26,6 +26,12 @@ export default function StudioDashboard() {
 
     return (
         <div className="space-y-6">
+            {error && error.includes('relation') && (
+                <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex flex-col gap-2">
+                    <p className="text-[13px] font-bold text-red-900">Database Tables Missing</p>
+                    <p className="text-[11px] text-red-800/60">It looks like the Studio module tables haven't been created yet. Please execute the SQL migration script in your Supabase dashboard.</p>
+                </div>
+            )}
             {/* GTV Header Banner */}
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0A2647] to-[#144272] p-8 text-white shadow-2xl">
                 <div className="absolute top-0 right-0 p-8 opacity-10">

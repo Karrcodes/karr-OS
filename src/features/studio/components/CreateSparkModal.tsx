@@ -56,8 +56,9 @@ export default function CreateSparkModal({ isOpen, onClose }: CreateSparkModalPr
                 project_id: '',
                 price: undefined
             })
-        } catch (err) {
+        } catch (err: any) {
             console.error('Failed to capture spark:', err)
+            alert(`Error: ${err.message || 'Failed to capture spark'}`)
         } finally {
             setLoading(false)
         }

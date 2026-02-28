@@ -4,13 +4,21 @@ import { useState } from 'react'
 import { Plus, Filter, Search } from 'lucide-react'
 import ProjectKanban from '@/features/studio/components/ProjectKanban'
 import CreateProjectModal from '@/features/studio/components/CreateProjectModal'
+import { useStudio } from '@/features/studio/hooks/useStudio'
 
 export default function ProjectsPage() {
+    const { error } = useStudio()
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
     return (
         <main className="min-h-screen bg-[#FAFAFA] pb-24 pt-4 px-4 md:px-8">
             <div className="max-w-7xl mx-auto space-y-6">
+                {error && error.includes('relation') && (
+                    <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex flex-col gap-2">
+                        <p className="text-[13px] font-bold text-red-900">Database Tables Missing</p>
+                        <p className="text-[11px] text-red-800/60">It looks like the Studio module tables haven't been created yet. Please execute the SQL migration script in your Supabase dashboard.</p>
+                    </div>
+                )}
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
