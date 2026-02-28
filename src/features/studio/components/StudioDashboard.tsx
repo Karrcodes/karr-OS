@@ -13,7 +13,7 @@ import PlatformIcon from './PlatformIcon'
 import type { StudioProject, StudioSpark } from '../types/studio.types'
 
 export default function StudioDashboard() {
-    const { projects, sparks, loading, error } = useStudio()
+    const { projects, sparks, content, loading, error } = useStudio()
     const [daysUntilGTV, setDaysUntilGTV] = useState(0)
     const [isProjectModalOpen, setIsProjectModalOpen] = useState(false)
     const [isSparkModalOpen, setIsSparkModalOpen] = useState(false)
@@ -209,8 +209,8 @@ export default function StudioDashboard() {
                                 <LayoutDashboard className="w-5 h-5" />
                             </div>
                             <div>
-                                <h3 className="text-[13px] font-black text-black leading-none">Content Planner</h3>
-                                <p className="text-[11px] text-black/40 mt-1">Next post in 2 days</p>
+                                <h3 className="text-[13px] font-black text-black leading-none">Content Pipeline</h3>
+                                <p className="text-[11px] text-black/40 mt-1">{content.length} active ideas & posts</p>
                             </div>
                         </div>
                         <div className="pt-2 border-t border-black/[0.05]">

@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Briefcase, Shield, Clock, MoreVertical, Trash2 } from 'lucide-react'
+import { Briefcase, Shield, Clock, MoreVertical, Trash2, CheckCircle2 } from 'lucide-react'
 import { useStudio } from '../hooks/useStudio'
-import type { StudioProject, ProjectStatus } from '../types/studio.types'
+import type { StudioProject, ProjectStatus, StudioMilestone } from '../types/studio.types'
 import { cn } from '@/lib/utils'
 import PlatformIcon from './PlatformIcon'
 import ProjectDetailModal from './ProjectDetailModal'
@@ -16,7 +16,7 @@ const COLUMNS: { label: string; value: ProjectStatus }[] = [
 ]
 
 export default function ProjectKanban() {
-    const { projects, updateProject, deleteProject, loading } = useStudio()
+    const { projects, milestones, updateProject, deleteProject, loading } = useStudio()
     const [draggingId, setDraggingId] = useState<string | null>(null)
     const [dragOverStatus, setDragOverStatus] = useState<ProjectStatus | null>(null)
     const [selectedProject, setSelectedProject] = useState<StudioProject | null>(null)
@@ -105,6 +105,7 @@ export default function ProjectKanban() {
                                     <ProjectCard
                                         key={project.id}
                                         project={project}
+                                        milestones={milestones}
                                         onDragStart={() => setDraggingId(project.id)}
                                         onDragEnd={() => setDraggingId(null)}
                                         onClick={() => setSelectedProject(project)}
@@ -125,8 +126,9 @@ export default function ProjectKanban() {
     )
 }
 
-function ProjectCard({ project, onDragStart, onDragEnd, onClick }: {
+function ProjectCard({ project, milestones, onDragStart, onDragEnd, onClick }: {
     project: StudioProject;
+    milestones: StudioMilestone[];
     onDragStart: () => void;
     onDragEnd: () => void;
     onClick: () => void;
@@ -178,20 +180,42 @@ function ProjectCard({ project, onDragStart, onDragEnd, onClick }: {
                 </p>
             )}
 
+            {/* Milestone Preview (Max 3) */}
+            <div className="mt-3 space-y-1.5">
+                {milestones?.filter((m: any) => m.project_id === project.id).slice(0, 3).map((m: any) => (
+                    <div key={m.id} className="flex items-center gap-2">
+                        {m.status === 'completed' ? (
+                            <CheckCircle2 className="w-2.5 h-2.5 text-emerald-500" />
+                        ) : (
+                            <div className="w-2.5 h-2.5 rounded-full border border-black/10" />
+                        )}
+                        <span className={cn(
+                            "text-[10px] font-medium truncate",
+                            m.status === 'completed' ? "text-black/20 line-through" : "text-black/40"
+                        )}>
+                            {m.title}
+                        </span>
+                    </div>
+                ))}
+            </div>
+
             <div className="mt-4 pt-3 border-t border-black/[0.03] flex items-center justify-between">
-                <div className="flex -space-x-1.5">
-                    {project.platforms?.map(p => (
-                        <div
-                            key={p}
-                            className="w-5 h-5 rounded-full bg-white border border-black/[0.08] flex items-center justify-center text-black shadow-sm"
-                            title={p}
-                        >
-                            <PlatformIcon platform={p} className="w-2.5 h-2.5" />
-                        </div>
-                    ))}
-                    {!project.platforms?.length && (
-                        <div className="w-5 h-5 rounded-full bg-black/[0.02] border border-black/[0.05] flex items-center justify-center">
-                            <Clock className="w-2.5 h-2.5 text-black/20" />
+                <div className="flex items-center gap-3">
+                    <div className="flex -space-x-1.5">
+                        {project.platforms?.map(p => (
+                            <div
+                                key={p}
+                                className="w-5 h-5 rounded-full bg-white border border-black/[0.08] flex items-center justify-center text-black shadow-sm"
+                                title={p}
+                            >
+                                <PlatformIcon platform={p} className="w-2.5 h-2.5" />
+                            </div>
+                        ))}
+                    </div>
+                    {project.target_date && (
+                        <div className="flex items-center gap-1 text-[9px] font-black text-black/20 uppercase tracking-tighter">
+                            <Clock className="w-3 h-3" />
+                            {new Date(project.target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                         </div>
                     )}
                 </div>

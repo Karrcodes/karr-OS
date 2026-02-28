@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, X, Briefcase, Globe, Type, AlignLeft, Youtube, Instagram } from 'lucide-react'
+import { Plus, X, Briefcase, Globe, Type, AlignLeft, Youtube, Instagram, UploadCloud, Trash2, CheckSquare, Calendar } from 'lucide-react'
 import type { ProjectStatus, ProjectType, Platform } from '../types/studio.types'
 import { useStudio } from '../hooks/useStudio'
 import PlatformIcon from './PlatformIcon'
@@ -25,8 +25,12 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
         platforms: [] as Platform[],
         status: 'idea' as ProjectStatus,
         gtv_featured: false,
-        cover_url: ''
+        cover_url: '',
+        target_date: ''
     })
+    const [coverFile, setCoverFile] = useState<File | null>(null)
+    const [milestones, setMilestones] = useState<string[]>([])
+    const [newMilestone, setNewMilestone] = useState('')
 
     if (!isOpen) return null
 
@@ -36,7 +40,7 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
 
         try {
             setLoading(true)
-            await addProject(formData)
+            await addProject(formData, milestones, coverFile || undefined)
             onClose()
             setFormData({
                 title: '',
@@ -46,8 +50,11 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                 platforms: [],
                 status: 'idea',
                 gtv_featured: false,
-                cover_url: ''
+                cover_url: '',
+                target_date: ''
             })
+            setCoverFile(null)
+            setMilestones([])
         } catch (err: any) {
             console.error('Failed to create project:', err)
             alert(`Error: ${err.message || 'Failed to create project'}`)
@@ -102,29 +109,88 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                                 />
                             </div>
                             <div className="relative">
-                                <AlignLeft className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
-                                <input
-                                    type="text"
-                                    placeholder="One-line Tagline"
-                                    value={formData.tagline}
-                                    onChange={e => setFormData(prev => ({ ...prev, tagline: e.target.value }))}
-                                    className="w-full pl-11 pr-4 py-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[13px] font-medium focus:outline-none focus:border-orange-200 transition-all"
-                                />
+                                <Plus className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
+                                <div className="flex gap-2">
+                                    <input
+                                        type="url"
+                                        placeholder="Cover Image URL (optional)"
+                                        value={formData.cover_url}
+                                        onChange={e => setFormData(prev => ({ ...prev, cover_url: e.target.value }))}
+                                        className="flex-1 pl-11 pr-4 py-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[13px] font-medium focus:outline-none focus:border-orange-200 transition-all"
+                                    />
+                                    <label className="cursor-pointer group/upload relative">
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            accept="image/*"
+                                            onChange={e => setCoverFile(e.target.files?.[0] || null)}
+                                        />
+                                        <div className={cn(
+                                            "h-full px-4 rounded-2xl border-2 border-dashed flex items-center justify-center transition-all",
+                                            coverFile ? "border-emerald-500 bg-emerald-50 text-emerald-600" : "border-black/5 hover:border-orange-200 bg-black/[0.02]"
+                                        )}>
+                                            <UploadCloud className="w-4 h-4" />
+                                            {coverFile && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white" />}
+                                        </div>
+                                    </label>
+                                </div>
                             </div>
+                        </div>
+
+                        {/* Initial Milestones */}
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Initial Roadmap</label>
+                            {milestones.length > 0 && (
+                                <div className="space-y-2 mb-3">
+                                    {milestones.map((m, idx) => (
+                                        <div key={idx} className="flex items-center justify-between p-3 bg-black/[0.02] border border-black/[0.05] rounded-xl group/ms">
+                                            <div className="flex items-center gap-2">
+                                                <CheckSquare className="w-3.5 h-3.5 text-black/20" />
+                                                <span className="text-[12px] font-bold text-black">{m}</span>
+                                            </div>
+                                            <button
+                                                onClick={() => setMilestones(prev => prev.filter((_, i) => i !== idx))}
+                                                className="opacity-0 group-hover/ms:opacity-100 p-1 rounded-md hover:bg-red-50 text-red-400 transition-all"
+                                            >
+                                                <X className="w-3 h-3" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                             <div className="relative">
                                 <Plus className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
                                 <input
-                                    type="url"
-                                    placeholder="Cover Image URL (optional)"
-                                    value={formData.cover_url}
-                                    onChange={e => setFormData(prev => ({ ...prev, cover_url: e.target.value }))}
-                                    className="w-full pl-11 pr-4 py-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[13px] font-medium focus:outline-none focus:border-orange-200 transition-all"
+                                    type="text"
+                                    placeholder="Add a milestone (e.g. Prototype, Script, Launch...)"
+                                    value={newMilestone}
+                                    onChange={e => setNewMilestone(e.target.value)}
+                                    onKeyDown={e => {
+                                        if (e.key === 'Enter' && newMilestone.trim()) {
+                                            e.preventDefault();
+                                            setMilestones(prev => [...prev, newMilestone.trim()]);
+                                            setNewMilestone('');
+                                        }
+                                    }}
+                                    className="w-full pl-11 pr-4 py-3 bg-black/[0.01] border-2 border-dashed border-black/[0.05] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-orange-200 transition-all"
                                 />
                             </div>
                         </div>
 
-                        {/* Type & Platforms */}
+                        {/* Type, Platforms & Target Date */}
                         <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Target Date</label>
+                                <div className="relative">
+                                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
+                                    <input
+                                        type="date"
+                                        value={formData.target_date}
+                                        onChange={e => setFormData(prev => ({ ...prev, target_date: e.target.value }))}
+                                        className="w-full pl-11 pr-4 py-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-orange-200 transition-all"
+                                    />
+                                </div>
+                            </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Project Type</label>
                                 <select
@@ -137,32 +203,33 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                                     ))}
                                 </select>
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Primary Target</label>
-                                <div className="flex flex-wrap gap-1.5 px-2">
-                                    {PLATFORMS.map(p => (
-                                        <button
-                                            key={p}
-                                            type="button"
-                                            onClick={() => togglePlatform(p)}
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Primary Platforms</label>
+                            <div className="flex flex-wrap gap-1.5 px-2">
+                                {PLATFORMS.map(p => (
+                                    <button
+                                        key={p}
+                                        type="button"
+                                        onClick={() => togglePlatform(p)}
+                                        className={cn(
+                                            "w-7 h-7 rounded-lg flex items-center justify-center transition-all",
+                                            formData.platforms.includes(p)
+                                                ? "bg-black text-white scale-110"
+                                                : "bg-black/[0.04] text-black/30 hover:bg-black/[0.08]"
+                                        )}
+                                        title={p.charAt(0).toUpperCase() + p.slice(1)}
+                                    >
+                                        <PlatformIcon
+                                            platform={p}
                                             className={cn(
-                                                "w-7 h-7 rounded-lg flex items-center justify-center transition-all",
-                                                formData.platforms.includes(p)
-                                                    ? "bg-black text-white scale-110"
-                                                    : "bg-black/[0.04] text-black/30 hover:bg-black/[0.08]"
+                                                "w-3 h-3 transition-colors",
+                                                formData.platforms.includes(p) ? "text-white" : "text-black/60 group-hover:text-orange-600"
                                             )}
-                                            title={p.charAt(0).toUpperCase() + p.slice(1)}
-                                        >
-                                            <PlatformIcon
-                                                platform={p}
-                                                className={cn(
-                                                    "w-3 h-3 transition-colors",
-                                                    formData.platforms.includes(p) ? "text-white" : "text-black/60 group-hover:text-orange-600"
-                                                )}
-                                            />
-                                        </button>
-                                    ))}
-                                </div>
+                                        />
+                                    </button>
+                                ))}
                             </div>
                         </div>
 

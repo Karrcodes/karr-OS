@@ -2,17 +2,18 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
-import type { StudioProject, StudioSpark, StudioMilestone } from '../types/studio.types'
+import type { StudioProject, StudioSpark, StudioMilestone, StudioContent } from '../types/studio.types'
 
 interface StudioContextType {
     projects: StudioProject[]
     sparks: StudioSpark[]
     milestones: StudioMilestone[]
+    content: StudioContent[]
     loading: boolean
     error: string | null
     refresh: () => Promise<void>
-    addProject: (project: Partial<StudioProject>) => Promise<StudioProject>
-    updateProject: (id: string, updates: Partial<StudioProject>) => Promise<StudioProject>
+    addProject: (project: Partial<StudioProject>, initialMilestones?: string[], coverFile?: File) => Promise<StudioProject>
+    updateProject: (id: string, updates: Partial<StudioProject>, coverFile?: File) => Promise<StudioProject>
     deleteProject: (id: string) => Promise<void>
     addSpark: (spark: Partial<StudioSpark>) => Promise<StudioSpark>
     updateSpark: (id: string, updates: Partial<StudioSpark>) => Promise<StudioSpark>
@@ -20,6 +21,9 @@ interface StudioContextType {
     addMilestone: (milestone: Partial<StudioMilestone>) => Promise<StudioMilestone>
     updateMilestone: (id: string, updates: Partial<StudioMilestone>) => Promise<StudioMilestone>
     deleteMilestone: (id: string) => Promise<void>
+    addContent: (item: Partial<StudioContent>) => Promise<StudioContent>
+    updateContent: (id: string, updates: Partial<StudioContent>) => Promise<StudioContent>
+    deleteContent: (id: string) => Promise<void>
 }
 
 const StudioContext = createContext<StudioContextType | undefined>(undefined)
@@ -28,25 +32,29 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     const [projects, setProjects] = useState<StudioProject[]>([])
     const [sparks, setSparks] = useState<StudioSpark[]>([])
     const [milestones, setMilestones] = useState<StudioMilestone[]>([])
+    const [content, setContent] = useState<StudioContent[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
     const fetchData = useCallback(async () => {
         try {
             setLoading(true)
-            const [projectsRes, sparksRes, milestonesRes] = await Promise.all([
+            const [projectsRes, sparksRes, milestonesRes, contentRes] = await Promise.all([
                 supabase.from('studio_projects').select('*').order('created_at', { ascending: false }),
                 supabase.from('studio_sparks').select('*').order('created_at', { ascending: false }),
-                supabase.from('studio_milestones').select('*').order('created_at', { ascending: true })
+                supabase.from('studio_milestones').select('*').order('created_at', { ascending: true }),
+                supabase.from('studio_content').select('*').order('created_at', { ascending: false })
             ])
 
             if (projectsRes.error) throw projectsRes.error
             if (sparksRes.error) throw sparksRes.error
             if (milestonesRes.error) throw milestonesRes.error
+            if (contentRes.error) throw contentRes.error
 
             setProjects(projectsRes.data || [])
             setSparks(sparksRes.data || [])
             setMilestones(milestonesRes.data || [])
+            setContent(contentRes.data || [])
             setError(null)
         } catch (err: any) {
             console.error('Error fetching studio data:', err)
@@ -60,24 +68,86 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
         fetchData()
     }, [fetchData])
 
-    const addProject = async (project: Partial<StudioProject>) => {
-        const { data, error } = await supabase.from('studio_projects').insert([project]).select()
-        if (error) throw error
-        const inserted = data?.[0]
-        if (!inserted) throw new Error('No data returned')
-        setProjects(prev => [inserted, ...prev])
-        return inserted
-    }
+    const addProject = async (project: Partial<StudioProject>, initialMilestones?: string[], coverFile?: File) => {
+        let finalCoverUrl = project.cover_url;
 
-    const updateProject = async (id: string, updates: Partial<StudioProject>) => {
-        if (!updates || Object.keys(updates).length === 0) return projects.find(p => p.id === id)!
-        const { data, error } = await supabase.from('studio_projects').update(updates).eq('id', id).select()
-        if (error) throw error
-        const updated = data?.[0]
-        if (!updated) throw new Error('Update failed')
-        setProjects(prev => prev.map(p => p.id === id ? updated : p))
-        return updated
-    }
+        // Handle Image Upload if file provided
+        if (coverFile) {
+            const fileExt = coverFile.name.split('.').pop();
+            const fileName = `${Math.random().toString(36).substring(2, 11)}_${Date.now()}.${fileExt}`;
+            const filePath = `project-covers/${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('studio-assets')
+                .upload(filePath, coverFile);
+
+            if (uploadError) {
+                console.error('Error uploading cover:', uploadError);
+                // Continue without image or throw? Let's throw for now to be safe
+                throw new Error(`Failed to upload cover image: ${uploadError.message}`);
+            }
+
+            const { data: urlData } = supabase.storage.from('studio-assets').getPublicUrl(filePath);
+            finalCoverUrl = urlData.publicUrl;
+        }
+
+        // Insert Project
+        const { data: projectData, error: projectError } = await supabase
+            .from('studio_projects')
+            .insert([{ ...project, cover_url: finalCoverUrl }])
+            .select()
+            .single();
+
+        if (projectError) throw projectError;
+        if (!projectData) throw new Error('No data returned from project creation');
+
+        // Insert Milestones if provided
+        if (initialMilestones && initialMilestones.length > 0) {
+            const milestonesToInsert = initialMilestones.map(title => ({
+                project_id: projectData.id,
+                title,
+                status: 'pending' as const
+            }));
+
+            const { data: msData, error: msError } = await supabase
+                .from('studio_milestones')
+                .insert(milestonesToInsert)
+                .select();
+
+            if (msError) console.error('Error inserting initial milestones:', msError);
+            if (msData) setMilestones(prev => [...prev, ...msData]);
+        }
+
+        setProjects(prev => [projectData, ...prev]);
+        return projectData;
+    };
+
+    const updateProject = async (id: string, updates: Partial<StudioProject>, coverFile?: File) => {
+        let finalUpdates = { ...updates };
+
+        if (coverFile) {
+            const fileExt = coverFile.name.split('.').pop();
+            const fileName = `${Math.random().toString(36).substring(2, 11)}_${Date.now()}.${fileExt}`;
+            const filePath = `project-covers/${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('studio-assets')
+                .upload(filePath, coverFile);
+
+            if (!uploadError) {
+                const { data: urlData } = supabase.storage.from('studio-assets').getPublicUrl(filePath);
+                finalUpdates.cover_url = urlData.publicUrl;
+            }
+        }
+
+        if (!finalUpdates || Object.keys(finalUpdates).length === 0) return projects.find(p => p.id === id)!;
+        const { data, error } = await supabase.from('studio_projects').update(finalUpdates).eq('id', id).select();
+        if (error) throw error;
+        const updated = data?.[0];
+        if (!updated) throw new Error('Update failed');
+        setProjects(prev => prev.map(p => p.id === id ? updated : p));
+        return updated;
+    };
 
     const deleteProject = async (id: string) => {
         const { error } = await supabase.from('studio_projects').delete().eq('id', id)
@@ -135,13 +205,39 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
         setMilestones(prev => prev.filter(m => m.id !== id))
     }
 
+    const addContent = async (item: Partial<StudioContent>) => {
+        const { data, error } = await supabase.from('studio_content').insert([item]).select()
+        if (error) throw error
+        const inserted = data?.[0]
+        if (!inserted) throw new Error('No data returned')
+        setContent(prev => [inserted, ...prev])
+        return inserted
+    }
+
+    const updateContent = async (id: string, updates: Partial<StudioContent>) => {
+        if (!updates || Object.keys(updates).length === 0) return content.find(c => c.id === id)!
+        const { data, error } = await supabase.from('studio_content').update(updates).eq('id', id).select()
+        if (error) throw error
+        const updated = data?.[0]
+        if (!updated) throw new Error('Update failed')
+        setContent(prev => prev.map(c => c.id === id ? updated : c))
+        return updated
+    }
+
+    const deleteContent = async (id: string) => {
+        const { error } = await supabase.from('studio_content').delete().eq('id', id)
+        if (error) throw error
+        setContent(prev => prev.filter(c => c.id !== id))
+    }
+
     return (
         <StudioContext.Provider value={{
-            projects, sparks, milestones, loading, error,
+            projects, sparks, milestones, content, loading, error,
             refresh: fetchData,
             addProject, updateProject, deleteProject,
             addSpark, updateSpark, deleteSpark,
-            addMilestone, updateMilestone, deleteMilestone
+            addMilestone, updateMilestone, deleteMilestone,
+            addContent, updateContent, deleteContent
         }}>
             {children}
         </StudioContext.Provider>
