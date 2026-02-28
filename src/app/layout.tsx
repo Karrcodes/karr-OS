@@ -35,12 +35,17 @@ import { TasksProfileProvider } from '@/features/tasks/contexts/TasksProfileCont
 import { VaultProvider } from '@/features/vault/contexts/VaultContext'
 import { SecurityLock } from '@/components/SecurityLock'
 import { GlobalQuickAction } from '@/components/GlobalQuickAction'
+import { headers } from 'next/headers'
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const headersList = headers()
+  const pathname = headersList.get('x-invoke-path') || ''
+  const isLandingPage = pathname === '/home'
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -54,12 +59,12 @@ export default function RootLayout({
             <TasksProfileProvider>
               <VaultProvider>
                 <SecurityLock>
-                  <Sidebar />
+                  {!isLandingPage && <Sidebar />}
                   {/* md:ml-[220px] — full width on mobile (sidebar is a drawer), shifted on desktop */}
-                  <main className="md:ml-[220px] min-h-screen bg-white">
+                  <main className={`${!isLandingPage ? 'md:ml-[220px]' : ''} min-h-screen bg-white`}>
                     {children}
                   </main>
-                  <GlobalQuickAction />
+                  {!isLandingPage && <GlobalQuickAction />}
                 </SecurityLock>
               </VaultProvider>
             </TasksProfileProvider>
