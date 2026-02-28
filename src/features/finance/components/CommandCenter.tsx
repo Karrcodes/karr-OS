@@ -19,9 +19,10 @@ import { KarrFooter } from '@/components/KarrFooter'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { useSearchParams, useRouter } from 'next/navigation'
+import { MonzoSyncControls } from './MonzoSyncControls'
 
 export function CommandCenter() {
-    const { pots, loading: pLoading, isSyncing, isMonzoConnected, refetch: refetchPots, syncMonzo } = usePots()
+    const { pots, loading: pLoading, isSyncing, refetch: refetchPots, syncMonzo } = usePots()
     const { obligations, loading: oLoading } = useRecurring()
     const { goals, loading: gLoading, refetch: refetchGoals } = useGoals()
     const { refetch: refetchTransactions } = useTransactions()
@@ -120,10 +121,6 @@ export function CommandCenter() {
 
     const loading = pLoading || oLoading || gLoading
 
-    const handleMonzoConnect = () => {
-        window.location.href = '/api/finance/monzo/auth'
-    }
-
     return (
         <div className="flex flex-col h-dvh bg-white">
             {/* Page Header */}
@@ -134,10 +131,10 @@ export function CommandCenter() {
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                     <div className="flex items-center gap-2 order-1 sm:order-2">
-                        {loading && (
+                        {(loading || isSyncing) && (
                             <div className="flex items-center gap-1.5 text-black/30">
                                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                                <span className="text-[11px]">Syncing</span>
+                                <span className="text-[11px]">{isSyncing ? 'Syncing Monzo' : 'Loading'}</span>
                             </div>
                         )}
                         <div className="text-[11px] text-black/25 uppercase tracking-wider font-medium">
@@ -166,24 +163,7 @@ export function CommandCenter() {
                         >
                             {isPrivacyEnabled ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
-                        {isMonzoConnected ? (
-                            <button
-                                onClick={() => syncMonzo()}
-                                disabled={loading}
-                                className="flex items-center gap-2 px-3 py-2 bg-[#7c3aed]/10 text-[#7c3aed] border border-[#7c3aed]/20 rounded-xl hover:bg-[#7c3aed]/20 transition-all font-bold text-[11px]"
-                            >
-                                <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
-                                Sync Monzo
-                            </button>
-                        ) : (
-                            <button
-                                onClick={handleMonzoConnect}
-                                className="flex items-center gap-2 px-3 py-2 bg-black text-white rounded-xl hover:bg-neutral-800 transition-all font-bold text-[11px]"
-                            >
-                                <RefreshCw className="w-3.5 h-3.5" />
-                                Connect Monzo
-                            </button>
-                        )}
+                        <MonzoSyncControls className="order-3" />
                     </div>
                 </div>
             </div>

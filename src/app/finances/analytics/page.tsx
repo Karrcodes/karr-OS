@@ -9,6 +9,7 @@ import { useFinanceProfile } from '@/features/finance/contexts/FinanceProfileCon
 import { SpendingAnalytics } from '@/features/finance/components/SpendingAnalytics'
 import { PayslipUploader } from '@/features/finance/components/PayslipUploader'
 import { Skeleton } from '@/features/finance/components/Skeleton'
+import { MonzoSyncControls } from '@/features/finance/components/MonzoSyncControls'
 import { cn } from '@/lib/utils'
 import { KarrFooter } from '@/components/KarrFooter'
 
@@ -68,26 +69,29 @@ export default function FinanceAnalyticsPage() {
                             </div>
                         </div>
 
-                        {/* Tab Switcher */}
-                        <div className="flex bg-black/[0.03] p-1 rounded-xl w-[max-content] max-w-full overflow-x-auto no-scrollbar self-start sm:self-auto shrink-0">
-                            <button
-                                onClick={() => setActiveTab('salary')}
-                                className={cn(
-                                    "px-4 py-1.5 rounded-lg text-[12px] font-bold transition-all",
-                                    activeTab === 'salary' ? "bg-white text-black shadow-sm" : "text-black/30 hover:text-black/50"
-                                )}
-                            >
-                                Salary Hub
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('spending')}
-                                className={cn(
-                                    "px-4 py-1.5 rounded-lg text-[12px] font-bold transition-all",
-                                    activeTab === 'spending' ? "bg-white text-black shadow-sm" : "text-black/30 hover:text-black/50"
-                                )}
-                            >
-                                Spending
-                            </button>
+                        {/* Tab Switcher & Sync */}
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 shrink-0">
+                            <div className="flex bg-black/[0.03] p-1 rounded-xl w-[max-content] max-w-full overflow-x-auto no-scrollbar self-start sm:self-auto shrink-0 border border-black/[0.06]">
+                                <button
+                                    onClick={() => setActiveTab('salary')}
+                                    className={cn(
+                                        "px-4 py-1.5 rounded-lg text-[12px] font-bold transition-all",
+                                        activeTab === 'salary' ? "bg-white text-black shadow-sm" : "text-black/30 hover:text-black/50"
+                                    )}
+                                >
+                                    Salary Hub
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('spending')}
+                                    className={cn(
+                                        "px-4 py-1.5 rounded-lg text-[12px] font-bold transition-all",
+                                        activeTab === 'spending' ? "bg-white text-black shadow-sm" : "text-black/30 hover:text-black/50"
+                                    )}
+                                >
+                                    Spending
+                                </button>
+                            </div>
+                            <MonzoSyncControls />
                         </div>
                     </div>
                 </div>

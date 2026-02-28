@@ -10,6 +10,7 @@ import { TransactionDetailsModal } from '@/features/finance/components/Transacti
 import { getCategoryById, FINANCE_CATEGORIES } from '@/features/finance/constants/categories'
 import { useBank } from '@/features/finance/hooks/useBank'
 import { RevolutImportModal } from '@/features/finance/components/RevolutImportModal'
+import { MonzoSyncControls } from '@/features/finance/components/MonzoSyncControls'
 import type { Transaction } from '@/features/finance/types/finance.types'
 
 export default function TransactionsPage() {
@@ -69,6 +70,7 @@ export default function TransactionsPage() {
                     </div>
 
                     <div className="flex items-center gap-2 flex-shrink-0">
+                        <MonzoSyncControls />
                         <button
                             onClick={() => setIsImportModalOpen(true)}
                             disabled={bankSyncLoading}
