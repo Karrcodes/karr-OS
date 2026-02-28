@@ -446,7 +446,7 @@ export function Sidebar() {
                         )}
 
                         {/* Fallback for other potential sub-tabs that aren't 'Finances' */}
-                        {'sub' in item && item.sub && expandedFolders[item.href] && label !== 'Finances' && (
+                        {'sub' in item && item.sub && expandedFolders[item.href] && label !== 'Finances' && label !== 'Studio' && (
                             <div className="ml-5 mt-0.5 space-y-0.5 border-l border-black/[0.07] pl-3">
                                 {item.sub.map((subItem) => {
                                     const SubIcon = subItem.icon
