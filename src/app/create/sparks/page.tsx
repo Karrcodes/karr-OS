@@ -5,14 +5,13 @@ import { Activity, Plus, Search, Users, Globe, MapPin, Grid, List as ListIcon } 
 import { cn } from '@/lib/utils'
 import SparksGrid from '@/features/studio/components/SparksGrid'
 import CreateSparkModal from '@/features/studio/components/CreateSparkModal'
-import { KarrFooter } from '@/components/KarrFooter'
 
 export default function SparksPage() {
     const [view, setView] = useState<'grid' | 'list'>('grid')
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
     return (
-        <main className="min-h-screen bg-[#FAFAFA] pb-24 pt-4 px-4 md:px-8">
+        <main className="pb-24 pt-4 px-4 md:px-8">
             <div className="max-w-7xl mx-auto space-y-6">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -60,8 +59,6 @@ export default function SparksPage() {
 
                 <SparksGrid />
             </div>
-
-            <KarrFooter />
 
             <CreateSparkModal
                 isOpen={isCreateModalOpen}

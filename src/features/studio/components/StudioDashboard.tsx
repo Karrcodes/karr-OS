@@ -5,7 +5,6 @@ import { Sparkles, Briefcase, Target, LayoutDashboard, Shield, Plus, Clock, Exte
 import { useStudio } from '../hooks/useStudio'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
-import { KarrFooter } from '@/components/KarrFooter'
 import CreateProjectModal from './CreateProjectModal'
 import CreateSparkModal from './CreateSparkModal'
 import ProjectDetailModal from './ProjectDetailModal'
@@ -267,8 +266,6 @@ export default function StudioDashboard() {
                 spark={selectedSpark}
                 projects={projects}
             />
-
-            <KarrFooter />
         </div>
     )
 }

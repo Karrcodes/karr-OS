@@ -7,7 +7,6 @@ import ProjectTimeline from '@/features/studio/components/ProjectTimeline'
 import CreateProjectModal from '@/features/studio/components/CreateProjectModal'
 import ProjectDetailModal from '@/features/studio/components/ProjectDetailModal'
 import { useStudio } from '@/features/studio/hooks/useStudio'
-import { KarrFooter } from '@/components/KarrFooter'
 import { Plus, Search, Filter } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { StudioProject } from '@/features/studio/types/studio.types'
@@ -19,7 +18,7 @@ export default function ProjectsPage() {
     const [selectedProject, setSelectedProject] = useState<StudioProject | null>(null)
 
     return (
-        <main className="min-h-screen bg-[#FAFAFA] pb-24 pt-4 px-4 md:px-8">
+        <main className="pb-24 pt-4 px-4 md:px-8">
             <div className="max-w-7xl mx-auto space-y-6">
                 {error && error.includes('relation') && (
                     <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex flex-col gap-2">
@@ -80,8 +79,6 @@ export default function ProjectsPage() {
                 {view === 'matrix' && <ProjectMatrix />}
                 {view === 'timeline' && <ProjectTimeline onProjectClick={setSelectedProject} />}
             </div>
-
-            <KarrFooter />
 
             <CreateProjectModal
                 isOpen={isCreateModalOpen}

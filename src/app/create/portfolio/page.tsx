@@ -4,7 +4,6 @@ import { Shield, ExternalLink, Calendar, Award, CheckCircle2, Plus } from 'lucid
 
 import { useStudio } from '@/features/studio/hooks/useStudio'
 import Link from 'next/link'
-import { KarrFooter } from '@/components/KarrFooter'
 
 export default function PortfolioPage() {
     const { projects, press } = useStudio()
@@ -23,7 +22,7 @@ export default function PortfolioPage() {
         return pCount + prjCount
     }
     return (
-        <main className="min-h-screen bg-[#FAFAFA] pb-24 pt-4 px-4 md:px-8">
+        <main className="pb-24 pt-4 px-4 md:px-8">
             <div className="max-w-7xl mx-auto space-y-8">
                 {/* GTV Status Header */}
                 <div className="p-8 rounded-[40px] bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 text-white shadow-2xl relative overflow-hidden">
@@ -103,7 +102,6 @@ export default function PortfolioPage() {
                     </a>
                 </div>
             </div>
-            <KarrFooter />
         </main>
     )
 }

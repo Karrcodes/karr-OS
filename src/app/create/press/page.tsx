@@ -7,7 +7,6 @@ import CreatePressModal from '@/features/studio/components/CreatePressModal'
 import PressDetailModal from '@/features/studio/components/PressDetailModal'
 import type { StudioPress, PressType, PressStatus } from '@/features/studio/types/studio.types'
 import { cn } from '@/lib/utils'
-import { KarrFooter } from '@/components/KarrFooter'
 
 const TYPE_ICONS: Record<PressType, any> = {
     competition: Award,
@@ -45,7 +44,7 @@ export default function PressPage() {
     const achievements = filteredPress.filter(p => p.status === 'achieved' || p.status === 'published')
 
     return (
-        <main className="min-h-screen bg-[#FAFAFA] pb-24 pt-4 px-4 md:px-8 font-outfit">
+        <main className="pb-24 pt-4 px-4 md:px-8">
             <div className="max-w-7xl mx-auto space-y-8">
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -173,7 +172,6 @@ export default function PressPage() {
                 onClose={() => setSelectedItem(null)}
                 item={selectedItem}
             />
-            <KarrFooter />
         </main>
     )
 }
