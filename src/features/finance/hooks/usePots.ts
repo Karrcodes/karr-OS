@@ -175,9 +175,13 @@ export function usePots() {
     const syncMonzo = async () => {
         setSyncing(true)
         try {
-            const res = await fetch('/api/finance/monzo/sync', { method: 'POST' })
-            const data = await res.json()
-            if (data.error) throw new Error(data.error)
+            // Run both sync (pot balances) and poll (missed card transactions) in parallel
+            const [syncRes, pollRes] = await Promise.all([
+                fetch('/api/finance/monzo/sync', { method: 'POST' }),
+                fetch('/api/finance/monzo/poll')
+            ])
+            const syncData = await syncRes.json()
+            if (syncData.error) throw new Error(syncData.error)
             await fetchPots()
             globalRefresh()
         } catch (err: any) {

@@ -7,6 +7,18 @@
         {
             "path": "/api/finance/monzo/poll",
             "schedule": "*/5 * * * *"
+        },
+        {
+            "path": "/api/cron/finance-morning",
+            "schedule": "30 3 * * *"
+        },
+        {
+            "path": "/api/cron/finance-morning",
+            "schedule": "0 8 * * *"
+        },
+        {
+            "path": "/api/cron/finance-evening",
+            "schedule": "0 21 * * *"
         }
     ]
 }
