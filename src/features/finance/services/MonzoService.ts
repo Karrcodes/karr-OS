@@ -159,7 +159,7 @@ export class MonzoService {
 
         const supabase = this.getServerSupabase()
 
-        // 2. Fetch all existing KarrOS pots to help with matching and cleanup
+        // 2. Fetch all existing Schrö pots to help with matching and cleanup
         const { data: existingKarrPots } = await supabase
             .from('fin_pockets')
             .select('*')
@@ -269,7 +269,7 @@ export class MonzoService {
             }
         }
 
-        // 3. Source of Truth Cleanup: Delete KarrOS pots that weren't in the Monzo response
+        // 3. Source of Truth Cleanup: Delete Schrö pots that weren't in the Monzo response
         // We skip pots that don't have a monzo_id IF they are protected (General/Liabilities)
         const potsToDelete = existingKarrPots?.filter(p => {
             // Never delete protected system pots

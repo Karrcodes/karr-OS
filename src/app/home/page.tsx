@@ -35,9 +35,9 @@ export default function LandingPage() {
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center text-white font-black italic">
-                            K
+                            S
                         </div>
-                        <span className="text-xl font-black tracking-tight">KarrOS</span>
+                        <span className="text-xl font-black tracking-tight">Schrö</span>
                     </div>
                     <div className="hidden md:flex items-center gap-8 text-sm font-bold text-black/60">
                         <a href="#features" className="hover:text-purple-600 transition-colors">Features</a>
@@ -60,7 +60,7 @@ export default function LandingPage() {
                         by intelligence.
                     </h1>
                     <p className="text-lg md:text-xl text-black/50 font-medium max-w-2xl mx-auto leading-relaxed animate-slide-up delay-100">
-                        KarrOS is the premium personal operating system designed to harmonize your finances, creativity, and legacy in one unified workspace.
+                        Schrö is the premium personal operating system designed to harmonize your finances, creativity, and legacy in one unified workspace.
                     </p>
 
                     <form onSubmit={handleSubmit} className="max-w-md mx-auto relative group animate-slide-up delay-200" id="waitlist">
@@ -88,8 +88,8 @@ export default function LandingPage() {
                     {/* Hero Image Mockup */}
                     <div className="mt-20 relative rounded-[40px] border border-black/[0.05] p-2 bg-black/[0.02] shadow-2xl animate-float">
                         <Image
-                            src="/.gemini/antigravity/brain/901f508c-3a60-4281-b4c9-64d2310d1da6/karros_dashboard_mockup_1772314274770.png"
-                            alt="KarrOS Dashboard"
+                            src="/schro_dashboard_mockup.png"
+                            alt="Schrö Dashboard"
                             width={1200}
                             height={800}
                             className="rounded-[36px]"
@@ -147,7 +147,7 @@ export default function LandingPage() {
                         </div>
                         <div className="flex-1 relative rounded-[40px] overflow-hidden shadow-2xl skew-y-1 hover:skew-y-0 transition-transform duration-700">
                             <Image
-                                src="/.gemini/antigravity/brain/901f508c-3a60-4281-b4c9-64d2310d1da6/karros_vault_mockup_1772314312190.png"
+                                src="/schro_vault_mockup.png"
                                 alt="Vault Showcase"
                                 width={800}
                                 height={600}
@@ -161,7 +161,7 @@ export default function LandingPage() {
                             <div className="px-4 py-1 rounded-full bg-purple-50 text-purple-600 text-[10px] font-black uppercase tracking-widest w-fit">Intelligence</div>
                             <h3 className="text-4xl font-black tracking-tight">Data turned into wisdom.</h3>
                             <p className="text-lg text-black/50 font-medium leading-relaxed">
-                                Stop guessing and start knowing. KarrOS Intelligence analyzes your financial and productivity trends to offer actionable advice.
+                                Stop guessing and start knowing. Schrö analyzes your financial and productivity trends to offer actionable advice.
                             </p>
                             <button className="flex items-center gap-2 text-purple-600 font-black tracking-widest uppercase text-[12px] group">
                                 Learn how it works
@@ -170,7 +170,7 @@ export default function LandingPage() {
                         </div>
                         <div className="flex-1 relative rounded-[40px] overflow-hidden shadow-2xl -skew-y-1 hover:skew-y-0 transition-transform duration-700">
                             <Image
-                                src="/.gemini/antigravity/brain/901f508c-3a60-4281-b4c9-64d2310d1da6/karros_intelligence_mockup_1772314363013.png"
+                                src="/schro_intelligence_mockup.png"
                                 alt="Intelligence Showcase"
                                 width={800}
                                 height={600}
@@ -186,9 +186,9 @@ export default function LandingPage() {
                     <div className="space-y-6 max-w-sm">
                         <div className="flex items-center gap-2">
                             <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center text-white font-black italic">
-                                K
+                                S
                             </div>
-                            <span className="text-xl font-black tracking-tight">KarrOS</span>
+                            <span className="text-xl font-black tracking-tight">Schrö</span>
                         </div>
                         <p className="text-black/40 text-sm font-medium leading-relaxed">
                             Designed and built by Studio Karrtesian. A new standard for personal management and digital legacy.
@@ -219,7 +219,7 @@ export default function LandingPage() {
                     </div>
                 </div>
                 <div className="max-w-7xl mx-auto mt-20 pt-8 border-t border-black/[0.03] flex justify-between items-center text-[12px] font-bold text-black/20 uppercase tracking-widest">
-                    <span>&copy; 2026 KarrOS. All rights reserved.</span>
+                    <span>&copy; 2026 Schrö. All rights reserved.</span>
                     <span>v1.0.0-alpha</span>
                 </div>
             </footer>

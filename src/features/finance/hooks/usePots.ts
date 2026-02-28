@@ -166,7 +166,7 @@ export function usePots() {
             const neverSynced = pots.some(p => p.monzo_id && !p.last_synced_at)
 
             if ((needsSync || neverSynced) && isMonzoConnected && !loading) {
-                console.log('KarrOS: Auto-syncing Monzo data...')
+                console.log('Schrö: Auto-syncing Monzo data...')
                 syncMonzo()
             }
         }

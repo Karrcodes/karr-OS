@@ -44,7 +44,7 @@ export default function SystemRoadmapPage() {
                     </a>
                     <div>
                         <h1 className="text-[20px] font-bold text-black tracking-tight">System Roadmap</h1>
-                        <p className="text-[12px] text-black/35 mt-0.5">Evolution & Future Plans for KarrOS</p>
+                        <p className="text-[12px] text-black/35 mt-0.5">Evolution & Future Plans for Schrö</p>
                     </div>
                 </div>
             </div>
@@ -70,7 +70,7 @@ export default function SystemRoadmapPage() {
                                 type="text"
                                 value={newFeature}
                                 onChange={(e) => setNewFeature(e.target.value)}
-                                placeholder="What's next for KarrOS?"
+                                placeholder="What's next for Schrö?"
                                 className="flex-1 px-4 py-2 bg-transparent text-[14px] text-black placeholder:text-black/20 focus:outline-none"
                             />
                             <button

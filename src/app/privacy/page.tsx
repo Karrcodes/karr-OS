@@ -19,7 +19,7 @@ export default function PrivacyPage() {
                 <section>
                     <h2 className="text-xl font-bold text-black mb-4">1. Overview</h2>
                     <p>
-                        KarrOS is a personal operating system designed for private financial management.
+                        Schrö is a personal operating system designed for private financial management.
                         This privacy policy explains how we handle your data when you connect your bank
                         accounts via Enable Banking.
                     </p>
@@ -28,7 +28,7 @@ export default function PrivacyPage() {
                 <section>
                     <h2 className="text-xl font-bold text-black mb-4">2. Data Collection</h2>
                     <p>
-                        When you authorize a bank connection, KarrOS accesses your transaction history
+                        When you authorize a bank connection, Schrö accesses your transaction history
                         and account balances. This data is fetched via Enable Banking and stored
                         directly in your private database.
                     </p>
@@ -38,7 +38,7 @@ export default function PrivacyPage() {
                     <h2 className="text-xl font-bold text-black mb-4">3. Data Usage</h2>
                     <p>
                         Your data is used exclusively to provide you with financial insights,
-                        automated ledger entries, and budget tracking within the KarrOS dashboard.
+                        automated ledger entries, and budget tracking within the Schrö dashboard.
                         We do not sell, share, or monetize your financial information.
                     </p>
                 </section>
@@ -47,7 +47,7 @@ export default function PrivacyPage() {
                     <h2 className="text-xl font-bold text-black mb-4">4. Security</h2>
                     <p>
                         We use industry-standard encryption and secure JWT signing to communicate
-                        with banking APIs. Your credentials are never stored by KarrOS;
+                        with banking APIs. Your credentials are never stored by Schrö;
                         authorization is handled via secure bank redirects.
                     </p>
                 </section>
@@ -57,13 +57,13 @@ export default function PrivacyPage() {
                     <p>
                         We use **Enable Banking** as our technical provider for Open Banking
                         connectivity. Their privacy policy applies to the data transmission
-                        process between your bank and KarrOS.
+                        process between your bank and Schrö.
                     </p>
                 </section>
             </div>
 
             <footer className="mt-24 pt-12 border-t border-black/[0.05] text-black/30 text-[13px]">
-                &copy; 2026 KarrOS. Built for privacy.
+                &copy; 2026 Schrö. Built for privacy.
             </footer>
         </div>
     )

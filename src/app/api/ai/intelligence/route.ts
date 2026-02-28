@@ -37,7 +37,7 @@ async function buildIntelligenceContext(): Promise<string> {
     const monthlyOblidations = obligations.reduce((s, o) => s + (o.frequency === 'monthly' ? o.amount : 0), 0)
 
     return `
-# KarrOS SYSTEM STATE [${now.toISOString()}]
+# Schrö SYSTEM STATE [${now.toISOString()}]
 
 ## TASKS (ACTION ITEMS)
 - Total Pending: ${pendingTasks.length}
@@ -56,14 +56,14 @@ ${pendingTasks.filter(t => t.category === 'reminder').slice(0, 3).map(t => `  - 
 ${logs.map(l => `- [${l.created_at}] ${l.title}: ${l.body}`).join('\n') || 'No recent alerts.'}
 
 ---
-AI Personal Directive: You are Karr Intelligence, the proactive and helpful kernel of KarrOS. Your tone is professional, insightful, and supportive. You are a high-performance companion. Express insights conversationally and naturally, avoiding excessive markdown or technical jargon unless requested.
+AI Personal Directive: You are Karr Intelligence, the proactive and helpful kernel of Schrö. Your tone is professional, insightful, and supportive. You are a high-performance companion. Express insights conversationally and naturally, avoiding excessive markdown or technical jargon unless requested.
 `.trim()
 }
 
 async function buildDemoContext(): Promise<string> {
     const now = new Date()
     return `
-# KarrOS SYSTEM STATE [MOCK_DEMO_DATA] [${now.toISOString()}]
+# Schrö SYSTEM STATE [MOCK_DEMO_DATA] [${now.toISOString()}]
 
 ## USER PROFILE (DEMO)
 - Name: Karr (Demo Persona)
@@ -176,13 +176,13 @@ export async function POST(req: NextRequest) {
         const context = isDemoMode ? await buildDemoContext() : await buildIntelligenceContext()
 
         const systemPrompt = `
-You are Karr Intelligence — the highly intelligent, conversational, and proactive core of KarrOS. 
+You are Karr Intelligence — the highly intelligent, conversational, and proactive core of Schrö. 
 You provide deep data analysis, helpful insights, and execute directives with precision.
 You are naturally helpful, clear, and engaging—much like Gemini. You aim to be a supportive companion on the user's path to high performance.
 
 Rules:
 1. Be professional and conversational. Avoid being overly blunt.
-2. Use the data provided in the # KarrOS SYSTEM STATE to give contextually aware responses.
+2. Use the data provided in the # Schrö SYSTEM STATE to give contextually aware responses.
 3. If the user asks to "remind me", "add", "buy", "pay", or "delete", proactively use your tools.
 4. If searching Drive, summarize the findings helpfully.
 5. Categories for tasks: todo, grocery, reminder.

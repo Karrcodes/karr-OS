@@ -7,7 +7,7 @@ import { useTasksProfile } from '@/features/tasks/contexts/TasksProfileContext'
 import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
 import { MOCK_TASKS } from '@/lib/demoData'
 
-const LOCAL_STORAGE_KEY = 'karros_demo_tasks'
+const LOCAL_STORAGE_KEY = 'schrö_demo_tasks'
 
 export function useTasks(category: 'todo' | 'grocery' | 'reminder', profileOverride?: string) {
     const [tasks, setTasks] = useState<Task[]>([])

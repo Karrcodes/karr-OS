@@ -7,7 +7,7 @@ export async function POST(req: Request) {
 
         // 1. Create a Salt Edge Customer if one doesn't exist for this profile
         // In a real app, you'd store this in your DB. For now, we use a unique string.
-        const customerIdentifier = `karros_${profile || 'personal'}`;
+        const customerIdentifier = `schrö_${profile || 'personal'}`;
 
         let customer;
         try {
@@ -17,7 +17,7 @@ export async function POST(req: Request) {
             console.log('Customer might already exist, continuing...');
         }
 
-        const customerId = customer?.data?.id || (customerIdentifier === 'karros_personal' ? 'placeholder_id' : 'placeholder_id');
+        const customerId = customer?.data?.id || (customerIdentifier === 'schrö_personal' ? 'placeholder_id' : 'placeholder_id');
         // Note: In production, you MUST store and fetch the customer_id from Supabase
 
         // 2. Create a Connect Session

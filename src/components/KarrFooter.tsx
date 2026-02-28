@@ -6,7 +6,7 @@ export function KarrFooter({ dark }: { dark?: boolean }) {
             <p className={cn(
                 "text-[11px] font-bold uppercase tracking-widest",
                 dark ? "text-white/10" : "text-black/20"
-            )}>KarrOS</p>
+            )}>Schrö</p>
             <p className={cn(
                 "text-[10px] mt-1",
                 dark ? "text-white/5" : "text-black/15"

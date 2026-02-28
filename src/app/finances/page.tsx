@@ -3,7 +3,7 @@ import { CommandCenter } from '@/features/finance/components/CommandCenter'
 import { Suspense } from 'react'
 
 export const metadata: Metadata = {
-    title: 'Finances — KarrOS',
+    title: 'Finances — Schrö',
     description: 'Finance Command Center — pockets, debts, goals, and AI co-pilot.',
 }
 

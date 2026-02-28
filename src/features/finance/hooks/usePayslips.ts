@@ -60,7 +60,7 @@ export function usePayslips() {
                     .limit(10)
 
                 if (pocketError) {
-                    console.error('KarrOS Error: Failed to find General pocket for allocation:', pocketError)
+                    console.error('Schrö Error: Failed to find General pocket for allocation:', pocketError)
                     return
                 }
 

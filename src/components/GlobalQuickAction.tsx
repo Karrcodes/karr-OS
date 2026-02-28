@@ -155,7 +155,7 @@ export function GlobalQuickAction() {
     ], [])
 
     // Early return for SSR and excluded routes AFTER all hook calls
-    if (!mounted || pathname === '/intelligence') return null
+    if (!mounted || pathname === '/intelligence' || pathname === '/home') return null
 
     // Radial Positioning constants
     const radius = 90

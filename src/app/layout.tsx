@@ -6,13 +6,13 @@ import { Sidebar } from '@/components/Sidebar'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'KarrOS — Personal Operating System',
+  title: 'Schrö — Personal Operating System',
   description: 'Studio Karrtesian personal finance and life management system.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'KarrOS',
+    title: 'Schrö',
   },
   icons: {
     apple: '/app-icon.png',
@@ -43,7 +43,7 @@ export default async function RootLayout({
   children: React.ReactNode
 }) {
   const headersList = await headers()
-  const pathname = headersList.get('x-invoke-path') || ''
+  const pathname = headersList.get('x-pathname') || ''
   const isLandingPage = pathname === '/home'
 
   return (
@@ -51,7 +51,7 @@ export default async function RootLayout({
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="KarrOS" />
+        <meta name="apple-mobile-web-app-title" content="Schrö" />
       </head>
       <body className={`${inter.className} bg-white text-[#0a0a0a] antialiased`}>
         <SystemSettingsProvider>

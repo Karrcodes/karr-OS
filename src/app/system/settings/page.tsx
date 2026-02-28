@@ -232,7 +232,7 @@ export default function SettingsPage() {
                         </button>
                         <div>
                             <h1 className="text-[18px] font-bold text-black tracking-tight">System Settings</h1>
-                            <p className="text-[11px] text-black/35 mt-0.5">Manage your KarrOS preferences</p>
+                            <p className="text-[11px] text-black/35 mt-0.5">Manage your Schrö preferences</p>
                         </div>
                     </div>
                 </div>
@@ -528,7 +528,7 @@ export default function SettingsPage() {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-[14px] font-bold text-black">Authorized Terminals</p>
-                                    <p className="text-[11px] text-black/35 font-medium">Manage devices that can access your KarrOS.</p>
+                                    <p className="text-[11px] text-black/35 font-medium">Manage devices that can access your Schrö.</p>
                                 </div>
                                 <button onClick={fetchDevices} className="p-2 hover:bg-black/5 rounded-lg transition-colors">
                                     <RefreshCw className={cn("w-4 h-4 text-black/20", fetchingDevices && "animate-spin")} />

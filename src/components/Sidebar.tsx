@@ -129,7 +129,7 @@ function ProfileMenu() {
             {isOpen && (
                 <div className="absolute bottom-full left-4 mb-2 w-52 bg-white border border-black/[0.08] rounded-xl shadow-xl overflow-hidden animate-in slide-in-from-bottom-2 duration-200 z-[60]">
                     <div className="p-3">
-                        <p className="text-[12px] font-bold text-black">{settings.user_name || 'Karr OS Admin'}</p>
+                        <p className="text-[12px] font-bold text-black">{settings.user_name || 'Schrö Admin'}</p>
                         <p className="text-[10px] text-black/40">{settings.user_email || 'karr@studiokarrtesian.com'}</p>
                     </div>
                 </div>
@@ -168,6 +168,7 @@ import { useVault } from '@/features/vault/contexts/VaultContext'
 
 export function Sidebar() {
     const pathname = usePathname()
+    if (pathname === '/home') return null
     const [mobileOpen, setMobileOpen] = useState(false)
     const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({})
     const { isPrivacyEnabled } = useFinanceProfile()
@@ -205,7 +206,7 @@ export function Sidebar() {
     useEffect(() => {
         setIsMounted(true)
         // Load main tabs order
-        const savedOrder = localStorage.getItem('karrOS_sidebar_order')
+        const savedOrder = localStorage.getItem('schro_sidebar_order')
         if (savedOrder) {
             try {
                 const parsed = JSON.parse(savedOrder)
@@ -217,7 +218,7 @@ export function Sidebar() {
         }
 
         // Load finance sub-tabs order
-        const savedSubOrder = localStorage.getItem('karrOS_finance_subtabs_order')
+        const savedSubOrder = localStorage.getItem('schro_finance_subtabs_order')
         const financeItem = navItems.find(i => i.label === 'Finances')
         const defaultSubLabels = financeItem?.sub?.map(s => s.label) || []
 
@@ -237,7 +238,7 @@ export function Sidebar() {
     useEffect(() => {
         if (settingsLoading) return
 
-        const dbOrder = settings['karrOS_sidebar_order']
+        const dbOrder = settings['schro_sidebar_order']
         if (dbOrder) {
             try {
                 const parsed = JSON.parse(dbOrder)
@@ -247,14 +248,14 @@ export function Sidebar() {
                 const finalOrder = [...validParsed, ...missing]
 
                 // Only update if different
-                if (JSON.stringify(finalOrder) !== localStorage.getItem('karrOS_sidebar_order')) {
+                if (JSON.stringify(finalOrder) !== localStorage.getItem('schro_sidebar_order')) {
                     setOrderedTabs(finalOrder)
-                    localStorage.setItem('karrOS_sidebar_order', JSON.stringify(finalOrder))
+                    localStorage.setItem('schro_sidebar_order', JSON.stringify(finalOrder))
                 }
             } catch (e) { }
         }
 
-        const dbSubOrder = settings['karrOS_finance_subtabs_order']
+        const dbSubOrder = settings['schro_finance_subtabs_order']
         const financeItem = navItems.find(i => i.label === 'Finances')
         const defaultSubLabels = financeItem?.sub?.map(s => s.label) || []
 
@@ -265,9 +266,9 @@ export function Sidebar() {
                 const missing = defaultSubLabels.filter(label => !validParsed.includes(label))
                 const finalSubOrder = [...validParsed, ...missing]
 
-                if (JSON.stringify(finalSubOrder) !== localStorage.getItem('karrOS_finance_subtabs_order')) {
+                if (JSON.stringify(finalSubOrder) !== localStorage.getItem('schro_finance_subtabs_order')) {
                     setOrderedFinanceSubTabs(finalSubOrder)
-                    localStorage.setItem('karrOS_finance_subtabs_order', JSON.stringify(finalSubOrder))
+                    localStorage.setItem('schro_finance_subtabs_order', JSON.stringify(finalSubOrder))
                 }
             } catch (e) { }
         }
@@ -275,14 +276,14 @@ export function Sidebar() {
 
     const handleReorder = (newOrder: string[]) => {
         setOrderedTabs(newOrder)
-        localStorage.setItem('karrOS_sidebar_order', JSON.stringify(newOrder))
-        setSetting('karrOS_sidebar_order', JSON.stringify(newOrder))
+        localStorage.setItem('schro_sidebar_order', JSON.stringify(newOrder))
+        setSetting('schro_sidebar_order', JSON.stringify(newOrder))
     }
 
     const handleSubReorder = (newOrder: string[]) => {
         setOrderedFinanceSubTabs(newOrder)
-        localStorage.setItem('karrOS_finance_subtabs_order', JSON.stringify(newOrder))
-        setSetting('karrOS_finance_subtabs_order', JSON.stringify(newOrder))
+        localStorage.setItem('schro_finance_subtabs_order', JSON.stringify(newOrder))
+        setSetting('schro_finance_subtabs_order', JSON.stringify(newOrder))
     }
 
     // Close drawer on route change and auto-collapse others
@@ -526,7 +527,9 @@ export function Sidebar() {
             <aside className="hidden md:flex fixed left-0 top-0 h-full w-[220px] bg-white border-r border-black/[0.07] flex-col z-50 shadow-[1px_0_0_0_rgba(0,0,0,0.04)]">
                 <div className="px-5 pt-5 pb-4 border-b border-black/[0.06] flex items-center h-[72px]">
                     <Link href="/system/control-centre">
-                        <Image src="/karros-logo.png.jpeg" alt="KarrOS" width={160} height={40} priority className="h-10 w-auto object-contain cursor-pointer" />
+                        <div className="flex items-center">
+                            <span className="text-2xl font-serif italic font-medium tracking-tight">Schrö</span>
+                        </div>
                     </Link>
                 </div>
                 {renderNav(false)}
@@ -556,7 +559,9 @@ export function Sidebar() {
 
                 <div className="flex items-center pr-2">
                     <Link href="/system/control-centre" className="flex items-center" onClick={() => setMobileOpen(false)}>
-                        <Image src="/karros-logo.png.jpeg" alt="KarrOS" width={110} height={28} priority className="h-6 w-auto object-contain" />
+                        <div className="flex items-center">
+                            <span className="text-xl font-serif italic font-medium tracking-tight">Schrö</span>
+                        </div>
                     </Link>
                 </div>
             </div>
@@ -578,7 +583,7 @@ export function Sidebar() {
                     >
                         <div className="px-5 pt-5 pb-4 border-b border-black/[0.06] flex items-center justify-between h-[72px]">
                             <Link href="/system/control-centre" onClick={() => setMobileOpen(false)}>
-                                <Image src="/karros-logo.png.jpeg" alt="KarrOS" width={120} height={32} priority className="h-7 w-auto object-contain cursor-pointer" />
+                                <span className="text-xl font-serif italic font-medium tracking-tight">Schrö</span>
                             </Link>
                             <button
                                 onClick={() => setMobileOpen(false)}

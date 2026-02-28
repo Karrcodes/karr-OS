@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
         }
 
         const prompt = `
-            You are a high-performance research assistant for KarrOS Studio.
+            You are a high-performance research assistant for Schrö Studio.
             The user is typing the name of a "${type || 'tool'}" and needs to find the official website and a high-quality logo/icon URL.
             
             Query: "${query}"

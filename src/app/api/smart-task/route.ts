@@ -17,7 +17,7 @@ export async function POST(req: Request) {
 
         const model = genAI.getGenerativeModel({
             model: 'gemini-2.5-flash',
-            systemInstruction: `You are an AI assistant in KarrOS, a powerful personal operating system.
+            systemInstruction: `You are an AI assistant in Schrö, a powerful personal operating system.
 Your job is to classify the priority of a new task the user is creating.
 The priority levels are:
 - 'urgent': Critical, urgent, blocker. Must be done immediately.

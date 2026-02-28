@@ -19,8 +19,8 @@ export default function TermsPage() {
                 <section>
                     <h2 className="text-xl font-bold text-black mb-4">1. Agreement to Terms</h2>
                     <p>
-                        By using KarrOS and connecting your bank accounts, you agree to these
-                        terms. KarrOS is a private tool provided "as-is" for personal use.
+                        By using Schrö and connecting your bank accounts, you agree to these
+                        terms. Schrö is a private tool provided "as-is" for personal use.
                     </p>
                 </section>
 
@@ -29,14 +29,14 @@ export default function TermsPage() {
                     <p>
                         Banking features are powered by Enable Banking. You are responsible for
                         maintaining the security of your own bank credentials and your
-                        KarrOS environment.
+                        Schrö environment.
                     </p>
                 </section>
 
                 <section>
                     <h2 className="text-xl font-bold text-black mb-4">3. No Financial Advice</h2>
                     <p>
-                        KarrOS provides data visualization and organization. It does not
+                        Schrö provides data visualization and organization. It does not
                         provide professional financial, investment, or legal advice. Use of
                         the insights provided is at your own risk.
                     </p>
@@ -45,7 +45,7 @@ export default function TermsPage() {
                 <section>
                     <h2 className="text-xl font-bold text-black mb-4">4. Limitation of Liability</h2>
                     <p>
-                        KarrOS and its developers are not liable for any financial losses,
+                        Schrö and its developers are not liable for any financial losses,
                         data inaccuracies, or issues arising from third-party banking API
                         availability.
                     </p>
@@ -62,7 +62,7 @@ export default function TermsPage() {
             </div>
 
             <footer className="mt-24 pt-12 border-t border-black/[0.05] text-black/30 text-[13px]">
-                &copy; 2026 KarrOS. Use responsibly.
+                &copy; 2026 Schrö. Use responsibly.
             </footer>
         </div>
     )

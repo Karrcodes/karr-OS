@@ -174,7 +174,7 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
             const credential = await navigator.credentials.create({
                 publicKey: {
                     challenge,
-                    rp: { name: "KarrOS", id: rpId },
+                    rp: { name: "Schrö", id: rpId },
                     user: {
                         id: userId,
                         name: "KarrUser",
@@ -277,7 +277,7 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
                         {showUnauthorized ? <ShieldCheck className="w-8 h-8 text-white" /> : isSetupMode ? <ShieldCheck className="w-8 h-8 text-white" /> : <Lock className="w-8 h-8 text-white" />}
                     </div>
                     <h1 className="text-[24px] font-bold text-black tracking-tight">
-                        {showUnauthorized ? 'Hardware Block' : isSetupMode ? 'Security Setup' : 'KarrOS Lock'}
+                        {showUnauthorized ? 'Hardware Block' : isSetupMode ? 'Security Setup' : 'Schrö Lock'}
                     </h1>
                     <p className="text-[14px] text-black/40 font-medium mt-1">
                         {showUnauthorized

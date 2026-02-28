@@ -29,7 +29,7 @@ export async function POST(request: Request) {
         const monzoTxId = data.id
         const potId = data.metadata?.pot_id // Monzo Pot ID if applicable
 
-        // 1. Find the pocket in KarrOS
+        // 1. Find the pocket in Schrö
         // We look for any pocket where monzo_id matches either the pot_id or the account_id
         const targetMonzoId = potId || data.account_id
         let pocketId = null

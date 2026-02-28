@@ -11,7 +11,7 @@ const supabase = supabaseUrl && supabaseAnonKey
 
 async function buildContext(profile: string): Promise<string> {
     if (!supabase) {
-        return '## KarrOS Financial Snapshot\nNo database connection — Supabase credentials not configured.'
+        return '## Schrö Financial Snapshot\nNo database connection — Supabase credentials not configured.'
     }
 
     const [pocketsRes, recurringRes, goalsRes, settingsRes] = await Promise.all([
@@ -48,7 +48,7 @@ async function buildContext(profile: string): Promise<string> {
     })
 
     return `
-## KarrOS Financial Snapshot: ${profile === 'personal' ? 'Personal' : 'Studio Karrtesian'}
+## Schrö Financial Snapshot: ${profile === 'personal' ? 'Personal' : 'Studio Karrtesian'}
 (Live Data as of ${new Date().toLocaleDateString()})
 
 ### Summary
@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
 
         const context = await buildContext(activeProfile)
 
-        const systemPrompt = `You are KarrAI — a direct, highly analytical financial advisor built into KarrOS. You have real-time access to his financial data.
+        const systemPrompt = `You are KarrAI — a direct, highly analytical financial advisor built into Schrö. You have real-time access to his financial data.
 Current Profile: ${activeProfile === 'personal' ? 'Personal' : 'Studio Karrtesian (Business)'}
 
 Key rules:

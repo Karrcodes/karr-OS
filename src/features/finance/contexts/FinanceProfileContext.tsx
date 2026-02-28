@@ -45,7 +45,7 @@ export function FinanceProfileProvider({ children }: { children: React.ReactNode
             if (document.visibilityState === 'visible') {
                 setRefreshTrigger(prev => prev + 1)
                 setLastRefresh(new Date())
-                console.log('KarrOS: Global financial data auto-refresh triggered.')
+                console.log('Schrö: Global financial data auto-refresh triggered.')
             }
         }, 180000)
 

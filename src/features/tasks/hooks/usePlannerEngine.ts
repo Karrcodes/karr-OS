@@ -42,7 +42,7 @@ export function usePlannerEngine(date: Date = new Date()) {
     const [initialization, setInitialization] = useState<PlannerInitialization | null>(null)
     const [activeTaskId, setActiveTaskId] = useState<string | null>(() => {
         if (typeof window !== 'undefined') {
-            return localStorage.getItem('karros_active_task_id')
+            return localStorage.getItem('schrö_active_task_id')
         }
         return null
     })
@@ -392,7 +392,7 @@ export function usePlannerEngine(date: Date = new Date()) {
             const nextTask = (plannerItems as any[]).find(item => item.time === now)
 
             if (nextTask && !isFlowActive) {
-                new Notification(`KarrOS: ${nextTask.title}`, {
+                new Notification(`Schrö: ${nextTask.title}`, {
                     body: `Time to start: ${nextTask.title} (${nextTask.duration}m)`,
                     icon: '/favicon.ico'
                 })
@@ -420,9 +420,9 @@ export function usePlannerEngine(date: Date = new Date()) {
         const newId = baseId === activeTaskId ? null : baseId
         setActiveTaskId(newId)
         if (newId) {
-            localStorage.setItem('karros_active_task_id', newId)
+            localStorage.setItem('schrö_active_task_id', newId)
         } else {
-            localStorage.removeItem('karros_active_task_id')
+            localStorage.removeItem('schrö_active_task_id')
         }
     }
 
@@ -456,7 +456,7 @@ export function usePlannerEngine(date: Date = new Date()) {
         // Clear active task if we just completed it
         if (activeTaskId === baseId) {
             setActiveTaskId(null)
-            localStorage.removeItem('karros_active_task_id')
+            localStorage.removeItem('schrö_active_task_id')
         }
         await fetchData()
     }
@@ -495,7 +495,7 @@ export function usePlannerEngine(date: Date = new Date()) {
         // Clear active task if we just rescheduled it
         if (activeTaskId === baseId) {
             setActiveTaskId(null)
-            localStorage.removeItem('karros_active_task_id')
+            localStorage.removeItem('schrö_active_task_id')
         }
 
         await refetchBusiness()
@@ -514,7 +514,7 @@ export function usePlannerEngine(date: Date = new Date()) {
         }
         // Clear active task
         setActiveTaskId(null)
-        localStorage.removeItem('karros_active_task_id')
+        localStorage.removeItem('schrö_active_task_id')
     }
 
     return {

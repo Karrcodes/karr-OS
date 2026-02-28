@@ -109,7 +109,7 @@ export function useRecurring() {
         const pot = potData?.[0]
 
         if (pot) {
-            console.log(`KarrOS: Found Liabilities pot "${pot.name}" (ID: ${pot.id}, Balance: ${pot.balance}). Deducting £${obligation.amount}.`)
+            console.log(`Schrö: Found Liabilities pot "${pot.name}" (ID: ${pot.id}, Balance: ${pot.balance}). Deducting £${obligation.amount}.`)
             // Deduct from pot (Liabilities pot can go negative)
             await supabase.from('fin_pockets').update({
                 balance: (pot.balance || 0) - obligation.amount,
