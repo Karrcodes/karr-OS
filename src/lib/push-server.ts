@@ -16,7 +16,7 @@ export async function sendPushNotification(title: string, body: string, url: str
             p_title: title,
             p_body: body,
             p_url: url,
-            p_cooldown_seconds: 60
+            p_cooldown_seconds: 5
         })
 
         if (gateError) {
@@ -26,6 +26,10 @@ export async function sendPushNotification(title: string, body: string, url: str
 
         if (canNotify === false) {
             console.log('[PushServer] Duplicate notification blocked by atomic cooldown');
+            await supabase.from('sys_notification_logs').insert({
+                title: 'DEBUG: Push Suppressed',
+                body: `Cooldown active for: ${title}`
+            })
             return { success: true, message: 'Duplicate suppressed' }
         }
 
