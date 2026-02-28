@@ -46,41 +46,67 @@ export async function sendPushNotification(title: string, body: string, url: str
         // Fetch all subscriptions for 'karr'
         const { data: subs, error } = await supabase
             .from('sys_push_subscriptions')
-            .select('subscription')
+            .select('id, subscription')
             .eq('user_id', 'karr')
 
         if (error) throw error
-        if (!subs || subs.length === 0) {
-            console.log('No active push subscriptions found for user: karr');
-            return { success: true, message: 'No subscriptions found' }
+        const payload = {
+            title,
+            body,
+            url,
+            icon: '/app-icon.png',
+            badge: '/app-icon.png'
         }
 
-        console.log(`Messaging ${subs.length} active push subscription(s) for user: karr`);
+        console.log(`[PushServer] Found ${subs?.length || 0} subscriptions for user: karr`)
 
-        const results = await Promise.all(subs.map(async (s: any) => {
+        const results = await Promise.all((subs || []).map(async (sub: any) => {
             try {
                 await webpush.sendNotification(
-                    s.subscription as any,
-                    JSON.stringify({ title, body, url })
+                    sub.subscription as any,
+                    JSON.stringify(payload),
+                    {
+                        vapidDetails: {
+                            subject: 'mailto:karr@karrtesian.com',
+                            publicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+                            privateKey: process.env.VAPID_PRIVATE_KEY!
+                        }
+                    }
                 )
 
-                return { endpoint: s.subscription.endpoint, success: true }
-            } catch (e: any) {
-                console.error('Error sending push:', e.statusCode, e.endpoint)
-                // Remove expired subscriptions
-                if (e.statusCode === 404 || e.statusCode === 410) {
-                    await supabase
-                        .from('sys_push_subscriptions')
-                        .delete()
-                        .match({ 'subscription->>endpoint': e.endpoint })
+                await supabase.from('sys_notification_logs').insert({
+                    title: `SUCCESS: Push Sent`,
+                    body: `To: ${sub.subscription?.endpoint?.slice(-20)}... Payload: ${title}`
+                })
+
+                return { endpoint: sub.subscription?.endpoint, success: true }
+            } catch (error: any) {
+                console.error('Error sending push to endpoint:', sub.subscription?.endpoint, error.statusCode)
+
+                await supabase.from('sys_notification_logs').insert({
+                    title: `ERROR: Push Failed (${error.statusCode || 'N/A'})`,
+                    body: `Endpoint: ${sub.subscription?.endpoint?.slice(-20)}... Error: ${error.message}`
+                })
+
+                // Delete stale subscriptions
+                if (error.statusCode === 410 || error.statusCode === 404) {
+                    await supabase.from('sys_push_subscriptions').delete().eq('id', sub.id)
                 }
-                return { endpoint: s.subscription.endpoint, success: false, error: e.message }
+                return { endpoint: sub.subscription?.endpoint, success: false, error: error.message }
             }
         }))
 
-        return { success: true, results, subscriptionCount: subs.length }
+        return {
+            success: true,
+            results,
+            subscriptionCount: (subs || []).length
+        }
     } catch (error: any) {
-        console.error('Global push send error:', error)
-        return { success: false, error: error.message }
+        console.error('Fatal error in sendPushNotification:', error)
+        await supabase.from('sys_notification_logs').insert({
+            title: 'FATAL: sendPushNotification Crash',
+            body: error.message
+        })
+        return { success: false, message: error.message }
     }
 }

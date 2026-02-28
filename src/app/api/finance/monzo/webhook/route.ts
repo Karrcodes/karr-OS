@@ -15,7 +15,7 @@ export async function POST(request: Request) {
         // Heartbeat log for debugging
         await supabase.from('sys_notification_logs').insert({
             title: 'DEBUG: Webhook Hit',
-            body: `Type: ${type}, Monzo ID: ${data?.id || 'N/A'}`
+            body: JSON.stringify(body).slice(0, 1000) // Truncate if too long
         })
 
         if (type !== 'transaction.created' && type !== 'transaction.updated') {
@@ -86,6 +86,10 @@ export async function POST(request: Request) {
         console.log(`[MonzoWebhook] RPC Status for ${monzoTxId}: ${rpcStatus}`)
 
         if (rpcStatus !== 'INSERTED') {
+            await supabase.from('sys_notification_logs').insert({
+                title: 'DEBUG: RPC Skip/Error',
+                body: `ID: ${monzoTxId}, Status: ${rpcStatus}`
+            })
             return NextResponse.json({ success: true, message: `Skipped: ${rpcStatus}` })
         }
 
@@ -115,6 +119,10 @@ export async function POST(request: Request) {
         })
     } catch (err: any) {
         console.error('[MonzoWebhook] Error:', err)
+        await supabase.from('sys_notification_logs').insert({
+            title: 'FATAL: Webhook Crash',
+            body: err.message
+        })
         return NextResponse.json({ error: err.message }, { status: 500 })
     }
 }
