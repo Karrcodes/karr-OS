@@ -19,7 +19,7 @@ export interface StudioProject {
     updated_at: string;
 }
 
-export type SparkType = 'idea' | 'tool' | 'item' | 'resource' | 'event' | 'person' | 'platform';
+export type SparkType = 'idea' | 'tool' | 'item' | 'resource' | 'event' | 'person';
 export type SparkStatus = 'active' | 'acquired' | 'dismissed';
 
 export interface StudioSpark {

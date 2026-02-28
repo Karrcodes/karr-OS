@@ -67,12 +67,29 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
     }
 
     const handleSaveMetadata = async () => {
+        if (Object.keys(editedData).length === 0) {
+            setIsEditing(false)
+            return
+        }
+
         try {
             await updateProject(project.id, editedData)
             setIsEditing(false)
+            setEditedData({})
         } catch (err: any) {
             alert(`Failed to save changes: ${err.message}`)
         }
+    }
+
+    const handleEditToggle = () => {
+        if (!isEditing) {
+            setEditedData({
+                title: project.title,
+                tagline: project.tagline,
+                description: project.description
+            })
+        }
+        setIsEditing(!isEditing)
     }
 
     return (
@@ -109,7 +126,16 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                         <div className="flex justify-between items-start">
                             <div className="space-y-1">
                                 <div className="flex items-center gap-2">
-                                    <h1 className="text-3xl font-black text-black tracking-tight">{project.title}</h1>
+                                    {isEditing ? (
+                                        <input
+                                            type="text"
+                                            value={editedData.title ?? project.title}
+                                            onChange={(e) => setEditedData(prev => ({ ...prev, title: e.target.value }))}
+                                            className="text-3xl font-black text-black tracking-tight bg-black/[0.02] border border-black/[0.1] rounded-xl px-3 py-1 focus:outline-none focus:border-orange-500"
+                                        />
+                                    ) : (
+                                        <h1 className="text-3xl font-black text-black tracking-tight">{project.title}</h1>
+                                    )}
                                     <div className={cn(
                                         "px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-tight",
                                         project.status === 'active' ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"
@@ -117,10 +143,20 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                                         {project.status}
                                     </div>
                                 </div>
-                                <p className="text-lg text-black/40 font-medium">{project.tagline || 'No tagline set'}</p>
+                                {isEditing ? (
+                                    <input
+                                        type="text"
+                                        value={editedData.tagline ?? project.tagline ?? ''}
+                                        onChange={(e) => setEditedData(prev => ({ ...prev, tagline: e.target.value }))}
+                                        className="w-full text-lg text-black/40 font-medium bg-black/[0.02] border border-black/[0.1] rounded-xl px-3 py-1 mt-2 focus:outline-none focus:border-orange-500"
+                                        placeholder="Add a catchy tagline..."
+                                    />
+                                ) : (
+                                    <p className="text-lg text-black/40 font-medium">{project.tagline || 'No tagline set'}</p>
+                                )}
                             </div>
                             <button
-                                onClick={() => setIsEditing(!isEditing)}
+                                onClick={handleEditToggle}
                                 className="px-3 py-1.5 rounded-lg border border-black/[0.05] text-[11px] font-bold hover:bg-black/[0.02] transition-colors"
                             >
                                 {isEditing ? 'Cancel' : 'Edit Project'}

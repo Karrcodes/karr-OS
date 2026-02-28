@@ -186,10 +186,9 @@ function ProjectCard({ project, onDragStart, onDragEnd, onClick }: {
                                 window.dispatchEvent(new CustomEvent('studio:deleteProject', { detail: project.id }));
                             }
                         }}
-                        className="p-1 px-2 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-all flex items-center gap-1.5"
+                        className="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-all flex items-center justify-center"
                     >
                         <Trash2 className="w-3.5 h-3.5" />
-                        <span className="text-[10px] font-black uppercase">Delete</span>
                     </button>
                     <button className="p-1 rounded-md hover:bg-black/5 text-black/20 hover:text-black/60 transition-all">
                         <MoreVertical className="w-3.5 h-3.5" />

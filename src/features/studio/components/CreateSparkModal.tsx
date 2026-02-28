@@ -12,12 +12,11 @@ interface CreateSparkModalProps {
 
 const SPARK_TYPES: { label: string; value: SparkType; icon: string }[] = [
     { label: 'Idea', value: 'idea', icon: '💡' },
-    { label: 'Tool / Software', value: 'tool', icon: '🛠️' },
+    { label: 'Tool / Platform', value: 'tool', icon: '🛠️' },
     { label: 'Physical Item', value: 'item', icon: '🛒' },
     { label: 'Resource / Link', value: 'resource', icon: '🔗' },
     { label: 'Event', value: 'event', icon: '📅' },
-    { label: 'Person / Network', value: 'person', icon: '👤' },
-    { label: 'Platform', value: 'platform', icon: '📱' }
+    { label: 'Person / Network', value: 'person', icon: '👤' }
 ]
 
 export default function CreateSparkModal({ isOpen, onClose }: CreateSparkModalProps) {
@@ -30,7 +29,8 @@ export default function CreateSparkModal({ isOpen, onClose }: CreateSparkModalPr
         notes: '',
         tags: [] as string[],
         project_id: '',
-        price: undefined as number | undefined
+        price: undefined as number | undefined,
+        icon_url: ''
     })
     const [tagInput, setTagInput] = useState('')
     const [suggestions, setSuggestions] = useState<any[]>([])
@@ -40,7 +40,7 @@ export default function CreateSparkModal({ isOpen, onClose }: CreateSparkModalPr
     if (!isOpen) return null
 
     const fetchSuggestions = async (query: string) => {
-        if (query.length < 3 || (formData.type !== 'tool' && formData.type !== 'resource' && formData.type !== 'platform')) {
+        if (query.length < 3 || (formData.type !== 'tool' && formData.type !== 'resource')) {
             setSuggestions([])
             return
         }

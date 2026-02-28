@@ -79,8 +79,7 @@ function SparkCard({ spark, projects, onClick }: { spark: StudioSpark; projects:
         item: '🛒',
         resource: '🔗',
         event: '📅',
-        person: '👤',
-        platform: '📱'
+        person: '👤'
     }[spark.type] || '✨'
 
     return (
@@ -105,10 +104,9 @@ function SparkCard({ spark, projects, onClick }: { spark: StudioSpark; projects:
                                 window.dispatchEvent(new CustomEvent('studio:deleteSpark', { detail: spark.id }));
                             }
                         }}
-                        className="p-1 px-2 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-all flex items-center gap-1.5"
+                        className="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-all flex items-center justify-center"
                     >
-                        <Trash2 className="w-3 h-3" />
-                        <span className="text-[10px] font-black uppercase">Delete</span>
+                        <Trash2 className="w-3.5 h-3.5" />
                     </button>
                     <button className="p-1.5 rounded-lg hover:bg-black/5 text-black/20 hover:text-black transition-all">
                         <MoreVertical className="w-4 h-4" />

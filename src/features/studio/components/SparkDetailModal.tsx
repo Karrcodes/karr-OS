@@ -73,8 +73,7 @@ export default function SparkDetailModal({ isOpen, onClose, spark, projects }: S
         item: '🛒',
         resource: '🔗',
         event: '📅',
-        person: '👤',
-        platform: '📱'
+        person: '👤'
     }[spark.type] || '✨'
 
     return (
