@@ -67,3 +67,15 @@ export interface StudioNetwork {
     created_at: string;
     updated_at: string;
 }
+
+export interface StudioMilestone {
+    id: string;
+    project_id: string;
+    title: string;
+    description?: string;
+    status: 'pending' | 'completed';
+    completed_at?: string;
+    target_date?: string;
+    created_at: string;
+    updated_at: string;
+}

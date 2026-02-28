@@ -62,21 +62,46 @@ CREATE TABLE IF NOT EXISTS studio_network (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 5. Milestones
+CREATE TABLE IF NOT EXISTS studio_milestones (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID NOT NULL REFERENCES studio_projects(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    description TEXT,
+    status TEXT NOT NULL DEFAULT 'pending', -- 'pending', 'completed'
+    completed_at TIMESTAMPTZ,
+    target_date DATE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Enable RLS
 ALTER TABLE studio_projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE studio_sparks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE studio_content ENABLE ROW LEVEL SECURITY;
 ALTER TABLE studio_network ENABLE ROW LEVEL SECURITY;
+ALTER TABLE studio_milestones ENABLE ROW LEVEL SECURITY;
 
 -- Simple RLS Policies (Assuming single user for now, like other modules)
-CREATE POLICY "Allow all for authenticated users" ON studio_projects FOR ALL TO authenticated USING (true);
-CREATE POLICY "Allow all for authenticated users" ON studio_sparks FOR ALL TO authenticated USING (true);
-CREATE POLICY "Allow all for authenticated users" ON studio_content FOR ALL TO authenticated USING (true);
-CREATE POLICY "Allow all for authenticated users" ON studio_network FOR ALL TO authenticated USING (true);
+DROP POLICY IF EXISTS "Allow all" ON studio_projects;
+CREATE POLICY "Allow all" ON studio_projects FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow all" ON studio_sparks;
+CREATE POLICY "Allow all" ON studio_sparks FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow all" ON studio_content;
+CREATE POLICY "Allow all" ON studio_content FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow all" ON studio_network;
+CREATE POLICY "Allow all" ON studio_network FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow all" ON studio_milestones;
+CREATE POLICY "Allow all" ON studio_milestones FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
 
 -- Indexes for performance
-CREATE INDEX idx_studio_projects_status ON studio_projects(status);
-CREATE INDEX idx_studio_sparks_type ON studio_sparks(type);
-CREATE INDEX idx_studio_content_status ON studio_content(status);
-CREATE INDEX idx_studio_content_publish_date ON studio_content(publish_date);
-CREATE INDEX idx_studio_network_type ON studio_network(type);
+CREATE INDEX IF NOT EXISTS idx_studio_projects_status ON studio_projects(status);
+CREATE INDEX IF NOT EXISTS idx_studio_sparks_type ON studio_sparks(type);
+CREATE INDEX IF NOT EXISTS idx_studio_content_status ON studio_content(status);
+CREATE INDEX IF NOT EXISTS idx_studio_content_publish_date ON studio_content(publish_date);
+CREATE INDEX IF NOT EXISTS idx_studio_network_type ON studio_network(type);
+CREATE INDEX IF NOT EXISTS idx_studio_milestones_project_id ON studio_milestones(project_id);
