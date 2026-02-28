@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { notifyMonzoTransaction } from '../utils/monzo-notifications'
 
 export interface MonzoToken {
     access_token: string
@@ -424,17 +425,39 @@ export class MonzoService {
                     description = tx.counterparty.name
                 }
 
-                await supabase.from('fin_transactions').upsert({
-                    provider_tx_id: tx.id,
-                    description,
-                    amount,
-                    type: isSpend ? 'spend' : 'income',
-                    category: this.mapMonzoCategory(tx.category || 'other'),
-                    pocket_id: pocket?.id,
-                    profile,
-                    date: tx.created,
-                    provider: 'monzo'
-                }, { onConflict: 'provider_tx_id' })
+                // Use the atomic RPC to ensure consistency with the webhook
+                const { data: rpcStatus, error: rpcError } = await supabase.rpc('process_monzo_transaction', {
+                    p_provider_tx_id: tx.id,
+                    p_description: description,
+                    p_amount: amount,
+                    p_type: isSpend ? 'spend' : 'income',
+                    p_category: this.mapMonzoCategory(tx.category || 'other'),
+                    p_pocket_id: pocket?.id,
+                    p_profile: profile,
+                    p_date: tx.created
+                })
+
+                if (rpcError) {
+                    console.error(`[MonzoService] RPC Error syncing ${tx.id}:`, rpcError)
+                    continue
+                }
+
+                if (rpcStatus === 'INSERTED') {
+                    const isTransfer = tx.category === 'p2p' || !!tx.metadata?.pot_id
+                    const shouldNotify = !isTransfer || isSpend
+
+                    if (shouldNotify) {
+                        await notifyMonzoTransaction({
+                            amount,
+                            description,
+                            isSpend,
+                            isTransfer,
+                            pocketName: pocket?.name || 'Main Account'
+                        })
+                    }
+                }
+
+                console.log(`[MonzoService] Synced tx ${tx.id}: ${rpcStatus}`)
             }
         }
     }

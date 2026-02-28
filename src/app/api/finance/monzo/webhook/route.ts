@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { sendPushNotification } from '@/lib/push-server'
+import { notifyMonzoTransaction } from '@/features/finance/utils/monzo-notifications'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -95,13 +95,13 @@ export async function POST(request: Request) {
 
         let notificationStatus = 'skipped'
         if (shouldNotify) {
-            const emoji = isTransfer ? '🔄' : (isSpend ? '💸' : '💰')
-            const title = isTransfer ? 'Monzo Transfer' : (isSpend ? `${emoji} Monzo Spend` : `${emoji} Monzo Received`)
-            const bodyText = isSpend
-                ? `Spent £${amount.toFixed(2)} from ${pocketName}: ${finalDescription}`
-                : `Received £${amount.toFixed(2)} in ${pocketName}: ${finalDescription}`
-
-            const result = await sendPushNotification(title, bodyText, '/finances/transactions')
+            const result = await notifyMonzoTransaction({
+                amount,
+                description: finalDescription,
+                isSpend,
+                isTransfer,
+                pocketName
+            })
             notificationStatus = result.success ? `sent (to ${result.subscriptionCount || 0} devices)` : `failed: ${result.error || result.message}`
         }
 
