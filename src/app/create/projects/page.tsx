@@ -1,14 +1,22 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Filter, Search } from 'lucide-react'
 import ProjectKanban from '@/features/studio/components/ProjectKanban'
+import ProjectMatrix from '@/features/studio/components/ProjectMatrix'
+import ProjectTimeline from '@/features/studio/components/ProjectTimeline'
 import CreateProjectModal from '@/features/studio/components/CreateProjectModal'
+import ProjectDetailModal from '@/features/studio/components/ProjectDetailModal'
 import { useStudio } from '@/features/studio/hooks/useStudio'
+import { KarrFooter } from '@/components/KarrFooter'
+import { Plus, Search, Filter } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import type { StudioProject } from '@/features/studio/types/studio.types'
 
 export default function ProjectsPage() {
     const { error } = useStudio()
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+    const [view, setView] = useState<'board' | 'matrix' | 'timeline'>('board')
+    const [selectedProject, setSelectedProject] = useState<StudioProject | null>(null)
 
     return (
         <main className="min-h-screen bg-[#FAFAFA] pb-24 pt-4 px-4 md:px-8">
@@ -20,19 +28,34 @@ export default function ProjectsPage() {
                     </div>
                 )}
                 {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                     <div>
-                        <h1 className="text-2xl font-black text-black tracking-tight">Project Pipeline</h1>
-                        <p className="text-[13px] text-black/40 font-medium">Manage your creative projects from idea to shipped product.</p>
+                        <h1 className="text-3xl font-black text-black tracking-tight font-outfit">Project Pipeline</h1>
+                        <p className="text-[13px] text-black/40 font-bold uppercase tracking-widest mt-1">Strategic Development</p>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
+                        <div className="flex bg-black/[0.03] p-1 rounded-xl border border-black/[0.04] items-center">
+                            {(['board', 'matrix', 'timeline'] as const).map((v) => (
+                                <button
+                                    key={v}
+                                    onClick={() => setView(v)}
+                                    className={cn(
+                                        "px-4 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-tight transition-all",
+                                        view === v ? 'bg-white text-black shadow-sm' : 'text-black/30 hover:text-black/60'
+                                    )}
+                                >
+                                    {v}
+                                </button>
+                            ))}
+                        </div>
                         <button
                             onClick={() => setIsCreateModalOpen(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-xl text-[12px] font-bold hover:scale-105 transition-transform shadow-lg shadow-black/10"
+                            className="flex items-center gap-2 px-5 py-2.5 bg-black text-white rounded-xl text-[12px] font-black hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-black/10"
                         >
                             <Plus className="w-4 h-4" />
-                            New Project
+                            <span className="hidden xs:inline">New Project</span>
+                            <span className="xs:hidden">Add</span>
                         </button>
                     </div>
                 </div>
@@ -53,12 +76,22 @@ export default function ProjectsPage() {
                     </button>
                 </div>
 
-                <ProjectKanban />
+                {view === 'board' && <ProjectKanban />}
+                {view === 'matrix' && <ProjectMatrix />}
+                {view === 'timeline' && <ProjectTimeline onProjectClick={setSelectedProject} />}
             </div>
+
+            <KarrFooter />
 
             <CreateProjectModal
                 isOpen={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
+            />
+
+            <ProjectDetailModal
+                isOpen={!!selectedProject}
+                onClose={() => setSelectedProject(null)}
+                project={selectedProject}
             />
         </main>
     )

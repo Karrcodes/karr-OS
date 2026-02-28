@@ -1,10 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Search, Grid, List as ListIcon } from 'lucide-react'
+import { Activity, Plus, Search, Users, Globe, MapPin, Grid, List as ListIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import SparksGrid from '@/features/studio/components/SparksGrid'
 import CreateSparkModal from '@/features/studio/components/CreateSparkModal'
+import { KarrFooter } from '@/components/KarrFooter'
 
 export default function SparksPage() {
     const [view, setView] = useState<'grid' | 'list'>('grid')
@@ -59,6 +60,8 @@ export default function SparksPage() {
 
                 <SparksGrid />
             </div>
+
+            <KarrFooter />
 
             <CreateSparkModal
                 isOpen={isCreateModalOpen}

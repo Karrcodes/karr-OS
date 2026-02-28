@@ -1,6 +1,8 @@
 export type ProjectStatus = 'idea' | 'research' | 'active' | 'paused' | 'shipped' | 'archived';
-export type ProjectType = 'article' | 'video' | 'product' | 'event' | 'open_source' | 'other';
+export type ProjectType = 'Architectural Design' | 'Media' | 'Product Design' | 'Technology' | 'Fashion' | 'Other';
 export type Platform = 'youtube' | 'instagram' | 'substack' | 'tiktok' | 'x' | 'web';
+export type PriorityLevel = 'urgent' | 'high' | 'mid' | 'low';
+export type ContentCategory = 'Vlog' | 'Thoughts' | 'Showcase' | 'Concept' | 'Update' | 'Other';
 
 export interface StudioProject {
     id: string;
@@ -15,6 +17,11 @@ export interface StudioProject {
     gtv_category?: 'innovation' | 'impact' | 'recognition' | 'leadership';
     start_date?: string;
     target_date?: string;
+    priority?: PriorityLevel;
+    impact?: PriorityLevel;
+    strategic_category?: string;
+    ai_position_x?: number;
+    ai_position_y?: number;
     created_at: string;
     updated_at: string;
 }
@@ -39,16 +46,51 @@ export interface StudioSpark {
 
 export type ContentStatus = 'idea' | 'scripted' | 'filmed' | 'edited' | 'scheduled' | 'published';
 
+export interface ContentScene {
+    id: string;
+    location: string;
+    type: 'public' | 'private';
+    cost?: string;
+    distance?: string;
+}
+
 export interface StudioContent {
     id: string;
     project_id?: string | null;
-    platform: Platform;
+    platforms: Platform[];
     type?: string;
+    category?: ContentCategory;
     title: string;
     status: ContentStatus;
+    priority?: PriorityLevel;
+    impact?: PriorityLevel;
     publish_date?: string;
     url?: string;
     notes?: string;
+    scenes?: ContentScene[];
+    created_at: string;
+    updated_at: string;
+}
+
+export type PressType = 'competition' | 'grant' | 'award' | 'feature' | 'accelerator' | 'other';
+export type PressStatus = 'not_started' | 'applying' | 'submitted' | 'achieved' | 'lost' | 'closed' | 'published' | 'rejected';
+
+export interface StudioPress {
+    id: string;
+    title: string;
+    organization: string;
+    type: PressType;
+    status: PressStatus;
+    requirements?: string;
+    deadline?: string;
+    date_achieved?: string;
+    url?: string;
+    notes?: string;
+    milestone_goal?: string;
+    is_strategy_goal: boolean;
+    is_portfolio_item: boolean;
+    gtv_category?: 'innovation' | 'impact' | 'recognition' | null;
+    project_id?: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -65,6 +107,8 @@ export interface StudioNetwork {
     notes?: string;
     status: NetworkStatus;
     event_date?: string;
+    last_contact?: string;
+    tags?: string[];
     created_at: string;
     updated_at: string;
 }

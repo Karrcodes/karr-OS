@@ -2,7 +2,26 @@
 
 import { Shield, ExternalLink, Calendar, Award, CheckCircle2, Plus } from 'lucide-react'
 
+import { useStudio } from '@/features/studio/hooks/useStudio'
+import Link from 'next/link'
+import { KarrFooter } from '@/components/KarrFooter'
+
 export default function PortfolioPage() {
+    const { projects, press } = useStudio()
+
+    const portfolioProjects = projects.filter(p => p.gtv_featured)
+    const portfolioPress = press.filter(p => p.is_portfolio_item && (p.status === 'achieved' || p.status === 'published'))
+
+    const evidenceCount = portfolioProjects.length + portfolioPress.length
+
+    // Helper to filter evidence by predefined categories
+    const getEvidenceCount = (categoryStr: string) => {
+        const cat = categoryStr.toLowerCase()
+        const pCount = portfolioPress.filter(p => p.gtv_category === cat).length
+        // Assign gtv_featured projects to 'innovation' by default for now
+        const prjCount = cat === 'innovation' ? portfolioProjects.length : 0
+        return pCount + prjCount
+    }
     return (
         <main className="min-h-screen bg-[#FAFAFA] pb-24 pt-4 px-4 md:px-8">
             <div className="max-w-7xl mx-auto space-y-8">
@@ -36,7 +55,7 @@ export default function PortfolioPage() {
                                 <p className="text-[10px] font-black uppercase tracking-widest text-blue-300 mb-1">Evidence Count</p>
                                 <div className="flex items-center gap-2 text-xl font-bold">
                                     <Award className="w-5 h-5 text-blue-400" />
-                                    0 / 10
+                                    {evidenceCount} / 10
                                 </div>
                             </div>
                         </div>
@@ -49,7 +68,7 @@ export default function PortfolioPage() {
                         <div key={category} className="space-y-4">
                             <div className="flex items-center justify-between px-2">
                                 <h2 className="text-[12px] font-black text-black/40 uppercase tracking-[0.2em]">{category}</h2>
-                                <span className="text-[11px] font-bold text-black/20">0 pieces</span>
+                                <span className="text-[11px] font-bold text-black/20">{getEvidenceCount(category)} pieces</span>
                             </div>
                             <div className="aspect-[3/4] rounded-[32px] bg-white border border-black/[0.05] p-8 flex flex-col items-center justify-center text-center group hover:border-blue-200 transition-all cursor-pointer">
                                 <div className="w-16 h-16 rounded-full bg-black/[0.02] border-2 border-dashed border-black/[0.05] flex items-center justify-center mb-6 group-hover:bg-blue-50 group-hover:border-blue-200 transition-all">
@@ -84,6 +103,7 @@ export default function PortfolioPage() {
                     </a>
                 </div>
             </div>
+            <KarrFooter />
         </main>
     )
 }

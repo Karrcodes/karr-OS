@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
-import type { StudioProject, StudioSpark, StudioMilestone, StudioContent } from '../types/studio.types'
+import type { StudioProject, StudioSpark, StudioMilestone, StudioContent, StudioPress, StudioNetwork } from '../types/studio.types'
 
 interface StudioContextType {
     projects: StudioProject[]
@@ -24,6 +24,14 @@ interface StudioContextType {
     addContent: (item: Partial<StudioContent>) => Promise<StudioContent>
     updateContent: (id: string, updates: Partial<StudioContent>) => Promise<StudioContent>
     deleteContent: (id: string) => Promise<void>
+    press: StudioPress[]
+    addPress: (item: Partial<StudioPress>) => Promise<StudioPress>
+    updatePress: (id: string, updates: Partial<StudioPress>) => Promise<StudioPress>
+    deletePress: (id: string) => Promise<void>
+    networks: StudioNetwork[]
+    addNetwork: (item: Partial<StudioNetwork>) => Promise<StudioNetwork>
+    updateNetwork: (id: string, updates: Partial<StudioNetwork>) => Promise<StudioNetwork>
+    deleteNetwork: (id: string) => Promise<void>
 }
 
 const StudioContext = createContext<StudioContextType | undefined>(undefined)
@@ -33,28 +41,36 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     const [sparks, setSparks] = useState<StudioSpark[]>([])
     const [milestones, setMilestones] = useState<StudioMilestone[]>([])
     const [content, setContent] = useState<StudioContent[]>([])
+    const [press, setPress] = useState<StudioPress[]>([])
+    const [networks, setNetworks] = useState<StudioNetwork[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
     const fetchData = useCallback(async () => {
         try {
             setLoading(true)
-            const [projectsRes, sparksRes, milestonesRes, contentRes] = await Promise.all([
+            const [projectsRes, sparksRes, milestonesRes, contentRes, pressRes, networksRes] = await Promise.all([
                 supabase.from('studio_projects').select('*').order('created_at', { ascending: false }),
                 supabase.from('studio_sparks').select('*').order('created_at', { ascending: false }),
                 supabase.from('studio_milestones').select('*').order('created_at', { ascending: true }),
-                supabase.from('studio_content').select('*').order('created_at', { ascending: false })
+                supabase.from('studio_content').select('*').order('created_at', { ascending: false }),
+                supabase.from('studio_press').select('*').order('created_at', { ascending: false }),
+                supabase.from('studio_networks').select('*').order('created_at', { ascending: false })
             ])
 
             if (projectsRes.error) throw projectsRes.error
             if (sparksRes.error) throw sparksRes.error
             if (milestonesRes.error) throw milestonesRes.error
             if (contentRes.error) throw contentRes.error
+            if (pressRes.error) throw pressRes.error
+            if (networksRes.error) throw networksRes.error
 
             setProjects(projectsRes.data || [])
             setSparks(sparksRes.data || [])
             setMilestones(milestonesRes.data || [])
             setContent(contentRes.data || [])
+            setPress(pressRes.data || [])
+            setNetworks(networksRes.data || [])
             setError(null)
         } catch (err: any) {
             console.error('Error fetching studio data:', err)
@@ -230,14 +246,66 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
         setContent(prev => prev.filter(c => c.id !== id))
     }
 
+    const addPress = async (item: Partial<StudioPress>) => {
+        const { data, error } = await supabase.from('studio_press').insert([item]).select()
+        if (error) throw error
+        const inserted = data?.[0]
+        if (!inserted) throw new Error('No data returned')
+        setPress(prev => [inserted, ...prev])
+        return inserted
+    }
+
+    const updatePress = async (id: string, updates: Partial<StudioPress>) => {
+        if (!updates || Object.keys(updates).length === 0) return press.find(p => p.id === id)!
+        const { data, error } = await supabase.from('studio_press').update(updates).eq('id', id).select()
+        if (error) throw error
+        const updated = data?.[0]
+        if (!updated) throw new Error('Update failed')
+        setPress(prev => prev.map(p => p.id === id ? updated : p))
+        return updated
+    }
+
+    const deletePress = async (id: string) => {
+        const { error } = await supabase.from('studio_press').delete().eq('id', id)
+        if (error) throw error
+        setPress(prev => prev.filter(p => p.id !== id))
+    }
+
+    const addNetwork = async (item: Partial<StudioNetwork>) => {
+        const { data, error } = await supabase.from('studio_networks').insert([item]).select()
+        if (error) throw error
+        const inserted = data?.[0]
+        if (!inserted) throw new Error('No data returned')
+        setNetworks(prev => [inserted, ...prev])
+        return inserted
+    }
+
+    const updateNetwork = async (id: string, updates: Partial<StudioNetwork>) => {
+        if (!updates || Object.keys(updates).length === 0) return networks.find(n => n.id === id)!
+        const { data, error } = await supabase.from('studio_networks').update(updates).eq('id', id).select()
+        if (error) throw error
+        const updated = data?.[0]
+        if (!updated) throw new Error('Update failed')
+        setNetworks(prev => prev.map(n => n.id === id ? updated : n))
+        return updated
+    }
+
+    const deleteNetwork = async (id: string) => {
+        const { error } = await supabase.from('studio_networks').delete().eq('id', id)
+        if (error) throw error
+        setNetworks(prev => prev.filter(n => n.id !== id))
+    }
+
     return (
         <StudioContext.Provider value={{
-            projects, sparks, milestones, content, loading, error,
+            projects, sparks, milestones, content, press, networks, loading, error,
             refresh: fetchData,
             addProject, updateProject, deleteProject,
             addSpark, updateSpark, deleteSpark,
             addMilestone, updateMilestone, deleteMilestone,
-            addContent, updateContent, deleteContent
+            addContent, updateContent, deleteContent,
+            addPress, updatePress, deletePress,
+            addNetwork, updateNetwork, deleteNetwork
         }}>
             {children}
         </StudioContext.Provider>

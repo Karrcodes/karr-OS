@@ -46,17 +46,14 @@ export default function ContentKanban() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-2">
                 <div>
-                    <h2 className="text-2xl font-black text-black flex items-center gap-3">
-                        <Video className="w-8 h-8 text-blue-500" />
-                        Content Pipeline
-                    </h2>
-                    <p className="text-[13px] text-black/40 font-medium mt-1">Track your creative output from idea to published</p>
+                    <h1 className="text-3xl font-black text-black tracking-tight font-outfit">Content Pipeline</h1>
+                    <p className="text-[13px] text-black/40 font-bold uppercase tracking-widest mt-1">Creative Production</p>
                 </div>
                 <button
                     onClick={() => setIsCreateModalOpen(true)}
-                    className="px-4 py-2 bg-black text-white text-[12px] font-black rounded-xl hover:scale-105 transition-all flex items-center gap-2"
+                    className="flex items-center gap-2 px-5 py-2.5 bg-black text-white rounded-xl text-[12px] font-black hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-black/10 self-start sm:self-auto"
                 >
                     <Plus className="w-4 h-4" />
                     New Content

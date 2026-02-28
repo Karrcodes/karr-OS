@@ -11,7 +11,7 @@ interface CreateProjectModalProps {
     onClose: () => void
 }
 
-const PROJECT_TYPES: ProjectType[] = ['article', 'video', 'product', 'event', 'open_source', 'other']
+const PROJECT_TYPES: ProjectType[] = ['Architectural Design', 'Media', 'Product Design', 'Technology', 'Fashion', 'Other']
 const PLATFORMS: Platform[] = ['youtube', 'instagram', 'substack', 'tiktok', 'x', 'web']
 
 export default function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps) {
@@ -21,12 +21,15 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
         title: '',
         tagline: '',
         description: '',
-        type: 'article' as ProjectType,
+        type: 'Other' as ProjectType,
         platforms: [] as Platform[],
         status: 'idea' as ProjectStatus,
         gtv_featured: false,
         cover_url: '',
-        target_date: ''
+        target_date: '',
+        priority: 'mid' as 'urgent' | 'high' | 'mid' | 'low',
+        impact: 'mid' as 'urgent' | 'high' | 'mid' | 'low',
+        strategic_category: 'personal'
     })
     const [coverFile, setCoverFile] = useState<File | null>(null)
     const [milestones, setMilestones] = useState<string[]>([])
@@ -46,12 +49,15 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                 title: '',
                 tagline: '',
                 description: '',
-                type: 'article',
+                type: 'Other',
                 platforms: [],
                 status: 'idea',
                 gtv_featured: false,
                 cover_url: '',
-                target_date: ''
+                target_date: '',
+                priority: 'mid',
+                impact: 'mid',
+                strategic_category: 'personal'
             })
             setCoverFile(null)
             setMilestones([])
@@ -187,30 +193,32 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                             </div>
                         </div>
 
-                        {/* Type, Platforms & Target Date */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Target Date</label>
-                                <div className="relative">
-                                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
-                                    <input
-                                        type="date"
-                                        value={formData.target_date}
-                                        onChange={e => setFormData(prev => ({ ...prev, target_date: e.target.value }))}
-                                        className="w-full pl-11 pr-4 py-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-orange-200 transition-all"
-                                    />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Project Type</label>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Priority</label>
                                 <select
-                                    value={formData.type}
-                                    onChange={e => setFormData(prev => ({ ...prev, type: e.target.value as ProjectType }))}
+                                    value={formData.priority}
+                                    onChange={e => setFormData(prev => ({ ...prev, priority: e.target.value as any }))}
                                     className="w-full px-4 py-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-orange-200 transition-all appearance-none cursor-pointer"
                                 >
-                                    {PROJECT_TYPES.map(t => (
-                                        <option key={t} value={t}>{t.split('_').map(w => w[0].toUpperCase() + w.slice(1)).join(' ')}</option>
-                                    ))}
+                                    <option value="urgent">Urgent</option>
+                                    <option value="high">High</option>
+                                    <option value="mid">Mid</option>
+                                    <option value="low">Low</option>
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Strategic Category</label>
+                                <select
+                                    value={formData.strategic_category}
+                                    onChange={e => setFormData(prev => ({ ...prev, strategic_category: e.target.value }))}
+                                    className="w-full px-4 py-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-orange-200 transition-all appearance-none cursor-pointer"
+                                >
+                                    <option value="rnd">R&D</option>
+                                    <option value="production">Production</option>
+                                    <option value="media">Media</option>
+                                    <option value="growth">Growth</option>
+                                    <option value="personal">Personal</option>
                                 </select>
                             </div>
                         </div>

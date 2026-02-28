@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 import { usePathname } from 'next/navigation'
 
-type ActionType = 'task' | 'vault' | null
+type ActionType = 'task' | 'vault' | 'spark' | null
 
 const PERSONAL_STRATEGIC = [
     { id: 'finance', label: 'Finance', icon: Heart, color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' },
@@ -50,7 +50,11 @@ export function GlobalQuickAction() {
         endDate: '',
         taskDuration: '30',
         taskImpact: '5',
-        vaultText: ''
+        vaultText: '',
+        sparkTitle: '',
+        sparkType: 'idea' as any,
+        sparkUrl: '',
+        sparkNotes: ''
     })
     const [showTaskExtras, setShowTaskExtras] = useState(false)
 
@@ -70,7 +74,11 @@ export function GlobalQuickAction() {
             endDate: '',
             taskDuration: '30',
             taskImpact: '5',
-            vaultText: ''
+            vaultText: '',
+            sparkTitle: '',
+            sparkType: 'idea',
+            sparkUrl: '',
+            sparkNotes: ''
         })
         setShowTaskExtras(false)
         setSuccess(false)
@@ -114,6 +122,16 @@ export function GlobalQuickAction() {
                     profile: 'personal'
                 })
                 if (error) throw error
+            } else if (activeAction === 'spark') {
+                if (!form.sparkTitle.trim()) throw new Error('Spark title required')
+                const { error } = await supabase.from('studio_sparks').insert({
+                    title: form.sparkTitle.trim(),
+                    type: form.sparkType,
+                    url: form.sparkUrl.trim() || null,
+                    notes: form.sparkNotes.trim() || null,
+                    status: 'new'
+                })
+                if (error) throw error
             }
 
             setSuccess(true)
@@ -132,6 +150,7 @@ export function GlobalQuickAction() {
 
     const actions = useMemo(() => [
         { id: 'task', label: 'Task', icon: CheckSquare, color: 'bg-violet-600', glow: 'shadow-violet-600/40' },
+        { id: 'spark', label: 'Spark', icon: Sparkles, color: 'bg-emerald-500', glow: 'shadow-emerald-500/40' },
         { id: 'vault', label: 'Vault', icon: Clipboard, color: 'bg-amber-500', glow: 'shadow-amber-500/40' },
     ], [])
 
@@ -407,6 +426,62 @@ export function GlobalQuickAction() {
                                                 placeholder="Secure message or link..."
                                                 className="w-full h-40 bg-black/[0.03] border border-black/5 rounded-2xl px-4 py-4 text-[14px] font-bold outline-none focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500/20 transition-all resize-none no-scrollbar"
                                             />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeAction === 'spark' && (
+                                    <div className="space-y-5">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Spark Type</label>
+                                            <div className="grid grid-cols-4 gap-2">
+                                                {['idea', 'tool', 'resource', 'event'].map(type => (
+                                                    <button
+                                                        key={type}
+                                                        type="button"
+                                                        onClick={() => setForm({ ...form, sparkType: type as any })}
+                                                        className={cn(
+                                                            "py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border",
+                                                            form.sparkType === type
+                                                                ? "bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/20"
+                                                                : "bg-black/[0.03] text-black/40 border-black/5 hover:bg-black/[0.06]"
+                                                        )}
+                                                    >
+                                                        {type}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Spark Title</label>
+                                                <input
+                                                    autoFocus
+                                                    value={form.sparkTitle}
+                                                    onChange={e => setForm({ ...form, sparkTitle: e.target.value })}
+                                                    placeholder="What's the spark?"
+                                                    className={cn(inputBase, "text-[15px] font-black")}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Resource URL (optional)</label>
+                                                <input
+                                                    value={form.sparkUrl}
+                                                    onChange={e => setForm({ ...form, sparkUrl: e.target.value })}
+                                                    placeholder="https://..."
+                                                    className={cn(inputBase, "text-[12px]")}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Notes</label>
+                                                <textarea
+                                                    value={form.sparkNotes}
+                                                    onChange={e => setForm({ ...form, sparkNotes: e.target.value })}
+                                                    placeholder="Capture any loose thoughts..."
+                                                    className="w-full h-24 bg-black/[0.03] border border-black/5 rounded-2xl px-4 py-3 text-[13px] font-medium outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/20 transition-all resize-none no-scrollbar"
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 )}

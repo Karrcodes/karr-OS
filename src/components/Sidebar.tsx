@@ -24,7 +24,12 @@ const navItems = [
     {
         label: 'Operations',
         href: '/tasks',
-        icon: Activity
+        icon: Activity,
+        sub: [
+            { label: 'Planner', href: '/tasks/planner', icon: LayoutDashboard },
+            { label: 'Matrix', href: '/tasks/matrix', icon: SlidersHorizontal },
+            { label: 'Calendar', href: '/tasks/calendar', icon: Calendar }
+        ]
     },
     {
         label: 'Vault',

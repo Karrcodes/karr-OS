@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Sparkles, Briefcase, Target, LayoutDashboard, Shield, Plus, Clock, ExternalLink, ArrowRight } from 'lucide-react'
+import { Sparkles, Briefcase, Target, LayoutDashboard, Shield, Plus, Clock, ExternalLink, ArrowRight, Activity, Award } from 'lucide-react'
 import { useStudio } from '../hooks/useStudio'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
+import { KarrFooter } from '@/components/KarrFooter'
 import CreateProjectModal from './CreateProjectModal'
 import CreateSparkModal from './CreateSparkModal'
 import ProjectDetailModal from './ProjectDetailModal'
@@ -13,7 +14,7 @@ import PlatformIcon from './PlatformIcon'
 import type { StudioProject, StudioSpark } from '../types/studio.types'
 
 export default function StudioDashboard() {
-    const { projects, sparks, content, loading, error } = useStudio()
+    const { projects, sparks, content, press, loading, error } = useStudio()
     const [daysUntilGTV, setDaysUntilGTV] = useState(0)
     const [isProjectModalOpen, setIsProjectModalOpen] = useState(false)
     const [isSparkModalOpen, setIsSparkModalOpen] = useState(false)
@@ -39,40 +40,64 @@ export default function StudioDashboard() {
                 </div>
             )}
             {/* GTV Header Banner */}
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0A2647] to-[#144272] p-8 text-white shadow-2xl">
-                <div className="absolute top-0 right-0 p-8 opacity-10">
+            <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-[#0A2647] to-[#144272] p-6 md:p-10 text-white shadow-2xl">
+                <div className="absolute top-0 right-0 p-8 opacity-10 hidden sm:block">
                     <Shield className="w-48 h-48" />
                 </div>
-                <div className="relative z-10">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-blue-300/80 mb-2">Global Talent Visa Pipeline</p>
-                    <div className="flex items-end gap-3 mb-6">
-                        <h1 className="text-5xl font-black">{daysUntilGTV}</h1>
-                        <p className="text-xl font-medium text-blue-200/60 pb-1">days until September 2026</p>
+                <div className="relative z-10 flex flex-col gap-2">
+                    <div className="flex flex-col gap-1">
+                        <p className="text-[10px] md:text-[11px] font-black uppercase tracking-[0.25em] text-blue-300/80 mb-2">Global Talent Visa Pipeline</p>
+                        <div className="flex items-baseline gap-3 mb-4 md:mb-6">
+                            <h1 className="text-4xl md:text-6xl font-black font-outfit">{daysUntilGTV}</h1>
+                            <p className="text-base md:text-xl font-bold text-blue-200/60 lowercase">days until 2026 cutoff</p>
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-6">
-                        <div className="flex -space-x-3">
-                            {projects.filter(p => p.gtv_featured).slice(0, 4).map((p, i) => (
-                                <div key={p.id} className="w-10 h-10 rounded-full border-2 border-blue-900 bg-blue-100 flex items-center justify-center text-blue-900 font-bold text-xs ring-4 ring-[#0A2647] overflow-hidden">
-                                    {p.title[0]}
-                                </div>
-                            ))}
-                            {projects.filter(p => p.gtv_featured).length > 4 && (
-                                <div className="w-10 h-10 rounded-full border-2 border-blue-900 bg-blue-800 flex items-center justify-center text-blue-200 font-bold text-xs ring-4 ring-[#0A2647]">
-                                    +{projects.filter(p => p.gtv_featured).length - 4}
-                                </div>
-                            )}
-                            {projects.filter(p => p.gtv_featured).length === 0 && (
-                                <div className="w-10 h-10 rounded-full border-2 border-dashed border-blue-400/30 flex items-center justify-center text-blue-400/50 text-[10px] ring-4 ring-[#0A2647]">
-                                    0
-                                </div>
-                            )}
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 mt-2 pt-6 border-t border-white/5">
+                        <div className="flex items-center gap-3">
+                            <div className="flex -space-x-3">
+                                {projects.filter(p => p.gtv_featured).slice(0, 4).map((p, i) => (
+                                    <div key={p.id} className="w-8 md:w-10 h-8 md:h-10 rounded-full border-2 border-blue-900 bg-blue-100 flex items-center justify-center text-blue-900 font-black text-[10px] md:text-xs ring-4 ring-[#0A2647] overflow-hidden">
+                                        {p.title[0]}
+                                    </div>
+                                ))}
+                                {projects.filter(p => p.gtv_featured).length > 4 && (
+                                    <div className="w-8 md:w-10 h-8 md:h-10 rounded-full border-2 border-blue-900 bg-blue-800 flex items-center justify-center text-blue-200 font-black text-[10px] md:text-xs ring-4 ring-[#0A2647]">
+                                        +{projects.filter(p => p.gtv_featured).length - 4}
+                                    </div>
+                                )}
+                            </div>
+                            <p className="text-[12px] md:text-[13px] font-bold text-blue-100/70">
+                                Portfolio is <span className="text-white font-black">{Math.min(100, Math.round(((projects.filter(p => p.gtv_featured).length + press.filter(p => p.is_portfolio_item && (p.status === 'achieved' || p.status === 'published')).length) / 10) * 100))}%</span> optimized
+                            </p>
                         </div>
-                        <p className="text-[13px] font-medium text-blue-100/70">
-                            Evidence portfolio is <span className="text-white font-bold">{Math.min(100, Math.round((projects.filter(p => p.gtv_featured).length / 10) * 100))}%</span> recommended volume
-                        </p>
                     </div>
                 </div>
+            </div>
+
+            {/* Subpage Quick Actions */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                    { label: 'Projects', href: '/create/projects', icon: Briefcase, color: 'text-orange-600', bg: 'bg-orange-50' },
+                    { label: 'Sparks', href: '/create/sparks', icon: Target, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                    { label: 'Content', href: '/create/content', icon: LayoutDashboard, color: 'text-blue-600', bg: 'bg-blue-50' },
+                    { label: 'Press', href: '/create/press', icon: Award, color: 'text-yellow-600', bg: 'bg-yellow-50' },
+                    { label: 'Network', href: '/create/network', icon: Activity, color: 'text-purple-600', bg: 'bg-purple-50' }
+                ].map((item) => (
+                    <Link
+                        key={item.label}
+                        href={item.href}
+                        className="p-4 bg-white border border-black/[0.05] rounded-3xl flex flex-col gap-3 group hover:border-black/10 hover:shadow-lg transition-all"
+                    >
+                        <div className={cn("w-10 h-10 rounded-2xl flex items-center justify-center shrink-0", item.bg, item.color)}>
+                            <item.icon className="w-5 h-5 transition-transform group-hover:scale-110" />
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <span className="text-[13px] font-black text-black">{item.label}</span>
+                            <ArrowRight className="w-3 h-3 text-black/20 group-hover:translate-x-1 transition-transform" />
+                        </div>
+                    </Link>
+                ))}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -242,6 +267,8 @@ export default function StudioDashboard() {
                 spark={selectedSpark}
                 projects={projects}
             />
+
+            <KarrFooter />
         </div>
     )
 }
