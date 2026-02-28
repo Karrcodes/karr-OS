@@ -201,7 +201,18 @@ export default function CreateSparkModal({ isOpen, onClose }: CreateSparkModalPr
                                             >
                                                 <div className="w-8 h-8 rounded-lg bg-black/[0.02] border border-black/[0.05] flex items-center justify-center overflow-hidden shrink-0">
                                                     {s.icon_url ? (
-                                                        <img src={s.icon_url} alt={s.name} className="w-full h-full object-contain" />
+                                                        <img
+                                                            src={s.icon_url}
+                                                            alt={s.name}
+                                                            className="w-full h-full object-contain"
+                                                            onError={(e) => {
+                                                                const target = e.target as HTMLImageElement;
+                                                                target.style.display = 'none';
+                                                                if (target.parentElement) {
+                                                                    target.parentElement.innerHTML = '<span class="text-[10px] text-black/20 font-black uppercase">?</span>';
+                                                                }
+                                                            }}
+                                                        />
                                                     ) : (
                                                         <Type className="w-4 h-4 text-black/20" />
                                                     )}

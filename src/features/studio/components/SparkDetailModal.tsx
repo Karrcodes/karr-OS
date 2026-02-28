@@ -30,6 +30,7 @@ export default function SparkDetailModal({ isOpen, onClose, spark, projects }: S
     if (!isOpen || !spark) return null
 
     const linkedProject = projects.find(p => p.id === spark.project_id)
+    const [imgError, setImgError] = useState(false)
 
     const handleSave = async () => {
         try {
@@ -87,8 +88,13 @@ export default function SparkDetailModal({ isOpen, onClose, spark, projects }: S
                 {/* Visual Header */}
                 <div className="h-32 bg-gradient-to-br from-emerald-500/10 to-blue-500/10 relative p-8">
                     <div className="w-16 h-16 rounded-3xl bg-white shadow-xl border border-black/[0.05] flex items-center justify-center text-3xl animate-bounce-subtle overflow-hidden p-2">
-                        {spark.icon_url ? (
-                            <img src={spark.icon_url} alt={spark.title} className="w-full h-full object-contain" />
+                        {spark.icon_url && !imgError ? (
+                            <img
+                                src={spark.icon_url}
+                                alt={spark.title}
+                                className="w-full h-full object-contain"
+                                onError={() => setImgError(true)}
+                            />
                         ) : (
                             typeEmoji
                         )}

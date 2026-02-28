@@ -72,6 +72,7 @@ export default function SparksGrid() {
 
 function SparkCard({ spark, projects, onClick }: { spark: StudioSpark; projects: any[]; onClick: () => void }) {
     const linkedProject = projects.find(p => p.id === spark.project_id)
+    const [imgError, setImgError] = useState(false)
 
     const typeEmoji = {
         idea: '💡',
@@ -90,8 +91,13 @@ function SparkCard({ spark, projects, onClick }: { spark: StudioSpark; projects:
             {/* Header */}
             <div className="flex justify-between items-start mb-4">
                 <div className="w-10 h-10 rounded-2xl bg-black/[0.02] flex items-center justify-center text-xl border border-black/[0.03] group-hover:bg-emerald-50 group-hover:border-emerald-100 transition-colors overflow-hidden shrink-0 p-1">
-                    {spark.icon_url ? (
-                        <img src={spark.icon_url} alt={spark.title} className="w-full h-full object-contain" />
+                    {spark.icon_url && !imgError ? (
+                        <img
+                            src={spark.icon_url}
+                            alt={spark.title}
+                            className="w-full h-full object-contain"
+                            onError={() => setImgError(true)}
+                        />
                     ) : (
                         typeEmoji
                     )}
