@@ -187,7 +187,7 @@ export default function SettingsPage() {
             const { error } = await supabase.from('sys_push_subscriptions').delete().eq('user_id', 'karr')
             if (error) throw error
             setIsSubscribed(false)
-            alert('All devices cleared. Please re-enable notifications on this device if needed.')
+            alert('All devices cleared. Please click "Enable" to re-register this device.')
         } catch (err: any) {
             alert(`Failed to clear: ${err.message}`)
         } finally {

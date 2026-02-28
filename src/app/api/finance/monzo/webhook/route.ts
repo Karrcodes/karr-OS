@@ -86,6 +86,7 @@ export async function POST(request: Request) {
         // Dedup: For internal transfers, only notify once (on the outgoing side)
         const shouldNotify = !isTransfer || isSpend
 
+        let notificationStatus = 'skipped'
         if (shouldNotify) {
             const emoji = isTransfer ? '🔄' : (isSpend ? '💸' : '💰')
             const title = isTransfer ? 'Monzo Transfer' : (isSpend ? `${emoji} Monzo Spend` : `${emoji} Monzo Received`)
@@ -93,10 +94,16 @@ export async function POST(request: Request) {
                 ? `Spent £${amount.toFixed(2)} from ${pocketName}: ${finalDescription}`
                 : `Received £${amount.toFixed(2)} in ${pocketName}: ${finalDescription}`
 
-            await sendPushNotification(title, bodyText, '/finances/transactions')
+            const result = await sendPushNotification(title, bodyText, '/finances/transactions')
+            notificationStatus = result.success ? 'sent' : `failed: ${result.error || result.message}`
         }
 
-        return NextResponse.json({ success: true })
+        return NextResponse.json({
+            success: true,
+            wasProcessed,
+            shouldNotify,
+            notificationStatus
+        })
     } catch (err: any) {
         console.error('[MonzoWebhook] Error:', err)
         return NextResponse.json({ error: err.message }, { status: 500 })

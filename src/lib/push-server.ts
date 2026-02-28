@@ -78,13 +78,6 @@ export async function sendPushNotification(title: string, body: string, url: str
             }
         }))
 
-        // Log the notification once for the history
-        await supabase.from('sys_notification_logs').insert({
-            title,
-            body,
-            url
-        })
-
         return { success: true, results }
     } catch (error: any) {
         console.error('Global push send error:', error)
