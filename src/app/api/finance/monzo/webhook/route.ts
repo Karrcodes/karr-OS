@@ -23,18 +23,6 @@ export async function POST(request: Request) {
         const monzoTxId = data.id
         const potId = data.metadata?.pot_id // Monzo Pot ID if applicable
 
-        // 0. Idempotency Check: Skip if transaction already exists
-        const { data: existingTx } = await supabase
-            .from('fin_transactions')
-            .select('id')
-            .eq('provider_tx_id', monzoTxId)
-            .single()
-
-        if (existingTx) {
-            console.log(`[MonzoWebhook] Transaction ${monzoTxId} already exists. Skipping notification.`)
-            return NextResponse.json({ success: true, message: 'Existing transaction' })
-        }
-
         // 1. Find the pocket in KarrOS
         // We look for any pocket where monzo_id matches either the pot_id or the account_id
         const targetMonzoId = potId || data.account_id
@@ -72,24 +60,26 @@ export async function POST(request: Request) {
             finalDescription = isSpend ? `Transfer to ${pocketName}` : `Top up from ${pocketName}`
         }
 
-        // 3. Insert Transaction
-        const { error: txError } = await supabase
-            .from('fin_transactions')
-            .upsert({
-                provider_tx_id: monzoTxId,
-                description: finalDescription,
-                amount,
-                type: isSpend ? 'spend' : 'income',
-                category: data.category || 'other',
-                pocket_id: pocketId,
-                profile,
-                date: data.created,
-                provider: 'monzo'
-            }, { onConflict: 'provider_tx_id' })
+        // 3. Process Transaction Atomically (Deduplication + Insert)
+        const { data: wasProcessed, error: rpcError } = await supabase.rpc('process_monzo_transaction', {
+            p_provider_tx_id: monzoTxId,
+            p_description: finalDescription,
+            p_amount: amount,
+            p_type: isSpend ? 'spend' : 'income',
+            p_category: data.category || 'other',
+            p_pocket_id: pocketId,
+            p_profile: profile,
+            p_date: data.created
+        })
 
-        if (txError) {
-            console.error('[MonzoWebhook] Insert error:', txError)
-            return NextResponse.json({ error: 'Database error' }, { status: 500 })
+        if (rpcError) {
+            console.error('[MonzoWebhook] RPC Error:', rpcError)
+            return NextResponse.json({ error: 'Database processing error' }, { status: 500 })
+        }
+
+        if (!wasProcessed) {
+            console.log(`[MonzoWebhook] Transaction ${monzoTxId} already handled or concurrently processed. Skipping.`)
+            return NextResponse.json({ success: true, message: 'Already processed' })
         }
 
         // 4. Send Notification

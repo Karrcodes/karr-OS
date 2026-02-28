@@ -11,18 +11,21 @@ export async function sendPushNotification(title: string, body: string, url: str
     try {
         console.log('Sending push notification:', { title, body, url });
 
-        // 1. Deduplication Check: Skip if identical notification sent in last 10s
-        const tenSecondsAgo = new Date(Date.now() - 10000).toISOString()
-        const { data: recentLogs } = await supabase
-            .from('sys_notification_logs')
-            .select('id')
-            .eq('title', title)
-            .eq('body', body)
-            .gt('created_at', tenSecondsAgo)
-            .limit(1)
+        // 1. Atomic Deduplication Check & Logging
+        const { data: canNotify, error: gateError } = await supabase.rpc('log_and_gate_notification', {
+            p_title: title,
+            p_body: body,
+            p_url: url,
+            p_cooldown_seconds: 10
+        })
 
-        if (recentLogs && recentLogs.length > 0) {
-            console.log('[PushServer] Duplicate notification suppressed (cooldown active)');
+        if (gateError) {
+            console.error('[PushServer] Gating error:', gateError);
+            // Fallback: Continue if database error to ensure user gets notification, but log it
+        }
+
+        if (canNotify === false) {
+            console.log('[PushServer] Duplicate notification blocked by atomic cooldown');
             return { success: true, message: 'Duplicate suppressed' }
         }
 
