@@ -358,8 +358,24 @@ export class MonzoService {
         for (const account of accounts) {
             if (account.closed) continue
 
+            // 1. Delete ALL existing webhooks for this account first
+            const existingRes = await fetch(`https://api.monzo.com/webhooks?account_id=${account.id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            })
+            const existingData = await existingRes.json()
+            const existing = existingData.webhooks || []
+
+            for (const wh of existing) {
+                await fetch(`https://api.monzo.com/webhooks/${wh.id}`, {
+                    method: 'DELETE',
+                    headers: { Authorization: `Bearer ${token}` }
+                })
+                console.log(`[MonzoService] Deleted old webhook: ${wh.id}`)
+            }
+
+            // 2. Register exactly ONE new webhook
             console.log(`[MonzoService] Registering webhook for account ${account.id}...`)
-            await fetch('https://api.monzo.com/webhooks', {
+            const regRes = await fetch('https://api.monzo.com/webhooks', {
                 method: 'POST',
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -370,6 +386,8 @@ export class MonzoService {
                     url: webhookUrl
                 })
             })
+            const regData = await regRes.json()
+            console.log(`[MonzoService] Registered webhook: ${regData.webhook?.id}`)
         }
         return { success: true }
     }
