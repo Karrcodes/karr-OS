@@ -102,7 +102,7 @@ export async function POST(request: Request) {
                 : `Received £${amount.toFixed(2)} in ${pocketName}: ${finalDescription}`
 
             const result = await sendPushNotification(title, bodyText, '/finances/transactions')
-            notificationStatus = result.success ? 'sent' : `failed: ${result.error || result.message}`
+            notificationStatus = result.success ? `sent (to ${result.subscriptionCount || 0} devices)` : `failed: ${result.error || result.message}`
         }
 
         return NextResponse.json({

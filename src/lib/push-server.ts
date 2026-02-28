@@ -16,7 +16,7 @@ export async function sendPushNotification(title: string, body: string, url: str
             p_title: title,
             p_body: body,
             p_url: url,
-            p_cooldown_seconds: 10
+            p_cooldown_seconds: 60
         })
 
         if (gateError) {
@@ -57,14 +57,14 @@ export async function sendPushNotification(title: string, body: string, url: str
 
         console.log(`Messaging ${subs.length} active push subscription(s) for user: karr`);
 
-        const results = await Promise.all(subs.map(async (s) => {
+        const results = await Promise.all(subs.map(async (s: any) => {
             try {
                 await webpush.sendNotification(
                     s.subscription as any,
                     JSON.stringify({ title, body, url })
                 )
 
-                return { success: true }
+                return { endpoint: s.subscription.endpoint, success: true }
             } catch (e: any) {
                 console.error('Error sending push:', e.statusCode, e.endpoint)
                 // Remove expired subscriptions
@@ -74,11 +74,11 @@ export async function sendPushNotification(title: string, body: string, url: str
                         .delete()
                         .match({ 'subscription->>endpoint': e.endpoint })
                 }
-                return { success: false, error: e.message }
+                return { endpoint: s.subscription.endpoint, success: false, error: e.message }
             }
         }))
 
-        return { success: true, results }
+        return { success: true, results, subscriptionCount: subs.length }
     } catch (error: any) {
         console.error('Global push send error:', error)
         return { success: false, error: error.message }

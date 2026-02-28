@@ -6,40 +6,28 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
-const targetMonzoId = 'tx_0000B3m60eoNt2eN3yqLbt';
-
 async function debug() {
-    console.log(`--- DEEP DEBUG: Monzo ID ${targetMonzoId} ---`)
+    console.log('--- LATEST LOGS (> 08:46:00) ---')
 
-    // 1. Check if it exists in fin_transactions
-    const { data: txs } = await supabase
-        .from('fin_transactions')
-        .select('*')
-        .eq('provider_tx_id', targetMonzoId)
-
-    console.log('\n--- Transaction Record ---')
-    console.log(JSON.stringify(txs, null, 2))
-
-    // 2. Check all logs related to this ID
+    // 1. Check for hits after the 08:46 hit
     const { data: logs } = await supabase
         .from('sys_notification_logs')
         .select('*')
-        .ilike('body', `%${targetMonzoId}%`)
-        .order('created_at', { ascending: true })
+        .gt('created_at', '2026-02-28T08:46:00Z')
+        .order('created_at', { ascending: false })
 
-    console.log('\n--- Related Logs ---')
+    console.log('\n--- Logs ---')
     console.log(JSON.stringify(logs, null, 2))
 
-    // 3. Check for any other recent Monzo transactions
-    const { data: recentMonzo } = await supabase
+    // 2. Check for transactions after 08:46
+    const { data: txs } = await supabase
         .from('fin_transactions')
         .select('*')
-        .eq('provider', 'monzo')
+        .gt('created_at', '2026-02-28T08:46:00Z')
         .order('created_at', { ascending: false })
-        .limit(3)
 
-    console.log('\n--- Most Recent Monzo Transactions ---')
-    console.log(JSON.stringify(recentMonzo, null, 2))
+    console.log('\n--- Transactions ---')
+    console.log(JSON.stringify(txs, null, 2))
 }
 
 debug().catch(console.error)
