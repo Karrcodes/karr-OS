@@ -5,10 +5,6 @@
             "schedule": "0 9 * * *"
         },
         {
-            "path": "/api/finance/monzo/poll",
-            "schedule": "*/5 * * * *"
-        },
-        {
             "path": "/api/cron/finance-morning",
             "schedule": "30 3 * * *"
         },
