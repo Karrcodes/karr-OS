@@ -137,6 +137,7 @@ export function usePots() {
                             balance: 0,
                             current_balance: 0,
                             target_budget: 0,
+                            target_amount: 0,
                             profile: activeProfile
                         })
                     }

@@ -105,7 +105,15 @@ function PotsSettings() {
         if (!form.name) return
         setSaving(true)
         try {
-            await createPot({ name: form.name!, target_budget: form.target_budget ?? 0, current_balance: form.current_balance ?? 0, balance: form.balance ?? 0, sort_order: pots.length, type: (form.type as Pot['type']) ?? 'general' })
+            await createPot({
+                name: form.name!,
+                target_budget: form.target_budget ?? 0,
+                target_amount: 0, // Manual pots start with 0 target
+                current_balance: form.current_balance ?? 0,
+                balance: form.balance ?? 0,
+                sort_order: pots.length,
+                type: (form.type as Pot['type']) ?? 'general'
+            })
             setForm({ type: 'general', target_budget: 0, current_balance: 0, balance: 0 })
             setAdding(false)
         } catch (e: any) {
