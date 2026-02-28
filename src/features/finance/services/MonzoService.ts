@@ -390,7 +390,8 @@ export class MonzoService {
             if (account.closed) continue
 
             console.log(`[MonzoService] Syncing transactions for account ${account.id}...`)
-            const txRes = await fetch(`https://api.monzo.com/transactions?account_id=${account.id}&limit=50&expand[]=merchant`, {
+            const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+            const txRes = await fetch(`https://api.monzo.com/transactions?account_id=${account.id}&since=${since}&limit=200&expand[]=merchant`, {
                 headers: { Authorization: `Bearer ${token}` }
             })
 
@@ -406,6 +407,7 @@ export class MonzoService {
                 const amount = Math.abs(tx.amount / 100)
                 const isSpend = tx.amount < 0
                 const potId = tx.metadata?.pot_id
+                const isTransfer = tx.category === 'p2p' || !!potId || tx.description?.startsWith('pot_')
                 const targetMonzoId = potId || account.id
 
                 // Find pocket to get name and ID
@@ -417,10 +419,20 @@ export class MonzoService {
 
                 // Improve description for transfers/pots
                 let description = tx.merchant?.name || tx.description
-                if (description.startsWith('pot_') && pocket) {
+                if (description?.startsWith('pot_') && pocket) {
                     description = isSpend ? `Transfer to ${pocket.name}` : `Top up from ${pocket.name}`
                 } else if (tx.category === 'p2p' && tx.counterparty?.name) {
                     description = tx.counterparty.name
+                }
+
+                // Determine type: transfer vs spend vs income
+                let txType: 'spend' | 'income' | 'transfer'
+                if (isTransfer) {
+                    txType = 'transfer'
+                } else if (isSpend) {
+                    txType = 'spend'
+                } else {
+                    txType = 'income'
                 }
 
                 // Use the atomic RPC to ensure consistency with the webhook
@@ -428,7 +440,7 @@ export class MonzoService {
                     p_provider_tx_id: tx.id,
                     p_description: description,
                     p_amount: amount,
-                    p_type: isSpend ? 'spend' : 'income',
+                    p_type: txType,
                     p_category: this.mapMonzoCategory(tx.category || 'other'),
                     p_pocket_id: pocket?.id,
                     p_profile: profile,
