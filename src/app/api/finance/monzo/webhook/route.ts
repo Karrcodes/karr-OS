@@ -67,7 +67,7 @@ export async function POST(request: Request) {
         }
 
         // 3. Process Transaction Atomically (Deduplication + Insert)
-        const { data: wasProcessed, error: rpcError } = await supabase.rpc('process_monzo_transaction', {
+        const { data: rpcStatus, error: rpcError } = await supabase.rpc('process_monzo_transaction', {
             p_provider_tx_id: monzoTxId,
             p_description: finalDescription,
             p_amount: amount,
@@ -79,13 +79,14 @@ export async function POST(request: Request) {
         })
 
         if (rpcError) {
-            console.error('[MonzoWebhook] RPC Error:', rpcError)
+            console.error('[MonzoWebhook] RPC Execution Error:', rpcError)
             return NextResponse.json({ error: 'Database processing error' }, { status: 500 })
         }
 
-        if (!wasProcessed) {
-            console.log(`[MonzoWebhook] Transaction ${monzoTxId} already handled or concurrently processed. Skipping.`)
-            return NextResponse.json({ success: true, message: 'Already processed' })
+        console.log(`[MonzoWebhook] RPC Status for ${monzoTxId}: ${rpcStatus}`)
+
+        if (rpcStatus !== 'INSERTED') {
+            return NextResponse.json({ success: true, message: `Skipped: ${rpcStatus}` })
         }
 
         // 4. Send Notification
@@ -106,7 +107,7 @@ export async function POST(request: Request) {
 
         return NextResponse.json({
             success: true,
-            wasProcessed,
+            rpcStatus,
             shouldNotify,
             notificationStatus
         })
