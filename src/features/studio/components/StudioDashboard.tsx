@@ -1,14 +1,18 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Sparkles, Briefcase, Target, LayoutDashboard, Activity, Shield, Plus, Clock, ExternalLink, ArrowRight } from 'lucide-react'
+import { Sparkles, Briefcase, Target, LayoutDashboard, Shield, Plus, Clock, ExternalLink, ArrowRight } from 'lucide-react'
 import { useStudio } from '../hooks/useStudio'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
+import CreateProjectModal from './CreateProjectModal'
+import CreateSparkModal from './CreateSparkModal'
 
 export default function StudioDashboard() {
     const { projects, sparks, loading } = useStudio()
     const [daysUntilGTV, setDaysUntilGTV] = useState(0)
+    const [isProjectModalOpen, setIsProjectModalOpen] = useState(false)
+    const [isSparkModalOpen, setIsSparkModalOpen] = useState(false)
 
     useEffect(() => {
         const target = new Date('2026-09-01')
@@ -36,14 +40,21 @@ export default function StudioDashboard() {
 
                     <div className="flex items-center gap-6">
                         <div className="flex -space-x-3">
-                            {[1, 2, 3, 4].map(i => (
-                                <div key={i} className="w-10 h-10 rounded-full border-2 border-blue-900 bg-blue-100 flex items-center justify-center text-blue-900 font-bold text-xs ring-4 ring-[#0A2647]">
-                                    {i}
+                            {projects.filter(p => p.gtv_featured).slice(0, 4).map((p, i) => (
+                                <div key={p.id} className="w-10 h-10 rounded-full border-2 border-blue-900 bg-blue-100 flex items-center justify-center text-blue-900 font-bold text-xs ring-4 ring-[#0A2647] overflow-hidden">
+                                    {p.title[0]}
                                 </div>
                             ))}
-                            <div className="w-10 h-10 rounded-full border-2 border-blue-900 bg-blue-800 flex items-center justify-center text-blue-200 font-bold text-xs ring-4 ring-[#0A2647]">
-                                +{projects.filter(p => p.gtv_featured).length}
-                            </div>
+                            {projects.filter(p => p.gtv_featured).length > 4 && (
+                                <div className="w-10 h-10 rounded-full border-2 border-blue-900 bg-blue-800 flex items-center justify-center text-blue-200 font-bold text-xs ring-4 ring-[#0A2647]">
+                                    +{projects.filter(p => p.gtv_featured).length - 4}
+                                </div>
+                            )}
+                            {projects.filter(p => p.gtv_featured).length === 0 && (
+                                <div className="w-10 h-10 rounded-full border-2 border-dashed border-blue-400/30 flex items-center justify-center text-blue-400/50 text-[10px] ring-4 ring-[#0A2647]">
+                                    0
+                                </div>
+                            )}
                         </div>
                         <p className="text-[13px] font-medium text-blue-100/70">
                             Evidence portfolio is <span className="text-white font-bold">{Math.min(100, Math.round((projects.filter(p => p.gtv_featured).length / 10) * 100))}%</span> recommended volume
@@ -75,7 +86,12 @@ export default function StudioDashboard() {
                                 </div>
                                 <h3 className="text-sm font-bold text-black">No active projects</h3>
                                 <p className="text-[12px] text-black/40 mt-1 max-w-[240px]">Transform your sparks into projects to start your GTV portfolio.</p>
-                                <button className="mt-4 px-4 py-2 bg-black text-white text-[11px] font-bold rounded-xl hover:scale-105 transition-transform">Start New Project</button>
+                                <button
+                                    onClick={() => setIsProjectModalOpen(true)}
+                                    className="mt-4 px-4 py-2 bg-black text-white text-[11px] font-bold rounded-xl hover:scale-105 transition-transform"
+                                >
+                                    Start New Project
+                                </button>
                             </div>
                         ) : (
                             activeProjects.map(project => (
@@ -146,14 +162,17 @@ export default function StudioDashboard() {
                                     )}
                                 </div>
                             ))}
-                            <button className="w-full p-3 border-2 border-dashed border-black/[0.05] rounded-xl flex items-center justify-center gap-2 text-[12px] font-bold text-black/40 hover:border-emerald-200 hover:text-emerald-600 hover:bg-emerald-50/30 transition-all group">
+                            <button
+                                onClick={() => setIsSparkModalOpen(true)}
+                                className="w-full p-3 border-2 border-dashed border-black/[0.05] rounded-xl flex items-center justify-center gap-2 text-[12px] font-bold text-black/40 hover:border-emerald-200 hover:text-emerald-600 hover:bg-emerald-50/30 transition-all group"
+                            >
                                 <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform" />
                                 Capture New Spark
                             </button>
                         </div>
                     </div>
 
-                    {/* Content Pulse (Placeholder for now) */}
+                    {/* Content Pulse */}
                     <div className="p-5 bg-white border border-black/[0.06] rounded-[32px] space-y-4">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600">
@@ -173,6 +192,15 @@ export default function StudioDashboard() {
                     </div>
                 </div>
             </div>
+
+            <CreateProjectModal
+                isOpen={isProjectModalOpen}
+                onClose={() => setIsProjectModalOpen(false)}
+            />
+            <CreateSparkModal
+                isOpen={isSparkModalOpen}
+                onClose={() => setIsSparkModalOpen(false)}
+            />
         </div>
     )
 }

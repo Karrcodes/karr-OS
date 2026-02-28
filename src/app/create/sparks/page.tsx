@@ -1,10 +1,14 @@
 'use client'
 
-import { Target, Plus, Search, Grid, List as ListIcon } from 'lucide-react'
 import { useState } from 'react'
+import { Plus, Search, Grid, List as ListIcon } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import SparksGrid from '@/features/studio/components/SparksGrid'
+import CreateSparkModal from '@/features/studio/components/CreateSparkModal'
 
 export default function SparksPage() {
     const [view, setView] = useState<'grid' | 'list'>('grid')
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
     return (
         <main className="min-h-screen bg-[#FAFAFA] pb-24 pt-4 px-4 md:px-8">
@@ -17,7 +21,10 @@ export default function SparksPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <button className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-xl text-[12px] font-bold hover:scale-105 transition-transform shadow-lg shadow-black/10">
+                        <button
+                            onClick={() => setIsCreateModalOpen(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-[12px] font-bold hover:scale-105 transition-transform shadow-lg shadow-emerald-500/20"
+                        >
                             <Plus className="w-4 h-4" />
                             New Spark
                         </button>
@@ -50,22 +57,13 @@ export default function SparksPage() {
                     </div>
                 </div>
 
-                {/* Grid Placeholder */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {[1, 2, 3, 4, 5, 6].map(i => (
-                        <div key={i} className="aspect-[4/5] rounded-3xl bg-black/[0.015] border-2 border-dashed border-black/[0.03] flex flex-col items-center justify-center p-8 text-center">
-                            <div className="w-12 h-12 rounded-2xl bg-black/[0.03] flex items-center justify-center mb-4">
-                                <Target className="w-6 h-6 text-black/10" />
-                            </div>
-                            <p className="text-[12px] font-bold text-black/10 italic">Empty spark slot {i}</p>
-                        </div>
-                    ))}
-                </div>
+                <SparksGrid />
             </div>
+
+            <CreateSparkModal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+            />
         </main>
     )
-}
-
-function cn(...classes: any[]) {
-    return classes.filter(Boolean).join(' ')
 }
