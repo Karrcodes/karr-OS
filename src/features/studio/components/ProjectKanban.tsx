@@ -1,10 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { Briefcase, Shield, Clock, MoreVertical, ExternalLink } from 'lucide-react'
+import { Briefcase, Shield, Clock, MoreVertical } from 'lucide-react'
 import { useStudio } from '../hooks/useStudio'
 import type { StudioProject, ProjectStatus } from '../types/studio.types'
 import { cn } from '@/lib/utils'
+import PlatformIcon from './PlatformIcon'
 
 const COLUMNS: { label: string; value: ProjectStatus }[] = [
     { label: 'Idea', value: 'idea' },
@@ -141,10 +142,10 @@ function ProjectCard({ project, onDragStart, onDragEnd }: {
                     {project.platforms?.map(p => (
                         <div
                             key={p}
-                            className="w-5 h-5 rounded-full bg-white border border-black/[0.08] flex items-center justify-center text-[8px] font-black text-black shadow-sm"
+                            className="w-5 h-5 rounded-full bg-white border border-black/[0.08] flex items-center justify-center text-black shadow-sm"
                             title={p}
                         >
-                            {p[0].toUpperCase()}
+                            <PlatformIcon platform={p} className="w-2.5 h-2.5" />
                         </div>
                     ))}
                     {!project.platforms?.length && (

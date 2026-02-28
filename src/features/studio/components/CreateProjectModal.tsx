@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, X, Briefcase, Globe, Type, AlignLeft } from 'lucide-react'
+import { Plus, X, Briefcase, Globe, Type, AlignLeft, Youtube, Instagram } from 'lucide-react'
 import type { ProjectStatus, ProjectType, Platform } from '../types/studio.types'
 import { useStudio } from '../hooks/useStudio'
+import PlatformIcon from './PlatformIcon'
 
 interface CreateProjectModalProps {
     isOpen: boolean
@@ -126,19 +127,20 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Primary Target</label>
                                 <div className="flex flex-wrap gap-1.5 px-2">
-                                    {PLATFORMS.slice(0, 4).map(p => (
+                                    {PLATFORMS.map(p => (
                                         <button
                                             key={p}
                                             type="button"
                                             onClick={() => togglePlatform(p)}
                                             className={cn(
-                                                "w-7 h-7 rounded-lg text-[10px] font-black flex items-center justify-center transition-all",
+                                                "w-7 h-7 rounded-lg flex items-center justify-center transition-all",
                                                 formData.platforms.includes(p)
                                                     ? "bg-black text-white scale-110"
                                                     : "bg-black/[0.04] text-black/30 hover:bg-black/[0.08]"
                                             )}
+                                            title={p.charAt(0).toUpperCase() + p.slice(1)}
                                         >
-                                            {p[0].toUpperCase()}
+                                            <PlatformIcon platform={p} className="w-3 h-3 text-black/60 group-hover:text-orange-600 transition-colors" />
                                         </button>
                                     ))}
                                 </div>
