@@ -32,7 +32,7 @@ export function TransactionLedger() {
                     <span className="w-1 h-1 rounded-full bg-black/10" />
                     <span className="flex items-center gap-1 text-[10px] font-bold text-amber-500 bg-amber-50 border border-amber-200/60 px-1.5 py-0.5 rounded-full">
                         <Lock className="w-2.5 h-2.5" />
-                        Limited
+                        <span className="hidden sm:inline">Limited</span>
                     </span>
                 </div>
                 {/* Open Monzo deep-link button */}
@@ -42,7 +42,7 @@ export function TransactionLedger() {
                     className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#00B9FF]/10 text-[#0070B9] border border-[#00B9FF]/20 hover:bg-[#00B9FF]/20 transition-all text-[11px] font-bold"
                 >
                     <ExternalLink className="w-3 h-3" />
-                    Open Monzo
+                    <span className="hidden sm:inline">Open Monzo</span>
                 </a>
             </div>
 

@@ -24,7 +24,7 @@ export function MonzoSyncControls({ className, showText = true }: MonzoSyncContr
                 )}
             >
                 <RefreshCw className="w-3.5 h-3.5" />
-                {showText && "Connect Monzo"}
+                {showText && <span className="hidden sm:inline">Connect Monzo</span>}
             </button>
         )
     }
@@ -34,10 +34,10 @@ export function MonzoSyncControls({ className, showText = true }: MonzoSyncContr
             <button
                 onClick={() => syncMonzo()}
                 disabled={isSyncing}
-                className="flex items-center gap-2 px-3 py-2 bg-[#7c3aed]/10 text-[#7c3aed] border border-[#7c3aed]/20 rounded-xl hover:bg-[#7c3aed]/20 transition-all font-bold text-[11px] min-w-[100px] justify-center"
+                className="flex items-center gap-2 px-3 py-2 bg-[#7c3aed]/10 text-[#7c3aed] border border-[#7c3aed]/20 rounded-xl hover:bg-[#7c3aed]/20 transition-all font-bold text-[11px] justify-center"
             >
                 <RefreshCw className={cn("w-3.5 h-3.5", isSyncing && "animate-spin")} />
-                {showText && (isSyncing ? "Syncing..." : "Sync Monzo")}
+                {showText && <span className="hidden sm:inline">{isSyncing ? "Syncing..." : "Sync Monzo"}</span>}
             </button>
             <button
                 onClick={handleReconnect}
