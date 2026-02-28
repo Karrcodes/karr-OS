@@ -66,7 +66,7 @@ export default function SparkDetailModal({ isOpen, onClose, spark, projects }: S
                 title: spark.title,
                 tagline: spark.notes?.slice(0, 100),
                 status: 'idea',
-                type: 'other'
+                type: 'Other'
             })
             // Link spark to the new project
             await updateSpark(spark.id, { project_id: project.id })

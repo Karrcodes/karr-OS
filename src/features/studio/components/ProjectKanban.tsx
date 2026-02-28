@@ -156,12 +156,14 @@ function ProjectCard({ project, milestones, onDragStart, onDragEnd, onClick }: {
                 <div className="flex justify-between items-start mb-3">
                     <div className={cn(
                         "px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-tight",
-                        project.type === 'video' && "bg-red-50 text-red-600",
-                        project.type === 'article' && "bg-blue-50 text-blue-600",
-                        project.type === 'product' && "bg-emerald-50 text-emerald-600",
+                        project.type === 'Media' && "bg-red-50 text-red-600",
+                        project.type === 'Architectural Design' && "bg-blue-50 text-blue-600",
+                        project.type === 'Product Design' && "bg-emerald-50 text-emerald-600",
+                        project.type === 'Technology' && "bg-cyan-50 text-cyan-600",
+                        project.type === 'Fashion' && "bg-purple-50 text-purple-600",
                         !project.type && "bg-black/[0.03] text-black/40"
                     )}>
-                        {project.type || 'other'}
+                        {project.type || 'Other'}
                     </div>
                     {project.gtv_featured && (
                         <div className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-50 border border-blue-100 rounded-md">

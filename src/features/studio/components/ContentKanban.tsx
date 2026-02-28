@@ -163,8 +163,12 @@ function ContentCard({ item, project, onDragStart, onDragEnd, onClick, onDelete 
         >
             <div className="flex justify-between items-start mb-3">
                 <div className="flex items-center gap-1.5">
-                    <div className="p-1 px-1.5 rounded-md bg-black/[0.03] flex items-center justify-center">
-                        <PlatformIcon platform={item.platform} className="w-2.5 h-2.5" />
+                    <div className="flex -space-x-1">
+                        {item.platforms?.map(p => (
+                            <div key={p} className="p-1 px-1.5 rounded-md bg-black/[0.03] flex items-center justify-center border border-white shadow-sm" title={p}>
+                                <PlatformIcon platform={p} className="w-2.5 h-2.5" />
+                            </div>
+                        ))}
                     </div>
                     <span className="text-[9px] font-black uppercase tracking-tight text-black/40">
                         {item.type || 'content'}
