@@ -14,7 +14,8 @@ import {
     ChevronRight,
     Briefcase,
     Type,
-    AlignLeft
+    AlignLeft,
+    Image as ImageIcon
 } from 'lucide-react'
 import { useStudio } from '../hooks/useStudio'
 import type { StudioProject, StudioMilestone } from '../types/studio.types'
@@ -86,7 +87,8 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
             setEditedData({
                 title: project.title,
                 tagline: project.tagline,
-                description: project.description
+                description: project.description,
+                cover_url: project.cover_url
             })
         }
         setIsEditing(!isEditing)
@@ -100,6 +102,18 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
             />
 
             <div className="relative w-full max-w-2xl h-full bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+                {/* Visual Header / Cover */}
+                {project.cover_url && !isEditing && (
+                    <div className="h-48 w-full overflow-hidden shrink-0">
+                        <img
+                            src={project.cover_url}
+                            alt=""
+                            className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent h-48 mt-[104px]" />
+                    </div>
+                )}
+
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-black/[0.05]">
                     <div className="flex items-center gap-3">
@@ -144,13 +158,25 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                                     </div>
                                 </div>
                                 {isEditing ? (
-                                    <input
-                                        type="text"
-                                        value={editedData.tagline ?? project.tagline ?? ''}
-                                        onChange={(e) => setEditedData(prev => ({ ...prev, tagline: e.target.value }))}
-                                        className="w-full text-lg text-black/40 font-medium bg-black/[0.02] border border-black/[0.1] rounded-xl px-3 py-1 mt-2 focus:outline-none focus:border-orange-500"
-                                        placeholder="Add a catchy tagline..."
-                                    />
+                                    <div className="space-y-3 mt-2">
+                                        <input
+                                            type="text"
+                                            value={editedData.tagline ?? project.tagline ?? ''}
+                                            onChange={(e) => setEditedData(prev => ({ ...prev, tagline: e.target.value }))}
+                                            className="w-full text-lg text-black/40 font-medium bg-black/[0.02] border border-black/[0.1] rounded-xl px-3 py-1 focus:outline-none focus:border-orange-500"
+                                            placeholder="Add a catchy tagline..."
+                                        />
+                                        <div className="relative">
+                                            <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
+                                            <input
+                                                type="url"
+                                                value={editedData.cover_url ?? project.cover_url ?? ''}
+                                                onChange={(e) => setEditedData(prev => ({ ...prev, cover_url: e.target.value }))}
+                                                className="w-full pl-10 pr-4 py-2 bg-black/[0.02] border border-black/[0.1] rounded-xl text-[12px] font-bold focus:outline-none focus:border-orange-500"
+                                                placeholder="Cover Image URL (Unsplash/Direct link)..."
+                                            />
+                                        </div>
+                                    </div>
                                 ) : (
                                     <p className="text-lg text-black/40 font-medium">{project.tagline || 'No tagline set'}</p>
                                 )}

@@ -18,6 +18,7 @@ const COLUMNS: { label: string; value: ProjectStatus }[] = [
 export default function ProjectKanban() {
     const { projects, updateProject, deleteProject, loading } = useStudio()
     const [draggingId, setDraggingId] = useState<string | null>(null)
+    const [dragOverStatus, setDragOverStatus] = useState<ProjectStatus | null>(null)
     const [selectedProject, setSelectedProject] = useState<StudioProject | null>(null)
 
     useEffect(() => {
@@ -32,12 +33,14 @@ export default function ProjectKanban() {
         return () => window.removeEventListener('studio:deleteProject', handleDelete)
     }, [deleteProject])
 
-    const onDragOver = (e: React.DragEvent) => {
+    const onDragOver = (e: React.DragEvent, status: ProjectStatus) => {
         e.preventDefault()
+        setDragOverStatus(status)
     }
 
     const onDrop = async (e: React.DragEvent, status: ProjectStatus) => {
         e.preventDefault()
+        setDragOverStatus(null)
         if (!draggingId) return
 
         try {
@@ -53,11 +56,14 @@ export default function ProjectKanban() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 min-h-[600px]">
             {COLUMNS.map(column => {
                 const columnProjects = projects.filter(p => p.status === column.value)
+                const isOver = dragOverStatus === column.value
+
                 return (
                     <div
                         key={column.value}
                         className="flex flex-col gap-4"
-                        onDragOver={onDragOver}
+                        onDragOver={(e) => onDragOver(e, column.value)}
+                        onDragLeave={() => setDragOverStatus(null)}
                         onDrop={(e) => onDrop(e, column.value)}
                     >
                         {/* Column Header */}
@@ -79,8 +85,9 @@ export default function ProjectKanban() {
 
                         {/* Column Content */}
                         <div className={cn(
-                            "flex-1 rounded-[32px] transition-colors p-2 space-y-3 min-h-[150px]",
-                            draggingId ? "bg-black/[0.01] border-2 border-dashed border-black/[0.03]" : "bg-transparent"
+                            "flex-1 rounded-[32px] transition-all p-2 space-y-3 min-h-[150px] border-2 border-transparent",
+                            isOver ? "bg-orange-50/50 border-orange-200 shadow-inner scale-[1.01]" :
+                                draggingId ? "bg-black/[0.01] border-dashed border-black/[0.05]" : "bg-transparent"
                         )}>
                             {loading ? (
                                 <div className="space-y-3">
@@ -132,6 +139,17 @@ function ProjectCard({ project, onDragStart, onDragEnd, onClick }: {
             onClick={onClick}
             className="group relative p-4 bg-white border border-black/[0.05] rounded-2xl cursor-grab active:cursor-grabbing hover:border-orange-200 hover:shadow-xl transition-all"
         >
+            {project.cover_url && (
+                <div className="absolute inset-0 -z-10 bg-black/5 overflow-hidden rounded-2xl">
+                    <img
+                        src={project.cover_url}
+                        alt=""
+                        className="w-full h-full object-cover opacity-20 group-hover:opacity-40 group-hover:scale-110 transition-all duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-white via-white/80 to-transparent" />
+                </div>
+            )}
+
             <div className="flex justify-between items-start mb-3">
                 <div className={cn(
                     "px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-tight",

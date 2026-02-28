@@ -24,7 +24,8 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
         type: 'article' as ProjectType,
         platforms: [] as Platform[],
         status: 'idea' as ProjectStatus,
-        gtv_featured: false
+        gtv_featured: false,
+        cover_url: ''
     })
 
     if (!isOpen) return null
@@ -44,7 +45,8 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                 type: 'article',
                 platforms: [],
                 status: 'idea',
-                gtv_featured: false
+                gtv_featured: false,
+                cover_url: ''
             })
         } catch (err: any) {
             console.error('Failed to create project:', err)
@@ -106,6 +108,16 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                                     placeholder="One-line Tagline"
                                     value={formData.tagline}
                                     onChange={e => setFormData(prev => ({ ...prev, tagline: e.target.value }))}
+                                    className="w-full pl-11 pr-4 py-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[13px] font-medium focus:outline-none focus:border-orange-200 transition-all"
+                                />
+                            </div>
+                            <div className="relative">
+                                <Plus className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
+                                <input
+                                    type="url"
+                                    placeholder="Cover Image URL (optional)"
+                                    value={formData.cover_url}
+                                    onChange={e => setFormData(prev => ({ ...prev, cover_url: e.target.value }))}
                                     className="w-full pl-11 pr-4 py-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[13px] font-medium focus:outline-none focus:border-orange-200 transition-all"
                                 />
                             </div>

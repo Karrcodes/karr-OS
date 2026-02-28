@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Plus, X, Type, Link as LinkIcon, AlignLeft, Tag, DollarSign, Briefcase } from 'lucide-react'
 import type { SparkType, StudioProject } from '../types/studio.types'
 import { useStudio } from '../hooks/useStudio'
@@ -36,6 +36,23 @@ export default function CreateSparkModal({ isOpen, onClose }: CreateSparkModalPr
     const [suggestions, setSuggestions] = useState<any[]>([])
     const [isSearching, setIsSearching] = useState(false)
     const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null)
+
+    // Reset form when modal opens to prevent data leaking from previous captures
+    useEffect(() => {
+        if (isOpen) {
+            setFormData({
+                title: '',
+                type: 'idea',
+                url: '',
+                notes: '',
+                tags: [],
+                project_id: '',
+                price: undefined,
+                icon_url: ''
+            } as any)
+            setSuggestions([])
+        }
+    }, [isOpen])
 
     if (!isOpen) return null
 
@@ -192,6 +209,16 @@ export default function CreateSparkModal({ isOpen, onClose }: CreateSparkModalPr
                                 {/* Suggestions Dropdown */}
                                 {suggestions.length > 0 && (
                                     <div className="absolute left-0 right-0 top-full mt-2 z-50 bg-white border border-black/[0.05] rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-top-2 duration-200">
+                                        <div className="px-3 py-2 bg-black/[0.02] border-b border-black/[0.03] flex items-center justify-between">
+                                            <span className="text-[10px] font-black text-black/30 uppercase tracking-widest">AI Matches Found</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => setSuggestions([])}
+                                                className="text-[10px] font-bold text-blue-600 hover:text-blue-700 transition-colors"
+                                            >
+                                                Dismiss Suggestions
+                                            </button>
+                                        </div>
                                         {suggestions.map((s, i) => (
                                             <button
                                                 key={i}

@@ -27,6 +27,14 @@ export default function SparkDetailModal({ isOpen, onClose, spark, projects }: S
     const [isEditing, setIsEditing] = useState(false)
     const [editedNotes, setEditedNotes] = useState('')
 
+    // Reset state when spark changes to prevent "leaking" notes between different sparks
+    useEffect(() => {
+        if (spark) {
+            setEditedNotes(spark.notes || '')
+            setIsEditing(false)
+        }
+    }, [spark])
+
     if (!isOpen || !spark) return null
 
     const linkedProject = projects.find(p => p.id === spark.project_id)
