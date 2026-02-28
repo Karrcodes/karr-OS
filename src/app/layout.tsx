@@ -37,12 +37,12 @@ import { SecurityLock } from '@/components/SecurityLock'
 import { GlobalQuickAction } from '@/components/GlobalQuickAction'
 import { headers } from 'next/headers'
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const headersList = headers()
+  const headersList = await headers()
   const pathname = headersList.get('x-invoke-path') || ''
   const isLandingPage = pathname === '/home'
 
