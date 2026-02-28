@@ -26,11 +26,19 @@ export async function notifyMonzoTransaction(tx: {
     }
 
     const emoji = tx.isTransfer ? '🔄' : (tx.isSpend ? '💸' : '💰')
-    const title = tx.isTransfer ? 'Monzo Transfer' : (tx.isSpend ? `${emoji} Monzo Spend` : `${emoji} Monzo Received`)
+    let title = tx.isTransfer ? 'Monzo Transfer' : (tx.isSpend ? `${emoji} Monzo Spend` : `${emoji} Monzo Received`)
 
-    const bodyText = tx.isSpend
-        ? `Spent £${tx.amount.toFixed(2)} from ${tx.pocketName}: ${tx.description}`
-        : `Received £${tx.amount.toFixed(2)} in ${tx.pocketName}: ${tx.description}`
+    let bodyText = ''
+    if (tx.isTransfer) {
+        title = `🔄 Monzo Transfer`
+        bodyText = tx.isSpend
+            ? `Transferred £${tx.amount.toFixed(2)} from ${tx.pocketName}: ${tx.description}`
+            : `Transferred £${tx.amount.toFixed(2)} into ${tx.pocketName}: ${tx.description}`
+    } else {
+        bodyText = tx.isSpend
+            ? `Spent £${tx.amount.toFixed(2)} from ${tx.pocketName}: ${tx.description}`
+            : `Received £${tx.amount.toFixed(2)} in ${tx.pocketName}: ${tx.description}`
+    }
 
     return await sendPushNotification(title, bodyText, '/finances/transactions')
 }
