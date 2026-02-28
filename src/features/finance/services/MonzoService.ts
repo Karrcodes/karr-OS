@@ -452,7 +452,8 @@ export class MonzoService {
                             description,
                             isSpend,
                             isTransfer,
-                            pocketName: pocket?.name || 'Main Account'
+                            pocketName: pocket?.name || 'Main Account',
+                            pocketId: pocket?.id
                         })
                     }
                 }

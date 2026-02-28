@@ -164,7 +164,20 @@ export default function SettingsPage() {
 
     const toggleNotification = async (key: string, current: boolean) => {
         try {
-            await updateSetting(key as any, !current)
+            const nextValue = !current
+            await updateSetting(key as any, nextValue)
+
+            // Auto-disable others if transactions are disabled
+            if (key === 'notification_transactions' && nextValue === false) {
+                const togglesToDisable = [
+                    'notification_low_balance',
+                    'notification_large_transaction',
+                    'notification_bank_sync',
+                    'notification_goal_milestone',
+                    'notification_reminders'
+                ]
+                await Promise.all(togglesToDisable.map(t => updateSetting(t as any, false)))
+            }
         } catch (error) {
             console.error(`Failed to toggle ${key}:`, error)
         }

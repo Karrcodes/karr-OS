@@ -121,7 +121,8 @@ export async function POST(request: Request) {
                 description: finalDescription,
                 isSpend,
                 isTransfer,
-                pocketName
+                pocketName,
+                pocketId
             })
             notificationStatus = result.success
                 ? (result.message || `sent (to ${result.subscriptionCount || 0} devices)`)
