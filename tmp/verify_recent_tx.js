@@ -69,8 +69,8 @@ async function run() {
     const personal = accData.accounts.find(a => a.type === 'uk_retail');
     const business = accData.accounts.find(a => a.type === 'uk_business');
 
-    // 5. Fetch transactions for both (last hour)
-    const since = new Date(Date.now() - 3600 * 1000).toISOString();
+    // 5. Fetch transactions for both (last 24 hours)
+    const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
 
     async function getTx(acc, label) {
         if (!acc) return;
@@ -82,9 +82,19 @@ async function run() {
         if (txData.transactions?.length === 0) {
             console.log('  None found.');
         } else {
-            txData.transactions.forEach(t => {
-                console.log(`  - [${t.created}] ${t.amount / 100} ${t.currency}: ${t.merchant?.name || t.description} (ID: ${t.id})`);
-            });
+            console.log(`Found ${txData.transactions.length} transactions total.`);
+            const merchants = txData.transactions.filter(t => t.merchant || t.description.toLowerCase().includes('apple pay'));
+            if (merchants.length > 0) {
+                console.log(`\nFound ${merchants.length} potential merchant transactions:`);
+                merchants.forEach(m => {
+                    console.log(`  - [${m.created}] ${m.amount / 100} ${m.currency}: ${m.merchant?.name || m.description} (ID: ${m.id})`);
+                });
+            } else {
+                console.log('No merchant/Apple Pay transactions found in this window.');
+            }
+            // Also print last 3 raw just for context
+            console.log('\nLast 3 raw transactions:');
+            console.log(JSON.stringify(txData.transactions.slice(-3), null, 2));
         }
     }
 
