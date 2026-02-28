@@ -4,7 +4,7 @@ self.addEventListener('push', (event) => {
     try {
         const data = event.data.json();
         const options = {
-            body: data.body || 'New message from KarrOS',
+            body: data.body || 'New message received',
             icon: '/app-icon.png',
             badge: '/app-icon.png',
             vibrate: [100, 50, 100],
@@ -15,7 +15,7 @@ self.addEventListener('push', (event) => {
         };
 
         event.waitUntil(
-            self.registration.showNotification(data.title || 'KarrOS', options)
+            self.registration.showNotification(data.title || 'Notification', options)
         );
     } catch (e) {
         console.error('Push event error:', e);

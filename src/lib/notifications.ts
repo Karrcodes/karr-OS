@@ -72,7 +72,7 @@ export async function subscribeToPushNotifications() {
         // 6. Send initial test notification locally
         try {
             await registration.showNotification('Notifications Enabled', {
-                body: "You'll now receive real-time updates from KarrOS.",
+                body: "You'll now receive real-time updates.",
                 icon: '/app-icon.png',
                 badge: '/app-icon.png',
                 tag: 'subscription-confirmed'
