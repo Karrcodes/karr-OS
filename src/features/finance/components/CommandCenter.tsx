@@ -92,15 +92,13 @@ export function CommandCenter() {
         const potGoals = pots
             .filter(p =>
                 p.type === 'savings' ||
-                p.target_budget > 0 ||
-                p.name.toLowerCase().includes('rent') ||
-                p.name.toLowerCase().includes('savings') ||
+                p.target_amount > 0 ||
                 p.name.toLowerCase().includes('goal')
             )
             .map(p => ({
                 id: p.id,
                 name: p.name,
-                target_amount: p.target_budget > 0 ? p.target_budget : p.balance,
+                target_amount: p.target_amount > 0 ? p.target_amount : p.balance,
                 current_amount: p.balance,
                 deadline: null,
                 is_recurring: p.name.toLowerCase().includes('rent'),
@@ -115,9 +113,7 @@ export function CommandCenter() {
         return pots.filter(p =>
             !p.name.toLowerCase().includes('general') &&
             p.type !== 'savings' &&
-            p.target_budget <= 0 &&
-            !p.name.toLowerCase().includes('rent') &&
-            !p.name.toLowerCase().includes('savings') &&
+            p.target_amount <= 0 &&
             !p.name.toLowerCase().includes('goal')
         )
     }, [pots])

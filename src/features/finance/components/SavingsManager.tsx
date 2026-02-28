@@ -21,7 +21,11 @@ export function SavingsManager() {
     const loading = gLoading || pLoading
 
     // Logic to map Monzo pots to "Goals" if they have a target or a specific name
-    const monzoGoals = pots.filter(p => p.target_amount > 0 || ['rent', 'bills', 'savings', 'holiday', 'emergency'].some(kw => p.name.toLowerCase().includes(kw)))
+    const monzoGoals = pots.filter(p =>
+        p.type === 'savings' ||
+        p.target_amount > 0 ||
+        p.name.toLowerCase().includes('goal')
+    )
 
     const allGoals = [
         ...goals.map(g => ({ ...g, type: 'manual' as const })),

@@ -236,16 +236,14 @@ export class MonzoService {
                         name: pot.name,
                         balance: pot.balance / 100,
                         current_balance: pot.balance / 100,
-                        target_budget: (pot.goal_amount || 0) / 100,
+                        target_budget: existing?.target_budget || 0, // Preserve manual weekly allocation
+                        target_amount: (pot.goal_amount || 0) / 100, // Actual savings goal from Monzo
                         last_synced_at: new Date().toISOString(),
                         type: (
                             pot.type?.toLowerCase().includes('savings') ||
                             pot.type?.toLowerCase().includes('interest') ||
                             pot.savings_account_id ||
-                            (pot.goal_amount && pot.goal_amount > 0) ||
-                            pot.name.toLowerCase().includes('savings') ||
-                            pot.name.toLowerCase().includes('rent') ||
-                            pot.name.toLowerCase().includes('goal')
+                            pot.name.toLowerCase().includes('savings')
                         ) ? 'savings' : 'general',
                         profile: profile
                     }
