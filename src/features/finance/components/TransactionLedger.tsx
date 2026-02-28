@@ -1,32 +1,15 @@
 'use client'
 
-import { useState } from 'react'
 import { useTransactions } from '../hooks/useTransactions'
-import { ArrowUpRight, ArrowDownLeft, RefreshCw, Layers } from 'lucide-react'
-import { Skeleton } from './Skeleton'
+import { ArrowUpRight, ArrowDownLeft, Lock, ExternalLink } from 'lucide-react'
 import { useFinanceProfile } from '../contexts/FinanceProfileContext'
-import { useBank } from '../hooks/useBank'
 import { usePots } from '../hooks/usePots'
-import { TransactionDetailsModal } from './TransactionDetailsModal'
 import { getCategoryById } from '../constants/categories'
-import type { Transaction } from '../types/finance.types'
 
 export function TransactionLedger() {
-    const { transactions, loading, refetch, clearTransactions } = useTransactions()
+    const { transactions, loading } = useTransactions()
     const { pots, loading: potsLoading } = usePots()
     const { isSyncing } = useFinanceProfile()
-    const { syncTransactions, startConnection, loading: bankSyncLoading } = useBank()
-    const [selectedTx, setSelectedTx] = useState<Transaction | null>(null)
-
-    const handleSync = async () => {
-        const count = await syncTransactions()
-        if (count > 0) {
-            alert(`Successfully synced ${count} new transactions!`)
-            refetch()
-        } else if (count === 0) {
-            alert('No new transactions found.')
-        }
-    }
 
     if (loading || potsLoading) {
         return (
@@ -40,90 +23,85 @@ export function TransactionLedger() {
 
     const recentTransactions = transactions.slice(0, 5)
 
-    if (recentTransactions.length === 0) {
-        return (
-            <div className="py-8 flex flex-col items-center justify-center text-center">
-                <div className="w-12 h-12 rounded-2xl bg-black/[0.03] flex items-center justify-center mb-3">
-                    <Layers className="w-6 h-6 text-black/20" />
-                </div>
-                <p className="text-[13px] font-medium text-black/40">No transactions recorded yet.</p>
-                <div className="flex flex-col gap-2 mt-4 items-center">
-                    <p className="text-[11px] text-black/25">Use the quick action button below to log a spend.</p>
-                </div>
-            </div>
-        )
-    }
-
     return (
         <div className="space-y-4">
+            {/* Header */}
             <div className="flex gap-y-2 items-center justify-between">
                 <div className="flex items-center gap-2">
                     <h3 className="text-[11px] uppercase tracking-wider font-bold text-black/40">Recent Transactions</h3>
                     <span className="w-1 h-1 rounded-full bg-black/10" />
-                    <a href="/finances/transactions" className="text-[10px] font-bold text-black/40 hover:text-black hover:underline transition-colors">See All</a>
+                    <span className="flex items-center gap-1 text-[10px] font-bold text-amber-500 bg-amber-50 border border-amber-200/60 px-1.5 py-0.5 rounded-full">
+                        <Lock className="w-2.5 h-2.5" />
+                        Limited
+                    </span>
+                </div>
+                {/* Open Monzo deep-link button */}
+                <a
+                    href="monzo://"
+                    title="View your full transaction history in the Monzo app"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#00B9FF]/10 text-[#0070B9] border border-[#00B9FF]/20 hover:bg-[#00B9FF]/20 transition-all text-[11px] font-bold"
+                >
+                    <ExternalLink className="w-3 h-3" />
+                    Open Monzo
+                </a>
+            </div>
+
+            {/* Locked overlay with blurred content */}
+            <div className="relative rounded-2xl overflow-hidden">
+                {/* The lock overlay */}
+                <div className="absolute inset-0 z-10 backdrop-blur-[3px] bg-white/60 flex flex-col items-center justify-center gap-3 border border-amber-200/40 rounded-2xl">
+                    <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200/60 flex items-center justify-center">
+                        <Lock className="w-5 h-5 text-amber-500" />
+                    </div>
+                    <div className="text-center px-4">
+                        <p className="text-[13px] font-bold text-black/70">Card transactions unavailable</p>
+                        <p className="text-[11px] text-black/40 mt-0.5">Monzo API restriction — tap Open Monzo above to view all</p>
+                    </div>
                 </div>
 
-            </div>
-
-            <div className="space-y-2">
-                {recentTransactions.map((t) => {
-                    const potName = pots.find(p => p.id === t.pocket_id)?.name || 'General'
-                    return (
-                        <button
-                            key={t.id}
-                            onClick={() => setSelectedTx(t)}
-                            className="w-full text-left flex items-center gap-3 p-3 rounded-xl border border-black/[0.04] bg-white hover:bg-black/[0.01] transition-colors group"
-                        >
-                            <div className="w-10 h-10 rounded-xl bg-black/[0.03] border border-black/[0.05] flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform overflow-hidden px-1">
-                                <span className="text-lg leading-none" title={t.category || 'Other'}>
-                                    {t.category ? getCategoryById(t.category).emoji : (t.emoji || '💸')}
-                                </span>
-                            </div>
-
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
+                {/* Blurred content (not interactive) */}
+                <div className="space-y-2 pointer-events-none select-none" aria-hidden="true">
+                    {recentTransactions.length === 0 ? (
+                        <>
+                            <div className="h-14 rounded-xl bg-black/[0.02] border border-black/[0.04]" />
+                            <div className="h-14 rounded-xl bg-black/[0.02] border border-black/[0.04]" />
+                            <div className="h-14 rounded-xl bg-black/[0.02] border border-black/[0.04]" />
+                        </>
+                    ) : (
+                        recentTransactions.map((t) => (
+                            <div
+                                key={t.id}
+                                className="w-full flex items-center gap-3 p-3 rounded-xl border border-black/[0.04] bg-white"
+                            >
+                                <div className="w-10 h-10 rounded-xl bg-black/[0.03] border border-black/[0.05] flex items-center justify-center flex-shrink-0 px-1">
+                                    <span className="text-lg leading-none">
+                                        {t.category ? getCategoryById(t.category).emoji : (t.emoji || '💸')}
+                                    </span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between">
                                         <p className="text-[13px] font-bold text-black truncate">{t.description || 'Transaction'}</p>
-                                        {t.provider === 'enable_banking' && (
-                                            <span className="text-[9px] font-bold text-black bg-black/5 px-1 py-0.5 rounded border border-black/10 flex-shrink-0">BANK</span>
-                                        )}
-                                        {t.provider === 'revolut_csv' && (
-                                            <span className="text-[9px] font-bold text-black bg-black/5 px-1 py-0.5 rounded border border-black/10 flex-shrink-0">CSV</span>
-                                        )}
-                                    </div>
-                                    <p className={`text-[13px] font-bold ${t.type === 'spend' ? 'text-black' : 'text-[#059669]'} privacy-blur`}>
-                                        <Skeleton as="span" show={loading || isSyncing}>
+                                        <p className={`text-[13px] font-bold ${t.type === 'spend' ? 'text-black' : 'text-[#059669]'}`}>
                                             {t.type === 'spend' ? '-' : '+'}£{t.amount.toFixed(2)}
-                                        </Skeleton>
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                    <p className="text-[10px] uppercase font-bold tracking-wider text-black/30">
-                                        {t.category ? getCategoryById(t.category).label : 'other'}
-                                    </p>
-                                    <span className="w-1 h-1 rounded-full bg-black/10" />
-                                    <p className="text-[10px] font-medium text-black/25">
-                                        {new Date(t.date).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                                    </p>
-                                    {t.type === 'transfer' && (
-                                        <ArrowUpRight className="w-2.5 h-2.5 text-blue-500" />
-                                    )}
-                                    {t.type === 'allocate' && (
-                                        <ArrowDownLeft className="w-2.5 h-2.5 text-emerald-500" />
-                                    )}
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                        <p className="text-[10px] uppercase font-bold tracking-wider text-black/30">
+                                            {t.category ? getCategoryById(t.category).label : 'other'}
+                                        </p>
+                                        <span className="w-1 h-1 rounded-full bg-black/10" />
+                                        <p className="text-[10px] font-medium text-black/25">
+                                            {new Date(t.date).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                        </p>
+                                        {t.type === 'transfer' && <ArrowUpRight className="w-2.5 h-2.5 text-blue-500" />}
+                                        {t.type === 'allocate' && <ArrowDownLeft className="w-2.5 h-2.5 text-emerald-500" />}
+                                    </div>
                                 </div>
                             </div>
-                        </button>
-                    )
-                })}
+                        ))
+                    )}
+                </div>
             </div>
-
-            <TransactionDetailsModal
-                transaction={selectedTx}
-                pots={pots}
-                isOpen={!!selectedTx}
-                onClose={() => setSelectedTx(null)}
-            />
         </div>
     )
 }

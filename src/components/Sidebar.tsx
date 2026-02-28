@@ -41,7 +41,7 @@ const navItems = [
         icon: BarChart3,
         sub: [
             { label: 'Projections', href: '/finances/projections', icon: Calendar, caps: ['P'] },
-            { label: 'Transactions', href: '/finances/transactions', icon: Receipt, caps: ['P', 'B'] },
+            { label: 'Transactions', href: '/finances/transactions', icon: Receipt, caps: ['P', 'B'], disabled: true },
             { label: 'Analytics', href: '/finances/analytics', icon: TrendingUp, caps: ['P'] },
             { label: 'Liabilities', href: '/finances/liabilities', icon: CreditCard, caps: ['P', 'B'] },
             { label: 'Savings', href: '/finances/savings', icon: PiggyBank, caps: ['P', 'B'] },
@@ -358,24 +358,33 @@ export function Sidebar() {
                                             if (!subItem) return null
                                             const SubIcon = subItem.icon
                                             const subActive = pathname === subItem.href
+                                            const isDisabled = (subItem as any).disabled
                                             return (
                                                 <Reorder.Item key={subLabel} value={subLabel} className="cursor-grab active:cursor-grabbing">
-                                                    <Link
-                                                        href={subItem.href}
-                                                        draggable={false}
-                                                        className={cn(
-                                                            'flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] transition-colors group/sub',
-                                                            subActive ? 'text-black bg-black/5 font-semibold' : 'text-black/35 hover:text-black/60'
-                                                        )}
-                                                    >
-                                                        <SubIcon className="w-3 h-3 shrink-0" />
-                                                        <span className="flex-1 truncate">{subItem.label}</span>
-                                                        <div className="flex items-center gap-1">
-                                                            {(subItem as any).caps?.map((c: string) => (
-                                                                <CapBadge key={c} cap={c as 'P' | 'B'} />
-                                                            ))}
+                                                    {isDisabled ? (
+                                                        <div className="flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] opacity-35 cursor-not-allowed grayscale select-none">
+                                                            <SubIcon className="w-3 h-3 shrink-0" />
+                                                            <span className="flex-1 truncate">{subItem.label}</span>
+                                                            <Lock className="w-2.5 h-2.5" />
                                                         </div>
-                                                    </Link>
+                                                    ) : (
+                                                        <Link
+                                                            href={subItem.href}
+                                                            draggable={false}
+                                                            className={cn(
+                                                                'flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] transition-colors group/sub',
+                                                                subActive ? 'text-black bg-black/5 font-semibold' : 'text-black/35 hover:text-black/60'
+                                                            )}
+                                                        >
+                                                            <SubIcon className="w-3 h-3 shrink-0" />
+                                                            <span className="flex-1 truncate">{subItem.label}</span>
+                                                            <div className="flex items-center gap-1">
+                                                                {(subItem as any).caps?.map((c: string) => (
+                                                                    <CapBadge key={c} cap={c as 'P' | 'B'} />
+                                                                ))}
+                                                            </div>
+                                                        </Link>
+                                                    )}
                                                 </Reorder.Item>
                                             )
                                         })}
@@ -387,24 +396,33 @@ export function Sidebar() {
                                             if (!subItem) return null
                                             const SubIcon = subItem.icon
                                             const subActive = pathname === subItem.href
+                                            const isDisabled = (subItem as any).disabled
                                             return (
                                                 <div key={subLabel}>
-                                                    <Link
-                                                        href={subItem.href}
-                                                        draggable={false}
-                                                        className={cn(
-                                                            'flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] transition-colors group/sub',
-                                                            subActive ? 'text-black bg-black/5 font-semibold' : 'text-black/35 hover:text-black/60'
-                                                        )}
-                                                    >
-                                                        <SubIcon className="w-3 h-3 shrink-0" />
-                                                        <span className="flex-1 truncate">{subItem.label}</span>
-                                                        <div className="flex items-center gap-1">
-                                                            {(subItem as any).caps?.map((c: string) => (
-                                                                <CapBadge key={c} cap={c as 'P' | 'B'} />
-                                                            ))}
+                                                    {isDisabled ? (
+                                                        <div className="flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] opacity-35 cursor-not-allowed grayscale select-none">
+                                                            <SubIcon className="w-3 h-3 shrink-0" />
+                                                            <span className="flex-1 truncate">{subItem.label}</span>
+                                                            <Lock className="w-2.5 h-2.5" />
                                                         </div>
-                                                    </Link>
+                                                    ) : (
+                                                        <Link
+                                                            href={subItem.href}
+                                                            draggable={false}
+                                                            className={cn(
+                                                                'flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] transition-colors group/sub',
+                                                                subActive ? 'text-black bg-black/5 font-semibold' : 'text-black/35 hover:text-black/60'
+                                                            )}
+                                                        >
+                                                            <SubIcon className="w-3 h-3 shrink-0" />
+                                                            <span className="flex-1 truncate">{subItem.label}</span>
+                                                            <div className="flex items-center gap-1">
+                                                                {(subItem as any).caps?.map((c: string) => (
+                                                                    <CapBadge key={c} cap={c as 'P' | 'B'} />
+                                                                ))}
+                                                            </div>
+                                                        </Link>
+                                                    )}
                                                 </div>
                                             )
                                         })}
