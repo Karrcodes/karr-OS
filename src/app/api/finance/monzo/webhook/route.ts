@@ -18,7 +18,7 @@ export async function POST(request: Request) {
             body: `Type: ${type}, Monzo ID: ${data?.id || 'N/A'}`
         })
 
-        if (type !== 'transaction.created') {
+        if (type !== 'transaction.created' && type !== 'transaction.updated') {
             return NextResponse.json({ success: true, message: 'Ignored event type' })
         }
 
@@ -95,14 +95,16 @@ export async function POST(request: Request) {
 
         let notificationStatus = 'skipped'
         if (shouldNotify) {
-            const result = await notifyMonzoTransaction({
+            const result: any = await notifyMonzoTransaction({
                 amount,
                 description: finalDescription,
                 isSpend,
                 isTransfer,
                 pocketName
             })
-            notificationStatus = result.success ? `sent (to ${result.subscriptionCount || 0} devices)` : `failed: ${result.error || result.message}`
+            notificationStatus = result.success
+                ? (result.message || `sent (to ${result.subscriptionCount || 0} devices)`)
+                : `failed: ${result.error || result.message}`
         }
 
         return NextResponse.json({

@@ -184,8 +184,13 @@ export default function SettingsPage() {
         if (!confirm('Are you sure? This will stop notifications on ALL your devices until you re-enable them.')) return
         setIsSaving(true)
         try {
+            // 1. Unsubscribe from current browser first
+            await unsubscribeFromPushNotifications()
+
+            // 2. Wipe from server
             const { error } = await supabase.from('sys_push_subscriptions').delete().eq('user_id', 'karr')
             if (error) throw error
+
             setIsSubscribed(false)
             alert('All devices cleared. Please click "Enable" to re-register this device.')
         } catch (err: any) {
