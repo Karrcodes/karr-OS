@@ -173,55 +173,96 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                 <div className="flex-1 overflow-y-auto p-8 space-y-10">
                     {/* Basic Info */}
                     <section className="space-y-4">
-                        <div className="flex justify-between items-start">
-                            <div className="space-y-1">
-                                <div className="flex items-center gap-2">
+                        <div className="space-y-4">
+                            <div className="flex flex-col gap-4">
+                                <div className="space-y-1">
                                     {isEditing ? (
-                                        <input
-                                            type="text"
-                                            value={editedData.title ?? project.title}
-                                            onChange={(e) => setEditedData(prev => ({ ...prev, title: e.target.value }))}
-                                            className="text-3xl font-black text-black tracking-tight bg-black/[0.02] border border-black/[0.1] rounded-xl px-3 py-1 focus:outline-none focus:border-orange-500"
-                                        />
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Project Title</label>
+                                                <input
+                                                    type="text"
+                                                    value={editedData.title ?? project.title}
+                                                    onChange={(e) => setEditedData(prev => ({ ...prev, title: e.target.value }))}
+                                                    className="w-full text-3xl font-black text-black tracking-tight bg-black/[0.02] border border-black/[0.1] rounded-xl px-4 py-2 focus:outline-none focus:border-orange-500 transition-all font-outfit"
+                                                />
+                                            </div>
+
+                                            <div className="space-y-4">
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="space-y-2">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Project Status</label>
+                                                        <div className="flex items-center h-[46px] px-4 bg-black/[0.02] border border-black/[0.1] rounded-xl">
+                                                            <div className={cn(
+                                                                "px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-tight",
+                                                                project.status === 'active' ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"
+                                                            )}>
+                                                                {project.status}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Project Type</label>
+                                                        <div className="flex items-center h-[46px] px-4 bg-black/[0.02] border border-black/[0.1] rounded-xl text-[11px] font-bold text-black/60 capitalize">
+                                                            {project.type?.replace('_', ' ') || 'Other'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Target Date</label>
+                                                    <div className="relative">
+                                                        <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
+                                                        <input
+                                                            type="date"
+                                                            value={editedData.target_date ?? project.target_date ?? ''}
+                                                            onChange={(e) => setEditedData(prev => ({ ...prev, target_date: e.target.value }))}
+                                                            className="w-full pl-11 pr-4 py-3 bg-black/[0.02] border border-black/[0.1] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-orange-500"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     ) : (
-                                        <h1 className="text-3xl font-black text-black tracking-tight">{project.title}</h1>
+                                        <>
+                                            <div className="flex items-center gap-3">
+                                                <h1 className="text-3xl font-black text-black tracking-tight">{project.title}</h1>
+                                                <div className={cn(
+                                                    "px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-tight",
+                                                    project.status === 'active' ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"
+                                                )}>
+                                                    {project.status}
+                                                </div>
+                                            </div>
+                                        </>
                                     )}
-                                    <div className={cn(
-                                        "px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-tight",
-                                        project.status === 'active' ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"
-                                    )}>
-                                        {project.status}
-                                    </div>
-                                    <div className="relative flex-1">
-                                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
-                                        <input
-                                            type="date"
-                                            value={editedData.target_date ?? project.target_date ?? ''}
-                                            onChange={(e) => setEditedData(prev => ({ ...prev, target_date: e.target.value }))}
-                                            className="w-full pl-10 pr-4 py-2 bg-black/[0.02] border border-black/[0.1] rounded-xl text-[12px] font-bold focus:outline-none focus:border-orange-500"
-                                        />
-                                    </div>
                                 </div>
                                 {isEditing ? (
-                                    <div className="space-y-3 mt-2">
-                                        <input
-                                            type="text"
-                                            value={editedData.tagline ?? project.tagline ?? ''}
-                                            onChange={(e) => setEditedData(prev => ({ ...prev, tagline: e.target.value }))}
-                                            className="w-full text-lg text-black/40 font-medium bg-black/[0.02] border border-black/[0.1] rounded-xl px-3 py-1 focus:outline-none focus:border-orange-500"
-                                            placeholder="Add a catchy tagline..."
-                                        />
-                                        <div className="relative flex-1">
-                                            <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
+                                    <div className="space-y-4 pt-2">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Tagline</label>
+                                            <input
+                                                type="text"
+                                                value={editedData.tagline ?? project.tagline ?? ''}
+                                                onChange={(e) => setEditedData(prev => ({ ...prev, tagline: e.target.value }))}
+                                                className="w-full text-lg text-black/40 font-medium bg-black/[0.02] border border-black/[0.1] rounded-xl px-4 py-2 focus:outline-none focus:border-orange-500"
+                                                placeholder="Add a catchy tagline..."
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Cover Asset</label>
                                             <div className="flex gap-2">
-                                                <input
-                                                    type="url"
-                                                    value={editedData.cover_url ?? project.cover_url ?? ''}
-                                                    onChange={(e) => setEditedData(prev => ({ ...prev, cover_url: e.target.value }))}
-                                                    className="flex-1 pl-10 pr-4 py-2 bg-black/[0.02] border border-black/[0.1] rounded-xl text-[12px] font-bold focus:outline-none focus:border-orange-500"
-                                                    placeholder="Cover Image URL..."
-                                                />
-                                                <label className="cursor-pointer">
+                                                <div className="relative flex-1">
+                                                    <ImageIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
+                                                    <input
+                                                        type="url"
+                                                        value={editedData.cover_url ?? project.cover_url ?? ''}
+                                                        onChange={(e) => setEditedData(prev => ({ ...prev, cover_url: e.target.value }))}
+                                                        className="w-full pl-11 pr-4 py-3 bg-black/[0.02] border border-black/[0.1] rounded-xl text-[12px] font-bold focus:outline-none focus:border-orange-500"
+                                                        placeholder="Cover Image URL..."
+                                                    />
+                                                </div>
+                                                <label className="cursor-pointer group/upload relative">
                                                     <input
                                                         type="file"
                                                         className="hidden"
@@ -229,10 +270,11 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                                                         onChange={e => setCoverFile(e.target.files?.[0] || null)}
                                                     />
                                                     <div className={cn(
-                                                        "h-full px-4 rounded-xl border border-dashed flex items-center justify-center transition-all",
-                                                        coverFile ? "bg-emerald-50 border-emerald-200 text-emerald-600" : "bg-black/[0.02] border-black/[0.1] hover:border-orange-200"
+                                                        "h-full px-5 rounded-xl border-2 border-dashed flex items-center justify-center transition-all",
+                                                        coverFile ? "bg-emerald-50 border-emerald-200 text-emerald-600 shadow-inner" : "bg-black/[0.02] border-black/[0.1] hover:border-orange-200 hover:bg-orange-50/5"
                                                     )}>
-                                                        <UploadCloud className="w-4 h-4" />
+                                                        <UploadCloud className="w-5 h-5" />
+                                                        {coverFile && <div className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full animate-ping" />}
                                                     </div>
                                                 </label>
                                             </div>
@@ -250,22 +292,24 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                                     </div>
                                 )}
                             </div>
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={handlePromote}
-                                    className="px-3 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 text-[11px] font-bold hover:bg-emerald-100 transition-colors flex items-center gap-1.5"
-                                    title="Promote to Operations (Goal)"
-                                >
-                                    <Rocket className="w-3.5 h-3.5" />
-                                    Promote
-                                </button>
-                                <button
-                                    onClick={handleEditToggle}
-                                    className="px-3 py-1.5 rounded-lg border border-black/[0.05] text-[11px] font-bold hover:bg-black/[0.02] transition-colors"
-                                >
-                                    {isEditing ? 'Cancel' : 'Edit Project'}
-                                </button>
-                            </div>
+                            {!isEditing && (
+                                <div className="flex gap-2 justify-end -mt-12 mb-4 relative z-10">
+                                    <button
+                                        onClick={handlePromote}
+                                        className="px-4 py-2 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 text-[11px] font-black uppercase tracking-widest hover:bg-emerald-100 hover:scale-105 transition-all flex items-center gap-2 shadow-sm"
+                                        title="Promote to Operations (Goal)"
+                                    >
+                                        <Rocket className="w-4 h-4" />
+                                        Promote
+                                    </button>
+                                    <button
+                                        onClick={handleEditToggle}
+                                        className="px-4 py-2 rounded-xl border border-black/[0.05] bg-white text-[11px] font-black uppercase tracking-widest hover:bg-black/[0.02] hover:scale-105 transition-all shadow-sm"
+                                    >
+                                        Edit Project
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         {/* Platforms & GTV */}
