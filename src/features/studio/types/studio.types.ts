@@ -31,6 +31,7 @@ export interface StudioSpark {
     tags?: string[];
     project_id?: string;
     price?: number;
+    icon_url?: string;
     status: SparkStatus;
     created_at: string;
     updated_at: string;

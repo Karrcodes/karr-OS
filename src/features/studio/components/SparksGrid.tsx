@@ -1,12 +1,27 @@
 'use client'
 
-import { Target, ExternalLink, Calendar, Plus, MoreVertical, Tag, Briefcase } from 'lucide-react'
+import { Target, ExternalLink, Calendar, Plus, MoreVertical, Tag, Briefcase, Trash2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import { useStudio } from '../hooks/useStudio'
 import type { StudioSpark } from '../types/studio.types'
 import { cn } from '@/lib/utils'
+import SparkDetailModal from './SparkDetailModal'
 
 export default function SparksGrid() {
-    const { sparks, projects, loading } = useStudio()
+    const { sparks, projects, deleteSpark, loading } = useStudio()
+    const [selectedSpark, setSelectedSpark] = useState<StudioSpark | null>(null)
+
+    useEffect(() => {
+        const handleDelete = async (e: any) => {
+            try {
+                await deleteSpark(e.detail)
+            } catch (err: any) {
+                alert(`Failed to delete spark: ${err.message}`)
+            }
+        }
+        window.addEventListener('studio:deleteSpark', handleDelete)
+        return () => window.removeEventListener('studio:deleteSpark', handleDelete)
+    }, [deleteSpark])
 
     if (loading) {
         return (
@@ -33,18 +48,32 @@ export default function SparksGrid() {
     }
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {sparks.map(spark => (
-                <SparkCard key={spark.id} spark={spark} projects={projects} />
-            ))}
-        </div>
+        <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {sparks.map(spark => (
+                    <SparkCard
+                        key={spark.id}
+                        spark={spark}
+                        projects={projects}
+                        onClick={() => setSelectedSpark(spark)}
+                    />
+                ))}
+            </div>
+
+            <SparkDetailModal
+                isOpen={!!selectedSpark}
+                onClose={() => setSelectedSpark(null)}
+                spark={selectedSpark}
+                projects={projects}
+            />
+        </>
     )
 }
 
-function SparkCard({ spark, projects }: { spark: StudioSpark; projects: any[] }) {
+function SparkCard({ spark, projects, onClick }: { spark: StudioSpark; projects: any[]; onClick: () => void }) {
     const linkedProject = projects.find(p => p.id === spark.project_id)
 
-    const typeIcon = {
+    const typeEmoji = {
         idea: '💡',
         tool: '🛠️',
         item: '🛒',
@@ -55,82 +84,77 @@ function SparkCard({ spark, projects }: { spark: StudioSpark; projects: any[] })
     }[spark.type] || '✨'
 
     return (
-        <div className="group relative p-6 bg-white border border-black/[0.05] rounded-[32px] hover:border-emerald-200 hover:shadow-xl transition-all flex flex-col">
+        <div
+            onClick={onClick}
+            className="group relative p-6 bg-white border border-black/[0.05] rounded-[32px] hover:border-emerald-200 hover:shadow-xl transition-all flex flex-col cursor-pointer"
+        >
             {/* Header */}
             <div className="flex justify-between items-start mb-4">
-                <div className="w-10 h-10 rounded-2xl bg-black/[0.02] flex items-center justify-center text-xl border border-black/[0.03] group-hover:bg-emerald-50 group-hover:border-emerald-100 transition-colors">
-                    {typeIcon}
-                </div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {spark.url && (
-                        <a
-                            href={spark.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-2 rounded-xl hover:bg-emerald-50 text-black/20 hover:text-emerald-600 transition-all"
-                        >
-                            <ExternalLink className="w-4 h-4" />
-                        </a>
+                <div className="w-10 h-10 rounded-2xl bg-black/[0.02] flex items-center justify-center text-xl border border-black/[0.03] group-hover:bg-emerald-50 group-hover:border-emerald-100 transition-colors overflow-hidden shrink-0 p-1">
+                    {spark.icon_url ? (
+                        <img src={spark.icon_url} alt={spark.title} className="w-full h-full object-contain" />
+                    ) : (
+                        typeEmoji
                     )}
-                    <button className="p-2 rounded-xl hover:bg-black/5 text-black/20 hover:text-black/60 transition-all">
+                </div>
+                <div className="flex items-center gap-1.5 opacity-100 group-hover:opacity-100 transition-opacity">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm(`Are you sure you want to delete this spark?`)) {
+                                window.dispatchEvent(new CustomEvent('studio:deleteSpark', { detail: spark.id }));
+                            }
+                        }}
+                        className="p-1 px-2 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-all flex items-center gap-1.5"
+                    >
+                        <Trash2 className="w-3 h-3" />
+                        <span className="text-[10px] font-black uppercase">Delete</span>
+                    </button>
+                    <button className="p-1.5 rounded-lg hover:bg-black/5 text-black/20 hover:text-black transition-all">
                         <MoreVertical className="w-4 h-4" />
                     </button>
                 </div>
             </div>
 
             {/* Content */}
-            <div className="flex-1">
-                <h4 className="text-[15px] font-black text-black leading-tight mb-2 group-hover:text-emerald-600 transition-colors">
+            <div className="flex-1 space-y-2">
+                <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-600 text-[9px] font-black uppercase tracking-tight">
+                        {spark.type}
+                    </span>
+                    {spark.url && <ExternalLink className="w-3 h-3 text-black/20" />}
+                </div>
+                <h4 className="text-[15px] font-black text-black leading-tight group-hover:text-emerald-600 transition-colors line-clamp-2">
                     {spark.title}
                 </h4>
                 {spark.notes && (
-                    <p className="text-[12px] text-black/50 line-clamp-3 leading-relaxed">
+                    <p className="text-[12px] text-black/40 line-clamp-3 leading-relaxed font-medium">
                         {spark.notes}
                     </p>
                 )}
             </div>
 
             {/* Footer */}
-            <div className="mt-6 pt-4 border-t border-black/[0.03] space-y-3">
-                {/* Tags */}
-                {spark.tags && spark.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                        {spark.tags.slice(0, 3).map(tag => (
-                            <span key={tag} className="px-2 py-0.5 rounded-md bg-black/[0.02] text-[9px] font-black uppercase text-black/30 tracking-tight">
-                                {tag}
-                            </span>
-                        ))}
-                    </div>
-                )}
-
-                {/* Meta */}
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        {linkedProject ? (
-                            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 border border-blue-100 rounded-lg max-w-[120px]">
-                                <Briefcase className="w-3 h-3 text-blue-600 shrink-0" />
-                                <span className="text-[9px] font-black text-blue-900 truncate uppercase tracking-tighter">
-                                    {linkedProject.title}
-                                </span>
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-1 text-[10px] text-black/20 font-bold">
-                                <Calendar className="w-3 h-3" />
-                                {new Date(spark.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                            </div>
-                        )}
-                    </div>
-
-                    {spark.price && (
-                        <div className="text-[11px] font-black text-emerald-600">
-                            £{spark.price}
+            <div className="mt-6 pt-4 border-t border-black/[0.03] flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    {linkedProject ? (
+                        <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50/50 rounded-lg max-w-[140px]">
+                            <Briefcase className="w-3 h-3 text-blue-500 shrink-0" />
+                            <span className="text-[10px] font-bold text-blue-700 truncate">{linkedProject.title}</span>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-black/20">
+                            <Tag className="w-3 h-3" />
+                            <span>Standalone</span>
                         </div>
                     )}
                 </div>
-            </div>
 
-            {/* Hover Action Indicator */}
-            <div className="absolute inset-x-8 bottom-0 h-1 bg-emerald-500 scale-x-0 group-hover:scale-x-50 transition-transform rounded-full" />
+                <div className="flex items-center gap-1 text-[10px] font-bold text-black/20">
+                    <Calendar className="w-3 h-3" />
+                    <span>{new Date(spark.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
+                </div>
+            </div>
         </div>
     )
 }

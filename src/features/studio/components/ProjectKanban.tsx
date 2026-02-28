@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
-import { Briefcase, Shield, Clock, MoreVertical } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Briefcase, Shield, Clock, MoreVertical, Trash2 } from 'lucide-react'
 import { useStudio } from '../hooks/useStudio'
 import type { StudioProject, ProjectStatus } from '../types/studio.types'
 import { cn } from '@/lib/utils'
 import PlatformIcon from './PlatformIcon'
+import ProjectDetailModal from './ProjectDetailModal'
 
 const COLUMNS: { label: string; value: ProjectStatus }[] = [
     { label: 'Idea', value: 'idea' },
@@ -15,8 +16,21 @@ const COLUMNS: { label: string; value: ProjectStatus }[] = [
 ]
 
 export default function ProjectKanban() {
-    const { projects, updateProject, loading } = useStudio()
+    const { projects, updateProject, deleteProject, loading } = useStudio()
     const [draggingId, setDraggingId] = useState<string | null>(null)
+    const [selectedProject, setSelectedProject] = useState<StudioProject | null>(null)
+
+    useEffect(() => {
+        const handleDelete = async (e: any) => {
+            try {
+                await deleteProject(e.detail)
+            } catch (err: any) {
+                alert(`Failed to delete project: ${err.message}`)
+            }
+        }
+        window.addEventListener('studio:deleteProject', handleDelete)
+        return () => window.removeEventListener('studio:deleteProject', handleDelete)
+    }, [deleteProject])
 
     const onDragOver = (e: React.DragEvent) => {
         e.preventDefault()
@@ -86,6 +100,7 @@ export default function ProjectKanban() {
                                         project={project}
                                         onDragStart={() => setDraggingId(project.id)}
                                         onDragEnd={() => setDraggingId(null)}
+                                        onClick={() => setSelectedProject(project)}
                                     />
                                 ))
                             )}
@@ -93,20 +108,28 @@ export default function ProjectKanban() {
                     </div>
                 )
             })}
+
+            <ProjectDetailModal
+                isOpen={!!selectedProject}
+                onClose={() => setSelectedProject(null)}
+                project={selectedProject}
+            />
         </div>
     )
 }
 
-function ProjectCard({ project, onDragStart, onDragEnd }: {
+function ProjectCard({ project, onDragStart, onDragEnd, onClick }: {
     project: StudioProject;
     onDragStart: () => void;
     onDragEnd: () => void;
+    onClick: () => void;
 }) {
     return (
         <div
             draggable
             onDragStart={onDragStart}
             onDragEnd={onDragEnd}
+            onClick={onClick}
             className="group relative p-4 bg-white border border-black/[0.05] rounded-2xl cursor-grab active:cursor-grabbing hover:border-orange-200 hover:shadow-xl transition-all"
         >
             <div className="flex justify-between items-start mb-3">
@@ -156,7 +179,19 @@ function ProjectCard({ project, onDragStart, onDragEnd }: {
                 </div>
 
                 <div className="flex items-center gap-1">
-                    <button className="p-1 rounded-md hover:bg-black/5 text-black/20 hover:text-black/60 transition-all opacity-0 group-hover:opacity-100">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm(`Are you sure you want to delete "${project.title}"?`)) {
+                                window.dispatchEvent(new CustomEvent('studio:deleteProject', { detail: project.id }));
+                            }
+                        }}
+                        className="p-1 px-2 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-all flex items-center gap-1.5"
+                    >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span className="text-[10px] font-black uppercase">Delete</span>
+                    </button>
+                    <button className="p-1 rounded-md hover:bg-black/5 text-black/20 hover:text-black/60 transition-all">
                         <MoreVertical className="w-3.5 h-3.5" />
                     </button>
                 </div>

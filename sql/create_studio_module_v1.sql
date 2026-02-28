@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS studio_sparks (
     tags TEXT[] DEFAULT '{}',
     project_id UUID REFERENCES studio_projects(id) ON DELETE SET NULL,
     price NUMERIC, -- For items/tools
+    icon_url TEXT, -- For intelligent tool capture
     status TEXT NOT NULL DEFAULT 'active', -- 'active', 'acquired', 'dismissed'
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()

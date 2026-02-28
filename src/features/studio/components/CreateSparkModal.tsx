@@ -16,7 +16,8 @@ const SPARK_TYPES: { label: string; value: SparkType; icon: string }[] = [
     { label: 'Physical Item', value: 'item', icon: '🛒' },
     { label: 'Resource / Link', value: 'resource', icon: '🔗' },
     { label: 'Event', value: 'event', icon: '📅' },
-    { label: 'Person / Network', value: 'person', icon: '👤' }
+    { label: 'Person / Network', value: 'person', icon: '👤' },
+    { label: 'Platform', value: 'platform', icon: '📱' }
 ]
 
 export default function CreateSparkModal({ isOpen, onClose }: CreateSparkModalProps) {
@@ -32,8 +33,56 @@ export default function CreateSparkModal({ isOpen, onClose }: CreateSparkModalPr
         price: undefined as number | undefined
     })
     const [tagInput, setTagInput] = useState('')
+    const [suggestions, setSuggestions] = useState<any[]>([])
+    const [isSearching, setIsSearching] = useState(false)
+    const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null)
 
     if (!isOpen) return null
+
+    const fetchSuggestions = async (query: string) => {
+        if (query.length < 3 || (formData.type !== 'tool' && formData.type !== 'resource' && formData.type !== 'platform')) {
+            setSuggestions([])
+            return
+        }
+
+        try {
+            setIsSearching(true)
+            const res = await fetch('/api/studio/search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query, type: formData.type })
+            })
+            const data = await res.json()
+            setSuggestions(data.results || [])
+        } catch (err) {
+            console.error('Suggestion fetch failed:', err)
+        } finally {
+            setIsSearching(false)
+        }
+    }
+
+    const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value
+        setFormData(prev => ({ ...prev, title: value }))
+
+        if (searchTimeout) clearTimeout(searchTimeout)
+
+        const timeout = setTimeout(() => {
+            fetchSuggestions(value)
+        }, 600)
+        setSearchTimeout(timeout)
+    }
+
+    const selectSuggestion = (s: any) => {
+        setFormData(prev => ({
+            ...prev,
+            title: s.name,
+            url: s.url,
+            icon_url: s.icon_url,
+            notes: s.description || prev.notes
+        }))
+        setSuggestions([])
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -45,7 +94,7 @@ export default function CreateSparkModal({ isOpen, onClose }: CreateSparkModalPr
                 ...formData,
                 project_id: formData.project_id || undefined,
                 price: (formData.type === 'item' || formData.type === 'tool') ? formData.price : undefined
-            })
+            } as any)
             onClose()
             setFormData({
                 title: '',
@@ -54,8 +103,9 @@ export default function CreateSparkModal({ isOpen, onClose }: CreateSparkModalPr
                 notes: '',
                 tags: [],
                 project_id: '',
-                price: undefined
-            })
+                price: undefined,
+                icon_url: ''
+            } as any)
         } catch (err: any) {
             console.error('Failed to capture spark:', err)
             alert(`Error: ${err.message || 'Failed to capture spark'}`)
@@ -130,9 +180,40 @@ export default function CreateSparkModal({ isOpen, onClose }: CreateSparkModalPr
                                     type="text"
                                     placeholder="Title / Name"
                                     value={formData.title}
-                                    onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                                    onChange={handleTitleChange}
                                     className="w-full pl-11 pr-4 py-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-sm font-bold focus:outline-none focus:border-emerald-200 transition-all"
                                 />
+                                {isSearching && (
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                        <div className="w-4 h-4 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
+                                    </div>
+                                )}
+
+                                {/* Suggestions Dropdown */}
+                                {suggestions.length > 0 && (
+                                    <div className="absolute left-0 right-0 top-full mt-2 z-50 bg-white border border-black/[0.05] rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-top-2 duration-200">
+                                        {suggestions.map((s, i) => (
+                                            <button
+                                                key={i}
+                                                type="button"
+                                                onClick={() => selectSuggestion(s)}
+                                                className="w-full flex items-center gap-3 p-3 hover:bg-black/[0.02] transition-colors border-b last:border-0 border-black/[0.03]"
+                                            >
+                                                <div className="w-8 h-8 rounded-lg bg-black/[0.02] border border-black/[0.05] flex items-center justify-center overflow-hidden shrink-0">
+                                                    {s.icon_url ? (
+                                                        <img src={s.icon_url} alt={s.name} className="w-full h-full object-contain" />
+                                                    ) : (
+                                                        <Type className="w-4 h-4 text-black/20" />
+                                                    )}
+                                                </div>
+                                                <div className="text-left">
+                                                    <div className="text-[13px] font-black text-black leading-tight">{s.name}</div>
+                                                    <div className="text-[10px] text-black/40 truncate max-w-[200px]">{s.url}</div>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                             <div className="relative">
                                 <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />

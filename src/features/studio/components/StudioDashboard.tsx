@@ -7,12 +7,18 @@ import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import CreateProjectModal from './CreateProjectModal'
 import CreateSparkModal from './CreateSparkModal'
+import ProjectDetailModal from './ProjectDetailModal'
+import SparkDetailModal from './SparkDetailModal'
+import PlatformIcon from './PlatformIcon'
+import type { StudioProject, StudioSpark } from '../types/studio.types'
 
 export default function StudioDashboard() {
     const { projects, sparks, loading, error } = useStudio()
     const [daysUntilGTV, setDaysUntilGTV] = useState(0)
     const [isProjectModalOpen, setIsProjectModalOpen] = useState(false)
     const [isSparkModalOpen, setIsSparkModalOpen] = useState(false)
+    const [selectedProject, setSelectedProject] = useState<StudioProject | null>(null)
+    const [selectedSpark, setSelectedSpark] = useState<StudioSpark | null>(null)
 
     useEffect(() => {
         const target = new Date('2026-09-01')
@@ -101,10 +107,10 @@ export default function StudioDashboard() {
                             </div>
                         ) : (
                             activeProjects.map(project => (
-                                <Link
+                                <div
                                     key={project.id}
-                                    href={`/create/projects?id=${project.id}`}
-                                    className="p-4 bg-white border border-black/[0.05] rounded-2xl hover:border-orange-200 hover:shadow-lg transition-all group"
+                                    onClick={() => setSelectedProject(project)}
+                                    className="p-4 bg-white border border-black/[0.05] rounded-2xl hover:border-orange-200 hover:shadow-lg transition-all group cursor-pointer"
                                 >
                                     <div className="flex justify-between items-start mb-3">
                                         <div className={cn(
@@ -121,8 +127,8 @@ export default function StudioDashboard() {
                                     <div className="mt-4 flex items-center justify-between">
                                         <div className="flex gap-1">
                                             {project.platforms?.slice(0, 3).map(p => (
-                                                <div key={p} className="w-5 h-5 rounded-full bg-black/5 flex items-center justify-center text-[8px] font-bold border border-black/5">
-                                                    {p[0].toUpperCase()}
+                                                <div key={p} className="w-5 h-5 rounded-full bg-black/5 flex items-center justify-center text-black border border-black/5">
+                                                    <PlatformIcon platform={p} className="w-2.5 h-2.5" />
                                                 </div>
                                             ))}
                                         </div>
@@ -133,7 +139,7 @@ export default function StudioDashboard() {
                                             </div>
                                         )}
                                     </div>
-                                </Link>
+                                </div>
                             ))
                         )}
                     </div>
@@ -153,16 +159,34 @@ export default function StudioDashboard() {
 
                         <div className="space-y-2">
                             {recentSparks.map(spark => (
-                                <div key={spark.id} className="p-3 bg-white border border-black/[0.04] rounded-xl flex items-center gap-3 group hover:border-emerald-200 transition-all">
+                                <div
+                                    key={spark.id}
+                                    onClick={() => setSelectedSpark(spark)}
+                                    className="p-3 bg-white border border-black/[0.04] rounded-xl flex items-center gap-3 group hover:border-emerald-200 cursor-pointer transition-all"
+                                >
                                     <div className="w-8 h-8 rounded-lg bg-black/[0.02] flex items-center justify-center text-sm border border-black/[0.05]">
-                                        {spark.type === 'tool' ? '🛠️' : spark.type === 'item' ? '🛒' : '💡'}
+                                        {{
+                                            idea: '💡',
+                                            tool: '🛠️',
+                                            item: '🛒',
+                                            resource: '🔗',
+                                            event: '📅',
+                                            person: '👤',
+                                            platform: '📱'
+                                        }[spark.type] || '✨'}
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-[12px] font-bold text-black truncate">{spark.title}</p>
                                         <p className="text-[10px] text-black/30 font-medium uppercase tracking-tight">{spark.type}</p>
                                     </div>
                                     {spark.url && (
-                                        <a href={spark.url} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg hover:bg-emerald-50 text-black/20 hover:text-emerald-600 transition-all">
+                                        <a
+                                            href={spark.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="p-1.5 rounded-lg hover:bg-emerald-50 text-black/20 hover:text-emerald-600 transition-all"
+                                        >
                                             <ExternalLink className="w-3.5 h-3.5" />
                                         </a>
                                     )}
@@ -206,6 +230,17 @@ export default function StudioDashboard() {
             <CreateSparkModal
                 isOpen={isSparkModalOpen}
                 onClose={() => setIsSparkModalOpen(false)}
+            />
+            <ProjectDetailModal
+                isOpen={!!selectedProject}
+                onClose={() => setSelectedProject(null)}
+                project={selectedProject}
+            />
+            <SparkDetailModal
+                isOpen={!!selectedSpark}
+                onClose={() => setSelectedSpark(null)}
+                spark={selectedSpark}
+                projects={projects}
             />
         </div>
     )
