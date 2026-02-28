@@ -1,6 +1,6 @@
 'use client'
 
-import { Shield, ExternalLink, Calendar, Award, CheckCircle2 } from 'lucide-react'
+import { Shield, ExternalLink, Calendar, Award, CheckCircle2, Plus } from 'lucide-react'
 
 export default function PortfolioPage() {
     return (
