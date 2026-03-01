@@ -9,6 +9,8 @@ import { useStudio } from '../hooks/useStudio'
 
 interface ProjectTimelineProps {
     onProjectClick: (project: StudioProject) => void
+    searchQuery?: string
+    filterType?: string | null
 }
 
 type StrategicStage = 'preparation' | 'execution' | 'extraction' | 'secured'
@@ -40,7 +42,7 @@ const STAGE_CONFIG: Record<StrategicStage, { label: string, desc: string, icon: 
     }
 }
 
-export default function ProjectTimeline({ onProjectClick }: ProjectTimelineProps) {
+export default function ProjectTimeline({ onProjectClick, searchQuery = '', filterType = null }: ProjectTimelineProps) {
     const { projects, milestones } = useStudio()
 
     const groupedProjects = useMemo(() => {
@@ -51,18 +53,26 @@ export default function ProjectTimeline({ onProjectClick }: ProjectTimelineProps
             secured: []
         }
 
+        const filtered = projects.filter((p: StudioProject) => {
+            const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                p.tagline?.toLowerCase().includes(searchQuery.toLowerCase())
+            const matchesType = !filterType || p.type === filterType
+            const isNotArchived = !p.is_archived
+            return matchesSearch && matchesType && isNotArchived
+        })
+
         const today = new Date()
         const criticalThreshold = new Date()
         criticalThreshold.setDate(today.getDate() + 14) // 2 weeks for extraction
 
-        projects.forEach(project => {
+        filtered.forEach((project: StudioProject) => {
             if (project.status === 'shipped' || project.status === 'archived') {
                 groups.secured.push(project)
                 return
             }
 
-            const projectMilestones = milestones.filter(m => m.project_id === project.id)
-            const completedCount = projectMilestones.filter(m => m.status === 'completed').length
+            const projectMilestones = milestones.filter((m: StudioMilestone) => m.project_id === project.id)
+            const completedCount = projectMilestones.filter((m: StudioMilestone) => m.status === 'completed').length
             const progress = projectMilestones.length > 0 ? (completedCount / projectMilestones.length) * 100 : 0
 
             const targetDate = project.target_date ? new Date(project.target_date) : null
@@ -77,11 +87,11 @@ export default function ProjectTimeline({ onProjectClick }: ProjectTimelineProps
         })
 
         return groups
-    }, [projects, milestones])
+    }, [projects, milestones, searchQuery, filterType])
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {(['preparation', 'execution', 'extraction', 'secured'] as StrategicStage[]).map(stageId => {
+            {(['preparation', 'execution', 'extraction', 'secured'] as StrategicStage[]).map((stageId: StrategicStage) => {
                 const config = STAGE_CONFIG[stageId]
                 const stageProjects = groupedProjects[stageId]
 
@@ -103,8 +113,8 @@ export default function ProjectTimeline({ onProjectClick }: ProjectTimelineProps
                         </div>
 
                         <div className="flex flex-col gap-3 min-h-[500px] p-2 rounded-2xl bg-black/[0.02] border border-black/[0.03]">
-                            {stageProjects.map(project => {
-                                const projectMilestones = milestones.filter(m => m.project_id === project.id)
+                            {stageProjects.map((project: StudioProject) => {
+                                const projectMilestones = milestones.filter((m: StudioMilestone) => m.project_id === project.id)
                                 const completedCount = projectMilestones.filter(m => m.status === 'completed').length
                                 const progress = projectMilestones.length > 0 ? (completedCount / projectMilestones.length) * 100 : 0
 

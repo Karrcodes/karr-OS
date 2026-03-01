@@ -65,6 +65,17 @@ const getTargetDateFromX = (xPercent: number): string | undefined => {
     return date.toISOString().split('T')[0]
 }
 
+interface ProjectDotProps {
+    project: StudioProject
+    containerRef: React.RefObject<HTMLDivElement | null>
+    updateProject: any
+    finalPosition: { x: number; y: number; density?: 'full' | 'compact' | 'minimal' }
+    setSelectedProject: (p: StudioProject | null) => void
+    isMoveApplied: boolean
+    setHoveredDayIndex: (index: number | null) => void
+    isConfirmingMove: boolean
+}
+
 function ProjectDot({
     project,
     containerRef,
@@ -74,16 +85,7 @@ function ProjectDot({
     isMoveApplied,
     setHoveredDayIndex,
     isConfirmingMove
-}: {
-    project: StudioProject,
-    containerRef: React.RefObject<HTMLDivElement | null>,
-    updateProject: any,
-    finalPosition: { x: number, y: number, density?: 'full' | 'compact' | 'minimal' },
-    setSelectedProject: (p: StudioProject | null) => void,
-    isMoveApplied: boolean,
-    setHoveredDayIndex: (index: number | null) => void,
-    isConfirmingMove: boolean
-}) {
+}: ProjectDotProps) {
     const [isDragging, setIsDragging] = useState(false)
     const dotRef = useRef<HTMLDivElement>(null)
     const dragStartPos = useRef<{ x: number, y: number } | null>(null)
@@ -111,7 +113,7 @@ function ProjectDot({
                 setIsDragging(true)
                 dragStartPos.current = { x: finalPosition.x, y: finalPosition.y }
             }}
-            onDrag={(e, info) => {
+            onDrag={(e: any, info: any) => {
                 if (!dotRef.current || !containerRef.current) return
                 const dotRect = dotRef.current.getBoundingClientRect()
                 const containerRect = containerRef.current.getBoundingClientRect()
@@ -126,7 +128,7 @@ function ProjectDot({
                 const snappedDays = Math.round((xPercent - 16) / 68 * 14)
                 setHoveredDayIndex(snappedDays)
             }}
-            onDragEnd={(e, info) => {
+            onDragEnd={(e: any, info: any) => {
                 setIsDragging(false)
                 setHoveredDayIndex(null)
                 if (!dotRef.current || !containerRef.current) return
@@ -170,7 +172,7 @@ function ProjectDot({
                 finalPosition.density === 'full' ? "border p-2 pr-4 h-auto min-h-[44px] rounded-xl bg-white/90 border-black/10 shadow-sm" :
                     finalPosition.density === 'compact' ? "border rounded-lg p-1.5 pr-3 h-6 bg-white/90 border-black/10 shadow-sm" : "p-1.5 w-6 h-6 justify-center"
             )}
-            onClick={(e) => {
+            onClick={(e: React.MouseEvent) => {
                 if (!isDragging) {
                     e.stopPropagation()
                     setSelectedProject(project)
@@ -189,7 +191,12 @@ function ProjectDot({
     )
 }
 
-export default function ProjectMatrix() {
+interface ProjectMatrixProps {
+    searchQuery?: string
+    filterType?: string | null
+}
+
+export default function ProjectMatrix({ searchQuery = '', filterType = null }: ProjectMatrixProps) {
     const { projects, updateProject } = useStudio()
     const containerRef = useRef<HTMLDivElement>(null)
     const [selectedProject, setSelectedProject] = useState<StudioProject | null>(null)
@@ -197,23 +204,28 @@ export default function ProjectMatrix() {
     const [selectedCategory, setSelectedCategory] = useState<'all' | string>('all')
 
     const filteredProjects = useMemo(() => {
-        return projects.filter(p => {
+        return projects.filter((p: StudioProject) => {
+            const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                p.tagline?.toLowerCase().includes(searchQuery.toLowerCase())
+            const matchesType = !filterType || p.type === filterType
             const matchesCat = selectedCategory === 'all' || p.strategic_category === selectedCategory
-            if (!matchesCat) return false
+            const isNotArchived = !p.is_archived
+
+            if (!matchesSearch || !matchesType || !matchesCat || !isNotArchived) return false
             if (!p.target_date) return true
+
             const diff = (new Date(p.target_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
             return diff >= -1 && diff <= 15
         })
-    }, [projects, selectedCategory])
+    }, [projects, selectedCategory, searchQuery, filterType])
 
     const finalPositions = useMemo(() => {
-        const positions = filteredProjects.map(p => {
+        const positions = filteredProjects.map((p: StudioProject) => {
             const x = p.ai_position_x ?? getUrgencyX(p.target_date)
             const y = p.ai_position_y ?? getPriorityY(p.priority)
             return { id: p.id, x, y, width: 15, height: 5, density: 'full' as const }
         })
-        // Basic repulsion logic could be added here similar to TasksMatrix if needed
-        return positions.reduce((acc, p) => ({ ...acc, [p.id]: p }), {} as any)
+        return positions.reduce((acc: Record<string, any>, p: any) => ({ ...acc, [p.id]: p }), {})
     }, [filteredProjects])
 
     const timelineDates = useMemo(() => {
@@ -256,7 +268,7 @@ export default function ProjectMatrix() {
                 </div>
 
                 <div className="absolute inset-0 pointer-events-none z-0">
-                    {timelineDates.map((_, i) => (
+                    {timelineDates.map((_: Date, i: number) => (
                         <div
                             key={i}
                             className={cn("absolute inset-y-0 w-px border-l transition-all duration-300", hoveredDayIndex === i ? "border-black/20" : "border-black/[0.03]")}
@@ -265,7 +277,7 @@ export default function ProjectMatrix() {
                     ))}
                 </div>
 
-                {filteredProjects.map(p => (
+                {filteredProjects.map((p: StudioProject) => (
                     <ProjectDot
                         key={p.id}
                         project={p}
