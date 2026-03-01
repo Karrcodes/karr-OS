@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { Briefcase, Shield, Clock, MoreVertical, Trash2, CheckCircle2 } from 'lucide-react'
 import { useStudio } from '../hooks/useStudio'
-import type { StudioProject, ProjectStatus, StudioMilestone } from '../types/studio.types'
+import type { StudioProject, ProjectStatus, StudioMilestone, ProjectKanbanProps } from '../types/studio.types'
 import { cn } from '@/lib/utils'
 import PlatformIcon from './PlatformIcon'
 import ProjectDetailModal from './ProjectDetailModal'
@@ -16,10 +16,6 @@ const COLUMNS: { label: string; value: ProjectStatus }[] = [
     { label: 'Shipped', value: 'shipped' }
 ]
 
-interface ProjectKanbanProps {
-    searchQuery?: string
-    filterType?: string | null
-}
 
 export default function ProjectKanban({ searchQuery = '', filterType = null }: ProjectKanbanProps) {
     const { projects: allProjects, milestones, updateProject, deleteProject, loading } = useStudio()

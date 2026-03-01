@@ -4,14 +4,9 @@ import React, { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Target, Flag, Clock, CheckCircle2, AlertCircle, ArrowRight, Briefcase } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { StudioProject, StudioMilestone } from '../types/studio.types'
+import type { StudioProject, StudioMilestone, ProjectTimelineProps } from '../types/studio.types'
 import { useStudio } from '../hooks/useStudio'
 
-interface ProjectTimelineProps {
-    onProjectClick: (project: StudioProject) => void
-    searchQuery?: string
-    filterType?: string | null
-}
 
 type StrategicStage = 'preparation' | 'execution' | 'extraction' | 'secured'
 
@@ -42,7 +37,11 @@ const STAGE_CONFIG: Record<StrategicStage, { label: string, desc: string, icon: 
     }
 }
 
-export default function ProjectTimeline({ onProjectClick, searchQuery = '', filterType = null }: ProjectTimelineProps) {
+export default function ProjectTimeline({
+    onProjectClick,
+    searchQuery = '',
+    filterType = null
+}: ProjectTimelineProps) {
     const { projects, milestones } = useStudio()
 
     const groupedProjects = useMemo(() => {

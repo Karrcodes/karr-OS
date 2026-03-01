@@ -1,10 +1,11 @@
 'use client'
 
-import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react'
+import * as React from 'react'
+const { useRef, useState, useEffect, useCallback, useMemo } = React
 import { motion, useMotionValue, animate, AnimatePresence } from 'framer-motion'
 import { useStudio } from '../hooks/useStudio'
 import { cn } from '@/lib/utils'
-import type { StudioProject } from '../types/studio.types'
+import type { StudioProject, ProjectMatrixProps } from '../types/studio.types'
 import { Sparkles, RefreshCw, Wallet, Briefcase, Heart, User, Check, X, Beaker, Factory, Tv, TrendingUp, Zap, Clock, Edit2, Calendar } from 'lucide-react'
 import ProjectDetailModal from './ProjectDetailModal'
 
@@ -191,12 +192,11 @@ function ProjectDot({
     )
 }
 
-interface ProjectMatrixProps {
-    searchQuery?: string
-    filterType?: string | null
-}
 
-export default function ProjectMatrix({ searchQuery = '', filterType = null }: ProjectMatrixProps) {
+export default function ProjectMatrix({
+    searchQuery = '',
+    filterType = null
+}: ProjectMatrixProps) {
     const { projects, updateProject } = useStudio()
     const containerRef = useRef<HTMLDivElement>(null)
     const [selectedProject, setSelectedProject] = useState<StudioProject | null>(null)
@@ -225,7 +225,7 @@ export default function ProjectMatrix({ searchQuery = '', filterType = null }: P
             const y = p.ai_position_y ?? getPriorityY(p.priority)
             return { id: p.id, x, y, width: 15, height: 5, density: 'full' as const }
         })
-        return positions.reduce((acc: Record<string, any>, p: any) => ({ ...acc, [p.id]: p }), {})
+        return positions.reduce((acc: Record<string, any>, p: any) => ({ ...acc, [p.id]: p }), {} as Record<string, any>)
     }, [filteredProjects])
 
     const timelineDates = useMemo(() => {

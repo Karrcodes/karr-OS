@@ -130,3 +130,19 @@ export interface StudioMilestone {
     created_at: string;
     updated_at: string;
 }
+
+export interface ProjectMatrixProps {
+    searchQuery?: string;
+    filterType?: string | null;
+}
+
+export interface ProjectTimelineProps {
+    onProjectClick: (project: StudioProject) => void;
+    searchQuery?: string;
+    filterType?: string | null;
+}
+
+export interface ProjectKanbanProps {
+    searchQuery?: string;
+    filterType?: string | null;
+}
