@@ -5,6 +5,7 @@ import { X, Award, Globe, Shield, Calendar, Link as LinkIcon, Edit3, Save, Trash
 import { useStudio } from '../hooks/useStudio'
 import type { PressType, PressStatus, StudioPress } from '../types/studio.types'
 import { cn } from '@/lib/utils'
+import ConfirmationModal from '@/components/ConfirmationModal'
 
 interface PressDetailModalProps {
     isOpen: boolean
@@ -33,6 +34,7 @@ export default function PressDetailModal({ isOpen, onClose, item }: PressDetailM
     const { updatePress, deletePress, projects } = useStudio()
     const [isEditing, setIsEditing] = useState(false)
     const [editedData, setEditedData] = useState<Partial<StudioPress>>({})
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
     useEffect(() => {
         if (item) {
@@ -62,7 +64,6 @@ export default function PressDetailModal({ isOpen, onClose, item }: PressDetailM
     }
 
     const handleDelete = async () => {
-        if (!confirm(`Are you sure you want to delete "${item.title}"?`)) return
         try {
             await deletePress(item.id)
             onClose()
@@ -269,7 +270,7 @@ export default function PressDetailModal({ isOpen, onClose, item }: PressDetailM
                 {/* Footer */}
                 <div className="p-8 pt-4 flex items-center justify-between bg-black/[0.01] border-t border-black/[0.05]">
                     <button
-                        onClick={handleDelete}
+                        onClick={() => setShowDeleteConfirm(true)}
                         className="flex items-center gap-2 px-5 py-2.5 text-red-500 hover:bg-red-50 rounded-xl transition-all font-bold text-[13px]"
                     >
                         <Trash2 className="w-4 h-4" />
@@ -288,6 +289,16 @@ export default function PressDetailModal({ isOpen, onClose, item }: PressDetailM
                     )}
                 </div>
             </div>
+
+            <ConfirmationModal
+                isOpen={showDeleteConfirm}
+                onClose={() => setShowDeleteConfirm(false)}
+                onConfirm={handleDelete}
+                title="Delete Entry"
+                message={`Are you sure you want to delete "${item.title}"? This action cannot be undone.`}
+                confirmText="Delete"
+                type="danger"
+            />
         </div>
     )
 }

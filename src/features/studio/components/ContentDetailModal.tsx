@@ -7,6 +7,7 @@ import type { StudioContent, ContentStatus, Platform, StudioProject, ContentCate
 import { useStudio } from '../hooks/useStudio'
 import PlatformIcon from './PlatformIcon'
 import { cn } from '@/lib/utils'
+import ConfirmationModal from '@/components/ConfirmationModal'
 
 interface ContentDetailModalProps {
     isOpen: boolean
@@ -24,6 +25,7 @@ export default function ContentDetailModal({ isOpen, onClose, item }: ContentDet
     const [isEditing, setIsEditing] = useState(false)
     const [editedData, setEditedData] = useState<Partial<StudioContent>>({})
     const [newScene, setNewScene] = useState<Partial<ContentScene>>({ type: 'public' })
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
     useEffect(() => {
         if (item) {
@@ -80,7 +82,6 @@ export default function ContentDetailModal({ isOpen, onClose, item }: ContentDet
     }
 
     const handleDelete = async () => {
-        if (!confirm(`Are you sure you want to delete "${item.title}"?`)) return
         try {
             await deleteContent(item.id)
             onClose()
@@ -440,7 +441,7 @@ export default function ContentDetailModal({ isOpen, onClose, item }: ContentDet
                 {/* Footer Actions */}
                 <div className="p-8 pt-4 flex items-center justify-between bg-black/[0.01] border-t border-black/[0.05]">
                     <button
-                        onClick={handleDelete}
+                        onClick={() => setShowDeleteConfirm(true)}
                         className="flex items-center gap-2 px-4 py-2 text-red-500 hover:bg-red-50 rounded-xl transition-all font-bold text-[12px]"
                     >
                         <Trash2 className="w-4 h-4" />
@@ -459,6 +460,16 @@ export default function ContentDetailModal({ isOpen, onClose, item }: ContentDet
                     )}
                 </div>
             </div>
+
+            <ConfirmationModal
+                isOpen={showDeleteConfirm}
+                onClose={() => setShowDeleteConfirm(false)}
+                onConfirm={handleDelete}
+                title="Delete Content"
+                message={`Are you sure you want to delete "${item.title}"? This action cannot be undone.`}
+                confirmText="Delete"
+                type="danger"
+            />
         </div>
     )
 }

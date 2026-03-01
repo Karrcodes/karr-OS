@@ -26,6 +26,7 @@ import type { StudioProject, StudioMilestone } from '../types/studio.types'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 import PlatformIcon from './PlatformIcon'
+import ConfirmationModal from '@/components/ConfirmationModal'
 
 interface ProjectDetailModalProps {
     isOpen: boolean
@@ -115,8 +116,6 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
     const { settings } = useSystemSettings()
 
     const handlePromote = async () => {
-        if (!confirm('This will convert this Studio Project into a formal Business Goal in the Operations module and sync its milestones as tasks. Continue?')) return
-
         try {
             // 1. Create Goal
             const goalData = {
@@ -157,11 +156,7 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                     allTasks[category] = [...newTasks, ...existingTasks]
                     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(allTasks))
                 } else {
-                    const { data: { session } } = await supabase.auth.getSession()
-                    const userId = session?.user?.id
-
                     const tasksToInsert = projectMilestones.map((m, idx) => ({
-                        user_id: userId,
                         profile: 'business',
                         title: `${project.title}: ${m.title}`,
                         is_completed: m.status === 'completed',
@@ -184,6 +179,8 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
             alert(`Promotion failed: ${err.message}`)
         }
     }
+
+    const [showPromoteConfirm, setShowPromoteConfirm] = useState(false)
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-end">
@@ -395,7 +392,7 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                             {!isEditing && (
                                 <div className="flex gap-2 justify-end -mt-12 mb-4 relative z-10">
                                     <button
-                                        onClick={handlePromote}
+                                        onClick={() => setShowPromoteConfirm(true)}
                                         className="px-4 py-2 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 text-[11px] font-black uppercase tracking-widest hover:bg-emerald-100 hover:scale-105 transition-all flex items-center gap-2 shadow-sm"
                                         title="Promote to Operations (Goal)"
                                     >
@@ -581,6 +578,16 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                     )}
                 </div>
             </div>
+
+            <ConfirmationModal
+                isOpen={showPromoteConfirm}
+                onClose={() => setShowPromoteConfirm(false)}
+                onConfirm={handlePromote}
+                title="Promote Project"
+                message="This will convert this Studio Project into a formal Business Goal in the Operations module and sync its milestones as tasks. Continue?"
+                confirmText="Promote"
+                type="warning"
+            />
         </div>
     )
 }

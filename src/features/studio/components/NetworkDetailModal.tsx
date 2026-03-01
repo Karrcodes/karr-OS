@@ -5,6 +5,7 @@ import { X, Users, Globe, MapPin, Activity, Calendar, Link as LinkIcon, MessageC
 import { useStudio } from '../hooks/useStudio'
 import type { NetworkType, NetworkStatus, StudioNetwork } from '../types/studio.types'
 import { cn } from '@/lib/utils'
+import ConfirmationModal from '@/components/ConfirmationModal'
 
 interface NetworkDetailModalProps {
     isOpen: boolean
@@ -31,6 +32,7 @@ export default function NetworkDetailModal({ isOpen, onClose, item }: NetworkDet
     const [isEditing, setIsEditing] = useState(false)
     const [editedData, setEditedData] = useState<Partial<StudioNetwork>>({})
     const [tagsInput, setTagsInput] = useState('')
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
     useEffect(() => {
         if (item) {
@@ -58,7 +60,6 @@ export default function NetworkDetailModal({ isOpen, onClose, item }: NetworkDet
     }
 
     const handleDelete = async () => {
-        if (!confirm(`Are you sure you want to remove "${item.name}" from your network?`)) return
         try {
             await deleteNetwork(item.id)
             onClose()
@@ -265,7 +266,7 @@ export default function NetworkDetailModal({ isOpen, onClose, item }: NetworkDet
                 {/* Footer */}
                 <div className="p-8 pt-4 flex items-center justify-between bg-black/[0.01] border-t border-black/[0.05]">
                     <button
-                        onClick={handleDelete}
+                        onClick={() => setShowDeleteConfirm(true)}
                         className="flex items-center gap-2 px-5 py-2.5 text-red-500 hover:bg-red-50 rounded-xl transition-all font-bold text-[13px]"
                     >
                         <Trash2 className="w-4 h-4" />
@@ -276,6 +277,16 @@ export default function NetworkDetailModal({ isOpen, onClose, item }: NetworkDet
                     </div>
                 </div>
             </div>
+
+            <ConfirmationModal
+                isOpen={showDeleteConfirm}
+                onClose={() => setShowDeleteConfirm(false)}
+                onConfirm={handleDelete}
+                title="Remove Contact"
+                message={`Are you sure you want to remove "${item.name}" from your network? This action cannot be undone.`}
+                confirmText="Remove"
+                type="danger"
+            />
         </div>
     )
 }

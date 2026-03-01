@@ -14,6 +14,7 @@ import {
 import { useStudio } from '../hooks/useStudio'
 import type { StudioSpark, StudioProject } from '../types/studio.types'
 import { cn } from '@/lib/utils'
+import ConfirmationModal from '@/components/ConfirmationModal'
 
 interface SparkDetailModalProps {
     isOpen: boolean
@@ -27,6 +28,7 @@ export default function SparkDetailModal({ isOpen, onClose, spark, projects }: S
     const [isEditing, setIsEditing] = useState(false)
     const [editedNotes, setEditedNotes] = useState('')
     const [imgError, setImgError] = useState(false)
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
     // Reset state when spark changes to prevent "leaking" notes between different sparks
     useEffect(() => {
@@ -51,7 +53,6 @@ export default function SparkDetailModal({ isOpen, onClose, spark, projects }: S
     }
 
     const handleDelete = async () => {
-        if (!confirm('Are you sure you want to delete this spark?')) return
         try {
             await deleteSpark(spark.id)
             onClose()
@@ -201,7 +202,7 @@ export default function SparkDetailModal({ isOpen, onClose, spark, projects }: S
                     {/* Footer Actions */}
                     <div className="pt-6 border-t border-black/[0.05] flex items-center justify-between gap-4">
                         <button
-                            onClick={handleDelete}
+                            onClick={() => setShowDeleteConfirm(true)}
                             className="p-3 text-red-500 hover:bg-red-50 rounded-2xl transition-all"
                             title="Delete Spark"
                         >
@@ -226,6 +227,16 @@ export default function SparkDetailModal({ isOpen, onClose, spark, projects }: S
                     </div>
                 </div>
             </div>
+
+            <ConfirmationModal
+                isOpen={showDeleteConfirm}
+                onClose={() => setShowDeleteConfirm(false)}
+                onConfirm={handleDelete}
+                title="Delete Spark"
+                message="Are you sure you want to delete this spark? This action cannot be undone."
+                confirmText="Delete"
+                type="danger"
+            />
         </div>
     )
 }
