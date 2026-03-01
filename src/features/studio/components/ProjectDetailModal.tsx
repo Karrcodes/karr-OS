@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { useStudio } from '../hooks/useStudio'
 import { useGoals } from '../../goals/hooks/useGoals'
+import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
 import type { StudioProject, StudioMilestone } from '../types/studio.types'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
@@ -111,43 +112,76 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
         setIsEditing(!isEditing)
     }
 
+    const { settings } = useSystemSettings()
+
     const handlePromote = async () => {
         if (!confirm('This will convert this Studio Project into a formal Business Goal in the Operations module and sync its milestones as tasks. Continue?')) return
 
         try {
             // 1. Create Goal
-            const goal = await createGoal({
+            const goalData = {
                 title: project.title,
                 description: project.description || '',
-                category: 'personal',
-                status: 'active',
+                category: 'personal' as const,
+                status: 'active' as const,
                 vision_image_url: project.cover_url,
                 milestones: projectMilestones.map(m => ({
                     title: m.title,
                     is_completed: m.status === 'completed'
                 }))
-            })
+            }
+
+            await createGoal(goalData)
 
             // 2. Sync Milestones to fin_tasks (Business Profile)
             if (projectMilestones.length > 0) {
-                const tasksToInsert = projectMilestones.map(m => ({
-                    profile: 'business',
-                    title: `${project.title}: ${m.title}`,
-                    is_completed: m.status === 'completed',
-                    category: 'todo',
-                    priority: project.priority || 'mid',
-                    impact: project.impact || 'mid',
-                    due_date: m.target_date || undefined,
-                    strategic_category: 'career'
-                }))
+                if (settings.is_demo_mode) {
+                    const LOCAL_STORAGE_KEY = 'schrö_demo_tasks'
+                    const stored = localStorage.getItem(LOCAL_STORAGE_KEY)
+                    const allTasks = stored ? JSON.parse(stored) : {}
+                    const category = 'todo'
+                    const existingTasks = allTasks[category] || []
 
-                const { error: taskError } = await supabase.from('fin_tasks').insert(tasksToInsert)
-                if (taskError) console.error('Error syncing milestones to tasks:', taskError)
+                    const newTasks = projectMilestones.map((m, idx) => ({
+                        id: `demo-promoted-${Date.now()}-${idx}`,
+                        profile: 'business',
+                        title: `${project.title}: ${m.title}`,
+                        is_completed: m.status === 'completed',
+                        category: 'todo',
+                        priority: project.priority || 'mid',
+                        strategic_category: 'career',
+                        created_at: new Date().toISOString(),
+                        position: Date.now() + (idx * 1000)
+                    }))
+
+                    allTasks[category] = [...newTasks, ...existingTasks]
+                    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(allTasks))
+                } else {
+                    const { data: { session } } = await supabase.auth.getSession()
+                    const userId = session?.user?.id
+
+                    const tasksToInsert = projectMilestones.map((m, idx) => ({
+                        user_id: userId,
+                        profile: 'business',
+                        title: `${project.title}: ${m.title}`,
+                        is_completed: m.status === 'completed',
+                        category: 'todo',
+                        priority: project.priority || 'mid',
+                        impact: project.impact || 'mid',
+                        due_date: m.target_date || undefined,
+                        strategic_category: 'career',
+                        position: Date.now() + (idx * 1000)
+                    }))
+
+                    const { error: taskError } = await supabase.from('fin_tasks').insert(tasksToInsert)
+                    if (taskError) throw taskError
+                }
             }
 
             alert('Project successfully promoted to Operations with synced tasks!')
             onClose()
         } catch (err: any) {
+            console.error('Promotion error:', err)
             alert(`Promotion failed: ${err.message}`)
         }
     }
