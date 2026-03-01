@@ -111,6 +111,7 @@ export default function ProjectKanban() {
                                         onDragStart={() => setDraggingId(project.id)}
                                         onDragEnd={() => setDraggingId(null)}
                                         onClick={() => setSelectedProject(project)}
+                                        onDelete={() => setProjectToDelete(project)}
                                     />
                                 ))
                             )}
@@ -142,12 +143,13 @@ export default function ProjectKanban() {
     )
 }
 
-function ProjectCard({ project, milestones, onDragStart, onDragEnd, onClick }: {
+function ProjectCard({ project, milestones, onDragStart, onDragEnd, onClick, onDelete }: {
     project: StudioProject;
     milestones: StudioMilestone[];
     onDragStart: () => void;
     onDragEnd: () => void;
     onClick: () => void;
+    onDelete: () => void;
 }) {
     return (
         <div
@@ -243,7 +245,7 @@ function ProjectCard({ project, milestones, onDragStart, onDragEnd, onClick }: {
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
-                                setProjectToDelete(project)
+                                onDelete()
                             }}
                             className="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-all flex items-center justify-center"
                         >
