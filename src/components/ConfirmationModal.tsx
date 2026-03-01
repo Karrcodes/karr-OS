@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Trash2, AlertCircle, Info, X } from 'lucide-react'
+import { Trash2, AlertCircle, Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface ConfirmationModalProps {
@@ -37,25 +37,18 @@ export default function ConfirmationModal({
                 className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
                 onClick={onClose}
             />
-            <div className="relative w-full max-w-sm bg-white rounded-[32px] shadow-2xl overflow-hidden flex flex-col p-8 text-center animate-in zoom-in-95 duration-200 font-outfit">
-                <button
-                    onClick={onClose}
-                    className="absolute top-6 right-6 p-1 rounded-full hover:bg-black/5 text-black/20 hover:text-black transition-colors"
-                >
-                    <X className="w-5 h-5" />
-                </button>
-
+            <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col p-6 text-center animate-in zoom-in-95 duration-200">
                 <div className={cn(
-                    "w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6",
-                    type === 'danger' ? "bg-red-50 text-red-600 shadow-inner" :
-                        type === 'warning' ? "bg-amber-50 text-amber-600 shadow-inner" :
-                            "bg-blue-50 text-blue-600 shadow-inner"
+                    "w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4",
+                    type === 'danger' ? "bg-red-100 text-red-600" :
+                        type === 'warning' ? "bg-amber-100 text-amber-600" :
+                            "bg-emerald-100 text-emerald-600"
                 )}>
-                    <Icon className="w-10 h-10" />
+                    <Icon className="w-8 h-8" />
                 </div>
 
-                <h3 className="text-xl font-black text-black mb-3 tracking-tight">{title}</h3>
-                <p className="text-[15px] font-medium text-black/50 mb-8 leading-relaxed px-2">
+                <h3 className="text-lg font-bold text-black mb-2">{title}</h3>
+                <p className="text-[14px] text-black/60 mb-6 leading-relaxed">
                     {message}
                 </p>
 
@@ -63,24 +56,28 @@ export default function ConfirmationModal({
                     <button
                         onClick={onClose}
                         disabled={loading}
-                        className="flex-1 py-4 rounded-2xl border border-black/[0.08] text-black/40 font-black text-[13px] uppercase tracking-widest hover:bg-black/[0.02] transition-all disabled:opacity-50"
+                        className="flex-1 py-3 rounded-xl border border-black/[0.1] text-black/60 font-bold text-[14px] hover:bg-black/[0.05] transition-colors disabled:opacity-50"
                     >
                         {cancelText}
                     </button>
                     <button
                         onClick={async () => {
-                            await onConfirm()
-                            onClose()
+                            try {
+                                await onConfirm()
+                                onClose()
+                            } catch (err) {
+                                // Error handled by onConfirm or ignored here
+                            }
                         }}
                         disabled={loading}
                         className={cn(
-                            "flex-1 py-4 rounded-2xl text-white font-black text-[13px] uppercase tracking-widest transition-all shadow-xl disabled:opacity-50",
+                            "flex-1 py-3 rounded-xl text-white font-bold text-[14px] transition-colors shadow-lg disabled:opacity-50",
                             type === 'danger' ? "bg-red-600 hover:bg-red-700 shadow-red-200" :
-                                type === 'warning' ? "bg-amber-500 hover:bg-amber-600 shadow-amber-200" :
-                                    "bg-blue-600 hover:bg-blue-700 shadow-blue-200"
+                                type === 'warning' ? "bg-amber-600 hover:bg-amber-700 shadow-amber-200" :
+                                    "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200"
                         )}
                     >
-                        {loading ? 'Processing...' : confirmText}
+                        {loading ? '...' : confirmText}
                     </button>
                 </div>
             </div>

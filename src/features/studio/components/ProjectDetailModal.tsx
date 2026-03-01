@@ -40,6 +40,7 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
     const [newMilestoneTitle, setNewMilestoneTitle] = useState('')
     const [editedData, setEditedData] = useState<Partial<StudioProject>>({})
     const [coverFile, setCoverFile] = useState<File | null>(null)
+    const [showPromoteConfirm, setShowPromoteConfirm] = useState(false)
     const { createGoal } = useGoals()
 
     if (!isOpen || !project) return null
@@ -116,8 +117,10 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
     const { settings } = useSystemSettings()
 
     const handlePromote = async () => {
+        console.log('Promoting project:', project.id)
         try {
             // 1. Create Goal
+            console.log('Step 1: Creating goal...')
             const goalData = {
                 title: project.title,
                 description: project.description || '',
@@ -131,15 +134,23 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
             }
 
             await createGoal(goalData)
+            console.log('Step 1 complete: Goal created.')
 
             // 2. Sync Milestones to fin_tasks (Business Profile)
+            console.log('Step 2: Syncing milestones...', projectMilestones.length)
             if (projectMilestones.length > 0) {
                 if (settings.is_demo_mode) {
                     const LOCAL_STORAGE_KEY = 'schrö_demo_tasks'
-                    const stored = localStorage.getItem(LOCAL_STORAGE_KEY)
-                    const allTasks = stored ? JSON.parse(stored) : {}
                     const category = 'todo'
-                    const existingTasks = allTasks[category] || []
+                    let allTasks: any = {}
+                    try {
+                        const stored = localStorage.getItem(LOCAL_STORAGE_KEY)
+                        allTasks = stored ? JSON.parse(stored) : {}
+                    } catch (e) {
+                        console.error('Failed to parse stored tasks:', e)
+                    }
+
+                    const existingTasks = Array.isArray(allTasks[category]) ? allTasks[category] : []
 
                     const newTasks = projectMilestones.map((m, idx) => ({
                         id: `demo-promoted-${Date.now()}-${idx}`,
@@ -180,7 +191,6 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
         }
     }
 
-    const [showPromoteConfirm, setShowPromoteConfirm] = useState(false)
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-end">

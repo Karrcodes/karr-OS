@@ -7,6 +7,7 @@ import type { StudioProject, ProjectStatus, StudioMilestone } from '../types/stu
 import { cn } from '@/lib/utils'
 import PlatformIcon from './PlatformIcon'
 import ProjectDetailModal from './ProjectDetailModal'
+import ConfirmationModal from '@/components/ConfirmationModal'
 
 const COLUMNS: { label: string; value: ProjectStatus }[] = [
     { label: 'Idea', value: 'idea' },
@@ -20,17 +21,18 @@ export default function ProjectKanban() {
     const [draggingId, setDraggingId] = useState<string | null>(null)
     const [dragOverStatus, setDragOverStatus] = useState<ProjectStatus | null>(null)
     const [selectedProject, setSelectedProject] = useState<StudioProject | null>(null)
+    const [projectToDelete, setProjectToDelete] = useState<StudioProject | null>(null)
 
     useEffect(() => {
-        const handleDelete = async (e: any) => {
+        const handleDeleteEvent = async (e: any) => {
             try {
                 await deleteProject(e.detail)
             } catch (err: any) {
                 alert(`Failed to delete project: ${err.message}`)
             }
         }
-        window.addEventListener('studio:deleteProject', handleDelete)
-        return () => window.removeEventListener('studio:deleteProject', handleDelete)
+        window.addEventListener('studio:deleteProject', handleDeleteEvent)
+        return () => window.removeEventListener('studio:deleteProject', handleDeleteEvent)
     }, [deleteProject])
 
     const onDragOver = (e: React.DragEvent, status: ProjectStatus) => {
@@ -121,6 +123,20 @@ export default function ProjectKanban() {
                 isOpen={!!selectedProject}
                 onClose={() => setSelectedProject(null)}
                 project={selectedProject}
+            />
+
+            <ConfirmationModal
+                isOpen={!!projectToDelete}
+                onClose={() => setProjectToDelete(null)}
+                onConfirm={async () => {
+                    if (projectToDelete) {
+                        await deleteProject(projectToDelete.id)
+                    }
+                }}
+                title="Delete Project"
+                message={`Are you sure you want to delete "${projectToDelete?.title}"? This will also delete all associated milestones and content.`}
+                confirmText="Delete"
+                type="danger"
             />
         </div>
     )
@@ -227,9 +243,7 @@ function ProjectCard({ project, milestones, onDragStart, onDragEnd, onClick }: {
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
-                                if (confirm(`Are you sure you want to delete "${project.title}"?`)) {
-                                    window.dispatchEvent(new CustomEvent('studio:deleteProject', { detail: project.id }));
-                                }
+                                setProjectToDelete(project)
                             }}
                             className="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-all flex items-center justify-center"
                         >
