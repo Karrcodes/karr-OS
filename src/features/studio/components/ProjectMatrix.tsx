@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import { motion, useMotionValue, animate, AnimatePresence } from 'framer-motion'
 import { useStudio } from '../hooks/useStudio'
 import { cn } from '@/lib/utils'

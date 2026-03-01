@@ -7,9 +7,19 @@ import type { StudioSpark } from '../types/studio.types'
 import { cn } from '@/lib/utils'
 import SparkDetailModal from './SparkDetailModal'
 
-export default function SparksGrid() {
-    const { sparks, projects, deleteSpark, loading } = useStudio()
+interface SparksGridProps {
+    searchQuery?: string
+}
+
+export default function SparksGrid({ searchQuery = '' }: SparksGridProps) {
+    const { sparks: allSparks, projects, deleteSpark, loading } = useStudio()
     const [selectedSpark, setSelectedSpark] = useState<StudioSpark | null>(null)
+
+    const sparks = allSparks.filter(s =>
+        s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.notes?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.type.toLowerCase().includes(searchQuery.toLowerCase())
+    )
 
     useEffect(() => {
         const handleDelete = async (e: any) => {

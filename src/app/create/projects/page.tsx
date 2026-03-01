@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import ProjectKanban from '@/features/studio/components/ProjectKanban'
 import ProjectMatrix from '@/features/studio/components/ProjectMatrix'
 import ProjectTimeline from '@/features/studio/components/ProjectTimeline'
@@ -16,6 +16,8 @@ export default function ProjectsPage() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [view, setView] = useState<'board' | 'matrix' | 'timeline'>('board')
     const [selectedProject, setSelectedProject] = useState<StudioProject | null>(null)
+    const [searchQuery, setSearchQuery] = useState('')
+    const [filterType, setFilterType] = useState<string | null>(null)
 
     return (
         <main className="pb-24 pt-4 px-4 md:px-8">
@@ -66,18 +68,30 @@ export default function ProjectsPage() {
                         <input
                             type="text"
                             placeholder="Search projects..."
+                            value={searchQuery}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
                             className="w-full pl-10 pr-4 py-2 bg-white border border-black/[0.05] rounded-xl text-[13px] focus:outline-none focus:border-orange-200 transition-all font-medium"
                         />
                     </div>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-white border border-black/[0.05] rounded-xl text-[12px] font-bold text-black/60 hover:bg-black/[0.02] transition-colors">
-                        <Filter className="w-4 h-4" />
-                        Filter
-                    </button>
+                    <div className="flex bg-black/[0.03] p-1 rounded-xl border border-black/[0.04] items-center">
+                        {[null, 'Architectural Design', 'Technology', 'Media', 'Fashion'].map((type) => (
+                            <button
+                                key={type || 'all'}
+                                onClick={() => setFilterType(type)}
+                                className={cn(
+                                    "px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tight transition-all",
+                                    filterType === type ? 'bg-white text-black shadow-sm' : 'text-black/30 hover:text-black/60'
+                                )}
+                            >
+                                {type || 'All'}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
-                {view === 'board' && <ProjectKanban />}
-                {view === 'matrix' && <ProjectMatrix />}
-                {view === 'timeline' && <ProjectTimeline onProjectClick={setSelectedProject} />}
+                {view === 'board' && <ProjectKanban searchQuery={searchQuery} filterType={filterType} />}
+                {view === 'matrix' && <ProjectMatrix searchQuery={searchQuery} filterType={filterType} />}
+                {view === 'timeline' && <ProjectTimeline onProjectClick={setSelectedProject} searchQuery={searchQuery} filterType={filterType} />}
             </div>
 
             <CreateProjectModal

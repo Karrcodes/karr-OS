@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { Plus, X, Briefcase, Globe, Type, AlignLeft, Youtube, Instagram, UploadCloud, Trash2, CheckSquare, Calendar } from 'lucide-react'
 import type { ProjectStatus, ProjectType, Platform } from '../types/studio.types'
 import { useStudio } from '../hooks/useStudio'
@@ -11,24 +11,37 @@ interface CreateProjectModalProps {
     onClose: () => void
 }
 
-const PROJECT_TYPES: ProjectType[] = ['Architectural Design', 'Media', 'Product Design', 'Technology', 'Fashion', 'Other']
+const PROJECT_TYPES: ProjectType[] = ['Architectural Design', 'Technology', 'Fashion', 'Product Design', 'Media', 'Other']
 const PLATFORMS: Platform[] = ['youtube', 'instagram', 'substack', 'tiktok', 'x', 'web']
 
 export default function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps) {
     const { addProject } = useStudio()
     const [loading, setLoading] = useState(false)
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<{
+        title: string;
+        tagline: string;
+        description: string;
+        type: ProjectType;
+        platforms: Platform[];
+        status: ProjectStatus;
+        gtv_featured: boolean;
+        cover_url: string;
+        target_date: string;
+        priority: 'urgent' | 'high' | 'mid' | 'low';
+        impact_score: number;
+        strategic_category: string;
+    }>({
         title: '',
         tagline: '',
         description: '',
-        type: 'Other' as ProjectType,
-        platforms: [] as Platform[],
-        status: 'idea' as ProjectStatus,
+        type: 'Other',
+        platforms: [],
+        status: 'idea',
         gtv_featured: false,
         cover_url: '',
         target_date: '',
-        priority: 'mid' as 'urgent' | 'high' | 'mid' | 'low',
-        impact: 'mid' as 'urgent' | 'high' | 'mid' | 'low',
+        priority: 'mid',
+        impact_score: 5,
         strategic_category: 'personal'
     })
     const [coverFile, setCoverFile] = useState<File | null>(null)
@@ -56,7 +69,7 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                 cover_url: '',
                 target_date: '',
                 priority: 'mid',
-                impact: 'mid',
+                impact_score: 5,
                 strategic_category: 'personal'
             })
             setCoverFile(null)
@@ -73,7 +86,7 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
         setFormData(prev => ({
             ...prev,
             platforms: prev.platforms.includes(p)
-                ? prev.platforms.filter(x => x !== p)
+                ? prev.platforms.filter((x: Platform) => x !== p)
                 : [...prev.platforms, p]
         }))
     }
@@ -110,7 +123,7 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                                     type="text"
                                     placeholder="Project Title"
                                     value={formData.title}
-                                    onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                                     className="w-full pl-11 pr-4 py-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-sm font-bold focus:outline-none focus:border-orange-200 transition-all"
                                 />
                             </div>
@@ -120,7 +133,7 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                                     type="text"
                                     placeholder="Project Tagline"
                                     value={formData.tagline}
-                                    onChange={e => setFormData(prev => ({ ...prev, tagline: e.target.value }))}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(prev => ({ ...prev, tagline: e.target.value }))}
                                     className="w-full pl-11 pr-4 py-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[13px] font-medium focus:outline-none focus:border-orange-200 transition-all"
                                 />
                             </div>
@@ -131,7 +144,7 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                                         type="url"
                                         placeholder="Cover Image URL (optional)"
                                         value={formData.cover_url}
-                                        onChange={e => setFormData(prev => ({ ...prev, cover_url: e.target.value }))}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(prev => ({ ...prev, cover_url: e.target.value }))}
                                         className="flex-1 pl-11 pr-4 py-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[13px] font-medium focus:outline-none focus:border-orange-200 transition-all"
                                     />
                                     <label className="cursor-pointer group/upload relative">
@@ -139,7 +152,7 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                                             type="file"
                                             className="hidden"
                                             accept="image/*"
-                                            onChange={e => setCoverFile(e.target.files?.[0] || null)}
+                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCoverFile(e.target.files?.[0] || null)}
                                         />
                                         <div className={cn(
                                             "h-full px-4 rounded-2xl border-2 border-dashed flex items-center justify-center transition-all",
@@ -180,7 +193,7 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                                     type="text"
                                     placeholder="Add a milestone (e.g. Prototype, Script, Launch...)"
                                     value={newMilestone}
-                                    onChange={e => setNewMilestone(e.target.value)}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewMilestone(e.target.value)}
                                     onKeyDown={e => {
                                         if (e.key === 'Enter' && newMilestone.trim()) {
                                             e.preventDefault();
@@ -196,22 +209,32 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Priority</label>
-                                <select
-                                    value={formData.priority}
-                                    onChange={e => setFormData(prev => ({ ...prev, priority: e.target.value as any }))}
-                                    className="w-full px-4 py-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-orange-200 transition-all appearance-none cursor-pointer"
-                                >
-                                    <option value="urgent">Urgent</option>
-                                    <option value="high">High</option>
-                                    <option value="mid">Mid</option>
-                                    <option value="low">Low</option>
-                                </select>
+                                <div className="flex gap-2">
+                                    {(['urgent', 'high', 'mid', 'low'] as const).map((level) => (
+                                        <button
+                                            key={level}
+                                            type="button"
+                                            onClick={() => setFormData(prev => ({ ...prev, priority: level }))}
+                                            className={cn(
+                                                "flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all",
+                                                formData.priority === level
+                                                    ? level === 'urgent' ? "bg-purple-50 text-purple-600 border-purple-200 shadow-sm"
+                                                        : level === 'high' ? "bg-red-50 text-red-600 border-red-200 shadow-sm"
+                                                            : level === 'mid' ? "bg-yellow-50 text-yellow-600 border-yellow-200 shadow-sm"
+                                                                : "bg-black text-white border-black"
+                                                    : "bg-black/[0.02] border-black/[0.05] text-black/30 hover:bg-black/[0.04]"
+                                            )}
+                                        >
+                                            {level}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Strategic Category</label>
                                 <select
                                     value={formData.strategic_category}
-                                    onChange={e => setFormData(prev => ({ ...prev, strategic_category: e.target.value }))}
+                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData(prev => ({ ...prev, strategic_category: e.target.value }))}
                                     className="w-full px-4 py-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-orange-200 transition-all appearance-none cursor-pointer"
                                 >
                                     <option value="rnd">R&D</option>
@@ -221,6 +244,34 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                                     <option value="personal">Personal</option>
                                 </select>
                             </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Target Completion Date</label>
+                            <div className="relative">
+                                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
+                                <input
+                                    type="date"
+                                    value={formData.target_date}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(prev => ({ ...prev, target_date: e.target.value }))}
+                                    className="w-full pl-11 pr-4 py-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-orange-200 transition-all"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2 flex justify-between">
+                                Impact Score
+                                <span className="text-orange-500 font-black">{formData.impact_score}/10</span>
+                            </label>
+                            <input
+                                type="range"
+                                min="1"
+                                max="10"
+                                value={formData.impact_score}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(prev => ({ ...prev, impact_score: parseInt(e.target.value) }))}
+                                className="w-full h-1.5 bg-black/[0.05] rounded-lg appearance-none cursor-pointer accent-black"
+                            />
                         </div>
 
                         <div className="space-y-2">
@@ -257,7 +308,7 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                             <textarea
                                 rows={4}
                                 value={formData.description}
-                                onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                                 className="w-full px-4 py-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[13px] font-medium focus:outline-none focus:border-orange-200 transition-all resize-none"
                                 placeholder="What is this project about?"
                             />
@@ -308,11 +359,9 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
     )
 }
 
-function Shield(props: any) {
+function Shield(props: React.SVGProps<SVGSVGElement>) {
     return (
         <svg
-            {...props}
-            xmlns="http://www.w3.org/2000/svg"
             width="24"
             height="24"
             viewBox="0 0 24 24"
@@ -321,8 +370,9 @@ function Shield(props: any) {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
+            {...props}
         >
-            <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+            <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1-1z" />
         </svg>
     )
 }

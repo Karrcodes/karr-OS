@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Briefcase, Shield, Clock, MoreVertical, Trash2, CheckCircle2 } from 'lucide-react'
 import { useStudio } from '../hooks/useStudio'
 import type { StudioProject, ProjectStatus, StudioMilestone } from '../types/studio.types'
@@ -16,12 +16,26 @@ const COLUMNS: { label: string; value: ProjectStatus }[] = [
     { label: 'Shipped', value: 'shipped' }
 ]
 
-export default function ProjectKanban() {
-    const { projects, milestones, updateProject, deleteProject, loading } = useStudio()
+interface ProjectKanbanProps {
+    searchQuery?: string
+    filterType?: string | null
+}
+
+export default function ProjectKanban({ searchQuery = '', filterType = null }: ProjectKanbanProps) {
+    const { projects: allProjects, milestones, updateProject, deleteProject, loading } = useStudio()
     const [draggingId, setDraggingId] = useState<string | null>(null)
     const [dragOverStatus, setDragOverStatus] = useState<ProjectStatus | null>(null)
     const [selectedProject, setSelectedProject] = useState<StudioProject | null>(null)
     const [projectToDelete, setProjectToDelete] = useState<StudioProject | null>(null)
+
+    // Filter projects based on search, type and archiving
+    const projects = allProjects.filter(p => {
+        const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            p.tagline?.toLowerCase().includes(searchQuery.toLowerCase())
+        const matchesType = !filterType || p.type === filterType
+        const isNotArchived = !p.is_archived
+        return matchesSearch && matchesType && isNotArchived
+    })
 
     useEffect(() => {
         const handleDeleteEvent = async (e: any) => {
@@ -151,6 +165,16 @@ function ProjectCard({ project, milestones, onDragStart, onDragEnd, onClick, onD
     onClick: () => void;
     onDelete: () => void;
 }) {
+    const { updateProject } = useStudio()
+
+    const handleArchive = async (e: React.MouseEvent) => {
+        e.stopPropagation()
+        try {
+            await updateProject(project.id, { is_archived: true })
+        } catch (err: any) {
+            alert(`Failed to archive: ${err.message}`)
+        }
+    }
     return (
         <div
             draggable
@@ -172,23 +196,43 @@ function ProjectCard({ project, milestones, onDragStart, onDragEnd, onClick, onD
 
             <div className="p-4">
                 <div className="flex justify-between items-start mb-3">
-                    <div className={cn(
-                        "px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-tight",
-                        project.type === 'Media' && "bg-red-50 text-red-600",
-                        project.type === 'Architectural Design' && "bg-blue-50 text-blue-600",
-                        project.type === 'Product Design' && "bg-emerald-50 text-emerald-600",
-                        project.type === 'Technology' && "bg-cyan-50 text-cyan-600",
-                        project.type === 'Fashion' && "bg-purple-50 text-purple-600",
-                        !project.type && "bg-black/[0.03] text-black/40"
-                    )}>
-                        {project.type || 'Other'}
-                    </div>
-                    {project.gtv_featured && (
-                        <div className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-50 border border-blue-100 rounded-md">
-                            <Shield className="w-3 h-3 text-blue-600" />
-                            <span className="text-[8px] font-black text-blue-900 uppercase">GTV</span>
+                    <div className="flex flex-col gap-1.5">
+                        <div className={cn(
+                            "px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-tight w-fit",
+                            project.type === 'Media' && "bg-red-50 text-red-600",
+                            project.type === 'Architectural Design' && "bg-blue-50 text-blue-600",
+                            project.type === 'Product Design' && "bg-emerald-50 text-emerald-600",
+                            project.type === 'Technology' && "bg-cyan-50 text-cyan-600",
+                            project.type === 'Fashion' && "bg-purple-50 text-purple-600",
+                            !project.type && "bg-black/[0.03] text-black/40"
+                        )}>
+                            {project.type || 'Other'}
                         </div>
-                    )}
+                        {project.priority && (
+                            <div className={cn(
+                                "px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter w-fit",
+                                project.priority === 'urgent' ? "bg-purple-50 text-purple-600 border border-purple-100" :
+                                    project.priority === 'high' ? "bg-red-50 text-red-600 border border-red-100" :
+                                        project.priority === 'mid' ? "bg-yellow-50 text-yellow-600 border border-yellow-100" :
+                                            "bg-black/5 text-black/40"
+                            )}>
+                                {project.priority}
+                            </div>
+                        )}
+                    </div>
+                    <div className="flex flex-col items-end gap-1.5">
+                        {project.impact_score && (
+                            <div className="text-[10px] font-black text-orange-500">
+                                {project.impact_score}/10
+                            </div>
+                        )}
+                        {project.gtv_featured && (
+                            <div className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-50 border border-blue-100 rounded-md">
+                                <Shield className="w-3 h-3 text-blue-600" />
+                                <span className="text-[8px] font-black text-blue-900 uppercase">GTV</span>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <h4 className="text-[13px] font-black text-black leading-tight group-hover:text-orange-600 transition-colors">
@@ -243,11 +287,19 @@ function ProjectCard({ project, milestones, onDragStart, onDragEnd, onClick, onD
 
                     <div className="flex items-center gap-1">
                         <button
+                            onClick={handleArchive}
+                            className="p-1.5 rounded-lg bg-black/[0.03] text-black/30 hover:bg-black/5 hover:text-black transition-all flex items-center justify-center"
+                            title="Archive Project"
+                        >
+                            <Shield className="w-3.5 h-3.5" />
+                        </button>
+                        <button
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onDelete()
                             }}
                             className="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-all flex items-center justify-center"
+                            title="Delete Project"
                         >
                             <Trash2 className="w-3.5 h-3.5" />
                         </button>

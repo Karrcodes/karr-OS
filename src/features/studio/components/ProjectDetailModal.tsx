@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import {
     X,
     Calendar,
@@ -22,7 +22,7 @@ import {
 import { useStudio } from '../hooks/useStudio'
 import { useGoals } from '../../goals/hooks/useGoals'
 import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
-import type { StudioProject, StudioMilestone } from '../types/studio.types'
+import type { StudioProject, StudioMilestone, Platform } from '../types/studio.types'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 import PlatformIcon from './PlatformIcon'
@@ -45,8 +45,8 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
 
     if (!isOpen || !project) return null
 
-    const projectMilestones = milestones.filter(m => m.project_id === project.id)
-    const completedCount = projectMilestones.filter(m => m.status === 'completed').length
+    const projectMilestones = milestones.filter((m: StudioMilestone) => m.project_id === project.id)
+    const completedCount = projectMilestones.filter((m: StudioMilestone) => m.status === 'completed').length
     const progress = projectMilestones.length > 0 ? (completedCount / projectMilestones.length) * 100 : 0
 
     const handleAddMilestone = async (e: React.FormEvent) => {
@@ -95,6 +95,7 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
             alert(`Failed to save changes: ${err.message}`)
         }
     }
+
     const handleEditToggle = () => {
         if (!isEditing) {
             setEditedData({
@@ -107,7 +108,7 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                 cover_url: project.cover_url,
                 target_date: project.target_date,
                 priority: project.priority,
-                impact: project.impact,
+                impact_score: project.impact_score,
                 strategic_category: project.strategic_category
             })
         }
@@ -119,6 +120,13 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
     const handlePromote = async () => {
         console.log('Promoting project:', project.id)
         try {
+            if (project.is_promoted) {
+                // Unpromote logic
+                await updateProject(project.id, { is_promoted: false })
+                alert('Project unpromoted from Operations.')
+                return
+            }
+
             // 1. Create Goal
             console.log('Step 1: Creating goal...')
             const goalData = {
@@ -127,7 +135,7 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                 category: 'personal' as const,
                 status: 'active' as const,
                 vision_image_url: project.cover_url,
-                milestones: projectMilestones.map(m => ({
+                milestones: projectMilestones.map((m: StudioMilestone) => ({
                     title: m.title,
                     is_completed: m.status === 'completed'
                 }))
@@ -152,7 +160,7 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
 
                     const existingTasks = Array.isArray(allTasks[category]) ? allTasks[category] : []
 
-                    const newTasks = projectMilestones.map((m, idx) => ({
+                    const newTasks = projectMilestones.map((m: StudioMilestone, idx: number) => ({
                         id: `demo-promoted-${Date.now()}-${idx}`,
                         profile: 'business',
                         title: `${project.title}: ${m.title}`,
@@ -167,7 +175,7 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                     allTasks[category] = [...newTasks, ...existingTasks]
                     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(allTasks))
                 } else {
-                    const tasksToInsert = projectMilestones.map((m, idx) => ({
+                    const tasksToInsert = projectMilestones.map((m: StudioMilestone, idx: number) => ({
                         profile: 'business',
                         title: `${project.title}: ${m.title}`,
                         is_completed: m.status === 'completed',
@@ -178,10 +186,22 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                         position: Date.now() + (idx * 1000)
                     }))
 
-                    const { error: taskError } = await supabase.from('fin_tasks').insert(tasksToInsert)
+                    const { data: insertedTasks, error: taskError } = await supabase.from('fin_tasks').insert(tasksToInsert).select()
                     if (taskError) throw taskError
+
+                    // Update milestones with linked task IDs
+                    if (insertedTasks) {
+                        for (let i = 0; i < projectMilestones.length; i++) {
+                            await updateMilestone(projectMilestones[i].id, {
+                                linked_task_id: insertedTasks[i].id
+                            })
+                        }
+                    }
                 }
             }
+
+            // 3. Update project status
+            await updateProject(project.id, { is_promoted: true })
 
             alert('Project successfully promoted to Operations with synced tasks!')
             onClose()
@@ -245,7 +265,7 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                                                 <input
                                                     type="text"
                                                     value={editedData.title ?? project.title}
-                                                    onChange={(e) => setEditedData(prev => ({ ...prev, title: e.target.value }))}
+                                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditedData(prev => ({ ...prev, title: e.target.value }))}
                                                     className="w-full text-3xl font-black text-black tracking-tight bg-black/[0.02] border border-black/[0.1] rounded-xl px-4 py-2 focus:outline-none focus:border-orange-500 transition-all font-outfit"
                                                 />
                                             </div>
@@ -273,30 +293,42 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
 
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Priority</label>
-                                                        <select
-                                                            value={editedData.priority ?? project.priority ?? 'mid'}
-                                                            onChange={(e) => setEditedData(prev => ({ ...prev, priority: e.target.value as any }))}
-                                                            className="w-full px-4 py-3 bg-black/[0.02] border border-black/[0.1] rounded-xl text-[13px] font-bold focus:outline-none focus:border-orange-500 appearance-none cursor-pointer"
-                                                        >
-                                                            <option value="urgent">Urgent</option>
-                                                            <option value="high">High</option>
-                                                            <option value="mid">Mid</option>
-                                                            <option value="low">Low</option>
-                                                        </select>
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2 text-right flex justify-between">
+                                                            Priority
+                                                        </label>
+                                                        <div className="flex gap-1.5">
+                                                            {(['urgent', 'high', 'mid', 'low'] as const).map((level) => (
+                                                                <button
+                                                                    key={level}
+                                                                    type="button"
+                                                                    onClick={() => setEditedData(prev => ({ ...prev, priority: level }))}
+                                                                    className={cn(
+                                                                        "flex-1 py-2 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all",
+                                                                        (editedData.priority ?? project.priority) === level
+                                                                            ? level === 'urgent' ? "bg-purple-50 text-purple-600 border-purple-200"
+                                                                                : level === 'high' ? "bg-red-50 text-red-600 border-red-200"
+                                                                                    : level === 'mid' ? "bg-yellow-50 text-yellow-600 border-yellow-200"
+                                                                                        : "bg-black text-white border-black"
+                                                                            : "bg-black/[0.02] border-black/[0.05] text-black/30 hover:bg-black/[0.04]"
+                                                                    )}
+                                                                >
+                                                                    {level}
+                                                                </button>
+                                                            ))}
+                                                        </div>
                                                     </div>
                                                     <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Impact</label>
-                                                        <select
-                                                            value={editedData.impact ?? project.impact ?? 'mid'}
-                                                            onChange={(e) => setEditedData(prev => ({ ...prev, impact: e.target.value as any }))}
-                                                            className="w-full px-4 py-3 bg-black/[0.02] border border-black/[0.1] rounded-xl text-[13px] font-bold focus:outline-none focus:border-orange-500 appearance-none cursor-pointer"
-                                                        >
-                                                            <option value="urgent">Urgent</option>
-                                                            <option value="high">High</option>
-                                                            <option value="mid">Mid</option>
-                                                            <option value="low">Low</option>
-                                                        </select>
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2 flex justify-between">
+                                                            Impact <span className="text-orange-500 font-black">{(editedData.impact_score ?? project.impact_score ?? 5)}/10</span>
+                                                        </label>
+                                                        <input
+                                                            type="range"
+                                                            min="1"
+                                                            max="10"
+                                                            value={editedData.impact_score ?? project.impact_score ?? 5}
+                                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditedData(prev => ({ ...prev, impact_score: parseInt(e.target.value) }))}
+                                                            className="w-full h-1.5 bg-black/[0.05] rounded-lg appearance-none cursor-pointer accent-black mt-2"
+                                                        />
                                                     </div>
                                                 </div>
 
@@ -305,7 +337,7 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                                                         <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Strategic Category</label>
                                                         <select
                                                             value={editedData.strategic_category ?? project.strategic_category ?? 'personal'}
-                                                            onChange={(e) => setEditedData(prev => ({ ...prev, strategic_category: e.target.value }))}
+                                                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setEditedData(prev => ({ ...prev, strategic_category: e.target.value }))}
                                                             className="w-full px-4 py-3 bg-black/[0.02] border border-black/[0.1] rounded-xl text-[13px] font-bold focus:outline-none focus:border-orange-500 appearance-none cursor-pointer"
                                                         >
                                                             <option value="rnd">R&D</option>
@@ -351,7 +383,7 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                                             <input
                                                 type="text"
                                                 value={editedData.tagline ?? project.tagline ?? ''}
-                                                onChange={(e) => setEditedData(prev => ({ ...prev, tagline: e.target.value }))}
+                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditedData(prev => ({ ...prev, tagline: e.target.value }))}
                                                 className="w-full text-lg text-black/40 font-medium bg-black/[0.02] border border-black/[0.1] rounded-xl px-4 py-2 focus:outline-none focus:border-orange-500"
                                                 placeholder="Add a catchy tagline..."
                                             />
@@ -364,7 +396,7 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                                                     <input
                                                         type="url"
                                                         value={editedData.cover_url ?? project.cover_url ?? ''}
-                                                        onChange={(e) => setEditedData(prev => ({ ...prev, cover_url: e.target.value }))}
+                                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditedData(prev => ({ ...prev, cover_url: e.target.value }))}
                                                         className="w-full pl-11 pr-4 py-3 bg-black/[0.02] border border-black/[0.1] rounded-xl text-[12px] font-bold focus:outline-none focus:border-orange-500"
                                                         placeholder="Cover Image URL..."
                                                     />
@@ -374,7 +406,7 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                                                         type="file"
                                                         className="hidden"
                                                         accept="image/*"
-                                                        onChange={e => setCoverFile(e.target.files?.[0] || null)}
+                                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCoverFile(e.target.files?.[0] || null)}
                                                     />
                                                     <div className={cn(
                                                         "h-full px-5 rounded-xl border-2 border-dashed flex items-center justify-center transition-all",
@@ -403,11 +435,16 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                                 <div className="flex gap-2 justify-end -mt-12 mb-4 relative z-10">
                                     <button
                                         onClick={() => setShowPromoteConfirm(true)}
-                                        className="px-4 py-2 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 text-[11px] font-black uppercase tracking-widest hover:bg-emerald-100 hover:scale-105 transition-all flex items-center gap-2 shadow-sm"
-                                        title="Promote to Operations (Goal)"
+                                        className={cn(
+                                            "px-4 py-2 rounded-xl border text-[11px] font-black uppercase tracking-widest hover:scale-105 transition-all flex items-center gap-2 shadow-sm",
+                                            project.is_promoted
+                                                ? "border-orange-200 bg-orange-50 text-orange-700"
+                                                : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                        )}
+                                        title={project.is_promoted ? "Already Promoted" : "Promote to Operations (Goal)"}
                                     >
                                         <Rocket className="w-4 h-4" />
-                                        Promote
+                                        {project.is_promoted ? 'Unpromote' : 'Promote'}
                                     </button>
                                     <button
                                         onClick={handleEditToggle}
@@ -424,10 +461,10 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-black/[0.02] border border-black/[0.04] rounded-xl">
                                 <Target className="w-3.5 h-3.5 text-black/40" />
                                 <div className="flex items-center gap-1 ml-1">
-                                    {project.platforms?.map(p => (
+                                    {(project.platforms || []).map((p: Platform) => (
                                         <PlatformIcon key={p} platform={p} className="w-3.5 h-3.5 text-black/60" />
                                     ))}
-                                    {!project.platforms?.length && <span className="text-[11px] font-bold text-black/20 italic">No targets</span>}
+                                    {(!project.platforms || project.platforms.length === 0) && <span className="text-[11px] font-bold text-black/20 italic">No targets</span>}
                                 </div>
                             </div>
                             {project.gtv_featured && (
@@ -458,7 +495,7 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                         </div>
 
                         <div className="space-y-2">
-                            {projectMilestones.map(m => (
+                            {projectMilestones.map((m: StudioMilestone) => (
                                 <div
                                     key={m.id}
                                     className="p-4 bg-white border border-black/[0.05] rounded-2xl flex items-center justify-between group hover:border-emerald-200 hover:shadow-sm transition-all"
@@ -475,37 +512,74 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                                         </button>
                                         <div className="flex flex-col flex-1 min-w-0">
                                             {isEditing ? (
-                                                <div className="flex flex-col gap-2">
+                                                <div className="flex flex-col gap-3">
                                                     <input
                                                         type="text"
                                                         value={m.title}
-                                                        onChange={(e) => updateMilestone(m.id, { title: e.target.value })}
-                                                        className="w-full bg-black/[0.03] border border-black/5 rounded-lg px-3 py-1 text-[13px] font-bold focus:outline-none focus:border-emerald-200"
+                                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateMilestone(m.id, { title: e.target.value })}
+                                                        className="w-full bg-black/[0.03] border border-black/5 rounded-lg px-3 py-1.5 text-[13px] font-bold focus:outline-none focus:border-emerald-200"
+                                                        placeholder="Milestone title"
                                                     />
-                                                    <div className="flex items-center gap-2">
-                                                        <Calendar className="w-3 h-3 text-black/20" />
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        <div className="flex items-center gap-2 px-2 py-1 bg-black/[0.02] border border-black/5 rounded-lg">
+                                                            <Calendar className="w-3 h-3 text-black/20" />
+                                                            <input
+                                                                type="date"
+                                                                value={m.target_date || ''}
+                                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateMilestone(m.id, { target_date: e.target.value || undefined })}
+                                                                className="bg-transparent border-none text-[10px] font-bold focus:outline-none w-full"
+                                                            />
+                                                        </div>
+                                                        <div className="flex items-center gap-2 px-2 py-1 bg-black/[0.02] border border-black/5 rounded-lg">
+                                                            <Target className="w-3 h-3 text-black/20" />
+                                                            <input
+                                                                type="text"
+                                                                value={m.category || ''}
+                                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateMilestone(m.id, { category: e.target.value })}
+                                                                className="bg-transparent border-none text-[10px] font-bold focus:outline-none w-full"
+                                                                placeholder="Category"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 px-2 py-1 bg-black/[0.02] border border-black/5 rounded-lg">
+                                                        <span className="text-[9px] font-black text-black/20 uppercase shrink-0">Impact</span>
                                                         <input
-                                                            type="date"
-                                                            value={m.target_date || ''}
-                                                            onChange={(e) => updateMilestone(m.id, { target_date: e.target.value || undefined })}
-                                                            className="bg-black/[0.03] border border-black/5 rounded-lg px-2 py-0.5 text-[10px] font-bold focus:outline-none"
+                                                            type="range"
+                                                            min="1"
+                                                            max="10"
+                                                            value={m.impact_score || 5}
+                                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateMilestone(m.id, { impact_score: parseInt(e.target.value) })}
+                                                            className="w-full h-1 bg-black/10 rounded-full appearance-none accent-emerald-500"
                                                         />
+                                                        <span className="text-[10px] font-black text-emerald-600 shrink-0 w-4 text-center">{m.impact_score || 5}</span>
                                                     </div>
                                                 </div>
                                             ) : (
                                                 <>
-                                                    <span className={cn(
-                                                        "text-[14px] font-bold transition-all truncate",
-                                                        m.status === 'completed' ? "text-black/30 line-through" : "text-black"
-                                                    )}>
-                                                        {m.title}
-                                                    </span>
-                                                    {m.target_date && (
-                                                        <span className="text-[10px] font-bold text-black/20 flex items-center gap-1">
-                                                            <Calendar className="w-3 h-3" />
-                                                            {new Date(m.target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                                                    <div className="flex flex-wrap items-center gap-3 mt-1">
+                                                        <span className={cn(
+                                                            "text-[14px] font-bold transition-all truncate",
+                                                            m.status === 'completed' ? "text-black/30 line-through" : "text-black"
+                                                        )}>
+                                                            {m.title}
                                                         </span>
-                                                    )}
+                                                        {m.category && (
+                                                            <span className="px-2 py-0.5 bg-black/[0.03] text-[9px] font-black uppercase tracking-wider text-black/40 rounded-md">
+                                                                {m.category}
+                                                            </span>
+                                                        )}
+                                                        {m.impact_score && (
+                                                            <span className="text-[10px] font-black text-orange-500/60">
+                                                                {m.impact_score}/10
+                                                            </span>
+                                                        )}
+                                                        {m.target_date && (
+                                                            <span className="text-[10px] font-bold text-black/20 flex items-center gap-1">
+                                                                <Calendar className="w-3 h-3" />
+                                                                {new Date(m.target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </>
                                             )}
                                         </div>
@@ -522,12 +596,13 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                                 </div>
                             ))}
 
+                            {/* Milestone Form */}
                             <form onSubmit={handleAddMilestone} className="relative mt-4">
                                 <Plus className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
                                 <input
                                     type="text"
                                     value={newMilestoneTitle}
-                                    onChange={(e) => setNewMilestoneTitle(e.target.value)}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewMilestoneTitle(e.target.value)}
                                     placeholder="Add a milestone to the roadmap..."
                                     className="w-full pl-11 pr-32 py-3.5 bg-black/[0.01] border-2 border-dashed border-black/[0.05] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-emerald-200 focus:bg-emerald-50/10 transition-all"
                                 />
@@ -540,6 +615,34 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                                     />
                                 </div>
                             </form>
+
+                            {/* Next Steps for Completed Projects */}
+                            {progress === 100 && (
+                                <div className="mt-8 p-6 bg-emerald-50/50 border border-emerald-100 rounded-3xl space-y-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-2xl bg-emerald-100 flex items-center justify-center">
+                                            <Rocket className="w-5 h-5 text-emerald-600" />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-[14px] font-black text-emerald-900 leading-none">Project Shipped!</h4>
+                                            <p className="text-[11px] text-emerald-800/60 font-medium mt-1">What's the next evolution of this idea?</p>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button className="py-3 bg-white border border-emerald-100 rounded-xl text-[12px] font-black text-emerald-700 hover:bg-emerald-100 transition-colors flex items-center justify-center gap-2">
+                                            <Plus className="w-4 h-4" />
+                                            New Related Spark
+                                        </button>
+                                        <button
+                                            onClick={() => updateProject(project.id, { is_archived: true })}
+                                            className="py-3 bg-white border border-emerald-100 rounded-xl text-[12px] font-black text-emerald-700 hover:bg-emerald-100 transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                            Archive Project
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </section>
 
@@ -552,7 +655,7 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                         {isEditing ? (
                             <textarea
                                 value={editedData.description ?? project.description ?? ''}
-                                onChange={(e) => setEditedData(prev => ({ ...prev, description: e.target.value }))}
+                                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEditedData((prev: Partial<StudioProject>) => ({ ...prev, description: e.target.value }))}
                                 className="w-full p-4 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[13px] font-medium min-h-[150px] focus:outline-none focus:border-blue-200"
                                 placeholder="Write the project vision, goals, and core features..."
                             />

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { Activity, Plus, Search, Users, Globe, MapPin, Grid, List as ListIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import SparksGrid from '@/features/studio/components/SparksGrid'
@@ -9,6 +9,7 @@ import CreateSparkModal from '@/features/studio/components/CreateSparkModal'
 export default function SparksPage() {
     const [view, setView] = useState<'grid' | 'list'>('grid')
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+    const [searchQuery, setSearchQuery] = useState('')
 
     return (
         <main className="pb-24 pt-4 px-4 md:px-8">
@@ -38,6 +39,8 @@ export default function SparksPage() {
                         <input
                             type="text"
                             placeholder="Search sparks by title or tag..."
+                            value={searchQuery}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
                             className="w-full pl-10 pr-4 py-2 bg-white border border-black/[0.05] rounded-xl text-[13px] focus:outline-none focus:border-emerald-200 transition-all font-medium"
                         />
                     </div>
@@ -57,7 +60,7 @@ export default function SparksPage() {
                     </div>
                 </div>
 
-                <SparksGrid />
+                <SparksGrid searchQuery={searchQuery} />
             </div>
 
             <CreateSparkModal

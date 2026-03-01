@@ -1,5 +1,5 @@
 export type ProjectStatus = 'idea' | 'research' | 'active' | 'paused' | 'shipped' | 'archived';
-export type ProjectType = 'Architectural Design' | 'Media' | 'Product Design' | 'Technology' | 'Fashion' | 'Other';
+export type ProjectType = 'Architectural Design' | 'Technology' | 'Fashion' | 'Product Design' | 'Media' | 'Other';
 export type Platform = 'youtube' | 'instagram' | 'substack' | 'tiktok' | 'x' | 'web';
 export type PriorityLevel = 'urgent' | 'high' | 'mid' | 'low';
 export type ContentCategory = 'Vlog' | 'Thoughts' | 'Showcase' | 'Concept' | 'Update' | 'Other';
@@ -19,9 +19,12 @@ export interface StudioProject {
     target_date?: string;
     priority?: PriorityLevel;
     impact?: PriorityLevel;
+    impact_score?: number;
     strategic_category?: string;
     ai_position_x?: number;
     ai_position_y?: number;
+    is_promoted?: boolean;
+    is_archived?: boolean;
     created_at: string;
     updated_at: string;
 }
@@ -121,6 +124,9 @@ export interface StudioMilestone {
     status: 'pending' | 'completed';
     completed_at?: string;
     target_date?: string;
+    category?: string;
+    impact_score?: number;
+    linked_task_id?: string | null;
     created_at: string;
     updated_at: string;
 }
