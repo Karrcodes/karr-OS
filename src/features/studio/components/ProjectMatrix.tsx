@@ -225,7 +225,11 @@ export default function ProjectMatrix({
             const y = p.ai_position_y ?? getPriorityY(p.priority)
             return { id: p.id, x, y, width: 15, height: 5, density: 'full' as const }
         })
-        return positions.reduce((acc: Record<string, any>, p: any) => ({ ...acc, [p.id]: p }), {} as Record<string, any>)
+        const lookup: { [key: string]: any } = {}
+        positions.forEach(pos => {
+            lookup[pos.id] = pos
+        })
+        return lookup
     }, [filteredProjects])
 
     const timelineDates = useMemo(() => {
