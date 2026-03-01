@@ -42,7 +42,7 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
         target_date: '',
         priority: 'mid',
         impact_score: 5,
-        strategic_category: 'personal'
+        strategic_category: 'rnd'
     })
     const [coverFile, setCoverFile] = useState<File | null>(null)
     const [milestones, setMilestones] = useState<string[]>([])
@@ -70,7 +70,7 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                 target_date: '',
                 priority: 'mid',
                 impact_score: 5,
-                strategic_category: 'personal'
+                strategic_category: 'rnd'
             })
             setCoverFile(null)
             setMilestones([])
@@ -95,8 +95,8 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
-            <div className="relative w-full max-w-xl bg-white rounded-[32px] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-                <div className="p-8">
+            <div className="relative w-full max-w-xl max-h-[90vh] bg-white rounded-[32px] shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
+                <div className="p-8 overflow-y-auto no-scrollbar">
                     <div className="flex items-center justify-between mb-8">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-2xl bg-orange-50 flex items-center justify-center">
@@ -241,20 +241,19 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                                     <option value="production">Production</option>
                                     <option value="media">Media</option>
                                     <option value="growth">Growth</option>
-                                    <option value="personal">Personal</option>
                                 </select>
                             </div>
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="space-y-4">
                             <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Target Completion Date</label>
-                            <div className="relative">
-                                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
+                            <div className="relative w-full md:w-1/2">
+                                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20 pointer-events-none" />
                                 <input
                                     type="date"
                                     value={formData.target_date}
                                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(prev => ({ ...prev, target_date: e.target.value }))}
-                                    className="w-full pl-11 pr-4 py-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-orange-200 transition-all"
+                                    className="w-full pl-11 pr-4 py-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-orange-200 transition-all cursor-pointer"
                                 />
                             </div>
                         </div>

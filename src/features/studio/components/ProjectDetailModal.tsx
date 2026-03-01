@@ -285,9 +285,15 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                                                     </div>
                                                     <div className="space-y-2">
                                                         <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Project Type</label>
-                                                        <div className="flex items-center h-[46px] px-4 bg-black/[0.02] border border-black/[0.1] rounded-xl text-[11px] font-bold text-black/60 capitalize">
-                                                            {project.type?.replace('_', ' ') || 'Other'}
-                                                        </div>
+                                                        <select
+                                                            value={editedData.type ?? project.type ?? 'Other'}
+                                                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setEditedData(prev => ({ ...prev, type: e.target.value as any }))}
+                                                            className="w-full px-4 h-[46px] bg-black/[0.02] border border-black/[0.1] rounded-xl text-[11px] font-bold text-black focus:outline-none focus:border-orange-500 appearance-none cursor-pointer"
+                                                        >
+                                                            {['Architectural Design', 'Technology', 'Fashion', 'Product Design', 'Media', 'Other'].map(t => (
+                                                                <option key={t} value={t}>{t}</option>
+                                                            ))}
+                                                        </select>
                                                     </div>
                                                 </div>
 
@@ -344,18 +350,17 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                                                             <option value="production">Production</option>
                                                             <option value="media">Media</option>
                                                             <option value="growth">Growth</option>
-                                                            <option value="personal">Personal</option>
                                                         </select>
                                                     </div>
                                                     <div className="space-y-2">
                                                         <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Target Date</label>
                                                         <div className="relative">
-                                                            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
+                                                            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20 pointer-events-none" />
                                                             <input
                                                                 type="date"
                                                                 value={editedData.target_date ?? project.target_date ?? ''}
                                                                 onChange={(e) => setEditedData(prev => ({ ...prev, target_date: e.target.value }))}
-                                                                className="w-full pl-11 pr-4 py-3 bg-black/[0.02] border border-black/[0.1] rounded-xl text-[13px] font-bold focus:outline-none focus:border-orange-500"
+                                                                className="w-full pl-11 pr-4 py-3 bg-black/[0.02] border border-black/[0.1] rounded-xl text-[13px] font-bold focus:outline-none focus:border-orange-500 cursor-pointer"
                                                             />
                                                         </div>
                                                     </div>

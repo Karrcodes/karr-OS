@@ -21,7 +21,6 @@ const STRATEGIC_CATEGORIES = [
     { id: 'production', label: 'Production', icon: Factory, color: 'text-orange-600 bg-orange-50 border-orange-100', dotBgColor: 'bg-orange-500 shadow-orange-500/40' },
     { id: 'media', label: 'Media', icon: Tv, color: 'text-rose-600 bg-rose-50 border-rose-100', dotBgColor: 'bg-rose-500 shadow-rose-500/40' },
     { id: 'growth', label: 'Growth', icon: TrendingUp, color: 'text-emerald-600 bg-emerald-50 border-emerald-100', dotBgColor: 'bg-emerald-500 shadow-emerald-500/40' },
-    { id: 'personal', label: 'Personal', icon: User, color: 'text-blue-600 bg-blue-50 border-blue-200', dotBgColor: 'bg-blue-600 shadow-blue-500/40' },
 ] as const
 
 const getPriorityY = (priority: string | undefined): number => {
