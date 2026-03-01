@@ -167,7 +167,6 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                         is_completed: m.status === 'completed',
                         category: 'todo',
                         priority: project.priority || 'mid',
-                        impact: project.impact || 'mid',
                         due_date: m.target_date || undefined,
                         strategic_category: 'career',
                         position: Date.now() + (idx * 1000)
