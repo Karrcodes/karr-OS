@@ -369,7 +369,7 @@ function ContentCard({ item, project, milestones, onPointerDragStart, onPointerD
                 style={{ touchAction: 'none' }}
             >
                 <img
-                    src={item.cover_url || `/api/studio/cover?title=${encodeURIComponent(item.title)}&tagline=${encodeURIComponent(item.category || '')}&type=content&id=${item.id}&w=600&h=400`}
+                    src={item.cover_url || `/api/studio/cover?title=${encodeURIComponent(item.title)}&tagline=${encodeURIComponent(item.category || '')}&type=content&id=${item.id}&w=1200&h=630`}
                     alt={item.title}
                     className={cn(
                         "w-full h-full object-cover transition-transform duration-500 group-hover:scale-110",

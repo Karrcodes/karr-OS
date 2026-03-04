@@ -213,7 +213,7 @@ export default function ContentDetailModal({ isOpen, onClose, item }: ContentDet
                 {/* Cover Banner */}
                 <div className="w-full h-36 relative overflow-hidden flex-shrink-0 bg-black/[0.02]">
                     <img
-                        src={coverSrc || `/api/studio/cover?title=${encodeURIComponent(item.title)}&tagline=${encodeURIComponent(item.category || '')}&type=content&id=${item.id}&w=1200&h=300`}
+                        src={coverSrc || `/api/studio/cover?title=${encodeURIComponent(item.title)}&tagline=${encodeURIComponent(item.category || '')}&type=content&id=${item.id}&w=1200&h=630`}
                         alt={item.title}
                         className={cn(
                             "w-full h-full object-cover transition-opacity duration-500",

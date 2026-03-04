@@ -172,7 +172,7 @@ export default function StudioDashboard() {
                                     {project.cover_url && (
                                         <div className="h-24 -mx-4 -mt-4 mb-4 overflow-hidden relative">
                                             <img
-                                                src={project.cover_url || `/api/studio/cover?title=${encodeURIComponent(project.title)}&tagline=${encodeURIComponent(project.tagline || '')}&type=${encodeURIComponent(project.type || '')}&id=${project.id}&w=800&h=600`}
+                                                src={project.cover_url || `/api/studio/cover?title=${encodeURIComponent(project.title)}&tagline=${encodeURIComponent(project.tagline || '')}&type=${encodeURIComponent(project.type || '')}&id=${project.id}&w=1200&h=630`}
                                                 alt=""
 
                                                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
