@@ -30,7 +30,7 @@ export interface StudioProject {
 }
 
 export type SparkType = 'idea' | 'tool' | 'item' | 'resource' | 'event' | 'person';
-export type SparkStatus = 'active' | 'acquired' | 'dismissed';
+export type SparkStatus = 'inbox' | 'review' | 'utilized' | 'discarded';
 
 export interface StudioSpark {
     id: string;

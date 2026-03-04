@@ -29,7 +29,9 @@ const STATUS_CONFIG = {
 export default function ContentCalendar() {
     const { content } = useStudio()
     const [currentDate, setCurrentDate] = useState(new Date())
-    const [selectedItem, setSelectedItem] = useState<StudioContent | null>(null)
+    const [selectedContentId, setSelectedContentId] = useState<string | null>(null)
+
+    const selectedItem = useMemo(() => content.find(i => i.id === selectedContentId) || null, [content, selectedContentId])
 
     const calendarData = useMemo(() => {
         const year = currentDate.getFullYear()
@@ -165,7 +167,7 @@ export default function ContentCalendar() {
                                     return (
                                         <button
                                             key={item.id}
-                                            onClick={() => setSelectedItem(item)}
+                                            onClick={() => setSelectedContentId(item.id)}
                                             className={cn(
                                                 "w-full text-left p-2 rounded-xl border transition-all hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] group",
                                                 config.color
@@ -197,13 +199,11 @@ export default function ContentCalendar() {
                 })}
             </div>
 
-            {selectedItem && (
-                <ContentDetailModal
-                    item={selectedItem}
-                    isOpen={!!selectedItem}
-                    onClose={() => setSelectedItem(null)}
-                />
-            )}
+            <ContentDetailModal
+                item={selectedItem || null}
+                isOpen={!!selectedContentId}
+                onClose={() => setSelectedContentId(null)}
+            />
         </div>
     )
 }

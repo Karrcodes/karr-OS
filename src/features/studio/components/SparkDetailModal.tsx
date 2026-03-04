@@ -13,14 +13,23 @@ import {
     CheckCircle2,
     Circle,
     Calendar,
-    Zap
+    Zap,
+    Inbox,
+    History,
+    Search
 } from 'lucide-react'
 import { useStudio } from '../hooks/useStudio'
-import type { StudioSpark, StudioProject, StudioMilestone } from '../types/studio.types'
+import type { StudioSpark, StudioProject, StudioMilestone, SparkStatus } from '../types/studio.types'
 import { cn } from '@/lib/utils'
 import ConfirmationModal from '@/components/ConfirmationModal'
 
 const MILESTONE_CATEGORIES = ['rnd', 'production', 'media', 'growth']
+const SPARK_STATUS_CONFIG: { label: string; value: SparkStatus; icon: any; color: string; border: string }[] = [
+    { label: 'Inbox', value: 'inbox', icon: Inbox, color: 'text-blue-500 bg-blue-50', border: 'border-blue-100' },
+    { label: 'Review', value: 'review', icon: Search, color: 'text-amber-500 bg-amber-50', border: 'border-amber-100' },
+    { label: 'Utilized', value: 'utilized', icon: CheckCircle2, color: 'text-emerald-500 bg-emerald-50', border: 'border-emerald-100' },
+    { label: 'Discarded', value: 'discarded', icon: Trash2, color: 'text-rose-500 bg-rose-50', border: 'border-rose-100' }
+]
 
 interface SparkDetailModalProps {
     isOpen: boolean
@@ -273,48 +282,64 @@ export default function SparkDetailModal({ isOpen, onClose, spark, projects }: S
                                                     )}
                                                 />
                                             </div>
-                                            <button
-                                                onClick={() => deleteMilestone(m.id)}
-                                                className={cn(
-                                                    "p-1.5 text-black/10 hover:text-red-500 transition-all",
-                                                    isEditing ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                                                )}
-                                            >
-                                                <Trash2 className="w-3.5 h-3.5" />
-                                            </button>
-                                        </div>
-                                        <div className="flex items-center gap-4 pl-6">
-                                            <div className="flex items-center gap-2">
-                                                <Calendar className="w-3 h-3 text-black/10" />
-                                                <input
-                                                    type="date"
-                                                    value={m.target_date ? m.target_date.split('T')[0] : ''}
-                                                    onChange={(e) => updateMilestone(m.id, { target_date: e.target.value || undefined })}
-                                                    className="bg-transparent border-none text-[10px] font-bold text-black/40 focus:outline-none w-24 cursor-pointer"
-                                                />
-                                            </div>
-                                            <div className="flex items-center gap-2 flex-1 max-w-[120px]">
-                                                <Zap className="w-3 h-3 text-orange-500/40" />
-                                                <input
-                                                    type="range"
-                                                    min="1"
-                                                    max="10"
-                                                    value={m.impact_score || 5}
-                                                    onChange={(e) => updateMilestone(m.id, { impact_score: parseInt(e.target.value) })}
-                                                    className="w-full h-1 bg-black/5 rounded-full appearance-none accent-black"
-                                                />
-                                                <span className="text-[10px] font-black text-black/40 w-4 text-center">{m.impact_score || 5}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <select
-                                                    value={m.category || 'rnd'}
-                                                    onChange={(e) => updateMilestone(m.id, { category: e.target.value })}
-                                                    className="bg-black/[0.02] border border-black/5 rounded px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-black/60 focus:outline-none cursor-pointer"
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <div className="flex items-center gap-1 px-1.5 py-0.5 bg-black/[0.03] border border-black/[0.05] rounded-lg group/stdate relative min-w-0 flex-1 h-7 overflow-hidden">
+                                                    <Calendar className="w-2.5 h-2.5 text-black/10 shrink-0 pointer-events-none" />
+                                                    <input
+                                                        type="date"
+                                                        value={m.target_date ? m.target_date.split('T')[0] : ''}
+                                                        onChange={(e) => updateMilestone(m.id, { target_date: e.target.value || undefined })}
+                                                        onClick={(e) => (e.target as any).showPicker?.()}
+                                                        className="absolute inset-0 w-full h-full text-transparent bg-transparent border-none cursor-pointer z-10 p-0"
+                                                    />
+                                                    <span className="text-[10px] font-bold text-black/40 truncate pointer-events-none">
+                                                        {m.target_date ? new Date(m.target_date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'Set date'}
+                                                    </span>
+                                                    {m.target_date && (
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); updateMilestone(m.id, { target_date: undefined }) }}
+                                                            className="relative ml-auto p-1 text-black/20 hover:text-red-500 transition-colors z-30 pointer-events-auto"
+                                                        >
+                                                            <X className="w-2.5 h-2.5" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-1.5 px-1.5 py-0.5 bg-orange-500/5 border border-orange-500/10 rounded-lg">
+                                                    <Zap className="w-2.5 h-2.5 text-orange-500 fill-orange-500" />
+                                                    <div className="flex items-center h-4">
+                                                        <button
+                                                            onClick={() => updateMilestone(m.id, { impact_score: Math.max(1, (m.impact_score || 0) - 1) })}
+                                                            className="text-[11px] font-black text-orange-600/30 hover:text-orange-600 px-0.5"
+                                                        >-</button>
+                                                        <span className="text-[10px] font-black text-orange-600 w-3 text-center">
+                                                            {m.impact_score || 0}
+                                                        </span>
+                                                        <button
+                                                            onClick={() => updateMilestone(m.id, { impact_score: Math.min(10, (m.impact_score || 0) + 1) })}
+                                                            className="text-[11px] font-black text-orange-600/30 hover:text-orange-600 px-0.5"
+                                                        >+</button>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center bg-black/[0.02] border border-black/5 rounded-lg px-1.5 py-0.5">
+                                                    <select
+                                                        value={m.category || 'rnd'}
+                                                        onChange={(e) => updateMilestone(m.id, { category: e.target.value })}
+                                                        className="bg-transparent border-none py-0 text-[10px] font-black uppercase text-black/40 focus:outline-none cursor-pointer"
+                                                    >
+                                                        {MILESTONE_CATEGORIES.map(cat => (
+                                                            <option key={cat} value={cat}>{cat}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <button
+                                                    onClick={() => deleteMilestone(m.id)}
+                                                    className={cn(
+                                                        "p-1.5 text-black/10 hover:text-red-500 transition-all",
+                                                        isEditing ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                                                    )}
                                                 >
-                                                    {MILESTONE_CATEGORIES.map(cat => (
-                                                        <option key={cat} value={cat}>{cat}</option>
-                                                    ))}
-                                                </select>
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -324,14 +349,32 @@ export default function SparkDetailModal({ isOpen, onClose, spark, projects }: S
                     </div>
 
                     {/* Meta Section */}
-                    <div className="grid grid-cols-2 gap-3 pt-4 border-t border-black/[0.05]">
-                        <div className="p-4 bg-black/[0.02] rounded-2xl border border-black/[0.03]">
-                            <p className="text-[9px] font-black text-black/30 uppercase tracking-widest mb-1">Status</p>
-                            <p className="text-[12px] font-bold text-black flex items-center gap-1.5 capitalize">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                {spark.status}
-                            </p>
+                    <div className="grid grid-cols-1 gap-3 pt-4 border-t border-black/[0.05]">
+                        <div className="space-y-3">
+                            <p className="text-[9px] font-black text-black/30 uppercase tracking-widest pl-2">Progress Stage</p>
+                            <div className="grid grid-cols-4 gap-2">
+                                {SPARK_STATUS_CONFIG.map(status => {
+                                    const Icon = status.icon
+                                    const isActive = spark.status === status.value
+                                    return (
+                                        <button
+                                            key={status.value}
+                                            onClick={() => updateSpark(spark.id, { status: status.value })}
+                                            className={cn(
+                                                "flex flex-col items-center justify-center p-3 rounded-2xl border transition-all gap-1.5",
+                                                isActive
+                                                    ? cn(status.color, status.border, "shadow-sm scale-105")
+                                                    : "bg-black/[0.01] border-black/[0.03] text-black/20 hover:text-black/40 hover:bg-black/[0.03]"
+                                            )}
+                                        >
+                                            <Icon className="w-4 h-4" />
+                                            <span className="text-[9px] font-black uppercase tracking-tight">{status.label}</span>
+                                        </button>
+                                    )
+                                })}
+                            </div>
                         </div>
+
                         <div className="p-4 bg-black/[0.02] rounded-2xl border border-black/[0.03]">
                             <p className="text-[9px] font-black text-black/30 uppercase tracking-widest mb-1">Context</p>
                             {linkedProject ? (

@@ -284,25 +284,51 @@ export default function CreateContentModal({ isOpen, onClose }: CreateContentMod
                     </div>
 
                     {/* Deadline & Publish Date */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Deadline</label>
-                            <div className="relative">
-                                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20 pointer-events-none" />
+                            <div className="relative group/dl h-12 flex items-center px-4 bg-black/[0.02] border border-black/[0.1] rounded-2xl overflow-hidden">
+                                <Calendar className="w-4 h-4 text-black/20 shrink-0 pointer-events-none" />
                                 <input type="date"
                                     value={formData.deadline}
                                     onChange={e => setFormData(prev => ({ ...prev, deadline: e.target.value }))}
-                                    className="w-full pl-11 pr-4 py-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-blue-200 cursor-pointer" />
+                                    onClick={(e) => (e.target as any).showPicker?.()}
+                                    className="absolute inset-0 w-full h-full text-transparent bg-transparent border-none cursor-pointer z-10 p-0" />
+                                <span className="ml-3 text-[13px] font-bold text-black/40 truncate pointer-events-none">
+                                    {formData.deadline ? new Date(formData.deadline + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Set deadline'}
+                                </span>
+                                {formData.deadline && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData(prev => ({ ...prev, deadline: '' }))}
+                                        className="relative ml-auto p-1 text-black/20 hover:text-red-500 transition-colors z-30 pointer-events-auto"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                )}
                             </div>
                         </div>
                         <div className="space-y-2">
                             <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Publish Date</label>
-                            <div className="relative">
-                                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20 pointer-events-none" />
+                            <div className="relative group/pb h-12 flex items-center px-4 bg-black/[0.02] border border-black/[0.1] rounded-2xl overflow-hidden">
+                                <Calendar className="w-4 h-4 text-black/20 shrink-0 pointer-events-none" />
                                 <input type="date"
                                     value={(formData as any).publish_date || ''}
                                     onChange={e => setFormData(prev => ({ ...prev, publish_date: e.target.value } as any))}
-                                    className="w-full pl-11 pr-4 py-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-blue-200 cursor-pointer" />
+                                    onClick={(e) => (e.target as any).showPicker?.()}
+                                    className="absolute inset-0 w-full h-full text-transparent bg-transparent border-none cursor-pointer z-10 p-0" />
+                                <span className="ml-3 text-[13px] font-bold text-black/40 truncate pointer-events-none">
+                                    {(formData as any).publish_date ? new Date((formData as any).publish_date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Set publish date'}
+                                </span>
+                                {(formData as any).publish_date && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData(prev => ({ ...prev, publish_date: '' } as any))}
+                                        className="relative ml-auto p-1 text-black/20 hover:text-red-500 transition-colors z-30 pointer-events-auto"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -408,12 +434,25 @@ export default function CreateContentModal({ isOpen, onClose }: CreateContentMod
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-[9px] font-black uppercase text-black/20 ml-2">Deadline</label>
-                                    <div className="relative">
-                                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-black/20 pointer-events-none" />
+                                    <div className="relative group/msdate h-9 flex items-center px-3 bg-black/[0.03] border border-black/5 rounded-xl overflow-hidden">
+                                        <Calendar className="w-3.5 h-3.5 text-black/20 shrink-0 pointer-events-none" />
                                         <input type="date"
                                             value={newMilestoneDate}
                                             onChange={e => setNewMilestoneDate(e.target.value)}
-                                            className="w-full pl-8 pr-3 py-2 bg-black/[0.03] border border-black/5 rounded-xl text-[11px] font-bold focus:outline-none cursor-pointer" />
+                                            onClick={(e) => (e.target as any).showPicker?.()}
+                                            className="absolute inset-0 w-full h-full text-transparent bg-transparent border-none cursor-pointer z-10 p-0" />
+                                        <span className="ml-2 text-[11px] font-bold text-black/40 truncate pointer-events-none">
+                                            {newMilestoneDate ? new Date(newMilestoneDate + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'Set date'}
+                                        </span>
+                                        {newMilestoneDate && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setNewMilestoneDate('')}
+                                                className="relative ml-auto p-1 text-black/20 hover:text-red-500 transition-colors z-30 pointer-events-auto"
+                                            >
+                                                <X className="w-3.5 h-3.5" />
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </div>

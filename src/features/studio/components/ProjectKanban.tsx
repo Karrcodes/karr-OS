@@ -21,8 +21,9 @@ export default function ProjectKanban({ searchQuery = '', filterType = null, sho
     const { projects: allProjects, milestones, updateProject, deleteProject, loading } = useStudio()
     const [draggingId, setDraggingId] = useState<string | null>(null)
     const [dragOverStatus, setDragOverStatus] = useState<ProjectStatus | null>(null)
-    const [selectedProject, setSelectedProject] = useState<StudioProject | null>(null)
+    const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
     const [projectToDelete, setProjectToDelete] = useState<StudioProject | null>(null)
+    const [projectToArchive, setProjectToArchive] = useState<StudioProject | null>(null)
 
     // Filter projects based on search, type and archiving
     const projects = allProjects.filter(p => {
@@ -74,12 +75,9 @@ export default function ProjectKanban({ searchQuery = '', filterType = null, sho
                     <div
                         key={column.value}
                         className="flex flex-col gap-4"
-                        onDragOver={(e) => onDragOver(e, column.value)}
-                        onDragLeave={() => setDragOverStatus(null)}
-                        onDrop={(e) => onDrop(e, column.value)}
                     >
                         {/* Column Header */}
-                        <div className="flex items-center justify-between px-2">
+                        <div className="flex items-center justify-between px-2 mb-2">
                             <h3 className="text-[11px] font-black uppercase tracking-[0.15em] text-black/30 flex items-center gap-2">
                                 <div className={cn(
                                     "w-1.5 h-1.5 rounded-full",
@@ -95,12 +93,27 @@ export default function ProjectKanban({ searchQuery = '', filterType = null, sho
                             </span>
                         </div>
 
-                        {/* Column Content */}
-                        <div className={cn(
-                            "flex-1 rounded-[32px] transition-all p-2 space-y-3 min-h-[150px] border-2 border-transparent",
-                            isOver ? "bg-orange-50/50 border-orange-200 shadow-inner scale-[1.01]" :
-                                draggingId ? "bg-black/[0.01] border-dashed border-black/[0.05]" : "bg-transparent"
-                        )}>
+                        {/* Column Content Area */}
+                        <div
+                            className={cn(
+                                "flex-1 rounded-[32px] transition-all p-2 space-y-3 min-h-[400px] border-2 border-transparent",
+                                isOver ? "bg-orange-50/50 border-orange-200 shadow-inner scale-[1.01]" :
+                                    draggingId ? "bg-black/[0.01] border-dashed border-black/[0.05]" : "bg-transparent"
+                            )}
+                            onDragOver={(e) => {
+                                e.preventDefault();
+                                e.dataTransfer.dropEffect = 'move';
+                                onDragOver(e, column.value);
+                            }}
+                            onDragLeave={(e) => {
+                                // Only reset if we actually leave the container (not entering a child)
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                if (e.clientX <= rect.left || e.clientX >= rect.right || e.clientY <= rect.top || e.clientY >= rect.bottom) {
+                                    setDragOverStatus(null);
+                                }
+                            }}
+                            onDrop={(e) => onDrop(e, column.value)}
+                        >
                             {loading ? (
                                 <div className="space-y-3">
                                     {[1, 2].map(i => (
@@ -120,7 +133,8 @@ export default function ProjectKanban({ searchQuery = '', filterType = null, sho
                                         milestones={milestones}
                                         onDragStart={() => setDraggingId(project.id)}
                                         onDragEnd={() => setDraggingId(null)}
-                                        onClick={() => setSelectedProject(project)}
+                                        onClick={() => setSelectedProjectId(project.id)}
+                                        onArchive={() => setProjectToArchive(project)}
                                         onDelete={() => setProjectToDelete(project)}
                                     />
                                 ))
@@ -131,9 +145,9 @@ export default function ProjectKanban({ searchQuery = '', filterType = null, sho
             })}
 
             <ProjectDetailModal
-                isOpen={!!selectedProject}
-                onClose={() => setSelectedProject(null)}
-                project={selectedProject}
+                isOpen={!!selectedProjectId}
+                onClose={() => setSelectedProjectId(null)}
+                project={allProjects.find(p => p.id === selectedProjectId) || null}
             />
 
             <ConfirmationModal
@@ -149,61 +163,77 @@ export default function ProjectKanban({ searchQuery = '', filterType = null, sho
                 confirmText="Delete"
                 type="danger"
             />
+
+            <ConfirmationModal
+                isOpen={!!projectToArchive}
+                onClose={() => setProjectToArchive(null)}
+                onConfirm={async () => {
+                    if (projectToArchive) {
+                        await updateProject(projectToArchive.id, { is_archived: !projectToArchive.is_archived })
+                    }
+                }}
+                title={projectToArchive?.is_archived ? "Unarchive Project" : "Archive Project"}
+                message={projectToArchive?.is_archived
+                    ? `Are you sure you want to unarchive "${projectToArchive?.title}"? It will be moved back to your active project pipeline.`
+                    : `Are you sure you want to archive "${projectToArchive?.title}"? You can view it later by enabling the Archive view.`}
+                confirmText={projectToArchive?.is_archived ? "Unarchive" : "Archive Project"}
+                type={projectToArchive?.is_archived ? "info" : "info"}
+            />
         </div>
     )
 }
 
-function ProjectCard({ project, milestones, onDragStart, onDragEnd, onClick, onDelete }: {
+function ProjectCard({ project, milestones, onDragStart, onDragEnd, onClick, onArchive, onDelete }: {
     project: StudioProject;
     milestones: StudioMilestone[];
     onDragStart: () => void;
     onDragEnd: () => void;
     onClick: () => void;
+    onArchive: () => void;
     onDelete: () => void;
 }) {
     const { updateProject } = useStudio()
 
     const handleArchive = async (e: React.MouseEvent) => {
         e.stopPropagation()
-        try {
-            await updateProject(project.id, { is_archived: true })
-        } catch (err: any) {
-            alert(`Failed to archive: ${err.message}`)
-        }
+        onArchive()
     }
     return (
         <div
-            draggable
-            onDragStart={onDragStart}
-            onDragEnd={onDragEnd}
             onClick={onClick}
-            className="group relative bg-white border border-black/[0.05] rounded-2xl cursor-grab active:cursor-grabbing hover:border-orange-200 hover:shadow-xl transition-all overflow-hidden"
+            className="group relative bg-white border border-black/[0.05] rounded-2xl hover:border-orange-200 hover:shadow-xl transition-all overflow-hidden"
         >
-            {project.cover_url && (
-                <div className="h-32 w-full overflow-hidden relative">
-                    <img
-                        src={project.cover_url}
-                        alt=""
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent opacity-60" />
-
-                    {/* Platform icons overlay */}
-                    {project.platforms && project.platforms.length > 0 && (
-                        <div className="absolute top-3 left-3 flex -space-x-1.5 ring-1 ring-white/20 rounded-full p-0.5 bg-black/10 backdrop-blur-md">
-                            {project.platforms.map(p => (
-                                <div
-                                    key={p}
-                                    className="w-5 h-5 rounded-full bg-white border border-black/[0.1] flex items-center justify-center text-black shadow-sm z-[1]"
-                                    title={p}
-                                >
-                                    <PlatformIcon platform={p} className="w-2.5 h-2.5" />
-                                </div>
-                            ))}
-                        </div>
+            <div
+                draggable
+                onDragStart={onDragStart}
+                onDragEnd={onDragEnd}
+                className="h-32 w-full overflow-hidden relative cursor-grab active:cursor-grabbing"
+            >
+                <img
+                    src={project.cover_url || `https://loremflickr.com/800/600/${encodeURIComponent(project.title.split(' ')[0])},tech,design?lock=${project.id.length}`}
+                    alt=""
+                    className={cn(
+                        "w-full h-full object-cover transition-transform duration-500 group-hover:scale-110",
+                        !project.cover_url && "opacity-80"
                     )}
-                </div>
-            )}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent opacity-60" />
+
+                {/* Platform icons overlay */}
+                {project.platforms && project.platforms.length > 0 && (
+                    <div className="absolute top-3 left-3 flex -space-x-1.5 ring-1 ring-white/20 rounded-full p-0.5 bg-black/10 backdrop-blur-md">
+                        {project.platforms.map(p => (
+                            <div
+                                key={p}
+                                className="w-5 h-5 rounded-full bg-white border border-black/[0.1] flex items-center justify-center text-black shadow-sm z-[1]"
+                                title={p}
+                            >
+                                <PlatformIcon platform={p} className="w-2.5 h-2.5" />
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
 
 
             <div className="p-4">
@@ -313,8 +343,13 @@ function ProjectCard({ project, milestones, onDragStart, onDragEnd, onClick, onD
                     <div className="flex items-center gap-1">
                         <button
                             onClick={handleArchive}
-                            className="p-1.5 rounded-lg bg-black/[0.03] text-black/30 hover:bg-black/5 hover:text-black transition-all flex items-center justify-center"
-                            title="Archive Project"
+                            className={cn(
+                                "p-1.5 rounded-lg transition-all flex items-center justify-center",
+                                project.is_archived
+                                    ? "bg-blue-50 text-blue-600 hover:bg-blue-100"
+                                    : "bg-black/[0.03] text-black/30 hover:bg-black/5 hover:text-black"
+                            )}
+                            title={project.is_archived ? "Unarchive Project" : "Archive Project"}
                         >
                             <Shield className="w-3.5 h-3.5" />
                         </button>

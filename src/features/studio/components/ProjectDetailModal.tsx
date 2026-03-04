@@ -57,9 +57,11 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
     const [editedData, setEditedData] = useState<Partial<StudioProject>>({})
     const [newMilestoneDate, setNewMilestoneDate] = useState('')
     const [newMilestoneCategory, setNewMilestoneCategory] = useState('rnd')
+    const [newMilestoneScore, setNewMilestoneScore] = useState(5)
     const [coverFile, setCoverFile] = useState<File | null>(null)
     const [showPromoteConfirm, setShowPromoteConfirm] = useState(false)
     const [showArchiveConfirm, setShowArchiveConfirm] = useState(false)
+    const [milestoneToDelete, setMilestoneToDelete] = useState<string | null>(null)
     const { createGoal } = useGoals()
 
     const { settings } = useSystemSettings()
@@ -80,11 +82,13 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                 title: newMilestoneTitle.trim(),
                 status: 'pending',
                 category: newMilestoneCategory,
+                impact_score: newMilestoneScore,
                 target_date: newMilestoneDate || undefined
             })
             setNewMilestoneTitle('')
             setNewMilestoneDate('')
             setNewMilestoneCategory('rnd')
+            setNewMilestoneScore(5)
         } catch (err: any) {
             alert(`Failed to add milestone: ${err.message}`)
         }
@@ -239,16 +243,18 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
 
             <div className="relative w-full max-w-2xl h-full bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
                 {/* Visual Header / Cover */}
-                {project.cover_url && !isEditing && (
-                    <div className="h-48 w-full overflow-hidden shrink-0">
-                        <img
-                            src={project.cover_url}
-                            alt=""
-                            className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent h-48 mt-[104px]" />
-                    </div>
-                )}
+                <div className="h-48 w-full overflow-hidden shrink-0 bg-black/[0.02] relative">
+                    <img
+                        src={project.cover_url || `https://loremflickr.com/1200/400/${encodeURIComponent(project.title.split(' ')[0])},tech?lock=${project.id.length}`}
+                        alt=""
+                        className={cn(
+                            "w-full h-full object-cover transition-opacity duration-500",
+                            !project.cover_url && "opacity-40"
+                        )}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent h-48 mt-[104px]" />
+                </div>
 
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-black/[0.05]">
@@ -317,9 +323,7 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
 
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2 text-right flex justify-between">
-                                                            Priority
-                                                        </label>
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Priority Selection</label>
                                                         <div className="flex gap-1.5">
                                                             {(['urgent', 'high', 'mid', 'low'] as const).map((level) => (
                                                                 <button
@@ -327,11 +331,11 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                                                                     type="button"
                                                                     onClick={() => setEditedData(prev => ({ ...prev, priority: level }))}
                                                                     className={cn(
-                                                                        "flex-1 py-2 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all",
+                                                                        "flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all",
                                                                         (editedData.priority ?? project.priority) === level
-                                                                            ? level === 'urgent' ? "bg-purple-50 text-purple-600 border-purple-200"
-                                                                                : level === 'high' ? "bg-red-50 text-red-600 border-red-200"
-                                                                                    : level === 'mid' ? "bg-yellow-50 text-yellow-600 border-yellow-200"
+                                                                            ? level === 'urgent' ? "bg-purple-600 text-white border-purple-600 shadow-md shadow-purple-200"
+                                                                                : level === 'high' ? "bg-red-600 text-white border-red-600 shadow-md shadow-red-200"
+                                                                                    : level === 'mid' ? "bg-orange-500 text-white border-orange-500 shadow-md shadow-orange-200"
                                                                                         : "bg-black text-white border-black"
                                                                             : "bg-black/[0.02] border-black/[0.05] text-black/30 hover:bg-black/[0.04]"
                                                                     )}
@@ -359,14 +363,26 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div className="space-y-2">
                                                         <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Target Date</label>
-                                                        <div className="relative">
-                                                            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20 pointer-events-none" />
+                                                        <div className="relative group/maindate h-[46px] flex items-center px-4 bg-black/[0.02] border border-black/[0.1] rounded-xl overflow-hidden">
+                                                            <Calendar className="w-4 h-4 text-black/20 shrink-0 pointer-events-none" />
                                                             <input
                                                                 type="date"
                                                                 value={editedData.target_date ? editedData.target_date.split('T')[0] : (project.target_date ? project.target_date.split('T')[0] : '')}
-                                                                onChange={(e) => setEditedData(prev => ({ ...prev, target_date: e.target.value }))}
-                                                                className="w-full pl-11 pr-4 py-3 bg-black/[0.02] border border-black/[0.1] rounded-xl text-[13px] font-bold focus:outline-none focus:border-orange-500 cursor-pointer"
+                                                                onChange={(e) => setEditedData(prev => ({ ...prev, target_date: e.target.value || undefined }))}
+                                                                onClick={(e) => (e.target as any).showPicker?.()}
+                                                                className="absolute inset-0 w-full h-full text-transparent bg-transparent border-none cursor-pointer z-10 p-0"
                                                             />
+                                                            <span className="ml-3 text-[13px] font-bold text-black/40 truncate pointer-events-none">
+                                                                {(editedData.target_date || project.target_date) ? new Date((editedData.target_date ?? project.target_date!) + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Set target date'}
+                                                            </span>
+                                                            {(editedData.target_date || project.target_date) && (
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); setEditedData(prev => ({ ...prev, target_date: undefined })) }}
+                                                                    className="relative ml-auto p-1 text-black/20 hover:text-red-500 transition-colors z-20"
+                                                                >
+                                                                    <X className="w-4 h-4" />
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -498,106 +514,169 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                                     key={m.id}
                                     className="p-4 bg-white border border-black/[0.05] rounded-2xl flex flex-col gap-3 group hover:border-emerald-200 hover:shadow-sm transition-all"
                                 >
-                                    <div className="flex items-center justify-between gap-3">
-                                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                                            <button
-                                                onClick={() => toggleMilestone(m)}
-                                                className={cn(
-                                                    "transition-colors shrink-0",
-                                                    m.status === 'completed' ? "text-emerald-500" : "text-black/10 hover:text-emerald-500"
-                                                )}
-                                            >
-                                                {m.status === 'completed' ? <CheckCircle2 className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
-                                            </button>
-                                            <input
-                                                type="text"
-                                                value={m.title}
-                                                onChange={(e) => updateMilestone(m.id, { title: e.target.value })}
-                                                className={cn(
-                                                    "w-full bg-transparent border-none focus:outline-none text-[14px] font-bold p-0",
-                                                    m.status === 'completed' && "line-through text-black/30"
-                                                )}
-                                                placeholder="Milestone title..."
-                                            />
-                                        </div>
-                                        <button
-                                            onClick={() => deleteMilestone(m.id)}
-                                            className={cn(
-                                                "p-2 text-black/10 hover:text-red-500 transition-all",
-                                                isEditing ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                                            )}
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </div>
-
-                                    <div className="flex flex-wrap items-center gap-4 pl-8">
-                                        <div className="flex items-center gap-2 px-2 py-1 bg-black/[0.02] border border-black/5 rounded-lg">
-                                            <Calendar className="w-3 h-3 text-black/20" />
-                                            <input
-                                                type="date"
-                                                value={m.target_date ? m.target_date.split('T')[0] : ''}
-                                                onChange={(e) => updateMilestone(m.id, { target_date: e.target.value || undefined })}
-                                                className="bg-transparent border-none text-[10px] font-bold focus:outline-none w-24 cursor-pointer"
-                                            />
-                                        </div>
-                                        <div className="flex items-center gap-2 flex-1 max-w-[150px]">
-                                            <span className="text-[9px] font-black uppercase text-black/20 whitespace-nowrap">Impact</span>
-                                            <input
-                                                type="range"
-                                                min="1"
-                                                max="10"
-                                                value={m.impact_score || 5}
-                                                onChange={(e) => updateMilestone(m.id, { impact_score: parseInt(e.target.value) })}
-                                                className="w-full h-1 bg-black/10 rounded-full appearance-none accent-black"
-                                            />
-                                            <span className="text-[10px] font-black text-black/40 w-4 text-center">{m.impact_score || 5}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-[9px] font-black uppercase text-black/20 shrink-0">Type</span>
-                                            <select
-                                                value={m.category || 'rnd'}
-                                                onChange={(e) => updateMilestone(m.id, { category: e.target.value })}
-                                                className="bg-black/[0.02] border border-black/5 rounded px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-black/60 focus:outline-none cursor-pointer"
-                                            >
-                                                {MILESTONE_CATEGORIES.map(cat => (
-                                                    <option key={cat} value={cat}>{cat}</option>
-                                                ))}
-                                            </select>
+                                    <div className="flex flex-col gap-2">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                <button
+                                                    onClick={() => toggleMilestone(m)}
+                                                    className={cn(
+                                                        "transition-colors shrink-0",
+                                                        m.status === 'completed' ? "text-emerald-500" : "text-black/10 hover:text-emerald-500"
+                                                    )}
+                                                >
+                                                    {m.status === 'completed' ? <CheckCircle2 className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
+                                                </button>
+                                                <input
+                                                    type="text"
+                                                    value={m.title}
+                                                    onChange={(e) => updateMilestone(m.id, { title: e.target.value })}
+                                                    className={cn(
+                                                        "w-full bg-transparent border-none focus:outline-none text-[14px] font-bold p-0",
+                                                        m.status === 'completed' && "line-through text-black/30"
+                                                    )}
+                                                    placeholder="Milestone title..."
+                                                />
+                                            </div>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-black/[0.03] border border-black/[0.05] rounded-lg group/date relative min-w-0 flex-1 h-7 overflow-hidden">
+                                                    <Calendar className="w-2.5 h-2.5 text-black/10 shrink-0 pointer-events-none" />
+                                                    <input
+                                                        type="date"
+                                                        value={m.target_date ? m.target_date.split('T')[0] : ''}
+                                                        onChange={(e) => updateMilestone(m.id, { target_date: e.target.value || undefined })}
+                                                        onClick={(e) => (e.target as any).showPicker?.()}
+                                                        className="absolute inset-0 w-full h-full text-transparent bg-transparent border-none cursor-pointer z-10 p-0"
+                                                    />
+                                                    <span className="text-[10px] font-bold text-black/40 truncate pointer-events-none">
+                                                        {m.target_date ? new Date(m.target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'Set date'}
+                                                    </span>
+                                                    {m.target_date && (
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); updateMilestone(m.id, { target_date: undefined }) }}
+                                                            className="relative ml-auto p-1 text-black/20 hover:text-red-500 transition-colors z-20"
+                                                        >
+                                                            <X className="w-2.5 h-2.5" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-2 px-2 py-0.5 bg-orange-500/5 border border-orange-500/10 rounded-lg">
+                                                    <Zap className="w-2.5 h-2.5 text-orange-500 fill-orange-500" />
+                                                    <div className="flex items-center h-4">
+                                                        <button
+                                                            onClick={() => updateMilestone(m.id, { impact_score: Math.max(1, (m.impact_score || 0) - 1) })}
+                                                            className="text-[12px] font-black text-orange-600/40 hover:text-orange-600 px-1"
+                                                        >-</button>
+                                                        <span className="text-[10px] font-black text-orange-600 w-4 text-center">
+                                                            {m.impact_score || 0}
+                                                        </span>
+                                                        <button
+                                                            onClick={() => updateMilestone(m.id, { impact_score: Math.min(10, (m.impact_score || 0) + 1) })}
+                                                            className="text-[12px] font-black text-orange-600/40 hover:text-orange-600 px-1"
+                                                        >+</button>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center bg-black/[0.02] border border-black/5 rounded-lg px-2 py-0.5">
+                                                    <select
+                                                        value={m.category || 'rnd'}
+                                                        onChange={(e) => updateMilestone(m.id, { category: e.target.value })}
+                                                        className="bg-transparent border-none py-0 text-[10px] font-black uppercase text-black/40 focus:outline-none cursor-pointer"
+                                                    >
+                                                        {MILESTONE_CATEGORIES.map(cat => (
+                                                            <option key={cat} value={cat}>{cat}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <button
+                                                    onClick={() => setMilestoneToDelete(m.id)}
+                                                    className={cn(
+                                                        "p-1.5 text-black/10 hover:text-red-500 transition-all",
+                                                        isEditing ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                                                    )}
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             ))}
 
                             {/* Milestone Form */}
-                            <form onSubmit={handleAddMilestone} className="relative mt-4">
-                                <Plus className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
-                                <input
-                                    type="text"
-                                    value={newMilestoneTitle}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewMilestoneTitle(e.target.value)}
-                                    placeholder="Add a milestone to the roadmap..."
-                                    className="w-full pl-11 pr-32 py-3.5 bg-black/[0.01] border-2 border-dashed border-black/[0.05] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-emerald-200 focus:bg-emerald-50/10 transition-all"
-                                />
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-3">
-                                    <select
-                                        value={newMilestoneCategory}
-                                        onChange={(e) => setNewMilestoneCategory(e.target.value)}
-                                        className="bg-black/5 rounded-lg px-2 py-1 text-[10px] font-black uppercase text-black/40 focus:outline-none cursor-pointer"
-                                    >
-                                        {MILESTONE_CATEGORIES.map(cat => (
-                                            <option key={cat} value={cat}>{cat.toUpperCase()}</option>
-                                        ))}
-                                    </select>
+                            <div className="flex flex-col gap-3 p-4 bg-orange-50/30 border border-orange-100 rounded-2xl mt-4">
+                                <div className="flex items-center gap-3">
+                                    <Plus className="w-4 h-4 text-orange-400 shrink-0 ml-1" />
                                     <input
-                                        type="date"
-                                        value={newMilestoneDate ? newMilestoneDate.split('T')[0] : ''}
-                                        onChange={(e) => setNewMilestoneDate(e.target.value)}
-                                        className="bg-transparent border-none text-[11px] font-bold text-black/40 focus:outline-none"
-                                        title="Target Date"
+                                        type="text"
+                                        value={newMilestoneTitle}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewMilestoneTitle(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleAddMilestone(e as any)}
+                                        placeholder="Add a milestone to the roadmap..."
+                                        className="flex-1 bg-transparent border-none p-0 text-[13px] font-bold text-black placeholder:text-orange-300 focus:ring-0"
                                     />
                                 </div>
-                            </form>
+                                <div className="flex items-center justify-between gap-4 pl-8">
+                                    <div className="flex flex-wrap items-center gap-3">
+                                        <div className="flex items-center gap-1.5 px-2 py-1 bg-white border border-orange-100 rounded-lg group/adddate relative min-w-0 flex-1 h-8 overflow-hidden">
+                                            <Calendar className="w-3 h-3 text-orange-300 shrink-0 pointer-events-none" />
+                                            <input
+                                                type="date"
+                                                value={newMilestoneDate}
+                                                onChange={(e) => setNewMilestoneDate(e.target.value)}
+                                                onClick={(e) => (e.target as any).showPicker?.()}
+                                                className="absolute inset-0 w-full h-full text-transparent bg-transparent border-none cursor-pointer z-10 p-0"
+                                            />
+                                            <span className="text-[11px] font-bold text-orange-600 truncate pointer-events-none">
+                                                {newMilestoneDate ? new Date(newMilestoneDate + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'Deadline'}
+                                            </span>
+                                            {newMilestoneDate && (
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); setNewMilestoneDate(''); }}
+                                                    className="relative ml-auto p-1 text-black/20 hover:text-red-500 transition-colors z-20"
+                                                >
+                                                    <X className="w-2.5 h-2.5" />
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-1.5 px-2 py-1 bg-white border border-orange-100 rounded-lg">
+                                            <Zap className="w-3 h-3 text-orange-400 fill-orange-400" />
+                                            <div className="flex items-center">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setNewMilestoneScore(s => Math.max(1, s - 1))}
+                                                    className="text-[14px] font-black text-orange-600/40 hover:text-orange-600 px-1"
+                                                >-</button>
+                                                <span className="w-4 text-center text-[11px] font-black text-orange-600">
+                                                    {newMilestoneScore}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setNewMilestoneScore(s => Math.min(10, s + 1))}
+                                                    className="text-[14px] font-black text-orange-600/40 hover:text-orange-600 px-1"
+                                                >+</button>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 px-2 py-1 bg-white border border-orange-100 rounded-lg">
+                                            <Target className="w-3 h-3 text-orange-300" />
+                                            <select
+                                                value={newMilestoneCategory}
+                                                onChange={(e) => setNewMilestoneCategory(e.target.value)}
+                                                className="bg-transparent border-none p-0 text-[10px] font-black uppercase text-orange-600 focus:ring-0 cursor-pointer"
+                                            >
+                                                {MILESTONE_CATEGORIES.map(cat => (
+                                                    <option key={cat} value={cat}>{cat.toUpperCase()}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={handleAddMilestone as any}
+                                        disabled={!newMilestoneTitle.trim()}
+                                        className="px-6 py-1.5 bg-orange-600 text-white rounded-xl text-[10px] font-black uppercase disabled:opacity-50 hover:scale-105 transition-transform"
+                                    >
+                                        Add
+                                    </button>
+                                </div>
+                            </div>
 
                             {/* Next Steps for Completed Projects */}
                             {progress === 100 && (
@@ -704,6 +783,21 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                 }
                 confirmText={project.is_archived ? "Restore" : "Archive"}
                 type="warning"
+            />
+
+            <ConfirmationModal
+                isOpen={!!milestoneToDelete}
+                onClose={() => setMilestoneToDelete(null)}
+                onConfirm={() => {
+                    if (milestoneToDelete) {
+                        deleteMilestone(milestoneToDelete)
+                        setMilestoneToDelete(null)
+                    }
+                }}
+                title="Delete Milestone"
+                message="Are you sure you want to delete this milestone? This cannot be undone."
+                confirmText="Delete"
+                type="danger"
             />
         </div>
     )

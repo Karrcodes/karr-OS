@@ -74,12 +74,14 @@ export default function ContentDetailModal({ isOpen, onClose, item }: ContentDet
     const [newScene, setNewScene] = useState<Partial<ContentScene>>({ type: 'public' })
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [showArchiveConfirm, setShowArchiveConfirm] = useState(false)
+    const [milestoneToDelete, setMilestoneToDelete] = useState<string | null>(null)
     const [coverFile, setCoverFile] = useState<File | null>(null)
     const [coverPreview, setCoverPreview] = useState<string>('')
 
     // Milestone state
     const [newMilestoneTitle, setNewMilestoneTitle] = useState('')
     const [newMilestoneScore, setNewMilestoneScore] = useState(5)
+    const [newMilestoneDate, setNewMilestoneDate] = useState('')
 
     // Script state
     const [scriptSections, setScriptSections] = useState<ScriptSections>({ hook: '', intro: '', body: '', cta: '', outro: '' })
@@ -183,12 +185,14 @@ export default function ContentDetailModal({ isOpen, onClose, item }: ContentDet
             await addMilestone({
                 title: newMilestoneTitle,
                 impact_score: newMilestoneScore,
+                target_date: newMilestoneDate || undefined,
                 content_id: item.id,
                 project_id: item.project_id || undefined,
                 status: 'pending'
             })
             setNewMilestoneTitle('')
             setNewMilestoneScore(5)
+            setNewMilestoneDate('')
         } catch (err) { console.error('Failed to add milestone:', err) }
     }
 
@@ -205,18 +209,23 @@ export default function ContentDetailModal({ isOpen, onClose, item }: ContentDet
             <div className="relative w-full max-w-2xl bg-white rounded-[40px] shadow-2xl border border-black/[0.05] overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh] font-outfit">
 
                 {/* Cover Banner */}
-                {coverSrc && (
-                    <div className="w-full h-36 relative overflow-hidden flex-shrink-0">
-                        <img src={coverSrc} alt="cover" className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                        {isEditing && (
-                            <button type="button" onClick={() => { setCoverFile(null); setCoverPreview(''); setEditedData(prev => ({ ...prev, cover_url: '' })) }}
-                                className="absolute top-3 right-3 p-1.5 bg-black/40 text-white rounded-full hover:bg-black/60 transition-colors">
-                                <X className="w-3.5 h-3.5" />
-                            </button>
+                <div className="w-full h-36 relative overflow-hidden flex-shrink-0 bg-black/[0.02]">
+                    <img
+                        src={coverSrc || `https://loremflickr.com/1200/400/${encodeURIComponent(item.title.split(' ')[0])},abstract?lock=${item.id.length}`}
+                        alt="cover"
+                        className={cn(
+                            "w-full h-full object-cover transition-opacity duration-500",
+                            !coverSrc && "opacity-40"
                         )}
-                    </div>
-                )}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                    {isEditing && (coverPreview || editedData.cover_url || item.cover_url) && (
+                        <button type="button" onClick={() => { setCoverFile(null); setCoverPreview(''); setEditedData(prev => ({ ...prev, cover_url: '' })) }}
+                            className="absolute top-3 right-3 p-1.5 bg-black/40 text-white rounded-full hover:bg-black/60 transition-colors">
+                            <X className="w-3.5 h-3.5" />
+                        </button>
+                    )}
+                </div>
 
                 {/* Header */}
                 <div className="p-8 pb-0 flex items-center justify-between">
@@ -307,60 +316,134 @@ export default function ContentDetailModal({ isOpen, onClose, item }: ContentDet
 
                             <div className="space-y-2.5">
                                 {contentMilestones.map(m => (
-                                    <div key={m.id} className="flex items-center gap-3 p-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl group">
-                                        <button
-                                            onClick={() => updateMilestone(m.id, { status: m.status === 'completed' ? 'pending' : 'completed' })}
-                                            className={cn(
-                                                "w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all",
-                                                m.status === 'completed' ? "bg-emerald-500 border-emerald-500 text-white" : "border-black/10 hover:border-black/20"
-                                            )}
-                                        >
-                                            {m.status === 'completed' && <CheckCircle2 className="w-3.5 h-3.5" />}
-                                        </button>
-                                        <div className="flex-1 min-w-0">
+                                    <div key={m.id} className="flex flex-col gap-2 p-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl group">
+                                        <div className="flex items-center gap-3">
+                                            <button
+                                                onClick={() => updateMilestone(m.id, { status: m.status === 'completed' ? 'pending' : 'completed' })}
+                                                className={cn(
+                                                    "w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all shrink-0",
+                                                    m.status === 'completed' ? "bg-emerald-500 border-emerald-500 text-white" : "border-black/10 hover:border-black/20"
+                                                )}
+                                            >
+                                                {m.status === 'completed' && <CheckCircle2 className="w-3.5 h-3.5" />}
+                                            </button>
                                             <input
                                                 type="text"
                                                 value={m.title}
                                                 onChange={e => updateMilestone(m.id, { title: e.target.value })}
-                                                className={cn("w-full bg-transparent border-none p-0 text-[13px] font-bold focus:ring-0", m.status === 'completed' && "line-through text-black/20")}
+                                                className={cn("flex-1 bg-transparent border-none p-0 text-[13px] font-bold focus:ring-0", m.status === 'completed' && "line-through text-black/20")}
                                             />
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-black/[0.03] border border-black/[0.05] rounded-lg group/date relative min-w-0 flex-1 h-7 overflow-hidden">
+                                                    <Calendar className="w-2.5 h-2.5 text-black/20 shrink-0 pointer-events-none" />
+                                                    <input
+                                                        type="date"
+                                                        value={m.target_date?.split('T')[0] || ''}
+                                                        onChange={e => updateMilestone(m.id, { target_date: e.target.value || undefined })}
+                                                        onClick={(e) => (e.target as any).showPicker?.()}
+                                                        className="absolute inset-0 w-full h-full text-transparent bg-transparent border-none cursor-pointer z-10 p-0"
+                                                    />
+                                                    <span className="text-[10px] font-bold text-black/40 truncate pointer-events-none">
+                                                        {m.target_date ? new Date(m.target_date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'Set date'}
+                                                    </span>
+                                                    {m.target_date && (
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); updateMilestone(m.id, { target_date: undefined }) }}
+                                                            className="relative ml-auto p-1 text-black/20 hover:text-red-500 transition-colors z-30 pointer-events-auto"
+                                                        >
+                                                            <X className="w-2.5 h-2.5" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-500/5 border border-amber-500/10 rounded-lg">
+                                                    <Zap className="w-2.5 h-2.5 text-amber-500 fill-amber-500" />
+                                                    <div className="flex items-center">
+                                                        <button
+                                                            onClick={() => updateMilestone(m.id, { impact_score: Math.max(1, (m.impact_score || 0) - 1) })}
+                                                            className="text-[12px] font-black text-amber-600/40 hover:text-amber-600 px-1"
+                                                        >-</button>
+                                                        <span className="text-[10px] font-black text-amber-600 w-4 text-center">
+                                                            {m.impact_score || 0}
+                                                        </span>
+                                                        <button
+                                                            onClick={() => updateMilestone(m.id, { impact_score: Math.min(10, (m.impact_score || 0) + 1) })}
+                                                            className="text-[12px] font-black text-amber-600/40 hover:text-amber-600 px-1"
+                                                        >+</button>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => setMilestoneToDelete(m.id)}
+                                                    className={cn(
+                                                        "p-1.5 text-black/10 hover:text-red-500 transition-all",
+                                                        isEditing ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                                                    )}
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
                                         </div>
-                                        <button
-                                            onClick={() => deleteMilestone(m.id)}
-                                            className="p-1.5 text-black/10 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
-                                        >
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                        </button>
                                     </div>
                                 ))}
 
                                 {/* Add Milestone Form */}
-                                <div className="flex items-center gap-3 p-3 bg-blue-50/50 border border-blue-100 rounded-2xl">
-                                    <Plus className="w-4 h-4 text-blue-400 shrink-0 ml-1" />
-                                    <input
-                                        type="text"
-                                        placeholder="Add a new milestone..."
-                                        value={newMilestoneTitle}
-                                        onChange={e => setNewMilestoneTitle(e.target.value)}
-                                        onKeyDown={e => e.key === 'Enter' && handleAddMilestone()}
-                                        className="flex-1 bg-transparent border-none p-0 text-[13px] font-bold text-black placeholder:text-blue-300 focus:ring-0"
-                                    />
-                                    <div className="flex items-center gap-2 pr-1">
-                                        <div className="flex items-center gap-1.5 px-2 py-1 bg-white border border-blue-100 rounded-lg">
-                                            <Zap className="w-3 h-3 text-amber-500 fill-amber-500" />
-                                            <input
-                                                type="number"
-                                                min="1"
-                                                max="10"
-                                                value={newMilestoneScore}
-                                                onChange={e => setNewMilestoneScore(parseInt(e.target.value))}
-                                                className="w-6 bg-transparent border-none p-0 text-[11px] font-black text-amber-600 focus:ring-0 text-center"
-                                            />
+                                <div className="flex flex-col gap-3 p-3 bg-blue-50/50 border border-blue-100 rounded-2xl">
+                                    <div className="flex items-center gap-3">
+                                        <Plus className="w-4 h-4 text-blue-400 shrink-0 ml-1" />
+                                        <input
+                                            type="text"
+                                            placeholder="Add a new milestone..."
+                                            value={newMilestoneTitle}
+                                            onChange={e => setNewMilestoneTitle(e.target.value)}
+                                            onKeyDown={e => e.key === 'Enter' && handleAddMilestone()}
+                                            className="flex-1 bg-transparent border-none p-0 text-[13px] font-bold text-black placeholder:text-blue-300 focus:ring-0"
+                                        />
+                                    </div>
+                                    <div className="flex items-center justify-between gap-4 pl-8">
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex items-center gap-1.5 px-2 py-1 bg-white border border-blue-100 rounded-lg group/adddate relative min-w-0 flex-1 h-8 overflow-hidden">
+                                                <Calendar className="w-3 h-3 text-blue-300 shrink-0 pointer-events-none" />
+                                                <input
+                                                    type="date"
+                                                    value={newMilestoneDate}
+                                                    onChange={e => setNewMilestoneDate(e.target.value)}
+                                                    onClick={(e) => (e.target as any).showPicker?.()}
+                                                    className="absolute inset-0 w-full h-full text-transparent bg-transparent border-none cursor-pointer z-10 p-0"
+                                                />
+                                                <span className="text-[11px] font-bold text-black/40 truncate pointer-events-none">
+                                                    {newMilestoneDate ? new Date(newMilestoneDate + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'Deadline'}
+                                                </span>
+                                                {newMilestoneDate && (
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); setNewMilestoneDate(''); }}
+                                                        className="relative ml-auto p-1 text-black/20 hover:text-red-500 transition-colors z-20"
+                                                    >
+                                                        <X className="w-2.5 h-2.5" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                            <div className="flex items-center gap-1.5 px-2 py-1 bg-white border border-blue-100 rounded-lg">
+                                                <Zap className="w-3 h-3 text-amber-500 fill-amber-500" />
+                                                <div className="flex items-center">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setNewMilestoneScore(s => Math.max(1, s - 1))}
+                                                        className="text-[14px] font-black text-amber-600/40 hover:text-amber-600 px-1"
+                                                    >-</button>
+                                                    <span className="w-4 text-center bg-transparent border-none p-0 text-[11px] font-black text-amber-600">
+                                                        {newMilestoneScore}
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setNewMilestoneScore(s => Math.min(10, s + 1))}
+                                                        className="text-[14px] font-black text-amber-600/40 hover:text-amber-600 px-1"
+                                                    >+</button>
+                                                </div>
+                                            </div>
                                         </div>
                                         <button
                                             onClick={handleAddMilestone}
                                             disabled={!newMilestoneTitle.trim()}
-                                            className="p-1 px-2.5 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase disabled:opacity-50"
+                                            className="px-6 py-1.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase disabled:opacity-50 hover:scale-105 transition-transform"
                                         >
                                             Add
                                         </button>
@@ -494,25 +577,49 @@ export default function ContentDetailModal({ isOpen, onClose, item }: ContentDet
                         </div>
 
                         {/* Dates */}
-                        <div className="grid grid-cols-2 gap-6">
+                        <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Deadline</label>
-                                <div className="relative">
-                                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
+                                <div className="relative group/maindate h-12 flex items-center px-4 bg-black/[0.02] border border-black/[0.05] rounded-2xl">
+                                    <Calendar className="w-4 h-4 text-black/20 shrink-0 pointer-events-none" />
                                     <input readOnly={!isEditing} type="date"
                                         value={(editedData.deadline ?? item.deadline ?? '').split('T')[0]}
-                                        onChange={e => setEditedData(prev => ({ ...prev, deadline: e.target.value }))}
-                                        className="w-full pl-11 pr-4 py-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-blue-200" />
+                                        onChange={e => setEditedData(prev => ({ ...prev, deadline: e.target.value || undefined }))}
+                                        onClick={(e) => (e.target as any).showPicker?.()}
+                                        className="absolute inset-0 w-full h-full text-transparent bg-transparent border-none cursor-pointer z-10 p-0 disabled:cursor-default" disabled={!isEditing} />
+                                    <span className="ml-3 text-[12px] font-bold text-black/40 truncate pointer-events-none">
+                                        {(editedData.deadline ?? item.deadline) ? new Date((editedData.deadline ?? item.deadline!) + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'No deadline'}
+                                    </span>
+                                    {isEditing && (editedData.deadline ?? item.deadline) && (
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setEditedData(prev => ({ ...prev, deadline: undefined })) }}
+                                            className="relative ml-auto p-1 text-black/20 hover:text-red-500 transition-colors z-20"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Publish Date</label>
-                                <div className="relative">
-                                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
+                                <div className="relative group/pubdate h-12 flex items-center px-4 bg-black/[0.02] border border-black/[0.05] rounded-2xl">
+                                    <Calendar className="w-4 h-4 text-black/20 shrink-0 pointer-events-none" />
                                     <input readOnly={!isEditing} type="date"
                                         value={(editedData.publish_date ?? item.publish_date ?? '').split('T')[0]}
-                                        onChange={e => setEditedData(prev => ({ ...prev, publish_date: e.target.value }))}
-                                        className="w-full pl-11 pr-4 py-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-blue-200" />
+                                        onChange={e => setEditedData(prev => ({ ...prev, publish_date: e.target.value || undefined }))}
+                                        onClick={(e) => (e.target as any).showPicker?.()}
+                                        className="absolute inset-0 w-full h-full text-transparent bg-transparent border-none cursor-pointer z-10 p-0 disabled:cursor-default" disabled={!isEditing} />
+                                    <span className="ml-3 text-[12px] font-bold text-black/40 truncate pointer-events-none">
+                                        {(editedData.publish_date ?? item.publish_date) ? new Date((editedData.publish_date ?? item.publish_date!) + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Not scheduled'}
+                                    </span>
+                                    {isEditing && (editedData.publish_date ?? item.publish_date) && (
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setEditedData(prev => ({ ...prev, publish_date: undefined })) }}
+                                            className="relative ml-auto p-1 text-black/20 hover:text-red-500 transition-colors z-20"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -657,6 +764,21 @@ export default function ContentDetailModal({ isOpen, onClose, item }: ContentDet
                 }
                 type="warning"
                 confirmText={item.is_archived ? "Restore" : "Archive"}
+            />
+
+            <ConfirmationModal
+                isOpen={!!milestoneToDelete}
+                onClose={() => setMilestoneToDelete(null)}
+                onConfirm={() => {
+                    if (milestoneToDelete) {
+                        deleteMilestone(milestoneToDelete)
+                        setMilestoneToDelete(null)
+                    }
+                }}
+                title="Delete Milestone"
+                message="Are you sure you want to delete this milestone? This cannot be undone."
+                confirmText="Delete"
+                type="danger"
             />
         </div>
     )

@@ -5,10 +5,11 @@ import ContentKanban from '@/features/studio/components/ContentKanban'
 import ProjectMatrix from '@/features/studio/components/ProjectMatrix'
 import ContentCalendar from '@/features/studio/components/ContentCalendar'
 import { cn } from '@/lib/utils'
-import { LayoutGrid, Network, Calendar } from 'lucide-react'
+import { LayoutGrid, Network, Calendar, Search, Grid, List as ListIcon } from 'lucide-react'
 
 export default function ContentPage() {
     const [view, setView] = useState<'board' | 'matrix' | 'planner'>('board')
+    const [searchQuery, setSearchQuery] = useState('')
 
     return (
         <main className={cn("pb-12 pt-4 px-4 md:px-8 flex flex-col", view !== 'matrix' && "flex-1")}>
@@ -43,8 +44,24 @@ export default function ContentPage() {
                     </div>
                 </div>
 
+                {/* Toolbar - Search only */}
+                {view === 'board' && (
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
+                            <input
+                                type="text"
+                                placeholder="Search content by title, category or type..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2 bg-white border border-black/[0.05] rounded-xl text-[13px] focus:outline-none focus:border-orange-200 transition-all font-medium"
+                            />
+                        </div>
+                    </div>
+                )}
+
                 {/* Views — Kanban hides its own title since the page header covers it */}
-                {view === 'board' && <ContentKanban hideHeader />}
+                {view === 'board' && <ContentKanban hideHeader searchQuery={searchQuery} />}
                 {view === 'matrix' && <ProjectMatrix />}
                 {view === 'planner' && <ContentCalendar />}
 

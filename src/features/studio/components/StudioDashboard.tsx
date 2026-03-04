@@ -17,8 +17,8 @@ export default function StudioDashboard() {
     const [daysUntilGTV, setDaysUntilGTV] = useState(0)
     const [isProjectModalOpen, setIsProjectModalOpen] = useState(false)
     const [isSparkModalOpen, setIsSparkModalOpen] = useState(false)
-    const [selectedProject, setSelectedProject] = useState<StudioProject | null>(null)
-    const [selectedSpark, setSelectedSpark] = useState<StudioSpark | null>(null)
+    const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
+    const [selectedSparkId, setSelectedSparkId] = useState<string | null>(null)
     const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active')
 
     useEffect(() => {
@@ -31,6 +31,9 @@ export default function StudioDashboard() {
     const activeProjects = projects.filter(p => (p.status === 'active' || p.status === 'research') && !p.is_archived)
     const archivedProjects = projects.filter(p => p.is_archived)
     const recentSparks = sparks.slice(0, 4)
+
+    const selectedProject = projects.find(p => p.id === selectedProjectId) || null
+    const selectedSpark = sparks.find(s => s.id === selectedSparkId) || null
 
     return (
         <div className="space-y-6">
@@ -80,10 +83,11 @@ export default function StudioDashboard() {
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 {[
                     { label: 'Projects', href: '/create/projects', icon: Briefcase, color: 'text-orange-600', bg: 'bg-orange-500/10' },
-                    { label: 'Sparks', href: '/create/sparks', icon: Target, color: 'text-emerald-600', bg: 'bg-emerald-500/10' },
                     { label: 'Content', href: '/create/content', icon: LayoutDashboard, color: 'text-blue-600', bg: 'bg-blue-600/10' },
+                    { label: 'Sparks', href: '/create/sparks', icon: Target, color: 'text-emerald-600', bg: 'bg-emerald-500/10' },
+                    { label: 'Network', href: '/create/network', icon: Activity, color: 'text-purple-600', bg: 'bg-purple-500/10' },
                     { label: 'Press', href: '/create/press', icon: Award, color: 'text-amber-600', bg: 'bg-amber-500/10' },
-                    { label: 'Network', href: '/create/network', icon: Activity, color: 'text-purple-600', bg: 'bg-purple-500/10' }
+                    { label: 'Portfolio', href: '/create/portfolio', icon: Shield, color: 'text-blue-600', bg: 'bg-blue-500/10' }
                 ].map((item) => (
                     <Link
                         key={item.label}
@@ -162,7 +166,7 @@ export default function StudioDashboard() {
                             (activeTab === 'active' ? activeProjects : archivedProjects).map(project => (
                                 <div
                                     key={project.id}
-                                    onClick={() => setSelectedProject(project)}
+                                    onClick={() => setSelectedProjectId(project.id)}
                                     className="p-4 bg-white border border-black/[0.05] rounded-2xl hover:border-orange-200 hover:shadow-lg transition-all group cursor-pointer"
                                 >
                                     {project.cover_url && (
@@ -264,7 +268,7 @@ export default function StudioDashboard() {
                             {recentSparks.map(spark => (
                                 <div
                                     key={spark.id}
-                                    onClick={() => setSelectedSpark(spark)}
+                                    onClick={() => setSelectedSparkId(spark.id)}
                                     className="p-3 bg-white border border-black/[0.04] rounded-xl flex items-center gap-3 group hover:border-emerald-200 cursor-pointer transition-all"
                                 >
                                     <div className="w-8 h-8 rounded-lg bg-black/[0.02] flex items-center justify-center text-sm border border-black/[0.05]">
@@ -335,16 +339,27 @@ export default function StudioDashboard() {
                 onClose={() => setIsSparkModalOpen(false)}
             />
             <ProjectDetailModal
-                isOpen={!!selectedProject}
-                onClose={() => setSelectedProject(null)}
+                isOpen={!!selectedProjectId}
+                onClose={() => setSelectedProjectId(null)}
                 project={selectedProject}
             />
             <SparkDetailModal
-                isOpen={!!selectedSpark}
-                onClose={() => setSelectedSpark(null)}
+                isOpen={!!selectedSparkId}
+                onClose={() => setSelectedSparkId(null)}
                 spark={selectedSpark}
                 projects={projects}
             />
+            <style jsx global>{`
+                input[type="date"]::-webkit-calendar-picker-indicator {
+                    opacity: 0;
+                    position: absolute;
+                    inset: 0;
+                    width: 100%;
+                    height: 100%;
+                    cursor: pointer;
+                    z-index: 10;
+                }
+            `}</style>
         </div >
     )
 }

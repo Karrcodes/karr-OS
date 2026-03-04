@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Video, Calendar, CheckCircle2, Trash2, Plus, Zap, Briefcase, Shield, ListTodo } from 'lucide-react'
+import { Video, Calendar, CheckCircle2, Trash2, Plus, Zap, Briefcase, Shield, ListTodo, MoreVertical } from 'lucide-react'
 import { useStudio } from '../hooks/useStudio'
 import type { StudioContent, ContentStatus, StudioProject, StudioMilestone } from '../types/studio.types'
 import { cn } from '@/lib/utils'
@@ -20,20 +20,43 @@ const CONTENT_COLUMNS: { label: string; value: ContentStatus; dot: string }[] = 
 ]
 
 const PRIORITY_STYLES: Record<string, { pill: string; border: string; bg: string }> = {
-    urgent: { pill: 'bg-purple-500 text-white', border: 'border-purple-200', bg: 'bg-purple-50/60' },
-    high: { pill: 'bg-red-500 text-white', border: 'border-red-200', bg: 'bg-red-50/60' },
-    mid: { pill: 'bg-amber-400 text-white', border: 'border-amber-200', bg: 'bg-amber-50/40' },
-    low: { pill: 'bg-neutral-300 text-neutral-700', border: 'border-black/5', bg: 'bg-black/[0.01]' },
+    urgent: { pill: 'bg-purple-50 text-purple-600 border-purple-100', border: 'border-black/[0.05]', bg: 'bg-white' },
+    high: { pill: 'bg-red-50 text-red-600 border-red-100', border: 'border-black/[0.05]', bg: 'bg-white' },
+    mid: { pill: 'bg-yellow-50 text-yellow-600 border-yellow-100', border: 'border-black/[0.05]', bg: 'bg-white' },
+    low: { pill: 'bg-black/5 text-black/40 border-transparent', border: 'border-black/[0.05]', bg: 'bg-white' },
 }
 
-export default function ContentKanban({ hideHeader = false }: { hideHeader?: boolean }) {
+export default function ContentKanban({
+    hideHeader = false,
+    searchQuery = '',
+    layout = 'focused'
+}: {
+    hideHeader?: boolean
+    searchQuery?: string
+    layout?: 'focused' | 'board' | 'compact'
+}) {
     const { content, projects, milestones, updateContent, deleteContent, loading } = useStudio()
+
     const [draggingId, setDraggingId] = useState<string | null>(null)
+    const [activeStatus, setActiveStatus] = useState<ContentStatus>('idea')
     const [dragOverStatus, setDragOverStatus] = useState<ContentStatus | null>(null)
-    const [selectedItem, setSelectedItem] = useState<StudioContent | null>(null)
+    const [selectedContentId, setSelectedContentId] = useState<string | null>(null)
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [showArchived, setShowArchived] = useState(false)
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+    const [contentToArchive, setContentToArchive] = useState<StudioContent | null>(null)
+
+    // Unified filtering logic
+    const filteredContent = content.filter(item => {
+        const matchesSearch = !searchQuery ||
+            item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.type?.toLowerCase().includes(searchQuery.toLowerCase())
+
+        const isArchivedMatch = showArchived ? item.is_archived : !item.is_archived
+
+        return matchesSearch && isArchivedMatch
+    })
 
     const onDragOver = (e: React.DragEvent, status: ContentStatus) => {
         e.preventDefault()
@@ -108,69 +131,94 @@ export default function ContentKanban({ hideHeader = false }: { hideHeader?: boo
                 </div>
             )}
 
-            <div className="flex gap-6 overflow-x-auto pb-8 -mx-4 px-4 no-scrollbar">
+            {/* Status Tabs - Focused View (Now Global) */}
+            <div className="flex items-center gap-1 p-1 bg-black/[0.03] rounded-2xl w-fit max-w-full overflow-x-auto no-scrollbar">
                 {CONTENT_COLUMNS.map(column => {
-                    const columnContent = content.filter(c => c.status === column.value && (showArchived ? c.is_archived : !c.is_archived))
+                    const isActive = activeStatus === column.value
                     const isOver = dragOverStatus === column.value
+                    const count = filteredContent.filter(c => c.status === column.value).length
 
                     return (
-                        <div
+                        <button
                             key={column.value}
-                            className="flex-shrink-0 w-72 flex flex-col gap-4"
+                            onClick={() => setActiveStatus(column.value)}
                             onDragOver={(e) => onDragOver(e, column.value)}
                             onDragLeave={() => setDragOverStatus(null)}
                             onDrop={(e) => onDrop(e, column.value)}
+                            className={cn(
+                                "flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all relative whitespace-nowrap",
+                                isActive
+                                    ? "bg-white text-black shadow-sm"
+                                    : "text-black/30 hover:text-black/60",
+                                isOver && "bg-orange-50 text-orange-600 scale-[1.05] z-10"
+                            )}
                         >
-                            <div className="flex items-center justify-between px-2">
-                                <h3 className="text-[11px] font-black uppercase tracking-[0.15em] text-black/30 flex items-center gap-2">
-                                    <div className={cn("w-1.5 h-1.5 rounded-full", column.dot)} />
-                                    {column.label}
-                                </h3>
-                                <span className="text-[10px] font-bold text-black/20 bg-black/5 px-1.5 py-0.5 rounded-md">
-                                    {columnContent.length}
+                            <div className={cn("w-1.5 h-1.5 rounded-full", column.dot)} />
+                            {column.label}
+                            {count > 0 && (
+                                <span className={cn(
+                                    "px-1.5 py-0.5 rounded-md text-[9px]",
+                                    isActive ? "bg-black text-white" : "bg-black/5 text-black/30"
+                                )}>
+                                    {count}
                                 </span>
-                            </div>
-
-                            <div className={cn(
-                                "flex-1 rounded-[32px] transition-all p-2 space-y-3 min-h-[500px] border-2 border-transparent",
-                                isOver ? "bg-blue-50/50 border-blue-200 shadow-inner scale-[1.01]" :
-                                    draggingId ? "bg-black/[0.01] border-dashed border-black/[0.05]" : "bg-black/[0.02]"
-                            )}>
-                                {loading ? (
-                                    <div className="space-y-3">
-                                        {[1, 2].map(i => (
-                                            <div key={i} className="h-36 bg-black/[0.02] border border-black/[0.05] rounded-2xl animate-pulse" />
-                                        ))}
-                                    </div>
-                                ) : columnContent.length === 0 ? (
-                                    <div className="py-12 flex flex-col items-center justify-center text-center px-4 opacity-10">
-                                        <Video className="w-8 h-8 mb-2" />
-                                        <p className="text-[11px] font-bold uppercase tracking-widest">Empty</p>
-                                    </div>
-                                ) : (
-                                    columnContent.map(item => (
-                                        <ContentCard
-                                            key={item.id}
-                                            item={item}
-                                            project={projects.find(p => p.id === item.project_id)}
-                                            milestones={milestones.filter(m => m.content_id === item.id)}
-                                            onDragStart={() => setDraggingId(item.id)}
-                                            onDragEnd={() => setDraggingId(null)}
-                                            onClick={() => setSelectedItem(item)}
-                                            onDelete={() => setDeleteConfirmId(item.id)}
-                                        />
-                                    ))
-                                )}
-                            </div>
-                        </div>
+                            )}
+                        </button>
                     )
                 })}
             </div>
 
+            {/* Content Display (Focused) */}
+            <div
+                className={cn(
+                    "rounded-[32px] transition-all min-h-[600px] border-2 border-transparent",
+                    dragOverStatus === activeStatus ? "bg-orange-50/50 border-orange-200 shadow-inner" :
+                        draggingId ? "bg-black/[0.01] border-dashed border-black/[0.05]" : "bg-transparent"
+                )}
+                onDragOver={(e) => onDragOver(e, activeStatus)}
+                onDragLeave={() => setDragOverStatus(null)}
+                onDrop={(e) => onDrop(e, activeStatus)}
+            >
+                {loading ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-2">
+                        {[1, 2, 3, 4, 5, 6].map(i => (
+                            <div key={i} className="h-48 bg-black/[0.02] border border-black/[0.05] rounded-3xl animate-pulse" />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-2">
+                        {filteredContent
+                            .filter(c => c.status === activeStatus)
+                            .length === 0 ? (
+                            <div className="col-span-full py-24 flex flex-col items-center justify-center text-center opacity-10">
+                                <Video className="w-12 h-12 mb-4" />
+                                <p className="text-[14px] font-black uppercase tracking-[0.2em]">No items in {activeStatus}</p>
+                            </div>
+                        ) : (
+                            filteredContent
+                                .filter(c => c.status === activeStatus)
+                                .map(item => (
+                                    <ContentCard
+                                        key={item.id}
+                                        item={item}
+                                        project={projects.find(p => p.id === item.project_id)}
+                                        milestones={milestones.filter(m => m.content_id === item.id)}
+                                        onDragStart={() => setDraggingId(item.id)}
+                                        onDragEnd={() => setDraggingId(null)}
+                                        onClick={() => setSelectedContentId(item.id)}
+                                        onArchive={() => setContentToArchive(item)}
+                                        onDelete={() => setDeleteConfirmId(item.id)}
+                                    />
+                                ))
+                        )}
+                    </div>
+                )}
+            </div>
+
             <ContentDetailModal
-                isOpen={!!selectedItem}
-                onClose={() => setSelectedItem(null)}
-                item={selectedItem}
+                isOpen={!!selectedContentId}
+                onClose={() => setSelectedContentId(null)}
+                item={content.find(c => c.id === selectedContentId) || null}
             />
             <CreateContentModal
                 isOpen={isCreateModalOpen}
@@ -189,22 +237,45 @@ export default function ContentKanban({ hideHeader = false }: { hideHeader?: boo
                 confirmText="Delete Content"
                 type="danger"
             />
+
+            <ConfirmationModal
+                isOpen={!!contentToArchive}
+                onClose={() => setContentToArchive(null)}
+                onConfirm={async () => {
+                    if (contentToArchive) {
+                        await updateContent(contentToArchive.id, { is_archived: !contentToArchive.is_archived })
+                    }
+                }}
+                title={contentToArchive?.is_archived ? "Unarchive Content" : "Archive Content"}
+                message={contentToArchive?.is_archived
+                    ? `Are you sure you want to unarchive "${contentToArchive?.title}"? It will be moved back to your content pipeline.`
+                    : `Are you sure you want to archive "${contentToArchive?.title}"? You can view it later by enabling the Archive view.`}
+                confirmText={contentToArchive?.is_archived ? "Unarchive" : "Archive Content"}
+                type={contentToArchive?.is_archived ? "info" : "info"}
+            />
         </div>
     )
 }
 
-function ContentCard({ item, project, milestones, onDragStart, onDragEnd, onClick, onDelete }: {
+function ContentCard({ item, project, milestones, onDragStart, onDragEnd, onClick, onArchive, onDelete }: {
     item: StudioContent
     project?: StudioProject
     milestones: StudioMilestone[]
     onDragStart: () => void
     onDragEnd: () => void
     onClick: () => void
+    onArchive: () => void
     onDelete: () => void
 }) {
+    const { updateContent } = useStudio()
     const priority = item.priority ?? 'low'
     const styles = PRIORITY_STYLES[priority] ?? PRIORITY_STYLES.low
     const deadline = item.deadline || item.publish_date
+
+    const handleArchive = async (e: React.MouseEvent) => {
+        e.stopPropagation()
+        onArchive()
+    }
 
     return (
         <div
@@ -212,41 +283,69 @@ function ContentCard({ item, project, milestones, onDragStart, onDragEnd, onClic
             onDragStart={onDragStart}
             onDragEnd={onDragEnd}
             onClick={onClick}
-            className={cn(
-                "group relative rounded-2xl cursor-grab active:cursor-grabbing transition-all hover:shadow-xl hover:-translate-y-0.5 border overflow-hidden",
-                styles.border, styles.bg
-            )}
+            className="group relative bg-white border border-black/[0.05] rounded-2xl cursor-grab active:cursor-grabbing hover:border-orange-200 hover:shadow-xl transition-all overflow-hidden"
         >
-            {/* Cover image if set */}
-            {item.cover_url && (
-                <div className="w-full h-24 overflow-hidden">
-                    <img src={item.cover_url} alt={item.title} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 h-24 bg-gradient-to-b from-transparent to-black/20" />
-                </div>
-            )}
+            {/* Cover image area */}
+            <div className="w-full h-24 overflow-hidden relative">
+                <img
+                    src={item.cover_url || `https://loremflickr.com/600/400/${encodeURIComponent(item.title.split(' ')[0])},abstract?lock=${item.id.length}`}
+                    alt={item.title}
+                    className={cn(
+                        "w-full h-full object-cover transition-transform duration-500 group-hover:scale-110",
+                        !item.cover_url && "opacity-80"
+                    )}
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20" />
+            </div>
 
             <div className="p-4">
-                {/* Top row: platforms + type + published check */}
-                <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-1.5">
-                        <div className="flex -space-x-0.5">
-                            {item.platforms?.map(p => (
-                                <div key={p} className="p-1 px-1.5 rounded-md bg-black/[0.04] flex items-center justify-center border border-white shadow-sm" title={p}>
-                                    <PlatformIcon platform={p} className="w-2.5 h-2.5" />
+                {/* Top row: platforms + type + published check + Date/Impact */}
+                <div className="flex justify-between items-start mb-3">
+                    <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                            <div className="flex -space-x-1 mr-1">
+                                {item.platforms?.map(p => (
+                                    <div key={p} className="w-4 h-4 rounded-full bg-white border border-black/[0.1] flex items-center justify-center text-black shadow-sm z-[1]" title={p}>
+                                        <PlatformIcon platform={p} className="w-2.5 h-2.5" />
+                                    </div>
+                                ))}
+                            </div>
+                            {item.category && (
+                                <div className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-tight bg-black/[0.03] text-black/40 w-fit truncate">
+                                    {item.category}
                                 </div>
-                            ))}
+                            )}
                         </div>
-                        {item.category && (
-                            <span className="text-[9px] font-black uppercase tracking-tight text-black/40 bg-black/[0.03] px-1.5 py-0.5 rounded-md">
-                                {item.category}
-                            </span>
+                        {item.status === 'published' && (
+                            <div className="flex items-center gap-1 px-1.5 py-0.5 bg-emerald-50 border border-emerald-100 rounded-md w-fit">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                <span className="text-[8px] font-black text-emerald-900 uppercase">Published</span>
+                            </div>
                         )}
                     </div>
-                    {item.status === 'published' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />}
+
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                        <div className="flex items-center gap-2">
+                            {deadline && (
+                                <div className="flex items-center gap-1 text-[9px] font-black text-black/30 uppercase tracking-tighter">
+                                    <Calendar className="w-2.5 h-2.5" />
+                                    {new Date(deadline + (deadline.length === 10 ? 'T00:00:00' : '')).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                                </div>
+                            )}
+                            {(item.impact_score != null) && (
+                                <div className="flex items-center gap-0.5">
+                                    <Zap className="w-3 h-3 text-orange-500 fill-orange-500" />
+                                    <span className="text-[11px] font-black text-orange-600">
+                                        {item.impact_score}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
 
                 {/* Title */}
-                <h4 className="text-[13px] font-black text-black leading-tight group-hover:text-blue-600 transition-colors mb-2">
+                <h4 className="text-[13px] font-black text-black leading-tight group-hover:text-orange-600 transition-colors mb-2">
                     {item.title}
                 </h4>
 
@@ -265,17 +364,17 @@ function ContentCard({ item, project, milestones, onDragStart, onDragEnd, onClic
                     </div>
                 )}
 
-                {/* Priority + Impact row */}
+                {/* Priority row */}
                 <div className="flex items-center gap-2 mb-3">
-                    <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider", styles.pill)}>
+                    <div className={cn(
+                        "px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter w-fit border",
+                        priority === 'urgent' ? "bg-purple-50 text-purple-600 border-purple-100" :
+                            priority === 'high' ? "bg-red-50 text-red-600 border-red-100" :
+                                priority === 'mid' ? "bg-yellow-50 text-yellow-600 border-yellow-100" :
+                                    "bg-black/5 text-black/40 border-transparent"
+                    )}>
                         {priority}
-                    </span>
-                    {(item.impact_score != null) && (
-                        <span className="flex items-center gap-0.5 text-[10px] font-black text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md">
-                            <Zap className="w-2.5 h-2.5 fill-current" />
-                            {item.impact_score}
-                        </span>
-                    )}
+                    </div>
                     {item.type && (
                         <span className="text-[9px] font-bold text-black/30 ml-auto">{item.type}</span>
                     )}
@@ -289,20 +388,35 @@ function ContentCard({ item, project, milestones, onDragStart, onDragEnd, onClic
                     </div>
                 )}
 
-                {/* Footer: deadline + delete */}
-                <div className="pt-3 border-t border-black/[0.05] flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-[10px] text-black/30 font-bold">
-                        <Calendar className="w-3 h-3" />
-                        {deadline
-                            ? new Date(deadline + (deadline.length === 10 ? 'T00:00:00' : '')).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-                            : 'No date'}
+                {/* Footer Actions */}
+                <div className="mt-4 pt-3 border-t border-black/[0.03] flex items-center justify-end">
+                    <div className="flex items-center gap-1">
+                        <button
+                            onClick={handleArchive}
+                            className={cn(
+                                "p-1.5 rounded-lg transition-all flex items-center justify-center",
+                                item.is_archived
+                                    ? "bg-blue-50 text-blue-600 hover:bg-blue-100"
+                                    : "bg-black/[0.03] text-black/30 hover:bg-black/5 hover:text-black"
+                            )}
+                            title={item.is_archived ? "Unarchive Content" : "Archive Content"}
+                        >
+                            <Shield className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onDelete()
+                            }}
+                            className="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-all flex items-center justify-center"
+                            title="Delete Content"
+                        >
+                            <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button className="p-1 rounded-md hover:bg-black/5 text-black/20 hover:text-black/60 transition-all">
+                            <MoreVertical className="w-3.5 h-3.5" />
+                        </button>
                     </div>
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onDelete() }}
-                        className="p-1.5 rounded-lg bg-red-50 text-red-400 opacity-0 group-hover:opacity-100 transition-all"
-                    >
-                        <Trash2 className="w-3.5 h-3.5" />
-                    </button>
                 </div>
             </div>
         </div>

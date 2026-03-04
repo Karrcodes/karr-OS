@@ -59,10 +59,10 @@ const navItems = [
         icon: Sparkles,
         sub: [
             { label: 'Projects', href: '/create/projects', icon: Briefcase },
-            { label: 'Sparks', href: '/create/sparks', icon: Target },
             { label: 'Content', href: '/create/content', icon: LayoutDashboard },
-            { label: 'Press', href: '/create/press', icon: Award },
+            { label: 'Sparks', href: '/create/sparks', icon: Target },
             { label: 'Network', href: '/create/network', icon: Activity },
+            { label: 'Press', href: '/create/press', icon: Award },
             { label: 'Portfolio', href: '/create/portfolio', icon: Shield }
         ]
     },

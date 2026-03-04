@@ -205,7 +205,10 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                                             className={cn(
                                                 "flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider border transition-all",
                                                 formData.priority === level
-                                                    ? "bg-black text-white border-black"
+                                                    ? level === 'urgent' ? "bg-purple-600 text-white border-purple-600 shadow-lg shadow-purple-200" :
+                                                        level === 'high' ? "bg-red-600 text-white border-red-600 shadow-lg shadow-red-200" :
+                                                            level === 'mid' ? "bg-orange-500 text-white border-orange-500 shadow-lg shadow-orange-200" :
+                                                                "bg-black text-white border-black"
                                                     : "bg-black/[0.02] border-black/[0.05] text-black/30 hover:bg-black/[0.04]"
                                             )}
                                         >
@@ -247,14 +250,27 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                         {/* 5. Target Date */}
                         <div className="space-y-2">
                             <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Overall Target Completion</label>
-                            <div className="relative w-full md:w-1/2">
-                                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20 pointer-events-none" />
+                            <div className="relative w-full md:w-1/2 group/targetdate h-12 flex items-center px-4 bg-black/[0.02] border border-black/[0.1] rounded-2xl overflow-hidden">
+                                <Calendar className="w-4 h-4 text-black/20 shrink-0 pointer-events-none" />
                                 <input
                                     type="date"
                                     value={formData.target_date ? formData.target_date.split('T')[0] : ''}
                                     onChange={(e) => setFormData(prev => ({ ...prev, target_date: e.target.value }))}
-                                    className="w-full pl-11 pr-4 py-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-orange-200 transition-all cursor-pointer"
+                                    onClick={(e) => (e.target as any).showPicker?.()}
+                                    className="absolute inset-0 w-full h-full text-transparent bg-transparent border-none cursor-pointer z-10 p-0"
                                 />
+                                <span className="ml-3 text-[13px] font-bold text-black/40 truncate pointer-events-none">
+                                    {formData.target_date ? new Date(formData.target_date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Set target date'}
+                                </span>
+                                {formData.target_date && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData(prev => ({ ...prev, target_date: '' }))}
+                                        className="relative ml-auto p-1 text-black/20 hover:text-red-500 transition-colors z-30 pointer-events-auto"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                )}
                             </div>
                         </div>
 
@@ -332,14 +348,26 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                                     </div>
                                     <div className="space-y-1.5">
                                         <label className="text-[9px] font-black uppercase text-black/20 ml-2">Deadline</label>
-                                        <div className="relative">
-                                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-black/20 pointer-events-none" />
+                                        <div className="relative group/newdate h-9 flex items-center px-3 bg-black/[0.03] border border-black/5 rounded-xl overflow-hidden">
+                                            <Calendar className="w-3.5 h-3.5 text-black/20 shrink-0 pointer-events-none" />
                                             <input
                                                 type="date"
                                                 value={newDate ? newDate.split('T')[0] : ''}
                                                 onChange={(e) => setNewDate(e.target.value)}
-                                                className="w-full pl-8 pr-3 py-2 bg-black/[0.03] border border-black/5 rounded-xl text-[11px] font-bold focus:outline-none cursor-pointer"
+                                                onClick={(e) => (e.target as any).showPicker?.()}
+                                                className="absolute inset-0 w-full h-full text-transparent bg-transparent border-none cursor-pointer z-10 p-0"
                                             />
+                                            <span className="ml-2 text-[11px] font-bold text-black/40 truncate pointer-events-none">
+                                                {newDate ? new Date(newDate + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'Set date'}
+                                            </span>
+                                            {newDate && (
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); setNewDate(''); }}
+                                                    className="relative ml-auto p-1 text-black/20 hover:text-red-500 transition-colors z-30 pointer-events-auto"
+                                                >
+                                                    <X className="w-3.5 h-3.5" />
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

@@ -109,6 +109,7 @@ export default function CreateSparkModal({ isOpen, onClose }: CreateSparkModalPr
             setLoading(true)
             await addSpark({
                 ...formData,
+                status: 'inbox',
                 project_id: formData.project_id || undefined,
                 price: (formData.type === 'item' || formData.type === 'tool') ? formData.price : undefined
             } as any)

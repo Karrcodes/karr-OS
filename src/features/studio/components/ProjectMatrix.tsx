@@ -321,7 +321,8 @@ export default function ProjectMatrix({ searchQuery = '', filterType = null, sho
     const safeZoneRef = useRef<HTMLDivElement>(null)
     const [selectedParentId, setSelectedParentId] = useState<string | null>(null)
     const [parentType, setParentType] = useState<'project' | 'spark' | null>(null)
-    const [selectedTaskForModal, setSelectedTaskForModal] = useState<Task | null>(null)
+    const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
+    const selectedTaskForModal = tasks.find(t => t.id === selectedTaskId) || null
     const [hoveredDayIndex, setHoveredDayIndex] = useState<number | null>(null)
     const [selectedStrategicCategory, setSelectedStrategicCategory] = useState<'all' | string>('all')
     const [isPlottingAI, setIsPlottingAI] = useState(false)
@@ -543,7 +544,7 @@ export default function ProjectMatrix({ searchQuery = '', filterType = null, sho
 
     const handleModalToggleComplete = async (id: string, completed: boolean) => {
         await toggleTask(id, completed)
-        setSelectedTaskForModal(null)
+        setSelectedTaskId(null)
     }
 
     return (
@@ -735,7 +736,7 @@ export default function ProjectMatrix({ searchQuery = '', filterType = null, sho
                                 setSelectedParentId(selected.data.project_id || selected.data.spark_id || null)
                                 setParentType(selected.data.project_id ? 'project' : 'spark')
                             } else {
-                                setSelectedTaskForModal(selected.data)
+                                setSelectedTaskId(selected.data.id)
                             }
                         }}
                         isMoveApplied={isConfirmingMove && movingItem?.id !== item.id}
@@ -787,8 +788,8 @@ export default function ProjectMatrix({ searchQuery = '', filterType = null, sho
             {/* Modals */}
             <TaskDetailModal
                 task={selectedTaskForModal}
-                isOpen={!!selectedTaskForModal}
-                onClose={() => setSelectedTaskForModal(null)}
+                isOpen={!!selectedTaskId}
+                onClose={() => setSelectedTaskId(null)}
                 onToggleSubtask={handleModalToggleSubtask}
                 onToggleComplete={handleModalToggleComplete}
                 onEditTask={editTask}
