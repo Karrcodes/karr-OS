@@ -4,7 +4,7 @@ import { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import { motion, useMotionValue, animate, AnimatePresence } from 'framer-motion'
 import { useStudio } from '../hooks/useStudio'
 import { cn } from '@/lib/utils'
-import type { StudioMilestone, ProjectMatrixProps, StudioProject } from '../types/studio.types'
+import type { StudioMilestone, ProjectMatrixProps, StudioProject, StudioContent } from '../types/studio.types'
 import { useTasks } from '@/features/tasks/hooks/useTasks'
 import type { Task } from '@/features/tasks/types/tasks.types'
 import { TaskDetailModal } from '@/features/tasks/components/TaskDetailModal'
@@ -93,7 +93,9 @@ function ItemDot({
     isMoveApplied,
     setHoveredDayIndex,
     isConfirmingMove,
-    safeZoneRef
+    safeZoneRef,
+    projects,
+    content
 }: {
     item: { id: string, type: 'task' | 'milestone', data: any },
     containerRef: React.RefObject<HTMLDivElement | null>,
@@ -104,7 +106,8 @@ function ItemDot({
     setHoveredDayIndex: (index: number | null) => void,
     isConfirmingMove: boolean,
     safeZoneRef: React.RefObject<HTMLDivElement | null>,
-    projects: StudioProject[]
+    projects: StudioProject[],
+    content: StudioContent[]
 }) {
     const [isDragging, setIsDragging] = useState(false)
     const dotRef = useRef<HTMLDivElement>(null)
@@ -252,7 +255,7 @@ function ItemDot({
                         {item.type === 'milestone' && (data.content_id || data.project_id) && (
                             <span className="text-[7px] font-bold text-black/30 border border-black/5 rounded px-1 truncate max-w-[100px]">
                                 {data.content_id
-                                    ? `C: ${projects.find((p: StudioProject) => p.id === data.project_id)?.title || 'Content'}`
+                                    ? `C: ${content.find((c: any) => c.id === data.content_id)?.title || 'Content'}`
                                     : `P: ${projects.find((p: StudioProject) => p.id === data.project_id)?.title || 'Project'}`}
                             </span>
                         )}
@@ -320,7 +323,7 @@ function ItemDot({
 }
 
 export default function ProjectMatrix({ searchQuery = '', filterType = null, showArchived = false }: ProjectMatrixProps) {
-    const { projects, sparks, milestones, updateMilestone, refresh, loading: studioLoading } = useStudio()
+    const { projects, sparks, content, milestones, updateMilestone, refresh, loading: studioLoading } = useStudio()
     const { tasks, loading: tasksLoading, editTask, toggleTask } = useTasks('todo')
     const { overrides } = useRota('all')
     const loading = studioLoading || tasksLoading
@@ -751,6 +754,7 @@ export default function ProjectMatrix({ searchQuery = '', filterType = null, sho
                         setHoveredDayIndex={setHoveredDayIndex}
                         isConfirmingMove={isConfirmingMove}
                         projects={projects}
+                        content={content}
                     />
                 ))}
 
