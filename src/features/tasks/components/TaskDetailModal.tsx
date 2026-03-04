@@ -14,8 +14,8 @@ interface TaskDetailModalProps {
     onClose: () => void
     onToggleSubtask: (taskId: string, index: number) => Promise<void>
     onToggleComplete: (taskId: string, completed: boolean) => Promise<void>
-    onEditTask?: (taskId: string, updates: Partial<Task>) => Promise<void>
-    onEditMilestone?: (milestoneId: string, updates: Partial<StudioMilestone>) => Promise<void>
+    onEditTask?: (taskId: string, updates: Partial<Task>) => Promise<any>
+    onEditMilestone?: (milestoneId: string, updates: Partial<StudioMilestone>) => Promise<any>
     projects?: StudioProject[]
     content?: StudioContent[]
 }
