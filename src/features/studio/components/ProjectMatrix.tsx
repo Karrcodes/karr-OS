@@ -386,9 +386,22 @@ export default function ProjectMatrix({ searchQuery = '', filterType = null, sho
             const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase())
             const matchesCategory = selectedStrategicCategory === 'all' || t.strategic_category === selectedStrategicCategory
 
-            if (!t.due_date) return false
-            const diff = (new Date(t.due_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-            if (diff < -1 || diff > 15) return false
+            // Always include tasks linked to projects/content, even without a due date
+            const isLinked = !!(t.project_id || t.content_id)
+
+            if (!isLinked) {
+                // For general unlinked tasks, require a due_date within the 15-day window
+                if (!t.due_date) return false
+                const diff = (new Date(t.due_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+                if (diff < -1 || diff > 15) return false
+            } else {
+                // For linked tasks, allow those with or without a due_date
+                // But still filter out if due_date is set but very far out (> 30 days)
+                if (t.due_date) {
+                    const diff = (new Date(t.due_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+                    if (diff < -1 || diff > 30) return false
+                }
+            }
 
             return matchesSearch && matchesCategory
         }).map(t => ({ id: t.id, type: 'task' as const, data: t }))

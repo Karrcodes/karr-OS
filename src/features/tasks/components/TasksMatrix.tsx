@@ -1128,6 +1128,7 @@ export function TasksMatrix() {
                 }}
                 onEditTask={async (taskId, updates) => {
                     await editTask(taskId, updates)
+                    await refetch()
                     if (selectedTaskForModal?.id === taskId) {
                         setSelectedTaskForModal({ ...selectedTaskForModal, ...updates })
                     }
