@@ -282,6 +282,7 @@ function ContentCard({ item, project, milestones, onPointerDragStart, onPointerD
     const { updateContent } = useStudio()
     const isDragging = useRef(false)
     const startPos = useRef({ x: 0, y: 0 })
+    const [isDraggingThis, setIsDraggingThis] = useState(false)
     const priority = item.priority ?? 'low'
     const styles = PRIORITY_STYLES[priority] ?? PRIORITY_STYLES.low
     const deadline = item.deadline || item.publish_date
@@ -296,19 +297,52 @@ function ContentCard({ item, project, milestones, onPointerDragStart, onPointerD
         startPos.current = { x: e.clientX, y: e.clientY }
         isDragging.current = false
 
+        let ghost: HTMLDivElement | null = null
+
         const handleMove = (ev: PointerEvent) => {
             const dx = ev.clientX - startPos.current.x
             const dy = ev.clientY - startPos.current.y
             if (!isDragging.current && Math.sqrt(dx * dx + dy * dy) > 8) {
                 isDragging.current = true
+                setIsDraggingThis(true)
                 onPointerDragStart(item.id)
+
+                // Create floating ghost card
+                ghost = document.createElement('div')
+                ghost.style.cssText = [
+                    'position:fixed',
+                    'pointer-events:none',
+                    'z-index:9999',
+                    'width:180px',
+                    'background:white',
+                    'border-radius:14px',
+                    'box-shadow:0 24px 48px rgba(0,0,0,0.18),0 0 0 1px rgba(0,0,0,0.06)',
+                    'padding:10px 12px',
+                    'transform:rotate(-2deg) scale(0.95)',
+                    'opacity:0.96',
+                    'transition:none',
+                    'line-height:1.3',
+                ].join(';')
+                ghost.innerHTML = `
+                    <div style="font-size:11px;font-weight:800;color:#000;margin-bottom:2px;font-family:inherit;">${item.title}</div>
+                    ${item.category ? `<div style="font-size:9px;color:rgba(0,0,0,0.4);font-family:inherit;">${item.category}</div>` : ''}
+                `
+                document.body.appendChild(ghost)
             }
-            if (isDragging.current) onPointerDragOver(ev.clientX, ev.clientY)
+            if (isDragging.current) {
+                onPointerDragOver(ev.clientX, ev.clientY)
+                if (ghost) {
+                    ghost.style.left = `${ev.clientX - 90}px`
+                    ghost.style.top = `${ev.clientY - 30}px`
+                }
+            }
         }
 
         const handleUp = (ev: PointerEvent) => {
             window.removeEventListener('pointermove', handleMove)
             window.removeEventListener('pointerup', handleUp)
+            if (ghost) { ghost.remove(); ghost = null }
+            setIsDraggingThis(false)
             if (isDragging.current) {
                 onPointerDrop(item.id, ev.clientX, ev.clientY)
                 isDragging.current = false
@@ -323,7 +357,10 @@ function ContentCard({ item, project, milestones, onPointerDragStart, onPointerD
 
     return (
         <div
-            className="group relative bg-white border border-black/[0.05] rounded-2xl hover:border-orange-200 hover:shadow-xl transition-all overflow-hidden"
+            className={cn(
+                "group relative bg-white border border-black/[0.05] rounded-2xl hover:border-orange-200 hover:shadow-xl transition-all overflow-hidden",
+                isDraggingThis && "opacity-30 scale-95 shadow-none"
+            )}
         >
             {/* Cover image area */}
             <div
