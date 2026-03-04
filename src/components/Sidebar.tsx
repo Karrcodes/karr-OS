@@ -579,7 +579,7 @@ export function Sidebar() {
                 {/* Nav */}
                 {isCollapsed ? (
                     /* Collapsed: icon-only nav with tooltips */
-                    <nav className="flex-1 flex flex-col items-center py-4 gap-0.5 overflow-y-auto overflow-x-visible hide-scrollbar relative z-50">
+                    <nav className="flex-1 flex flex-col items-center py-4 gap-0.5">
                         {orderedTabs.map(label => {
                             const item = navItems.find(i => i.label === label)
                             if (!item) return null
