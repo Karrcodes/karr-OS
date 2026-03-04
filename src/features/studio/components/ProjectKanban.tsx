@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Briefcase, Shield, Clock, MoreVertical, Trash2, CheckCircle2, Zap } from 'lucide-react'
 import { useStudio } from '../hooks/useStudio'
 import type { StudioProject, ProjectStatus, StudioMilestone, ProjectKanbanProps } from '../types/studio.types'
@@ -200,6 +200,7 @@ function ProjectCard({ project, milestones, onDragStart, onDragEnd, onClick, onA
     onDelete: () => void;
 }) {
     const { updateProject } = useStudio()
+    const dragStarted = useRef(false)
 
     const handleArchive = async (e: React.MouseEvent) => {
         e.stopPropagation()
@@ -207,13 +208,25 @@ function ProjectCard({ project, milestones, onDragStart, onDragEnd, onClick, onA
     }
     return (
         <div
-            onClick={onClick}
+            onClick={(e) => {
+                if (dragStarted.current) {
+                    dragStarted.current = false
+                    return
+                }
+                onClick()
+            }}
             className="group relative bg-white border border-black/[0.05] rounded-2xl hover:border-orange-200 hover:shadow-xl transition-all overflow-hidden"
         >
             <div
                 draggable
-                onDragStart={onDragStart}
-                onDragEnd={onDragEnd}
+                onDragStart={(e) => {
+                    dragStarted.current = true
+                    onDragStart(e)
+                }}
+                onDragEnd={() => {
+                    onDragEnd()
+                    setTimeout(() => { dragStarted.current = false }, 100)
+                }}
                 className="h-32 w-full overflow-hidden relative cursor-grab active:cursor-grabbing touch-none"
             >
                 <img

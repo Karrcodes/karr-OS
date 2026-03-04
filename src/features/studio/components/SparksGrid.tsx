@@ -1,7 +1,7 @@
 'use client'
 
 import { Target, ExternalLink, Calendar, Plus, MoreVertical, Tag, Briefcase, Trash2, Search, HelpCircle, Archive, CheckCircle2, Inbox } from 'lucide-react'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useStudio } from '../hooks/useStudio'
 import type { StudioSpark, SparkStatus } from '../types/studio.types'
 import { cn } from '@/lib/utils'
@@ -265,6 +265,7 @@ function SparkCard({ spark, projects, onClick, onDragStart, onDragEnd }: {
     onDragStart?: (e: React.DragEvent, id: string) => void;
     onDragEnd?: () => void;
 }) {
+    const dragStarted = useRef(false)
     const linkedProject = projects.find(p => p.id === spark.project_id)
     const [imgError, setImgError] = useState(false)
 
@@ -280,10 +281,22 @@ function SparkCard({ spark, projects, onClick, onDragStart, onDragEnd }: {
     return (
         <div
             draggable={!!onDragStart}
-            onDragStart={(e) => onDragStart?.(e, spark.id)}
-            onDragEnd={onDragEnd}
-            onClick={onClick}
-            className="group relative p-6 bg-white border border-black/[0.05] rounded-[32px] hover:border-emerald-200 hover:shadow-xl transition-all flex flex-col cursor-pointer active:scale-95"
+            onDragStart={(e) => {
+                dragStarted.current = true
+                onDragStart?.(e, spark.id)
+            }}
+            onDragEnd={() => {
+                onDragEnd?.()
+                setTimeout(() => { dragStarted.current = false }, 100)
+            }}
+            onClick={(e) => {
+                if (dragStarted.current) {
+                    dragStarted.current = false
+                    return
+                }
+                onClick()
+            }}
+            className="group relative p-6 bg-white border border-black/[0.05] rounded-[32px] hover:border-emerald-200 hover:shadow-xl transition-all flex flex-col cursor-pointer active:scale-95 touch-none"
         >
             {/* Header */}
             <div className="flex justify-between items-start mb-4">

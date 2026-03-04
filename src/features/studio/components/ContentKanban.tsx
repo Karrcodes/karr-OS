@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Video, Calendar, CheckCircle2, Trash2, Plus, Zap, Briefcase, Shield, ListTodo, MoreVertical } from 'lucide-react'
 import { useStudio } from '../hooks/useStudio'
 import type { StudioContent, ContentStatus, StudioProject, StudioMilestone } from '../types/studio.types'
@@ -275,6 +275,7 @@ function ContentCard({ item, project, milestones, onDragStart, onDragEnd, onClic
     onDelete: () => void
 }) {
     const { updateContent } = useStudio()
+    const dragStarted = useRef(false)
     const priority = item.priority ?? 'low'
     const styles = PRIORITY_STYLES[priority] ?? PRIORITY_STYLES.low
     const deadline = item.deadline || item.publish_date
@@ -287,9 +288,21 @@ function ContentCard({ item, project, milestones, onDragStart, onDragEnd, onClic
     return (
         <div
             draggable
-            onDragStart={onDragStart}
-            onDragEnd={onDragEnd}
-            onClick={onClick}
+            onDragStart={(e) => {
+                dragStarted.current = true
+                onDragStart(e)
+            }}
+            onDragEnd={() => {
+                onDragEnd()
+                setTimeout(() => { dragStarted.current = false }, 100)
+            }}
+            onClick={(e) => {
+                if (dragStarted.current) {
+                    dragStarted.current = false
+                    return
+                }
+                onClick()
+            }}
             className="group relative bg-white border border-black/[0.05] rounded-2xl cursor-grab active:cursor-grabbing hover:border-orange-200 hover:shadow-xl transition-all overflow-hidden touch-none"
         >
             {/* Cover image area */}
