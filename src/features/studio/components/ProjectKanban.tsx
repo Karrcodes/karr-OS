@@ -24,14 +24,29 @@ export default function ProjectKanban({ searchQuery = '', filterType = null, sho
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
     const [projectToDelete, setProjectToDelete] = useState<StudioProject | null>(null)
     const [projectToArchive, setProjectToArchive] = useState<StudioProject | null>(null)
+    const [sortBy, setSortBy] = useState<'priority' | 'impact' | 'date'>('priority')
 
-    // Filter projects based on search, type and archiving
+    // Filter and sort projects based on search, type, archiving and sorting mode
     const projects = allProjects.filter(p => {
         const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             p.tagline?.toLowerCase().includes(searchQuery.toLowerCase())
         const matchesType = !filterType || p.type === filterType
         const archiveMatch = showArchived ? p.is_archived : !p.is_archived
         return matchesSearch && matchesType && archiveMatch
+    }).sort((a, b) => {
+        if (sortBy === 'priority') {
+            const weights = { urgent: 4, high: 3, mid: 2, low: 1 }
+            return (weights[b.priority || 'low'] || 0) - (weights[a.priority || 'low'] || 0)
+        }
+        if (sortBy === 'impact') {
+            return (b.impact_score || 0) - (a.impact_score || 0)
+        }
+        if (sortBy === 'date') {
+            const dateA = a.target_date || '9999-12-31'
+            const dateB = b.target_date || '9999-12-31'
+            return dateA.localeCompare(dateB)
+        }
+        return 0
     })
 
     useEffect(() => {
@@ -77,109 +92,128 @@ export default function ProjectKanban({ searchQuery = '', filterType = null, sho
     }
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 min-h-[600px]">
-            {COLUMNS.map(column => {
-                const columnProjects = projects.filter(p => p.status === column.value)
-                const isOver = dragOverStatus === column.value
-
-                return (
-                    <div
-                        key={column.value}
-                        className="flex flex-col gap-4"
+        <div className="space-y-4">
+            <div className="flex items-center gap-1.5 p-1 bg-black/[0.03] rounded-xl border border-black/5 w-fit">
+                {(['priority', 'impact', 'date'] as const).map(mode => (
+                    <button
+                        key={mode}
+                        onClick={() => setSortBy(mode)}
+                        className={cn(
+                            "px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                            sortBy === mode
+                                ? "bg-white text-black shadow-sm ring-1 ring-black/5"
+                                : "text-black/30 hover:text-black/60"
+                        )}
                     >
-                        {/* Column Header */}
-                        <div className="flex items-center justify-between px-2 mb-2">
-                            <h3 className="text-[11px] font-black uppercase tracking-[0.15em] text-black/30 flex items-center gap-2">
-                                <div className={cn(
-                                    "w-1.5 h-1.5 rounded-full",
-                                    column.value === 'idea' && "bg-black/10",
-                                    column.value === 'research' && "bg-blue-400",
-                                    column.value === 'active' && "bg-orange-400",
-                                    column.value === 'shipped' && "bg-emerald-400"
-                                )} />
-                                {column.label}
-                            </h3>
-                            <span className="text-[10px] font-bold text-black/20 bg-black/5 px-1.5 py-0.5 rounded-md">
-                                {columnProjects.length}
-                            </span>
-                        </div>
+                        {mode}
+                    </button>
+                ))}
+            </div>
 
-                        {/* Column Content Area */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 min-h-[600px]">
+                {COLUMNS.map(column => {
+                    const columnProjects = projects.filter(p => p.status === column.value)
+                    const isOver = dragOverStatus === column.value
+
+                    return (
                         <div
-                            data-column-status={column.value}
-                            className={cn(
-                                "flex-1 rounded-[32px] transition-all p-2 space-y-3 min-h-[400px] border-2 border-transparent",
-                                isOver ? "bg-orange-50/50 border-orange-200 shadow-inner scale-[1.01]" :
-                                    draggingId ? "bg-black/[0.01] border-dashed border-black/[0.05]" : "bg-transparent"
-                            )}
+                            key={column.value}
+                            className="flex flex-col gap-4"
                         >
-                            {loading ? (
-                                <div className="space-y-3">
-                                    {[1, 2].map(i => (
-                                        <div key={i} className="h-40 bg-black/[0.02] border border-black/[0.05] rounded-2xl animate-pulse" />
-                                    ))}
-                                </div>
-                            ) : columnProjects.length === 0 ? (
-                                <div className="py-12 flex flex-col items-center justify-center text-center px-4 opacity-10">
-                                    <Briefcase className="w-8 h-8 mb-2" />
-                                    <p className="text-[11px] font-bold uppercase tracking-widest">Empty</p>
-                                </div>
-                            ) : (
-                                columnProjects.map(project => (
-                                    <ProjectCard
-                                        key={project.id}
-                                        project={project}
-                                        milestones={milestones}
-                                        onPointerDragStart={(id) => setDraggingId(id)}
-                                        onPointerDragOver={handlePointerDragOver}
-                                        onPointerDrop={handlePointerDrop}
-                                        onPointerDragEnd={() => { setDraggingId(null); setDragOverStatus(null) }}
-                                        onClick={() => setSelectedProjectId(project.id)}
-                                        onArchive={() => setProjectToArchive(project)}
-                                        onDelete={() => setProjectToDelete(project)}
-                                    />
-                                ))
-                            )}
+                            {/* Column Header */}
+                            <div className="flex items-center justify-between px-2 mb-2">
+                                <h3 className="text-[11px] font-black uppercase tracking-[0.15em] text-black/30 flex items-center gap-2">
+                                    <div className={cn(
+                                        "w-1.5 h-1.5 rounded-full",
+                                        column.value === 'idea' && "bg-black/10",
+                                        column.value === 'research' && "bg-blue-400",
+                                        column.value === 'active' && "bg-orange-400",
+                                        column.value === 'shipped' && "bg-emerald-400"
+                                    )} />
+                                    {column.label}
+                                </h3>
+                                <span className="text-[10px] font-bold text-black/20 bg-black/5 px-1.5 py-0.5 rounded-md">
+                                    {columnProjects.length}
+                                </span>
+                            </div>
+
+                            {/* Column Content Area */}
+                            <div
+                                data-column-status={column.value}
+                                className={cn(
+                                    "flex-1 rounded-[32px] transition-all p-2 space-y-3 min-h-[400px] border-2 border-transparent",
+                                    isOver ? "bg-orange-50/50 border-orange-200 shadow-inner scale-[1.01]" :
+                                        draggingId ? "bg-black/[0.01] border-dashed border-black/[0.05]" : "bg-transparent"
+                                )}
+                            >
+                                {loading ? (
+                                    <div className="space-y-3">
+                                        {[1, 2].map(i => (
+                                            <div key={i} className="h-40 bg-black/[0.02] border border-black/[0.05] rounded-2xl animate-pulse" />
+                                        ))}
+                                    </div>
+                                ) : columnProjects.length === 0 ? (
+                                    <div className="py-12 flex flex-col items-center justify-center text-center px-4 opacity-10">
+                                        <Briefcase className="w-8 h-8 mb-2" />
+                                        <p className="text-[11px] font-bold uppercase tracking-widest">Empty</p>
+                                    </div>
+                                ) : (
+                                    columnProjects.map(project => (
+                                        <ProjectCard
+                                            key={project.id}
+                                            project={project}
+                                            milestones={milestones}
+                                            onPointerDragStart={(id) => setDraggingId(id)}
+                                            onPointerDragOver={handlePointerDragOver}
+                                            onPointerDrop={handlePointerDrop}
+                                            onPointerDragEnd={() => { setDraggingId(null); setDragOverStatus(null) }}
+                                            onClick={() => setSelectedProjectId(project.id)}
+                                            onArchive={() => setProjectToArchive(project)}
+                                            onDelete={() => setProjectToDelete(project)}
+                                        />
+                                    ))
+                                )}
+                            </div>
                         </div>
-                    </div>
-                )
-            })}
+                    )
+                })}
 
-            <ProjectDetailModal
-                isOpen={!!selectedProjectId}
-                onClose={() => setSelectedProjectId(null)}
-                project={allProjects.find(p => p.id === selectedProjectId) || null}
-            />
+                <ProjectDetailModal
+                    isOpen={!!selectedProjectId}
+                    onClose={() => setSelectedProjectId(null)}
+                    project={allProjects.find(p => p.id === selectedProjectId) || null}
+                />
 
-            <ConfirmationModal
-                isOpen={!!projectToDelete}
-                onClose={() => setProjectToDelete(null)}
-                onConfirm={async () => {
-                    if (projectToDelete) {
-                        await deleteProject(projectToDelete.id)
-                    }
-                }}
-                title="Delete Project"
-                message={`Are you sure you want to delete "${projectToDelete?.title}"? This will also delete all associated milestones and content.`}
-                confirmText="Delete"
-                type="danger"
-            />
+                <ConfirmationModal
+                    isOpen={!!projectToDelete}
+                    onClose={() => setProjectToDelete(null)}
+                    onConfirm={async () => {
+                        if (projectToDelete) {
+                            await deleteProject(projectToDelete.id)
+                        }
+                    }}
+                    title="Delete Project"
+                    message={`Are you sure you want to delete "${projectToDelete?.title}"? This will also delete all associated milestones and content.`}
+                    confirmText="Delete"
+                    type="danger"
+                />
 
-            <ConfirmationModal
-                isOpen={!!projectToArchive}
-                onClose={() => setProjectToArchive(null)}
-                onConfirm={async () => {
-                    if (projectToArchive) {
-                        await updateProject(projectToArchive.id, { is_archived: !projectToArchive.is_archived })
-                    }
-                }}
-                title={projectToArchive?.is_archived ? "Unarchive Project" : "Archive Project"}
-                message={projectToArchive?.is_archived
-                    ? `Are you sure you want to unarchive "${projectToArchive?.title}"? It will be moved back to your active project pipeline.`
-                    : `Are you sure you want to archive "${projectToArchive?.title}"? You can view it later by enabling the Archive view.`}
-                confirmText={projectToArchive?.is_archived ? "Unarchive" : "Archive Project"}
-                type={projectToArchive?.is_archived ? "info" : "info"}
-            />
+                <ConfirmationModal
+                    isOpen={!!projectToArchive}
+                    onClose={() => setProjectToArchive(null)}
+                    onConfirm={async () => {
+                        if (projectToArchive) {
+                            await updateProject(projectToArchive.id, { is_archived: !projectToArchive.is_archived })
+                        }
+                    }}
+                    title={projectToArchive?.is_archived ? "Unarchive Project" : "Archive Project"}
+                    message={projectToArchive?.is_archived
+                        ? `Are you sure you want to unarchive "${projectToArchive?.title}"? It will be moved back to your active project pipeline.`
+                        : `Are you sure you want to archive "${projectToArchive?.title}"? You can view it later by enabling the Archive view.`}
+                    confirmText={projectToArchive?.is_archived ? "Unarchive" : "Archive Project"}
+                    type={projectToArchive?.is_archived ? "info" : "info"}
+                />
+            </div>
         </div>
     )
 }

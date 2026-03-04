@@ -155,6 +155,14 @@ export default function ContentKanban({
                         <Shield className={cn("w-3 h-3", showArchived ? "text-white" : "text-black/20")} />
                         {showArchived ? 'Viewing Archives' : 'View Archives'}
                     </button>
+                    <div className="flex items-center gap-1.5 p-1 bg-black/[0.03] rounded-xl border border-black/5">
+                        {(['priority', 'impact', 'date'] as const).map(mode => (
+                            <button key={mode} onClick={() => setSortBy(mode)}
+                                className={cn("px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all", sortBy === mode ? "bg-white text-black shadow-sm" : "text-black/30 hover:text-black/50")}>
+                                {mode}
+                            </button>
+                        ))}
+                    </div>
                     <button
                         onClick={() => setIsCreateModalOpen(true)}
                         className="flex items-center gap-2 px-5 py-2.5 bg-black text-white rounded-xl text-[12px] font-black hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-black/10"
