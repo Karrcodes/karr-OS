@@ -613,7 +613,30 @@ export function Sidebar() {
 
                 {/* Expand / Profile row */}
                 {isCollapsed ? (
-                    <div className="pb-4 flex flex-col items-center gap-2 shrink-0">
+                    <div className="pb-4 flex flex-col items-center gap-1 shrink-0 px-2">
+                        <Link href="/system/settings" className="relative group w-10 h-10 flex items-center justify-center rounded-xl text-black/35 hover:text-black/80 hover:bg-black/[0.04] transition-all">
+                            <SlidersHorizontal className="w-4 h-4" />
+                            <div className="pointer-events-none absolute left-full ml-2 px-2.5 py-1.5 bg-black text-white text-[11px] font-bold rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-[200] shadow-xl">
+                                System Settings
+                            </div>
+                        </Link>
+
+                        <button
+                            onClick={() => {
+                                setIsRefreshing(true)
+                                setTimeout(() => window.location.reload(), 600)
+                            }}
+                            disabled={isRefreshing}
+                            className="relative group w-10 h-10 flex items-center justify-center rounded-xl text-black/35 hover:text-black/80 hover:bg-black/[0.04] transition-all"
+                        >
+                            <RefreshCw className={cn("w-4 h-4", isRefreshing && "animate-spin text-orange-500")} />
+                            <div className="pointer-events-none absolute left-full ml-2 px-2.5 py-1.5 bg-black text-white text-[11px] font-bold rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-[200] shadow-xl">
+                                Sync Database
+                            </div>
+                        </button>
+
+                        <div className="w-6 h-px bg-black/[0.06] my-2 rounded-full" />
+
                         <button
                             onClick={toggleCollapse}
                             className="w-10 h-10 rounded-xl flex items-center justify-center text-black/25 hover:text-black/70 hover:bg-black/[0.04] transition-colors"
