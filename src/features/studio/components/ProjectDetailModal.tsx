@@ -367,7 +367,9 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div className="space-y-2">
                                                         <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Project Start Date</label>
-                                                        <div className="relative group/startdate h-[46px] flex items-center px-4 bg-black/[0.02] border border-black/[0.1] rounded-xl overflow-hidden">
+                                                        <div className="relative group/startdate h-[46px] flex items-center px-4 bg-black/[0.02] border border-black/[0.1] rounded-xl overflow-hidden cursor-pointer"
+                                                            onClick={(e) => (e.currentTarget.querySelector('input[type="date"]') as any)?.showPicker?.()}
+                                                        >
                                                             <Calendar className="w-4 h-4 text-black/20 shrink-0 pointer-events-none" />
                                                             <input
                                                                 type="date"
@@ -382,7 +384,9 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                                                     </div>
                                                     <div className="space-y-2">
                                                         <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Target Date</label>
-                                                        <div className="relative group/maindate h-[46px] flex items-center px-4 bg-black/[0.02] border border-black/[0.1] rounded-xl overflow-hidden">
+                                                        <div className="relative group/maindate h-[46px] flex items-center px-4 bg-black/[0.02] border border-black/[0.1] rounded-xl overflow-hidden cursor-pointer"
+                                                            onClick={(e) => (e.currentTarget.querySelector('input[type="date"]') as any)?.showPicker?.()}
+                                                        >
                                                             <Calendar className="w-4 h-4 text-black/20 shrink-0 pointer-events-none" />
                                                             <input
                                                                 type="date"
@@ -587,7 +591,9 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                                                 />
                                             </div>
                                             <div className="flex items-center gap-2 shrink-0">
-                                                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-black/[0.03] border border-black/[0.05] rounded-lg group/date relative min-w-0 flex-1 h-7 overflow-hidden">
+                                                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-black/[0.03] border border-black/[0.05] rounded-lg group/date relative min-w-0 flex-1 h-7 overflow-hidden cursor-pointer"
+                                                    onClick={(e) => (e.currentTarget.querySelector('input[type="date"]') as any)?.showPicker?.()}
+                                                >
                                                     <Calendar className="w-2.5 h-2.5 text-black/10 shrink-0 pointer-events-none" />
                                                     <input
                                                         type="date"

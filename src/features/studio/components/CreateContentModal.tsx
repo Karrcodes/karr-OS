@@ -26,7 +26,7 @@ const PRIORITY_CONFIG = {
 
 const MILESTONE_CATEGORIES = ['rnd', 'production', 'media', 'growth']
 
-type ContentMilestone = { title: string; impact_score: number; category: string; target_date?: string }
+type ContentMilestone = { title: string; impact_score: number; category: string; priority: PriorityLevel; target_date?: string }
 
 const INITIAL_FORM = {
     title: '',
@@ -54,6 +54,7 @@ export default function CreateContentModal({ isOpen, onClose }: CreateContentMod
     const [newMilestone, setNewMilestone] = useState('')
     const [newMilestoneImpact, setNewMilestoneImpact] = useState(5)
     const [newMilestoneCategory, setNewMilestoneCategory] = useState('production')
+    const [newMilestonePriority, setNewMilestonePriority] = useState<PriorityLevel>('mid')
     const [newMilestoneDate, setNewMilestoneDate] = useState('')
 
     const deadlineInputRef = useRef<HTMLInputElement>(null)
@@ -84,11 +85,13 @@ export default function CreateContentModal({ isOpen, onClose }: CreateContentMod
             title: newMilestone.trim(),
             impact_score: newMilestoneImpact,
             category: newMilestoneCategory,
+            priority: newMilestonePriority,
             target_date: newMilestoneDate || undefined
         }])
         setNewMilestone('')
         setNewMilestoneImpact(5)
         setNewMilestoneCategory('production')
+        setNewMilestonePriority('mid')
         setNewMilestoneDate('')
     }
 
@@ -127,6 +130,7 @@ export default function CreateContentModal({ isOpen, onClose }: CreateContentMod
                     title: m.title,
                     impact_score: m.impact_score,
                     category: m.category,
+                    priority: m.priority,
                     target_date: m.target_date,
                     project_id: formData.project_id || undefined,
                     content_id: !formData.project_id ? created.id : undefined,
@@ -291,7 +295,9 @@ export default function CreateContentModal({ isOpen, onClose }: CreateContentMod
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Deadline</label>
-                            <div className="relative group/dl h-12 flex items-center px-4 bg-black/[0.02] border border-black/[0.1] rounded-2xl overflow-hidden cursor-pointer">
+                            <div className="relative group/dl h-12 flex items-center px-4 bg-black/[0.02] border border-black/[0.1] rounded-2xl overflow-hidden cursor-pointer"
+                                onClick={(e) => (e.currentTarget.querySelector('input[type="date"]') as any)?.showPicker?.()}
+                            >
                                 <Calendar className="w-4 h-4 text-black/20 shrink-0 pointer-events-none" />
                                 <input type="date"
                                     ref={deadlineInputRef}
@@ -314,7 +320,9 @@ export default function CreateContentModal({ isOpen, onClose }: CreateContentMod
                         </div>
                         <div className="space-y-2">
                             <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Publish Date</label>
-                            <div className="relative group/pb h-12 flex items-center px-4 bg-black/[0.02] border border-black/[0.1] rounded-2xl overflow-hidden cursor-pointer">
+                            <div className="relative group/pb h-12 flex items-center px-4 bg-black/[0.02] border border-black/[0.1] rounded-2xl overflow-hidden cursor-pointer"
+                                onClick={(e) => (e.currentTarget.querySelector('input[type="date"]') as any)?.showPicker?.()}
+                            >
                                 <Calendar className="w-4 h-4 text-black/20 shrink-0 pointer-events-none" />
                                 <input type="date"
                                     ref={publishDateInputRef}
@@ -416,7 +424,7 @@ export default function CreateContentModal({ isOpen, onClose }: CreateContentMod
                         )}
 
                         <div className="flex flex-col gap-4 p-5 bg-black/[0.01] border-2 border-dashed border-black/[0.07] rounded-[24px]">
-                            <div className="relative">
+                            <div className="relative group/title">
                                 <Plus className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
                                 <input
                                     type="text"
@@ -426,6 +434,12 @@ export default function CreateContentModal({ isOpen, onClose }: CreateContentMod
                                     onKeyDown={e => { if (e.key === 'Enter' && newMilestone.trim()) { e.preventDefault(); handleAddMilestone() } }}
                                     className="w-full pl-11 pr-4 py-3 bg-transparent border-none text-[13px] font-bold focus:outline-none"
                                 />
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover/title:opacity-100 transition-opacity">
+                                    {(['urgent', 'high', 'mid', 'low'] as const).map(lvl => (
+                                        <button key={lvl} type="button" onClick={() => setNewMilestonePriority(lvl)}
+                                            className={cn("w-2 h-2 rounded-full border transition-all", newMilestonePriority === lvl ? PRIORITY_CONFIG[lvl].bg : "bg-black/[0.05] border-transparent")} />
+                                    ))}
+                                </div>
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="space-y-1.5">
@@ -438,7 +452,9 @@ export default function CreateContentModal({ isOpen, onClose }: CreateContentMod
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-[9px] font-black uppercase text-black/20 ml-2">Deadline</label>
-                                    <div className="relative group/msdate h-9 flex items-center px-3 bg-black/[0.03] border border-black/5 rounded-xl overflow-hidden cursor-pointer">
+                                    <div className="relative group/msdate h-9 flex items-center px-3 bg-black/[0.03] border border-black/5 rounded-xl overflow-hidden cursor-pointer"
+                                        onClick={(e) => (e.currentTarget.querySelector('input[type="date"]') as any)?.showPicker?.()}
+                                    >
                                         <Calendar className="w-3.5 h-3.5 text-black/20 shrink-0 pointer-events-none" />
                                         <input type="date"
                                             ref={newMilestoneDateRef}

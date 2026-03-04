@@ -43,10 +43,11 @@ export default function ContentKanban({
     const [selectedContentId, setSelectedContentId] = useState<string | null>(null)
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [showArchived, setShowArchived] = useState(false)
+    const [sortBy, setSortBy] = useState<'priority' | 'impact' | 'date'>('priority')
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
     const [contentToArchive, setContentToArchive] = useState<StudioContent | null>(null)
 
-    // Unified filtering logic
+    // Unified filtering and sorting logic
     const filteredContent = content.filter(item => {
         const matchesSearch = !searchQuery ||
             item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -54,8 +55,21 @@ export default function ContentKanban({
             item.type?.toLowerCase().includes(searchQuery.toLowerCase())
 
         const isArchivedMatch = showArchived ? item.is_archived : !item.is_archived
-
         return matchesSearch && isArchivedMatch
+    }).sort((a, b) => {
+        if (sortBy === 'priority') {
+            const weights = { urgent: 4, high: 3, mid: 2, low: 1 }
+            return (weights[b.priority || 'low'] || 0) - (weights[a.priority || 'low'] || 0)
+        }
+        if (sortBy === 'impact') {
+            return (b.impact_score || 0) - (a.impact_score || 0)
+        }
+        if (sortBy === 'date') {
+            const dateA = a.publish_date || a.deadline || '9999-12-31'
+            const dateB = b.publish_date || b.deadline || '9999-12-31'
+            return dateA.localeCompare(dateB)
+        }
+        return 0
     })
 
     const handlePointerDrop = async (contentId: string, x: number, y: number) => {
@@ -109,6 +123,14 @@ export default function ContentKanban({
                             <Shield className={cn("w-3 h-3", showArchived ? "text-white" : "text-black/20")} />
                             {showArchived ? 'Viewing Archives' : 'View Archives'}
                         </button>
+                        <div className="flex items-center gap-1.5 p-1 bg-black/[0.03] rounded-xl border border-black/5">
+                            {(['priority', 'impact', 'date'] as const).map(mode => (
+                                <button key={mode} onClick={() => setSortBy(mode)}
+                                    className={cn("px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all", sortBy === mode ? "bg-white text-black shadow-sm" : "text-black/30 hover:text-black/50")}>
+                                    {mode}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                     <button
                         onClick={() => setIsCreateModalOpen(true)}
@@ -379,7 +401,7 @@ function ContentCard({ item, project, milestones, onPointerDragStart, onPointerD
                         !item.cover_url && "opacity-80"
                     )}
                 />
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20" />
+                <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent opacity-60" />
             </div>
 
             <div className="p-4">

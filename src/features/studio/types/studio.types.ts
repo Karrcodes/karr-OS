@@ -133,6 +133,7 @@ export interface StudioMilestone {
     target_date?: string | null;
     category?: string;
     impact_score?: number;
+    priority?: PriorityLevel;
     linked_task_id?: string | null;
     created_at: string;
     updated_at: string;

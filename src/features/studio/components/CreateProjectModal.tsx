@@ -261,7 +261,9 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Project Start Date</label>
-                                <div className="relative group/startdate h-12 flex items-center px-4 bg-black/[0.02] border border-black/[0.1] rounded-2xl overflow-hidden cursor-pointer">
+                                <div className="relative group/startdate h-12 flex items-center px-4 bg-black/[0.02] border border-black/[0.1] rounded-2xl overflow-hidden cursor-pointer"
+                                    onClick={(e) => (e.currentTarget.querySelector('input[type="date"]') as any)?.showPicker?.()}
+                                >
                                     <Calendar className="w-4 h-4 text-black/20 shrink-0 pointer-events-none" />
                                     <input
                                         type="date"
@@ -276,7 +278,9 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Target Completion</label>
-                                <div className="relative group/targetdate h-12 flex items-center px-4 bg-black/[0.02] border border-black/[0.1] rounded-2xl overflow-hidden cursor-pointer">
+                                <div className="relative group/targetdate h-12 flex items-center px-4 bg-black/[0.02] border border-black/[0.1] rounded-2xl overflow-hidden cursor-pointer"
+                                    onClick={(e) => (e.currentTarget.querySelector('input[type="date"]') as any)?.showPicker?.()}
+                                >
                                     <Calendar className="w-4 h-4 text-black/20 shrink-0 pointer-events-none" />
                                     <input
                                         type="date"

@@ -82,6 +82,8 @@ export default function ContentDetailModal({ isOpen, onClose, item }: ContentDet
     const [newMilestoneTitle, setNewMilestoneTitle] = useState('')
     const [newMilestoneScore, setNewMilestoneScore] = useState(5)
     const [newMilestoneDate, setNewMilestoneDate] = useState('')
+    const [newMilestoneCategory, setNewMilestoneCategory] = useState<string>('Concept')
+    const [newMilestonePriority, setNewMilestonePriority] = useState<PriorityLevel>('mid')
 
     // Script state
     const [scriptSections, setScriptSections] = useState<ScriptSections>({ hook: '', intro: '', body: '', cta: '', outro: '' })
@@ -182,12 +184,14 @@ export default function ContentDetailModal({ isOpen, onClose, item }: ContentDet
     }
 
     const handleAddMilestone = async () => {
-        if (!newMilestoneTitle.trim()) return
+        if (!newMilestoneTitle.trim() || !item) return
         try {
             await addMilestone({
                 title: newMilestoneTitle,
                 impact_score: newMilestoneScore,
                 target_date: newMilestoneDate || undefined,
+                category: newMilestoneCategory,
+                priority: newMilestonePriority,
                 content_id: item.id,
                 project_id: item.project_id || undefined,
                 status: 'pending'
@@ -195,6 +199,8 @@ export default function ContentDetailModal({ isOpen, onClose, item }: ContentDet
             setNewMilestoneTitle('')
             setNewMilestoneScore(5)
             setNewMilestoneDate('')
+            setNewMilestoneCategory('Concept')
+            setNewMilestonePriority('mid')
         } catch (err) { console.error('Failed to add milestone:', err) }
     }
 
@@ -374,6 +380,16 @@ export default function ContentDetailModal({ isOpen, onClose, item }: ContentDet
                                                         >+</button>
                                                     </div>
                                                 </div>
+                                                <div className="flex items-center gap-1 shrink-0">
+                                                    {(['urgent', 'high', 'mid', 'low'] as const).map(lvl => (
+                                                        <button key={lvl} onClick={() => updateMilestone(m.id, { priority: lvl })}
+                                                            className={cn("w-2 h-2 rounded-full", (m.priority === lvl || (!m.priority && lvl === 'mid')) ? PRIORITY_CONFIG[lvl].bg : "bg-black/[0.05]")} />
+                                                    ))}
+                                                </div>
+                                                <select value={m.category || 'Other'} onChange={e => updateMilestone(m.id, { category: e.target.value })}
+                                                    className="text-[9px] font-black uppercase tracking-widest bg-black/[0.03] border-none rounded-lg px-2 py-1 focus:ring-0">
+                                                    {['Concept', 'Draft', 'Filming', 'Edit', 'Final', 'Other'].map(c => <option key={c} value={c}>{c}</option>)}
+                                                </select>
                                                 <button
                                                     onClick={() => setMilestoneToDelete(m.id)}
                                                     className="p-1.5 text-black/20 hover:text-red-500 transition-all opacity-100"
@@ -440,6 +456,16 @@ export default function ContentDetailModal({ isOpen, onClose, item }: ContentDet
                                                     >+</button>
                                                 </div>
                                             </div>
+                                            <div className="flex items-center gap-1 bg-white border border-blue-100 rounded-lg p-1">
+                                                {(['urgent', 'high', 'mid', 'low'] as const).map(lvl => (
+                                                    <button key={lvl} type="button" onClick={() => setNewMilestonePriority(lvl)}
+                                                        className={cn("w-3 h-3 rounded-full border transition-all", newMilestonePriority === lvl ? PRIORITY_CONFIG[lvl].bg : "bg-black/[0.05] border-transparent")} />
+                                                ))}
+                                            </div>
+                                            <select value={newMilestoneCategory} onChange={e => setNewMilestoneCategory(e.target.value)}
+                                                className="bg-white border border-blue-100 rounded-lg px-2 py-1 text-[10px] font-black uppercase tracking-widest text-blue-600 focus:outline-none">
+                                                {['Concept', 'Draft', 'Filming', 'Edit', 'Final', 'Other'].map(c => <option key={c} value={c}>{c}</option>)}
+                                            </select>
                                         </div>
                                         <button
                                             onClick={handleAddMilestone}
@@ -497,14 +523,12 @@ export default function ContentDetailModal({ isOpen, onClose, item }: ContentDet
                             <div className="flex gap-2">
                                 {(Object.keys(PRIORITY_CONFIG) as PriorityLevel[]).map(level => (
                                     <button key={level} type="button"
-                                        onClick={() => isEditing && setEditedData(prev => ({ ...prev, priority: level }))}
+                                        onClick={() => updateContent(item.id, { priority: level })}
                                         className={cn(
-                                            "flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider border-2 transition-all",
+                                            "flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider border-2 transition-all cursor-pointer hover:bg-black/[0.04]",
                                             currentPriority === level
                                                 ? cn(PRIORITY_CONFIG[level].bg, "border-transparent scale-105 shadow-md")
-                                                : "bg-black/[0.02] border-black/[0.05] text-black/30",
-                                            isEditing && currentPriority !== level && "hover:bg-black/[0.04] cursor-pointer",
-                                            !isEditing && "cursor-default"
+                                                : "bg-black/[0.02] border-black/[0.05] text-black/30"
                                         )}>
                                         {PRIORITY_CONFIG[level].label}
                                     </button>
@@ -581,7 +605,9 @@ export default function ContentDetailModal({ isOpen, onClose, item }: ContentDet
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Deadline</label>
-                                <div className="relative group/maindate h-12 flex items-center px-4 bg-black/[0.02] border border-black/[0.05] rounded-2xl cursor-pointer">
+                                <div className="relative group/maindate h-12 flex items-center px-4 bg-black/[0.02] border border-black/[0.05] rounded-2xl cursor-pointer"
+                                    onClick={(e) => (e.currentTarget.querySelector('input[type="date"]') as any)?.showPicker?.()}
+                                >
                                     <Calendar className="w-4 h-4 text-black/20 shrink-0 pointer-events-none" />
                                     <input readOnly={!isEditing} type="date"
                                         ref={deadlineInputRef}
@@ -603,7 +629,9 @@ export default function ContentDetailModal({ isOpen, onClose, item }: ContentDet
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Publish Date</label>
-                                <div className="relative group/pubdate h-12 flex items-center px-4 bg-black/[0.02] border border-black/[0.05] rounded-2xl cursor-pointer">
+                                <div className="relative group/pubdate h-12 flex items-center px-4 bg-black/[0.02] border border-black/[0.05] rounded-2xl cursor-pointer"
+                                    onClick={(e) => (e.currentTarget.querySelector('input[type="date"]') as any)?.showPicker?.()}
+                                >
                                     <Calendar className="w-4 h-4 text-black/20 shrink-0 pointer-events-none" />
                                     <input readOnly={!isEditing} type="date"
                                         ref={publishDateInputRef}

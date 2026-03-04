@@ -97,13 +97,14 @@ function ItemDot({
 }: {
     item: { id: string, type: 'task' | 'milestone', data: any },
     containerRef: React.RefObject<HTMLDivElement | null>,
-    safeZoneRef: React.RefObject<HTMLDivElement | null>,
     editItem: (id: string, updates: any, callback: any) => void,
     finalPosition: { x: number, y: number, density?: 'full' | 'compact' | 'minimal' },
     onSelectItem: (item: any) => void,
     isMoveApplied: boolean,
     setHoveredDayIndex: (index: number | null) => void,
-    isConfirmingMove: boolean
+    isConfirmingMove: boolean,
+    safeZoneRef: React.RefObject<HTMLDivElement | null>,
+    projects: StudioProject[]
 }) {
     const [isDragging, setIsDragging] = useState(false)
     const dotRef = useRef<HTMLDivElement>(null)
@@ -248,6 +249,13 @@ function ItemDot({
                             {item.type === 'milestone' && <span className="text-[8px] font-black mr-1 opacity-40">M</span>}
                             {data.title}
                         </span>
+                        {item.type === 'milestone' && (data.content_id || data.project_id) && (
+                            <span className="text-[7px] font-bold text-black/30 border border-black/5 rounded px-1 truncate max-w-[100px]">
+                                {data.content_id
+                                    ? `C: ${projects.find((p: StudioProject) => p.id === data.project_id)?.title || 'Content'}`
+                                    : `P: ${projects.find((p: StudioProject) => p.id === data.project_id)?.title || 'Project'}`}
+                            </span>
+                        )}
                         {data.impact_score && finalPosition.density === 'compact' && (
                             <span className="flex items-center gap-0.5 text-[8px] font-black text-amber-600 flex-shrink-0">
                                 <Zap className="w-2 h-2 fill-current" />
@@ -742,6 +750,7 @@ export default function ProjectMatrix({ searchQuery = '', filterType = null, sho
                         isMoveApplied={isConfirmingMove && movingItem?.id !== item.id}
                         setHoveredDayIndex={setHoveredDayIndex}
                         isConfirmingMove={isConfirmingMove}
+                        projects={projects}
                     />
                 ))}
 
