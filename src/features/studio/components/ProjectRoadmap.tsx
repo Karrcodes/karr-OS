@@ -283,11 +283,19 @@ export default function ProjectRoadmap({
                                     className="absolute left-0 right-0 border-b border-black/[0.03] flex items-center group/row"
                                     style={{ top, height: ROW_HEIGHT }}
                                 >
+                                    {/* Base Light Title (visible when bar is too short) */}
+                                    <div
+                                        className="absolute h-8 flex items-center px-4 text-black/[0.15] text-[10px] font-black uppercase tracking-tight whitespace-nowrap pointer-events-none transition-opacity"
+                                        style={{ left: pos.left }}
+                                    >
+                                        {project.title}
+                                    </div>
+
                                     <motion.div
                                         initial={{ opacity: 0, scaleX: 0 }}
                                         animate={{ opacity: 1, scaleX: 1 }}
                                         transition={{ duration: 0.4, ease: 'easeOut' }}
-                                        className="absolute h-8 rounded-full border border-black/10 shadow-sm flex items-center px-4 overflow-hidden cursor-pointer hover:shadow-md transition-shadow group"
+                                        className="absolute h-8 rounded-full border border-black/10 shadow-sm flex items-center overflow-hidden cursor-pointer hover:shadow-md transition-shadow group/bar"
                                         style={{
                                             left: pos.left,
                                             width: pos.width,
@@ -300,18 +308,12 @@ export default function ProjectRoadmap({
                                             className="absolute inset-y-0 left-0 bg-black/[0.06] rounded-full"
                                             style={{ width: `${progress}%` }}
                                         />
-                                        <div className="relative z-10 flex items-center justify-between w-full gap-4">
-                                            <div className="flex flex-col min-w-0">
-                                                <span className="text-[10px] font-black uppercase tracking-tight truncate text-black group-hover:text-blue-600 transition-colors">
-                                                    {project.title}
-                                                </span>
-                                            </div>
 
-                                            <div className="flex items-center gap-2 shrink-0">
-                                                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <ArrowRight className="w-2.5 h-2.5 text-black/40" />
-                                                </div>
-                                            </div>
+                                        {/* Clipped Dark Title */}
+                                        <div className="relative z-10 flex items-center px-4 w-full h-full">
+                                            <span className="text-[10px] font-black uppercase tracking-tight whitespace-nowrap text-black group-hover/bar:text-blue-600 transition-colors">
+                                                {project.title}
+                                            </span>
                                         </div>
                                     </motion.div>
                                 </div>
