@@ -30,7 +30,8 @@ import {
     Type,
     UploadCloud,
     Video,
-    Zap
+    Zap,
+    Loader2
 } from 'lucide-react'
 import { useStudio } from '../hooks/useStudio'
 import { useGoals } from '../../goals/hooks/useGoals'
@@ -53,6 +54,8 @@ interface ProjectDetailModalProps {
 export default function ProjectDetailModal({ isOpen, onClose, project }: ProjectDetailModalProps) {
     const { milestones, addMilestone, updateMilestone, deleteMilestone, updateProject, loading } = useStudio()
     const [isEditing, setIsEditing] = useState(false)
+    const [isRegenerating, setIsRegenerating] = useState(false)
+    const [isClearingImage, setIsClearingImage] = useState(false)
     const [newMilestoneTitle, setNewMilestoneTitle] = useState('')
     const [editedData, setEditedData] = useState<Partial<StudioProject>>({})
     const [newMilestoneDate, setNewMilestoneDate] = useState('')
@@ -130,6 +133,20 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
             setCoverFile(null)
         } catch (err: any) {
             alert(`Failed to save changes: ${err.message}`)
+        }
+    }
+
+    const handleRegenerateCover = async () => {
+        if (!project || isRegenerating) return;
+        setIsRegenerating(true);
+        setIsClearingImage(true);
+        try {
+            const url = `/api/studio/cover?title=${encodeURIComponent(project.title)}&tagline=${encodeURIComponent(project.tagline || '')}&type=project&id=${project.id}&w=1200&h=630&t=${Date.now()}`;
+            await fetch(url);
+            window.location.reload();
+        } catch (err) {
+            console.error('Failed to regenerate cover:', err);
+            setIsRegenerating(false);
         }
     }
 
@@ -259,14 +276,39 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                 {/* Visual Header / Cover */}
                 <div className="h-48 w-full overflow-hidden shrink-0 bg-black/[0.02] relative">
                     <img
-                        src={project.cover_url || `/api/studio/cover?title=${encodeURIComponent(project.title)}&tagline=${encodeURIComponent(project.tagline || '')}&type=${encodeURIComponent(project.type || '')}&id=${project.id}&w=1200&h=630`}
+                        src={!isClearingImage ? (project.cover_url || `/api/studio/cover?title=${encodeURIComponent(project.title)}&tagline=${encodeURIComponent(project.tagline || '')}&type=project&id=${project.id}&w=1200&h=630`) : ''}
                         alt=""
                         className={cn(
                             "w-full h-full object-cover transition-opacity duration-500",
-                            !project.cover_url && "opacity-40"
+                            (!project.cover_url || isClearingImage) && "opacity-40"
                         )}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                    {isRegenerating && (
+                        <div className="absolute inset-0 bg-black/20 backdrop-blur-sm animate-pulse flex items-center justify-center">
+                            <div className="flex flex-col items-center gap-2">
+                                <Loader2 className="w-6 h-6 text-white animate-spin" />
+                                <span className="text-[10px] font-black text-white uppercase tracking-widest">Regenerating...</span>
+                            </div>
+                        </div>
+                    )}
+                    <div className="absolute top-4 right-4 flex items-center justify-center">
+                        <button
+                            onClick={handleRegenerateCover}
+                            disabled={isRegenerating}
+                            className={cn(
+                                "px-4 py-2 bg-black/40 backdrop-blur-md border border-white/20 rounded-full text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all shadow-xl",
+                                isRegenerating ? "opacity-50 cursor-not-allowed" : "hover:bg-black/60 active:scale-95"
+                            )}
+                        >
+                            {isRegenerating ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                                <Zap className="w-3.5 h-3.5 fill-white" />
+                            )}
+                            {isRegenerating ? 'Working...' : 'Regenerate'}
+                        </button>
+                    </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent h-48 mt-[104px]" />
                 </div>
 

@@ -48,7 +48,7 @@ export default function NotificationsLogPage() {
     return (
         <div className="flex flex-col h-full bg-[#fafafa]">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-black/[0.06] bg-white flex-shrink-0 z-10 sticky top-0">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-black/[0.06] bg-[#fafafa] flex-shrink-0 z-10 sticky top-0">
                 <div className="flex items-center gap-4">
                     <button
                         onClick={() => router.back()}

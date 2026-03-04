@@ -319,6 +319,7 @@ function ContentCard({ item, project, milestones, onPointerDragStart, onPointerD
     const isDragging = useRef(false)
     const startPos = useRef({ x: 0, y: 0 })
     const [isDraggingThis, setIsDraggingThis] = useState(false)
+    const [imageLoading, setImageLoading] = useState(true)
     const priority = item.priority ?? 'low'
     const styles = PRIORITY_STYLES[priority] ?? PRIORITY_STYLES.low
     const deadline = item.deadline || item.publish_date
@@ -410,11 +411,18 @@ function ContentCard({ item, project, milestones, onPointerDragStart, onPointerD
                 <img
                     src={item.cover_url || `/api/studio/cover?title=${encodeURIComponent(item.title)}&tagline=${encodeURIComponent(item.category || '')}&type=content&id=${item.id}&w=1200&h=630`}
                     alt={item.title}
+                    onLoad={() => setImageLoading(false)}
                     className={cn(
-                        "w-full h-full object-cover transition-transform duration-500 group-hover:scale-110",
-                        !item.cover_url && "opacity-80"
+                        "w-full h-full object-cover transition-all duration-700 group-hover:scale-110",
+                        !item.cover_url && "opacity-80",
+                        imageLoading ? "opacity-0" : "opacity-100"
                     )}
                 />
+                {imageLoading && (
+                    <div className="absolute inset-0 bg-black/[0.03] animate-pulse flex items-center justify-center">
+                        <div className="w-full h-full bg-gradient-to-r from-transparent via-black/[0.03] to-transparent bg-[length:200%_100%] animate-shimmer" />
+                    </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent opacity-60" />
             </div>
 

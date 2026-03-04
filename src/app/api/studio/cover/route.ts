@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
             if (error) console.error("Error saving cover_url to database:", error)
         }
 
-        return NextResponse.redirect(finalUrl, 302)
+        return NextResponse.redirect(new URL(finalUrl), 302)
     } catch (e) {
         // Fallback if AI fails or rate limits
         const fallback = encodeURIComponent((title.split(' ')[0] + ',' + (type || 'abstract')).toLowerCase())
@@ -62,6 +62,6 @@ export async function GET(req: NextRequest) {
             await supabase.from(table).update({ cover_url: finalUrl }).eq('id', id)
         }
 
-        return NextResponse.redirect(finalUrl, 302)
+        return NextResponse.redirect(new URL(finalUrl), 302)
     }
 }

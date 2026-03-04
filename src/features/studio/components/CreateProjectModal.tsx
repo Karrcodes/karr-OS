@@ -123,11 +123,11 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
     }
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+        <div className="fixed inset-0 z-[100] flex items-center justify-end">
+            <div className="absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity" onClick={onClose} />
 
-            <div className="relative w-full max-w-xl max-h-[90vh] bg-white rounded-[32px] shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
-                <div className="p-8 overflow-y-auto no-scrollbar">
+            <div className="relative w-full max-w-2xl h-full bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+                <div className="flex-1 overflow-y-auto p-8 no-scrollbar">
                     <div className="flex items-center justify-between mb-8">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-2xl bg-orange-50 flex items-center justify-center">

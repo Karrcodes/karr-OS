@@ -235,6 +235,7 @@ function ProjectCard({ project, milestones, onPointerDragStart, onPointerDragOve
     const isDragging = useRef(false)
     const startPos = useRef({ x: 0, y: 0 })
     const [isDraggingThis, setIsDraggingThis] = useState(false)
+    const [imageLoading, setImageLoading] = useState(true)
 
     const handleArchive = async (e: React.MouseEvent) => {
         e.stopPropagation()
@@ -321,11 +322,18 @@ function ProjectCard({ project, milestones, onPointerDragStart, onPointerDragOve
                 <img
                     src={project.cover_url || `/api/studio/cover?title=${encodeURIComponent(project.title)}&tagline=${encodeURIComponent(project.tagline || '')}&type=${encodeURIComponent(project.type || '')}&id=${project.id}&w=1200&h=630`}
                     alt=""
+                    onLoad={() => setImageLoading(false)}
                     className={cn(
-                        "w-full h-full object-cover transition-transform duration-500 group-hover:scale-110",
-                        !project.cover_url && "opacity-80"
+                        "w-full h-full object-cover transition-all duration-700 group-hover:scale-110",
+                        !project.cover_url && "opacity-80",
+                        imageLoading ? "opacity-0" : "opacity-100"
                     )}
                 />
+                {imageLoading && (
+                    <div className="absolute inset-0 bg-black/[0.03] animate-pulse flex items-center justify-center">
+                        <div className="w-full h-full bg-gradient-to-r from-transparent via-black/[0.03] to-transparent bg-[length:200%_100%] animate-shimmer" />
+                    </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent opacity-60" />
 
                 {/* Platform icons overlay */}

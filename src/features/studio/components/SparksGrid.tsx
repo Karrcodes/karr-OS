@@ -6,6 +6,7 @@ import { useStudio } from '../hooks/useStudio'
 import type { StudioSpark, SparkStatus } from '../types/studio.types'
 import { cn } from '@/lib/utils'
 import SparkDetailModal from './SparkDetailModal'
+import ConfirmationModal from '@/components/ConfirmationModal'
 
 interface SparksGridProps {
     searchQuery?: string
@@ -26,6 +27,7 @@ export default function SparksGrid({ searchQuery = '', view = 'focused', renderA
     const [activeStatus, setActiveStatus] = useState<SparkStatus>('inbox')
     const [draggingId, setDraggingId] = useState<string | null>(null)
     const [dragOverStatus, setDragOverStatus] = useState<SparkStatus | null>(null)
+    const [sparkToDelete, setSparkToDelete] = useState<StudioSpark | null>(null)
 
     const filteredSparks = allSparks.filter(s =>
         s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -33,43 +35,42 @@ export default function SparksGrid({ searchQuery = '', view = 'focused', renderA
         s.type.toLowerCase().includes(searchQuery.toLowerCase())
     )
 
-    // Drag and Drop Logic
-    const onDragStart = (e: React.DragEvent, id: string) => {
+    // Pointer-based Drag and Drop Logic
+    const handlePointerDragStart = (id: string) => {
         setDraggingId(id)
-        e.dataTransfer.setData('sparkId', id)
     }
 
-    const onDragOver = (e: React.DragEvent, status: SparkStatus) => {
-        e.preventDefault()
-        setDragOverStatus(status)
+    const handlePointerDragOver = (x: number, y: number) => {
+        const elements = document.elementsFromPoint(x, y)
+        for (const el of elements) {
+            if (el instanceof HTMLElement && el.dataset.columnStatus) {
+                setDragOverStatus(el.dataset.columnStatus as SparkStatus)
+                return
+            }
+        }
     }
 
-    const onDrop = async (e: React.DragEvent, status: SparkStatus) => {
-        e.preventDefault()
-        const sparkId = e.dataTransfer.getData('sparkId') || draggingId
-        setDragOverStatus(null)
+    const handlePointerDrop = async (sparkId: string, x: number, y: number) => {
+        const elements = document.elementsFromPoint(x, y)
+        let targetStatus: SparkStatus | null = null
+        for (const el of elements) {
+            if (el instanceof HTMLElement && el.dataset.columnStatus) {
+                targetStatus = el.dataset.columnStatus as SparkStatus
+                break
+            }
+        }
         setDraggingId(null)
+        setDragOverStatus(null)
 
-        if (sparkId) {
+        if (targetStatus && sparkId) {
             try {
-                await updateSpark(sparkId, { status })
+                await updateSpark(sparkId, { status: targetStatus })
             } catch (err) {
                 console.error('Failed to move spark:', err)
             }
         }
     }
 
-    useEffect(() => {
-        const handleDelete = async (e: any) => {
-            try {
-                await deleteSpark(e.detail)
-            } catch (err: any) {
-                alert(`Failed to delete spark: ${err.message}`)
-            }
-        }
-        window.addEventListener('studio:deleteSpark', handleDelete)
-        return () => window.removeEventListener('studio:deleteSpark', handleDelete)
-    }, [deleteSpark])
 
     if (loading) {
         return (
@@ -116,16 +117,14 @@ export default function SparksGrid({ searchQuery = '', view = 'focused', renderA
                             return (
                                 <button
                                     key={column.value}
+                                    data-column-status={column.value}
                                     onClick={() => setActiveStatus(column.value)}
-                                    onDragOver={(e) => onDragOver(e, column.value)}
-                                    onDragLeave={() => setDragOverStatus(null)}
-                                    onDrop={(e) => onDrop(e, column.value)}
                                     className={cn(
                                         "flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all relative whitespace-nowrap",
                                         isActive
                                             ? "bg-white text-black shadow-sm"
                                             : "text-black/30 hover:text-black/60",
-                                        isOver && "bg-orange-50 text-orange-600 scale-[1.05] z-10"
+                                        isOver && "bg-orange-50 text-orange-600 scale-[1.05] z-10 shadow-md ring-1 ring-orange-200"
                                     )}
                                 >
                                     <Icon className={cn("w-3.5 h-3.5", isActive ? column.color.split(' ')[0] : "text-current")} />
@@ -161,6 +160,11 @@ export default function SparksGrid({ searchQuery = '', view = 'focused', renderA
                                 spark={spark}
                                 projects={projects}
                                 onClick={() => setSelectedSparkId(spark.id)}
+                                onPointerDragStart={handlePointerDragStart}
+                                onPointerDragOver={handlePointerDragOver}
+                                onPointerDrop={handlePointerDrop}
+                                onPointerDragEnd={() => { setDraggingId(null); setDragOverStatus(null) }}
+                                onDelete={() => setSparkToDelete(spark)}
                             />
                         ) : (
                             <SparkCard
@@ -168,8 +172,11 @@ export default function SparksGrid({ searchQuery = '', view = 'focused', renderA
                                 spark={spark}
                                 projects={projects}
                                 onClick={() => setSelectedSparkId(spark.id)}
-                                onDragStart={(e) => onDragStart(e, spark.id)}
-                                onDragEnd={() => setDraggingId(null)}
+                                onPointerDragStart={handlePointerDragStart}
+                                onPointerDragOver={handlePointerDragOver}
+                                onPointerDrop={handlePointerDrop}
+                                onPointerDragEnd={() => { setDraggingId(null); setDragOverStatus(null) }}
+                                onDelete={() => setSparkToDelete(spark)}
                             />
                         )
                     ))}
@@ -188,11 +195,38 @@ export default function SparksGrid({ searchQuery = '', view = 'focused', renderA
                 spark={allSparks.find(s => s.id === selectedSparkId) || null}
                 projects={projects}
             />
+
+            <ConfirmationModal
+                isOpen={!!sparkToDelete}
+                onClose={() => setSparkToDelete(null)}
+                onConfirm={async () => {
+                    if (sparkToDelete) {
+                        await deleteSpark(sparkToDelete.id)
+                        setSparkToDelete(null)
+                    }
+                }}
+                title="Delete Spark"
+                message={`Are you sure you want to delete "${sparkToDelete?.title}"? This action cannot be undone.`}
+                confirmText="Delete"
+                type="danger"
+            />
         </div>
     )
 }
 
-function SparkListRow({ spark, projects, onClick }: { spark: StudioSpark; projects: any[]; onClick: () => void }) {
+function SparkListRow({ spark, projects, onClick, onPointerDragStart, onPointerDragOver, onPointerDrop, onPointerDragEnd, onDelete }: {
+    spark: StudioSpark;
+    projects: any[];
+    onClick: () => void;
+    onPointerDragStart: (id: string) => void;
+    onPointerDragOver: (x: number, y: number) => void;
+    onPointerDrop: (id: string, x: number, y: number) => void;
+    onPointerDragEnd: () => void;
+    onDelete: () => void;
+}) {
+    const isDragging = useRef(false)
+    const startPos = useRef({ x: 0, y: 0 })
+    const [isDraggingThis, setIsDraggingThis] = useState(false)
     const linkedProject = projects.find(p => p.id === spark.project_id)
     const [imgError, setImgError] = useState(false)
 
@@ -205,10 +239,91 @@ function SparkListRow({ spark, projects, onClick }: { spark: StudioSpark; projec
         person: '👤'
     }[spark.type] || '✨'
 
+    const handlePointerDown = (e: React.PointerEvent) => {
+        if (e.button !== 0) return
+        // Don't drag if clicking a button or an anchor
+        if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('a')) return
+
+        startPos.current = { x: e.clientX, y: e.clientY }
+        isDragging.current = false
+
+        let ghost: HTMLDivElement | null = null
+
+        const handleMove = (ev: PointerEvent) => {
+            const dx = ev.clientX - startPos.current.x
+            const dy = ev.clientY - startPos.current.y
+
+            if (!isDragging.current && Math.sqrt(dx * dx + dy * dy) > 8) {
+                isDragging.current = true
+                setIsDraggingThis(true)
+                onPointerDragStart(spark.id)
+
+                // Clear any existing selection to prevent text copying
+                window.getSelection()?.removeAllRanges()
+
+                ghost = document.createElement('div')
+                ghost.style.cssText = [
+                    'position:fixed',
+                    'pointer-events:none',
+                    'z-index:9999',
+                    'width:200px',
+                    'background:white',
+                    'border-radius:24px',
+                    'box-shadow:0 24px 48px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06)',
+                    'padding:16px',
+                    'transform:rotate(-2deg) scale(0.95)',
+                    'opacity:0.96',
+                    'transition:none',
+                    'font-family:inherit',
+                ].join(';')
+
+                ghost.innerHTML = `
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                        <div style="width:32px;height:32px;background:rgba(0,0,0,0.03);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;">
+                            ${spark.icon_url && !imgError ? `<img src="${spark.icon_url}" style="width:100%;height:100%;object-fit:contain;padding:2px;" />` : typeEmoji}
+                        </div>
+                        <div style="font-size:12px;font-weight:900;color:#000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;">${spark.title}</div>
+                    </div>
+                `
+                document.body.appendChild(ghost)
+            }
+
+            if (isDragging.current) {
+                onPointerDragOver(ev.clientX, ev.clientY)
+                if (ghost) {
+                    ghost.style.left = `${ev.clientX - 10}px`
+                    ghost.style.top = `${ev.clientY - 10}px`
+                }
+            }
+        }
+
+        const handleUp = (ev: PointerEvent) => {
+            window.removeEventListener('pointermove', handleMove)
+            window.removeEventListener('pointerup', handleUp)
+            if (ghost) { ghost.remove(); ghost = null }
+            setIsDraggingThis(false)
+            onPointerDragEnd()
+
+            if (isDragging.current) {
+                onPointerDrop(spark.id, ev.clientX, ev.clientY)
+                isDragging.current = false
+            } else {
+                onClick()
+            }
+        }
+
+        window.addEventListener('pointermove', handleMove)
+        window.addEventListener('pointerup', handleUp)
+    }
+
     return (
         <div
-            onClick={onClick}
-            className="group relative px-6 py-4 bg-white border border-black/[0.05] rounded-[24px] hover:border-emerald-200 hover:shadow-lg transition-all flex items-center gap-6 cursor-pointer"
+            onPointerDown={handlePointerDown}
+            style={{ touchAction: 'none' }}
+            className={cn(
+                "group relative px-6 py-4 bg-white border border-black/[0.05] rounded-[24px] hover:border-emerald-200 hover:shadow-lg transition-all flex items-center gap-6 cursor-pointer select-none",
+                isDraggingThis && "opacity-30 scale-95 shadow-none"
+            )}
         >
             <div className="w-10 h-10 rounded-xl bg-black/[0.02] flex items-center justify-center text-xl border border-black/[0.03] shrink-0">
                 {spark.icon_url && !imgError ? (
@@ -245,9 +360,7 @@ function SparkListRow({ spark, projects, onClick }: { spark: StudioSpark; projec
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
-                        if (confirm(`Are you sure you want to delete this spark?`)) {
-                            window.dispatchEvent(new CustomEvent('studio:deleteSpark', { detail: spark.id }));
-                        }
+                        onDelete();
                     }}
                     className="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-all"
                 >
@@ -258,14 +371,19 @@ function SparkListRow({ spark, projects, onClick }: { spark: StudioSpark; projec
     )
 }
 
-function SparkCard({ spark, projects, onClick, onDragStart, onDragEnd }: {
+function SparkCard({ spark, projects, onClick, onPointerDragStart, onPointerDragOver, onPointerDrop, onPointerDragEnd, onDelete }: {
     spark: StudioSpark;
     projects: any[];
     onClick: () => void;
-    onDragStart?: (e: React.DragEvent, id: string) => void;
-    onDragEnd?: () => void;
+    onPointerDragStart: (id: string) => void;
+    onPointerDragOver: (x: number, y: number) => void;
+    onPointerDrop: (id: string, x: number, y: number) => void;
+    onPointerDragEnd: () => void;
+    onDelete: () => void;
 }) {
-    const dragStarted = useRef(false)
+    const isDragging = useRef(false)
+    const startPos = useRef({ x: 0, y: 0 })
+    const [isDraggingThis, setIsDraggingThis] = useState(false)
     const linkedProject = projects.find(p => p.id === spark.project_id)
     const [imgError, setImgError] = useState(false)
 
@@ -278,25 +396,99 @@ function SparkCard({ spark, projects, onClick, onDragStart, onDragEnd }: {
         person: '👤'
     }[spark.type] || '✨'
 
+    const handlePointerDown = (e: React.PointerEvent) => {
+        // Only trigger on left click (button 0)
+        if (e.button !== 0) return
+        // Don't drag if clicking a button or an anchor
+        if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('a')) return
+
+        startPos.current = { x: e.clientX, y: e.clientY }
+        isDragging.current = false
+
+        let ghost: HTMLDivElement | null = null
+
+        const handleMove = (ev: PointerEvent) => {
+            const dx = ev.clientX - startPos.current.x
+            const dy = ev.clientY - startPos.current.y
+
+            if (!isDragging.current && Math.sqrt(dx * dx + dy * dy) > 8) {
+                isDragging.current = true
+                setIsDraggingThis(true)
+                onPointerDragStart(spark.id)
+
+                // Clear any existing selection to prevent text copying
+                window.getSelection()?.removeAllRanges()
+
+                // Create floating ghost card
+                ghost = document.createElement('div')
+                ghost.style.cssText = [
+                    'position:fixed',
+                    'pointer-events:none',
+                    'z-index:9999',
+                    'width:200px',
+                    'background:white',
+                    'border-radius:24px',
+                    'box-shadow:0 24px 48px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06)',
+                    'padding:16px',
+                    'transform:rotate(-2deg) scale(0.95)',
+                    'opacity:0.96',
+                    'transition:none',
+                    'font-family:inherit',
+                ].join(';')
+
+                ghost.innerHTML = `
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                        <div style="width:32px;height:32px;background:rgba(0,0,0,0.03);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;">
+                            ${spark.icon_url && !imgError ? `<img src="${spark.icon_url}" style="width:100%;height:100%;object-fit:contain;padding:2px;" />` : typeEmoji}
+                        </div>
+                        <div style="font-size:12px;font-weight:900;color:#000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;">${spark.title}</div>
+                    </div>
+                    <div style="font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:0.05em;color:rgba(0,0,0,0.4);">${spark.type}</div>
+                `
+                document.body.appendChild(ghost)
+            }
+
+            if (isDragging.current) {
+                onPointerDragOver(ev.clientX, ev.clientY)
+                if (ghost) {
+                    ghost.style.left = `${ev.clientX - 10}px`
+                    ghost.style.top = `${ev.clientY - 10}px`
+                }
+            }
+        }
+
+        const handleUp = (ev: PointerEvent) => {
+            window.removeEventListener('pointermove', handleMove)
+            window.removeEventListener('pointerup', handleUp)
+
+            if (ghost) {
+                ghost.remove()
+                ghost = null
+            }
+
+            setIsDraggingThis(false)
+            onPointerDragEnd()
+
+            if (isDragging.current) {
+                onPointerDrop(spark.id, ev.clientX, ev.clientY)
+                isDragging.current = false
+            } else {
+                onClick()
+            }
+        }
+
+        window.addEventListener('pointermove', handleMove)
+        window.addEventListener('pointerup', handleUp)
+    }
+
     return (
         <div
-            draggable={!!onDragStart}
-            onDragStart={(e) => {
-                dragStarted.current = true
-                onDragStart?.(e, spark.id)
-            }}
-            onDragEnd={() => {
-                onDragEnd?.()
-                setTimeout(() => { dragStarted.current = false }, 100)
-            }}
-            onClick={(e) => {
-                if (dragStarted.current) {
-                    dragStarted.current = false
-                    return
-                }
-                onClick()
-            }}
-            className="group relative p-6 bg-white border border-black/[0.05] rounded-[32px] hover:border-emerald-200 hover:shadow-xl transition-all flex flex-col cursor-pointer active:scale-95 touch-none"
+            onPointerDown={handlePointerDown}
+            style={{ touchAction: 'none' }}
+            className={cn(
+                "group relative p-6 bg-white border border-black/[0.05] rounded-[32px] hover:border-emerald-200 hover:shadow-xl transition-all flex flex-col cursor-pointer active:scale-95 select-none",
+                isDraggingThis && "opacity-30 scale-95 shadow-none"
+            )}
         >
             {/* Header */}
             <div className="flex justify-between items-start mb-4">
@@ -316,9 +508,7 @@ function SparkCard({ spark, projects, onClick, onDragStart, onDragEnd }: {
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
-                            if (confirm(`Are you sure you want to delete this spark?`)) {
-                                window.dispatchEvent(new CustomEvent('studio:deleteSpark', { detail: spark.id }));
-                            }
+                            onDelete();
                         }}
                         className="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-all flex items-center justify-center"
                     >

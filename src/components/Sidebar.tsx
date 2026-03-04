@@ -186,6 +186,27 @@ export function Sidebar() {
     const [isMounted, setIsMounted] = useState(false)
     const { settings, setSetting, loading: settingsLoading } = useSettings()
     const [isCollapsed, setIsCollapsed] = useState(false)
+    const [hoveredItem, setHoveredItem] = useState<string | null>(null)
+    const [activeTabGap, setActiveTabGap] = useState<{ start: number; end: number } | null>(null)
+    const sidebarRef = useRef<HTMLElement>(null)
+    const collapsedNavRef = useRef<HTMLElement>(null)
+    const tabRefs = useRef<Record<string, HTMLAnchorElement | null>>({})
+
+    // Update activeTabGap whenever pathname or collapsed state changes
+    useEffect(() => {
+        if (!isCollapsed || !collapsedNavRef.current || !sidebarRef.current) { setActiveTabGap(null); return }
+        const sidebarRect = sidebarRef.current.getBoundingClientRect()
+        const activeLabel = orderedTabs.find(label => {
+            const item = navItems.find(i => i.label === label)
+            return item && pathname.startsWith(item.href)
+        })
+        if (!activeLabel || !tabRefs.current[activeLabel]) { setActiveTabGap(null); return }
+        const tabRect = tabRefs.current[activeLabel]!.getBoundingClientRect()
+        setActiveTabGap({
+            start: Math.max(0, tabRect.top - sidebarRect.top - 12), // 12px for top curve
+            end: tabRect.bottom - sidebarRect.top + 12,             // 12px for bottom curve
+        })
+    }, [pathname, isCollapsed, orderedTabs])
 
     // Touch handlers for swipe to close on mobile
     const [touchStartX, setTouchStartX] = useState<number | null>(null)
@@ -548,12 +569,24 @@ export function Sidebar() {
     return (
         <>
             {/* ── Desktop sidebar (always visible ≥ md) ─────────────────── */}
-            <aside className={cn(
-                "hidden md:flex fixed left-0 top-0 h-full flex-col z-[200] bg-white border-r border-black/[0.07] shadow-[1px_0_0_0_rgba(0,0,0,0.04)] transition-[width] duration-300 overflow-visible",
-                isCollapsed ? "w-[64px]" : "w-[220px]"
-            )}>
+            <aside
+                ref={sidebarRef as React.RefObject<HTMLElement>}
+                className={cn(
+                    "hidden md:flex fixed left-0 top-0 h-full flex-col z-[200] bg-white transition-[width] duration-300 overflow-visible",
+                    isCollapsed ? "w-[64px]" : "w-[220px]"
+                )}
+            >
+                {/* Dynamic separator — transparent gap curves around the active tab */}
+                <div
+                    className="absolute right-0 top-0 w-px h-full pointer-events-none z-[5]"
+                    style={{
+                        background: isCollapsed && activeTabGap
+                            ? `linear-gradient(to bottom, rgba(0,0,0,0.07) ${activeTabGap.start}px, transparent ${activeTabGap.start}px, transparent ${activeTabGap.end}px, rgba(0,0,0,0.07) ${activeTabGap.end}px)`
+                            : 'rgba(0,0,0,0.07)',
+                    }}
+                />
                 {/* Logo area */}
-                <div className="px-4 pt-5 pb-4 border-b border-black/[0.06] flex items-center justify-between h-[72px] shrink-0">
+                <div className="px-4 border-b border-black/[0.06] flex items-center justify-between h-[96px] shrink-0">
                     <Link href="/system/control-centre">
                         {isCollapsed ? (
                             <span className="text-3xl font-serif italic font-medium tracking-tight leading-none select-none">ö</span>
@@ -584,11 +617,18 @@ export function Sidebar() {
                             const isExpanded = !!expandedFolders[item.label]
 
                             return (
-                                <div key={item.label} className="w-full flex justify-center relative mb-1 z-10">
+                                <div key={item.label} className="w-full flex justify-end relative mb-1 z-10">
                                     {/* Main Tab */}
                                     <div className="relative group">
+                                        {/* Folder-tab box — absolutely positioned, independent from icon */}
+                                        {isActive && (
+                                            <div className="absolute top-0 right-0 -mr-[2px] w-14 h-11 bg-[#fafafa] rounded-l-xl rounded-r-none border border-black/[0.1] border-r-transparent z-0 pointer-events-none before:content-[''] before:absolute before:-top-3 before:right-0 before:w-3 before:h-3 before:rounded-br-xl before:shadow-[3px_3px_0_3px_#fafafa] before:border-b before:border-black/[0.07] before:pointer-events-none after:content-[''] after:absolute after:-bottom-3 after:right-0 after:w-3 after:h-3 after:rounded-tr-xl after:shadow-[3px_-3px_0_3px_#fafafa] after:border-t after:border-black/[0.07] after:pointer-events-none" />
+                                        )}
                                         <Link
+                                            ref={el => { tabRefs.current[item.label] = el }}
                                             href={item.href}
+                                            onMouseEnter={() => setHoveredItem(item.label)}
+                                            onMouseLeave={() => setHoveredItem(null)}
                                             onClick={(e) => {
                                                 if ('sub' in item && item.sub) {
                                                     if (isActive) {
@@ -602,13 +642,20 @@ export function Sidebar() {
                                                 }
                                             }}
                                             className={cn(
-                                                'w-10 h-10 flex items-center justify-center rounded-xl transition-all',
-                                                isActive ? 'bg-black/10 text-black shadow-sm' : 'text-black/35 hover:text-black/80 hover:bg-black/[0.04]'
+                                                'w-11 h-11 mr-2 flex items-center justify-center transition-colors duration-150 transform-gpu cursor-pointer relative z-10 rounded-xl',
+                                                isActive
+                                                    ? 'text-black'
+                                                    : hoveredItem === item.label
+                                                        ? 'text-black bg-black/[0.05]'
+                                                        : 'text-black/35'
                                             )}
                                         >
                                             <Icon className="w-4.5 h-4.5" />
                                         </Link>
-                                        <div className="pointer-events-none absolute left-[calc(100%+12px)] top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-black text-white text-[11px] font-bold rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-[200] shadow-xl">
+                                        <div className={cn(
+                                            "pointer-events-none absolute left-[calc(100%+12px)] top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-black text-white text-[11px] font-bold rounded-lg whitespace-nowrap transition-opacity z-[200] shadow-xl",
+                                            hoveredItem === item.label ? "opacity-100" : "opacity-0"
+                                        )}>
                                             {item.label}
                                         </div>
                                     </div>

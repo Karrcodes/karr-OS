@@ -1565,6 +1565,8 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
                                 editTask={editTask}
                                 category={category}
                                 setSelectedTaskForModal={setSelectedTaskForModal}
+                                setSelectedProjectForModal={setSelectedProjectForModal}
+                                setSelectedContentForModal={setSelectedContentForModal}
                                 projects={projects}
                                 content={content}
                             />
@@ -1574,7 +1576,15 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
                                 milestone={item.data}
                                 project={projects.find(p => p.id === item.data.project_id)}
                                 content={content.find(c => c.id === item.data.content_id)}
-                                onSelectItem={(m) => setSelectedMilestoneForModal(m)}
+                                onSelectItem={(m) => {
+                                    if (m.content_id) {
+                                        setSelectedContentForModal(content.find(c => c.id === m.content_id))
+                                    } else if (m.project_id) {
+                                        setSelectedProjectForModal(projects.find(p => p.id === m.project_id))
+                                    } else {
+                                        setSelectedMilestoneForModal(m)
+                                    }
+                                }}
                             />
                         )
                     ))
@@ -1617,13 +1627,15 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
 }
 
 
-function TaskRow({ task, toggleTask, deleteTask, editTask, category, setSelectedTaskForModal, projects, content }: {
+function TaskRow({ task, toggleTask, deleteTask, editTask, category, setSelectedTaskForModal, setSelectedProjectForModal, setSelectedContentForModal, projects, content }: {
     task: Task,
     toggleTask: any,
     deleteTask: any,
     editTask: any,
     category: string,
     setSelectedTaskForModal: (task: Task) => void,
+    setSelectedProjectForModal: (project: any) => void,
+    setSelectedContentForModal: (content: any) => void,
     projects: any[],
     content: any[]
 }) {
@@ -2226,7 +2238,15 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category, setSelected
                 )}
                 <div
                     className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
-                    onClick={() => setSelectedTaskForModal(task)}
+                    onClick={() => {
+                        if (task.content_id) {
+                            setSelectedContentForModal(content.find(c => c.id === task.content_id))
+                        } else if (task.project_id) {
+                            setSelectedProjectForModal(projects.find(p => p.id === task.project_id))
+                        } else {
+                            setSelectedTaskForModal(task)
+                        }
+                    }}
                 >
                     {/* Checkbox — isolated from row click to prevent opening modal */}
                     <div

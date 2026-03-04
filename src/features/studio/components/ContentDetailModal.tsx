@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { X, Video, Globe, Calendar, Rocket, AlignLeft, Edit3, Save, Trash2, ExternalLink, Link as LinkIcon, CheckCircle2, MapPin, Navigation, DollarSign, Plus, FileText, Lightbulb, ChevronDown, ChevronRight, Clock, Hash, Zap, UploadCloud, Type, Shield } from 'lucide-react'
+import { Video, Calendar, CheckCircle2, Trash2, Plus, Zap, Rocket, Shield, ListTodo, MoreVertical, Edit, X, Hash, Clock, Link as LinkIcon, Download, Share2, Layout, FileText, Settings, Loader2, Globe, Edit3, Save, ExternalLink, MapPin, Navigation, DollarSign, Lightbulb, ChevronDown, ChevronRight, UploadCloud, Type, AlignLeft } from 'lucide-react'
 import type { StudioContent, ContentStatus, Platform, ContentCategory, ContentScene, PriorityLevel } from '../types/studio.types'
 import { useStudio } from '../hooks/useStudio'
 import PlatformIcon from './PlatformIcon'
@@ -72,6 +72,8 @@ export default function ContentDetailModal({ isOpen, onClose, item }: ContentDet
     const { updateContent, deleteContent, projects, milestones, addMilestone, updateMilestone, deleteMilestone } = useStudio()
     const [activeTab, setActiveTab] = useState<'details' | 'script'>('details')
     const [isEditing, setIsEditing] = useState(false)
+    const [isRegenerating, setIsRegenerating] = useState(false)
+    const [isClearingImage, setIsClearingImage] = useState(false)
     const [editedData, setEditedData] = useState<Partial<StudioContent>>({})
     const [newScene, setNewScene] = useState<Partial<ContentScene>>({ type: 'public' })
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -201,6 +203,20 @@ export default function ContentDetailModal({ isOpen, onClose, item }: ContentDet
         } catch (err: any) { alert(`Failed to archive: ${err.message}`) }
     }
 
+    const handleRegenerateCover = async () => {
+        if (!item || isRegenerating) return;
+        setIsRegenerating(true);
+        setIsClearingImage(true);
+        try {
+            const url = `/api/studio/cover?title=${encodeURIComponent(item.title)}&tagline=${encodeURIComponent(item.category || '')}&type=content&id=${item.id}&w=1200&h=630&t=${Date.now()}`;
+            await fetch(url);
+            window.location.reload();
+        } catch (err) {
+            console.error('Failed to regenerate cover:', err);
+            setIsRegenerating(false);
+        }
+    }
+
     const handleAddMilestone = async () => {
         if (!newMilestoneTitle.trim() || !item) return
         try {
@@ -229,22 +245,47 @@ export default function ContentDetailModal({ isOpen, onClose, item }: ContentDet
     const coverSrc = coverPreview || editedData.cover_url || item.cover_url
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+        <div className="fixed inset-0 z-[100] flex items-center justify-end">
+            <div className="absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity" onClick={onClose} />
 
-            <div className="relative w-full max-w-2xl bg-white rounded-[40px] shadow-2xl border border-black/[0.05] overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh] font-outfit">
+            <div className="relative w-full max-w-2xl h-full bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 font-outfit">
 
                 {/* Cover Banner */}
                 <div className="w-full h-36 relative overflow-hidden flex-shrink-0 bg-black/[0.02]">
                     <img
-                        src={coverSrc || `/api/studio/cover?title=${encodeURIComponent(item.title)}&tagline=${encodeURIComponent(item.category || '')}&type=content&id=${item.id}&w=1200&h=630`}
+                        src={!isClearingImage ? (coverSrc || `/api/studio/cover?title=${encodeURIComponent(item.title)}&tagline=${encodeURIComponent(item.category || '')}&type=content&id=${item.id}&w=1200&h=630`) : ''}
                         alt={item.title}
                         className={cn(
                             "w-full h-full object-cover transition-opacity duration-500",
-                            !coverSrc && "opacity-40"
+                            (!coverSrc || isClearingImage) && "opacity-40"
                         )}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                    {isRegenerating && (
+                        <div className="absolute inset-0 bg-black/20 backdrop-blur-sm animate-pulse flex items-center justify-center">
+                            <div className="flex flex-col items-center gap-2">
+                                <Loader2 className="w-6 h-6 text-white animate-spin" />
+                                <span className="text-[10px] font-black text-white uppercase tracking-widest">Regenerating...</span>
+                            </div>
+                        </div>
+                    )}
+                    <div className="absolute top-4 right-4 flex items-center justify-center">
+                        <button
+                            onClick={handleRegenerateCover}
+                            disabled={isRegenerating}
+                            className={cn(
+                                "px-4 py-2 bg-black/40 backdrop-blur-md border border-white/20 rounded-full text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all shadow-xl",
+                                isRegenerating ? "opacity-50 cursor-not-allowed" : "hover:bg-black/60 active:scale-95"
+                            )}
+                        >
+                            {isRegenerating ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                                <Zap className="w-3.5 h-3.5 fill-white" />
+                            )}
+                            {isRegenerating ? 'Working...' : 'Regenerate'}
+                        </button>
+                    </div>
                     {isEditing && (coverPreview || editedData.cover_url || item.cover_url) && (
                         <button type="button" onClick={() => { setCoverFile(null); setCoverPreview(''); setEditedData(prev => ({ ...prev, cover_url: '' })) }}
                             className="absolute top-3 right-3 p-1.5 bg-black/40 text-white rounded-full hover:bg-black/60 transition-colors">

@@ -138,6 +138,11 @@ export default function CreateContentModal({ isOpen, onClose }: CreateContentMod
                 } as any)
             }
 
+            // Trigger cover generation if it doesn't have one
+            if (!finalCoverUrl) {
+                fetch(`/api/studio/cover?title=${encodeURIComponent(formData.title)}&tagline=${encodeURIComponent(formData.category || '')}&type=content&id=${created.id}&w=1200&h=630`);
+            }
+
 
             onClose()
             setFormData(INITIAL_FORM)
@@ -153,10 +158,10 @@ export default function CreateContentModal({ isOpen, onClose }: CreateContentMod
     }
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+        <div className="fixed inset-0 z-[100] flex items-center justify-end">
+            <div className="absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity" onClick={onClose} />
 
-            <div className="relative w-full max-w-xl max-h-[92vh] bg-white rounded-[32px] shadow-2xl border border-black/[0.05] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
+            <div className="relative w-full max-w-2xl h-full bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
 
                 {/* Cover Banner */}
                 {coverPreview && (

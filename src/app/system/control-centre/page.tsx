@@ -76,9 +76,9 @@ export default function ControlCentrePage() {
     const loading = tasksLoading || financeLoading
 
     return (
-        <div className="min-h-screen bg-white flex flex-col">
+        <div className="min-h-screen bg-[#fafafa] flex flex-col">
             {/* Page Header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-black/[0.06] bg-white flex-shrink-0 shadow-sm z-10">
+            <div className="flex items-center justify-between px-6 py-5 h-[96px] border-b border-black/[0.06] bg-[#fafafa] flex-shrink-0 shadow-sm z-10">
                 <div>
                     <h1 className="text-[22px] font-bold text-black tracking-tight">Control Centre</h1>
                     <p className="text-[12px] text-black/35 mt-0.5">System Hub</p>
