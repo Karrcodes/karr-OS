@@ -251,9 +251,13 @@ function ItemDot({
                             data.impact_score && data.impact_score >= 8 && "font-black text-[11px]"
                         )}>
                             {item.type === 'milestone' ? (
-                                data.content_id ? <Video className="w-2.5 h-2.5 opacity-40" /> : <Rocket className="w-2.5 h-2.5 opacity-40" />
+                                data.content_id ? <Video className="w-2.5 h-2.5 opacity-40 shrink-0" /> : <Rocket className="w-2.5 h-2.5 opacity-40 shrink-0" />
                             ) : (
-                                <Zap className="w-2.5 h-2.5 opacity-40 text-amber-500" />
+                                <>
+                                    {data.project_id && <Rocket className="w-3 h-3 text-orange-500 shrink-0" />}
+                                    {data.content_id && <Video className="w-3 h-3 text-blue-500 shrink-0" />}
+                                    <Zap className="w-2.5 h-2.5 opacity-40 text-amber-500 shrink-0" />
+                                </>
                             )}
                             {data.title}
                         </span>
@@ -270,7 +274,7 @@ function ItemDot({
                             </span>
                         )}
                     </div>
-                    {(data.content_id || data.project_id) && (
+                    {finalPosition.density === 'full' && (data.content_id || data.project_id) && (
                         <div className="mt-[-3px]">
                             <span className="text-[7px] font-bold text-black/30 bg-black/[0.03] border border-black/5 rounded px-1 py-0.5 w-fit">
                                 {data.content_id
@@ -416,60 +420,117 @@ export default function ProjectMatrix({ searchQuery = '', filterType = null, sho
             return lastStablePositions.current
         }
 
-        const positions = filteredItems.map(item => {
-            const isMovingThis = movingItem?.id === item.id
-            const isAnchored = isMovingThis && (isConfirmingMove || !!newMovePos)
-            const targetPos = isAnchored && newMovePos ? newMovePos : null
+        const positions = filteredItems.map((item, idx) => {
+            const isMovingThisItem = movingItem?.id === item.id;
+            const isAnchored = isMovingThisItem && (isConfirmingMove || !!newMovePos);
+            const targetPos = isAnchored && newMovePos ? newMovePos : null;
 
-            let x, y;
-            if (item.type === 'milestone') {
-                x = targetPos ? targetPos.x : getUrgencyX(item.data.target_date)
-                y = targetPos ? targetPos.y : getPriorityY(item.data.impact_score)
+            let x: number;
+            let y: number;
+
+            if (item.type === 'task') {
+                const task = item.data;
+                x = targetPos ? targetPos.x : getUrgencyX(task.due_date);
+                y = targetPos ? targetPos.y : getImpactY(task.priority as any);
             } else {
-                x = targetPos ? targetPos.x : getUrgencyX(item.data.due_date)
-                y = targetPos ? targetPos.y : getImpactY(item.data.priority)
+                const milestone = item.data;
+                x = targetPos ? targetPos.x : getUrgencyX(milestone.target_date);
+                y = targetPos ? targetPos.y : getPriorityY(getPriorityFromImpact(milestone.impact_score));
             }
 
-            const titleLen = Math.min(item.data.title?.length || 10, 25)
-            const width = 3 + (titleLen * 0.8) + (item.data.impact_score ? 2 : 0)
-            return { id: item.id, x, y, width, height: 3 }
-        })
+            // Dynamic Width Calculation
+            const titleLen = Math.min(item.data.title.length, 25);
+            const impactBonus = (item.data as any).impact_score ? 2 : 0;
+            const width = 3 + (titleLen * 0.8) + impactBonus;
+            const height = 3;
 
-        // Physics overlap resolution
-        const iterations = 60
-        const topWall = 5
-        const bottomWall = 95
+            return {
+                id: item.id,
+                x,
+                y,
+                width,
+                height,
+                priority: item.type === 'task' ? (item.data.priority === 'urgent' ? 10 : item.data.priority === 'high' ? 8 : 5) : (item.data.impact_score || 5)
+            };
+        });
+
+        // Resolve Overlaps (Vertical Only)
+        const iterations = 60;
+        const topWall = 5;
+        const bottomWall = 95;
+
         for (let i = 0; i < iterations; i++) {
-            let totalShift = 0
+            let totalShift = 0;
             for (let j = 0; j < positions.length; j++) {
                 for (let k = j + 1; k < positions.length; k++) {
-                    const a = positions[j]
-                    const b = positions[k]
-                    const xOverlap = Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x - 3, b.x - 3)
+                    const a = positions[j];
+                    const b = positions[k];
+
+                    // Only check tasks on the same approximate X-axis (colliding labels)
+                    const xOverlap = Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x - 3, b.x - 3);
+
                     if (xOverlap > 0) {
-                        const dy = a.y - b.y
-                        const distance = Math.abs(dy)
-                        const minSpacing = 5.5
+                        const dy = a.y - b.y;
+                        const distance = Math.abs(dy);
+                        const minSpacing = 5.5;
+
                         if (distance < minSpacing) {
-                            const force = (minSpacing - distance) / 2
-                            const shift = dy >= 0 ? force : -force
-                            positions[j].y += shift
-                            positions[k].y -= shift
-                            totalShift += Math.abs(shift)
+                            const force = (minSpacing - distance) / 2;
+                            const shift = dy >= 0 ? force : -force;
+
+                            const isAMoving = movingItem?.id === a.id;
+                            const isBMoving = movingItem?.id === b.id;
+
+                            if (isAMoving) {
+                                positions[k].y -= shift * 1.2;
+                            } else if (isBMoving) {
+                                positions[j].y += shift * 1.2;
+                            } else {
+                                positions[j].y += shift;
+                                positions[k].y -= shift;
+                            }
+                            totalShift += Math.abs(shift);
                         }
                     }
                 }
             }
-            if (totalShift < 0.01) break
+
+            // Global Boundary Pass
+            positions.forEach(p => {
+                if (p.y < topWall) {
+                    const delta = topWall - p.y;
+                    positions.forEach(other => {
+                        if (Math.abs(other.x - p.x) < 5) other.y += delta;
+                    });
+                }
+                if (p.y > bottomWall) {
+                    const delta = p.y - bottomWall;
+                    positions.forEach(other => {
+                        if (Math.abs(other.x - p.x) < 5) other.y -= delta;
+                    });
+                }
+            });
+
+            if (totalShift < 0.01) break;
         }
 
-        const result = positions.reduce((acc, pos) => {
-            acc[pos.id] = { x: pos.x, y: pos.y, density: 'full' as const }
-            return acc
-        }, {} as Record<string, any>)
+        // Density Analysis: Determine labels visibility based on neighborhood density
+        const result = positions.reduce((acc, pos, idx) => {
+            const neighbors = positions.filter((p, i) => i !== idx && Math.abs(p.x - pos.x) < 5);
+            const closeNeighbors = neighbors.filter(p => Math.abs(p.y - pos.y) < 10);
+            const veryCloseNeighbors = neighbors.filter(p => Math.abs(p.y - pos.y) < 5);
 
-        lastStablePositions.current = result
-        wasConfirmingRef.current = isConfirmingMove
+            let density: 'full' | 'compact' | 'minimal' = 'full';
+            if (veryCloseNeighbors.length > 0 || neighbors.length > 5) density = 'minimal';
+            else if (closeNeighbors.length > 0) density = 'compact';
+
+            acc[pos.id] = { x: pos.x, y: pos.y, density };
+            return acc;
+        }, {} as Record<string, { x: number, y: number, density: 'full' | 'compact' | 'minimal' }>);
+
+        lastStablePositions.current = result;
+        wasConfirmingRef.current = isConfirmingMove;
+
         return result
     }, [filteredItems, movingItem, newMovePos, isConfirmingMove])
 

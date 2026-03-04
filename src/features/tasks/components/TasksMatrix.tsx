@@ -251,7 +251,7 @@ function ItemDot({
             className={cn(
                 "group flex items-center cursor-grab active:cursor-grabbing",
                 "backdrop-blur-[2px] shadow-sm hover:shadow-md",
-                isDragging ? "shadow-2xl ring-4 ring-black/10 scale-110 z-[100] select-none" : "z-10 transition-all duration-300",
+                isDragging ? "shadow-2xl ring-4 ring-black/10 scale-110 z-[100] select-none" : "z-10",
                 item.type === 'milestone' && "border-2",
                 finalPosition.density === 'full' ? cn(
                     "border items-center p-2 pr-4 h-auto min-h-[44px] rounded-xl",
@@ -314,7 +314,7 @@ function ItemDot({
                         )}
                     </div>
 
-                    {item.type === 'task' && (data.project_id || data.content_id) && (
+                    {finalPosition.density === 'full' && item.type === 'task' && (data.project_id || data.content_id) && (
                         <div className="mt-[-2px]">
                             <span className="text-[7px] font-bold text-black/30 bg-black/[0.03] border border-black/5 rounded px-1 py-0.5">
                                 {data.content_id
@@ -323,7 +323,7 @@ function ItemDot({
                             </span>
                         </div>
                     )}
-                    {item.type === 'milestone' && (data.project_id || data.content_id) && (
+                    {finalPosition.density === 'full' && item.type === 'milestone' && (data.project_id || data.content_id) && (
                         <div className="mt-[-2px]">
                             <span className="text-[7px] font-bold text-black/30 bg-black/[0.03] border border-black/5 rounded px-1 py-0.5">
                                 {data.content_id
