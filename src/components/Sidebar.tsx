@@ -585,23 +585,69 @@ export function Sidebar() {
                             const Icon = item.icon
                             const isActive = !('disabled' in item && item.disabled) && pathname.startsWith(item.href)
                             if ('disabled' in item && item.disabled) return null
+                            const isExpanded = expandedFolders.has(item.label)
+
                             return (
-                                <div key={item.label} className="relative group w-full flex justify-center">
-                                    <Link
-                                        href={item.href}
-                                        className={cn(
-                                            'w-10 h-10 flex items-center justify-center rounded-xl transition-all',
-                                            isActive ? 'bg-black/10 text-black' : 'text-black/35 hover:text-black/80 hover:bg-black/[0.04]'
-                                        )}
-                                    >
-                                        <Icon className="w-4.5 h-4.5" />
-                                    </Link>
-                                    {/* Tooltip */}
-                                    <div className="pointer-events-none absolute left-full ml-2 px-2.5 py-1.5 bg-black text-white text-[11px] font-bold rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-[200] shadow-xl">
-                                        {item.label}
+                                <div key={item.label} className="w-full flex justify-center flex-col items-center gap-1 mb-1">
+                                    {/* Main Tab */}
+                                    <div className="relative group">
+                                        <Link
+                                            href={item.href}
+                                            onClick={() => {
+                                                if (item.subItems) {
+                                                    setExpandedFolders(prev => {
+                                                        const next = new Set(prev)
+                                                        if (next.has(item.label)) {
+                                                            // Optional: toggle off if clicking again? Default expanded sidebar keeps it open, here we can toggle
+                                                            next.delete(item.label)
+                                                        } else {
+                                                            next.add(item.label)
+                                                        }
+                                                        localStorage.setItem('schro_sidebar_expanded', JSON.stringify([...next]))
+                                                        return next
+                                                    })
+                                                }
+                                            }}
+                                            className={cn(
+                                                'w-10 h-10 flex items-center justify-center rounded-xl transition-all',
+                                                isActive ? 'bg-black/10 text-black shadow-sm' : 'text-black/35 hover:text-black/80 hover:bg-black/[0.04]'
+                                            )}
+                                        >
+                                            <Icon className="w-4.5 h-4.5" />
+                                        </Link>
+                                        <div className="pointer-events-none absolute left-full ml-2 px-2.5 py-1.5 bg-black text-white text-[11px] font-bold rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-[200] shadow-xl">
+                                            {item.label}
+                                        </div>
                                     </div>
+
+                                    {/* Sub-items drop-down */}
+                                    {item.subItems && isExpanded && (
+                                        <div className="flex flex-col gap-1 items-center mt-0.5 mb-1 animate-in slide-in-from-top-2 fade-in duration-200">
+                                            {item.subItems.map(subItem => {
+                                                const SubIcon = subItem.icon || ((props: any) => <div className={cn("w-1.5 h-1.5 rounded-full bg-current", props.className)} />)
+                                                const isSubActive = pathname === subItem.href
+                                                return (
+                                                    <div key={subItem.href} className="relative group">
+                                                        <Link
+                                                            href={subItem.href}
+                                                            className={cn(
+                                                                'w-8 h-8 flex items-center justify-center rounded-lg transition-all',
+                                                                isSubActive ? 'bg-black/5 text-black border border-black/[0.05]' : 'text-black/30 hover:text-black/70 hover:bg-black/[0.02]'
+                                                            )}
+                                                        >
+                                                            <SubIcon className="w-3.5 h-3.5" />
+                                                        </Link>
+                                                        <div className="pointer-events-none absolute left-full ml-2 px-2.5 py-1.5 bg-black text-white text-[11px] font-bold rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-[200] shadow-xl">
+                                                            {subItem.label}
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    )}
                                 </div>
                             )
+
                         })}
                     </nav>
                 ) : (
