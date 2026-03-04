@@ -58,28 +58,33 @@ export default function ContentKanban({
         return matchesSearch && isArchivedMatch
     })
 
-    const onDragStart = (e: React.DragEvent, id: string) => {
-        setDraggingId(id)
-        e.dataTransfer.setData('contentId', id)
-        e.dataTransfer.effectAllowed = 'move'
-    }
-
-    const onDragOver = (e: React.DragEvent, status: ContentStatus) => {
-        e.preventDefault()
-        setDragOverStatus(status)
-    }
-
-    const onDrop = async (e: React.DragEvent, status: ContentStatus) => {
-        e.preventDefault()
+    const handlePointerDrop = async (contentId: string, x: number, y: number) => {
+        const elements = document.elementsFromPoint(x, y)
+        let targetStatus: ContentStatus | null = null
+        for (const el of elements) {
+            if (el instanceof HTMLElement && el.dataset.columnStatus) {
+                targetStatus = el.dataset.columnStatus as ContentStatus
+                break
+            }
+        }
+        setDraggingId(null)
         setDragOverStatus(null)
-        const contentId = e.dataTransfer.getData('contentId') || draggingId
-        if (!contentId) return
-        try {
-            await updateContent(contentId, { status })
-        } catch (err) {
-            console.error('Failed to update content status:', err)
-        } finally {
-            setDraggingId(null)
+        if (targetStatus && contentId) {
+            try {
+                await updateContent(contentId, { status: targetStatus })
+            } catch (err) {
+                console.error('Failed to update content status:', err)
+            }
+        }
+    }
+
+    const handlePointerDragOver = (x: number, y: number) => {
+        const elements = document.elementsFromPoint(x, y)
+        for (const el of elements) {
+            if (el instanceof HTMLElement && el.dataset.columnStatus) {
+                setDragOverStatus(el.dataset.columnStatus as ContentStatus)
+                return
+            }
         }
     }
 
@@ -148,10 +153,8 @@ export default function ContentKanban({
                     return (
                         <button
                             key={column.value}
+                            data-column-status={column.value}
                             onClick={() => setActiveStatus(column.value)}
-                            onDragOver={(e) => onDragOver(e, column.value)}
-                            onDragLeave={() => setDragOverStatus(null)}
-                            onDrop={(e) => onDrop(e, column.value)}
                             className={cn(
                                 "flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all relative whitespace-nowrap",
                                 isActive
@@ -177,14 +180,12 @@ export default function ContentKanban({
 
             {/* Content Display (Focused) */}
             <div
+                data-column-status={activeStatus}
                 className={cn(
                     "rounded-[32px] transition-all min-h-[600px] border-2 border-transparent",
                     dragOverStatus === activeStatus ? "bg-orange-50/50 border-orange-200 shadow-inner" :
                         draggingId ? "bg-black/[0.01] border-dashed border-black/[0.05]" : "bg-transparent"
                 )}
-                onDragOver={(e) => onDragOver(e, activeStatus)}
-                onDragLeave={() => setDragOverStatus(null)}
-                onDrop={(e) => onDrop(e, activeStatus)}
             >
                 {loading ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-2">
@@ -210,8 +211,10 @@ export default function ContentKanban({
                                         item={item}
                                         project={projects.find(p => p.id === item.project_id)}
                                         milestones={milestones.filter(m => m.content_id === item.id)}
-                                        onDragStart={(e) => onDragStart(e, item.id)}
-                                        onDragEnd={() => setDraggingId(null)}
+                                        onPointerDragStart={(id) => setDraggingId(id)}
+                                        onPointerDragOver={handlePointerDragOver}
+                                        onPointerDrop={handlePointerDrop}
+                                        onPointerDragEnd={() => { setDraggingId(null); setDragOverStatus(null) }}
                                         onClick={() => setSelectedContentId(item.id)}
                                         onArchive={() => setContentToArchive(item)}
                                         onDelete={() => setDeleteConfirmId(item.id)}
@@ -264,18 +267,21 @@ export default function ContentKanban({
     )
 }
 
-function ContentCard({ item, project, milestones, onDragStart, onDragEnd, onClick, onArchive, onDelete }: {
+function ContentCard({ item, project, milestones, onPointerDragStart, onPointerDragOver, onPointerDrop, onPointerDragEnd, onClick, onArchive, onDelete }: {
     item: StudioContent
     project?: StudioProject
     milestones: StudioMilestone[]
-    onDragStart: (e: React.DragEvent) => void
-    onDragEnd: () => void
+    onPointerDragStart: (id: string) => void
+    onPointerDragOver: (x: number, y: number) => void
+    onPointerDrop: (id: string, x: number, y: number) => void
+    onPointerDragEnd: () => void
     onClick: () => void
     onArchive: () => void
     onDelete: () => void
 }) {
     const { updateContent } = useStudio()
-    const dragStarted = useRef(false)
+    const isDragging = useRef(false)
+    const startPos = useRef({ x: 0, y: 0 })
     const priority = item.priority ?? 'low'
     const styles = PRIORITY_STYLES[priority] ?? PRIORITY_STYLES.low
     const deadline = item.deadline || item.publish_date
@@ -285,28 +291,46 @@ function ContentCard({ item, project, milestones, onDragStart, onDragEnd, onClic
         onArchive()
     }
 
+    const handleCoverPointerDown = (e: React.PointerEvent) => {
+        e.preventDefault()
+        startPos.current = { x: e.clientX, y: e.clientY }
+        isDragging.current = false
+
+        const handleMove = (ev: PointerEvent) => {
+            const dx = ev.clientX - startPos.current.x
+            const dy = ev.clientY - startPos.current.y
+            if (!isDragging.current && Math.sqrt(dx * dx + dy * dy) > 8) {
+                isDragging.current = true
+                onPointerDragStart(item.id)
+            }
+            if (isDragging.current) onPointerDragOver(ev.clientX, ev.clientY)
+        }
+
+        const handleUp = (ev: PointerEvent) => {
+            window.removeEventListener('pointermove', handleMove)
+            window.removeEventListener('pointerup', handleUp)
+            if (isDragging.current) {
+                onPointerDrop(item.id, ev.clientX, ev.clientY)
+                isDragging.current = false
+            } else {
+                onClick()
+            }
+        }
+
+        window.addEventListener('pointermove', handleMove)
+        window.addEventListener('pointerup', handleUp)
+    }
+
     return (
         <div
-            draggable
-            onDragStart={(e) => {
-                dragStarted.current = true
-                onDragStart(e)
-            }}
-            onDragEnd={() => {
-                onDragEnd()
-                setTimeout(() => { dragStarted.current = false }, 100)
-            }}
-            onClick={(e) => {
-                if (dragStarted.current) {
-                    dragStarted.current = false
-                    return
-                }
-                onClick()
-            }}
-            className="group relative bg-white border border-black/[0.05] rounded-2xl cursor-grab active:cursor-grabbing hover:border-orange-200 hover:shadow-xl transition-all overflow-hidden touch-none"
+            className="group relative bg-white border border-black/[0.05] rounded-2xl hover:border-orange-200 hover:shadow-xl transition-all overflow-hidden"
         >
             {/* Cover image area */}
-            <div className="w-full h-24 overflow-hidden relative">
+            <div
+                onPointerDown={handleCoverPointerDown}
+                className="w-full h-24 overflow-hidden relative cursor-grab active:cursor-grabbing select-none"
+                style={{ touchAction: 'none' }}
+            >
                 <img
                     src={item.cover_url || `https://loremflickr.com/600/400/${encodeURIComponent(item.title.split(' ')[0])},abstract?lock=${item.id.length}`}
                     alt={item.title}

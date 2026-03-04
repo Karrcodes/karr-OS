@@ -46,29 +46,33 @@ export default function ProjectKanban({ searchQuery = '', filterType = null, sho
         return () => window.removeEventListener('studio:deleteProject', handleDeleteEvent)
     }, [deleteProject])
 
-    const onDragStart = (e: React.DragEvent, id: string) => {
-        setDraggingId(id)
-        e.dataTransfer.setData('projectId', id)
-        e.dataTransfer.effectAllowed = 'move'
-    }
-
-    const onDragOver = (e: React.DragEvent, status: ProjectStatus) => {
-        e.preventDefault()
-        setDragOverStatus(status)
-    }
-
-    const onDrop = async (e: React.DragEvent, status: ProjectStatus) => {
-        e.preventDefault()
+    const handlePointerDrop = async (projectId: string, x: number, y: number) => {
+        const elements = document.elementsFromPoint(x, y)
+        let targetStatus: ProjectStatus | null = null
+        for (const el of elements) {
+            if (el instanceof HTMLElement && el.dataset.columnStatus) {
+                targetStatus = el.dataset.columnStatus as ProjectStatus
+                break
+            }
+        }
+        setDraggingId(null)
         setDragOverStatus(null)
-        const projectId = e.dataTransfer.getData('projectId') || draggingId
-        if (!projectId) return
+        if (targetStatus && projectId) {
+            try {
+                await updateProject(projectId, { status: targetStatus })
+            } catch (err) {
+                console.error('Failed to update project status:', err)
+            }
+        }
+    }
 
-        try {
-            await updateProject(projectId, { status })
-        } catch (err) {
-            console.error('Failed to update project status:', err)
-        } finally {
-            setDraggingId(null)
+    const handlePointerDragOver = (x: number, y: number) => {
+        const elements = document.elementsFromPoint(x, y)
+        for (const el of elements) {
+            if (el instanceof HTMLElement && el.dataset.columnStatus) {
+                setDragOverStatus(el.dataset.columnStatus as ProjectStatus)
+                return
+            }
         }
     }
 
@@ -102,24 +106,12 @@ export default function ProjectKanban({ searchQuery = '', filterType = null, sho
 
                         {/* Column Content Area */}
                         <div
+                            data-column-status={column.value}
                             className={cn(
                                 "flex-1 rounded-[32px] transition-all p-2 space-y-3 min-h-[400px] border-2 border-transparent",
                                 isOver ? "bg-orange-50/50 border-orange-200 shadow-inner scale-[1.01]" :
                                     draggingId ? "bg-black/[0.01] border-dashed border-black/[0.05]" : "bg-transparent"
                             )}
-                            onDragOver={(e) => {
-                                e.preventDefault();
-                                e.dataTransfer.dropEffect = 'move';
-                                onDragOver(e, column.value);
-                            }}
-                            onDragLeave={(e) => {
-                                // Only reset if we actually leave the container (not entering a child)
-                                const rect = e.currentTarget.getBoundingClientRect();
-                                if (e.clientX <= rect.left || e.clientX >= rect.right || e.clientY <= rect.top || e.clientY >= rect.bottom) {
-                                    setDragOverStatus(null);
-                                }
-                            }}
-                            onDrop={(e) => onDrop(e, column.value)}
                         >
                             {loading ? (
                                 <div className="space-y-3">
@@ -138,8 +130,10 @@ export default function ProjectKanban({ searchQuery = '', filterType = null, sho
                                         key={project.id}
                                         project={project}
                                         milestones={milestones}
-                                        onDragStart={(e) => onDragStart(e, project.id)}
-                                        onDragEnd={() => setDraggingId(null)}
+                                        onPointerDragStart={(id) => setDraggingId(id)}
+                                        onPointerDragOver={handlePointerDragOver}
+                                        onPointerDrop={handlePointerDrop}
+                                        onPointerDragEnd={() => { setDraggingId(null); setDragOverStatus(null) }}
                                         onClick={() => setSelectedProjectId(project.id)}
                                         onArchive={() => setProjectToArchive(project)}
                                         onDelete={() => setProjectToDelete(project)}
@@ -190,44 +184,64 @@ export default function ProjectKanban({ searchQuery = '', filterType = null, sho
     )
 }
 
-function ProjectCard({ project, milestones, onDragStart, onDragEnd, onClick, onArchive, onDelete }: {
+function ProjectCard({ project, milestones, onPointerDragStart, onPointerDragOver, onPointerDrop, onPointerDragEnd, onClick, onArchive, onDelete }: {
     project: StudioProject;
     milestones: StudioMilestone[];
-    onDragStart: (e: React.DragEvent) => void;
-    onDragEnd: () => void;
+    onPointerDragStart: (id: string) => void;
+    onPointerDragOver: (x: number, y: number) => void;
+    onPointerDrop: (id: string, x: number, y: number) => void;
+    onPointerDragEnd: () => void;
     onClick: () => void;
     onArchive: () => void;
     onDelete: () => void;
 }) {
-    const { updateProject } = useStudio()
-    const dragStarted = useRef(false)
+    const isDragging = useRef(false)
+    const startPos = useRef({ x: 0, y: 0 })
 
     const handleArchive = async (e: React.MouseEvent) => {
         e.stopPropagation()
         onArchive()
     }
+
+    const handleCoverPointerDown = (e: React.PointerEvent) => {
+        e.preventDefault()
+        startPos.current = { x: e.clientX, y: e.clientY }
+        isDragging.current = false
+
+        const handleMove = (ev: PointerEvent) => {
+            const dx = ev.clientX - startPos.current.x
+            const dy = ev.clientY - startPos.current.y
+            if (!isDragging.current && Math.sqrt(dx * dx + dy * dy) > 8) {
+                isDragging.current = true
+                onPointerDragStart(project.id)
+            }
+            if (isDragging.current) {
+                onPointerDragOver(ev.clientX, ev.clientY)
+            }
+        }
+
+        const handleUp = (ev: PointerEvent) => {
+            window.removeEventListener('pointermove', handleMove)
+            window.removeEventListener('pointerup', handleUp)
+            if (isDragging.current) {
+                onPointerDrop(project.id, ev.clientX, ev.clientY)
+                isDragging.current = false
+            } else {
+                onClick()
+            }
+        }
+
+        window.addEventListener('pointermove', handleMove)
+        window.addEventListener('pointerup', handleUp)
+    }
     return (
         <div
-            onClick={(e) => {
-                if (dragStarted.current) {
-                    dragStarted.current = false
-                    return
-                }
-                onClick()
-            }}
             className="group relative bg-white border border-black/[0.05] rounded-2xl hover:border-orange-200 hover:shadow-xl transition-all overflow-hidden"
         >
             <div
-                draggable
-                onDragStart={(e) => {
-                    dragStarted.current = true
-                    onDragStart(e)
-                }}
-                onDragEnd={() => {
-                    onDragEnd()
-                    setTimeout(() => { dragStarted.current = false }, 100)
-                }}
-                className="h-32 w-full overflow-hidden relative cursor-grab active:cursor-grabbing touch-none"
+                onPointerDown={handleCoverPointerDown}
+                className="h-32 w-full overflow-hidden relative cursor-grab active:cursor-grabbing select-none"
+                style={{ touchAction: 'none' }}
             >
                 <img
                     src={project.cover_url || `https://loremflickr.com/800/600/${encodeURIComponent(project.title.split(' ')[0])},tech,design?lock=${project.id.length}`}
