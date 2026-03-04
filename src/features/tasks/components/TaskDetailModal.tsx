@@ -471,8 +471,8 @@ export function TaskDetailModal({ task, isOpen, onClose, onToggleSubtask, onTogg
                                             start_time: editStartTime || undefined,
                                             location: editLocation || undefined,
                                             origin_location: editOriginLocation || undefined,
-                                            project_id: editProjectId || undefined,
-                                            content_id: editContentId || undefined
+                                            project_id: editProjectId || null,
+                                            content_id: editContentId || null
                                         })
                                         setIsEditing(false)
                                     } else if (!isEditing) {
