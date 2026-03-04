@@ -119,7 +119,9 @@ function ItemDot({
     activeCategories,
     isMoveApplied,
     setHoveredDayIndex,
-    isConfirmingMove
+    isConfirmingMove,
+    projects,
+    content
 }: {
     item: { type: 'task' | 'milestone', id: string, data: any },
     containerRef: React.RefObject<HTMLDivElement | null>,
@@ -131,7 +133,9 @@ function ItemDot({
     activeCategories: readonly any[],
     isMoveApplied: boolean,
     setHoveredDayIndex: (index: number | null) => void,
-    isConfirmingMove: boolean
+    isConfirmingMove: boolean,
+    projects: any[],
+    content: any[]
 }) {
     const [isDragging, setIsDragging] = useState(false)
     const dotRef = useRef<HTMLDivElement>(null)
@@ -287,11 +291,13 @@ function ItemDot({
                     <div className="flex items-center gap-1.5">
                         {item.type === 'task' && data.project_id && <Rocket className="w-3 h-3 text-orange-500 shrink-0" />}
                         {item.type === 'task' && data.content_id && <Video className="w-3 h-3 text-blue-500 shrink-0" />}
+                        {item.type === 'milestone' && (
+                            data.content_id ? <Video className="w-2.5 h-2.5 opacity-40" /> : <Rocket className="w-2.5 h-2.5 opacity-40" />
+                        )}
                         <span className={cn(
                             "text-[10px] font-semibold tracking-tight leading-none whitespace-nowrap text-black/80",
                             data.impact_score && data.impact_score >= 8 && "font-black text-[11px]"
                         )}>
-                            {item.type === 'milestone' && <span className="text-[8px] font-black mr-1 opacity-40">M</span>}
                             {data.title}
                         </span>
                         {data.impact_score && finalPosition.density === 'compact' && (
@@ -307,6 +313,25 @@ function ItemDot({
                             </span>
                         )}
                     </div>
+
+                    {item.type === 'task' && (data.project_id || data.content_id) && (
+                        <div className="mt-[-2px]">
+                            <span className="text-[7px] font-bold text-black/30 bg-black/[0.03] border border-black/5 rounded px-1 py-0.5">
+                                {data.content_id
+                                    ? content.find((c: any) => c.id === data.content_id)?.title || 'Content'
+                                    : projects.find((p: any) => p.id === data.project_id)?.title || 'Project'}
+                            </span>
+                        </div>
+                    )}
+                    {item.type === 'milestone' && (data.project_id || data.content_id) && (
+                        <div className="mt-[-2px]">
+                            <span className="text-[7px] font-bold text-black/30 bg-black/[0.03] border border-black/5 rounded px-1 py-0.5">
+                                {data.content_id
+                                    ? content.find((c: any) => c.id === data.content_id)?.title || 'Content'
+                                    : projects.find((p: any) => p.id === data.project_id)?.title || 'Project'}
+                            </span>
+                        </div>
+                    )}
 
                     {finalPosition.density === 'full' && (
                         <div className="flex items-center gap-2 mt-1">
@@ -994,6 +1019,8 @@ export function TasksMatrix() {
                             isMoveApplied={movingItem?.id === item.id}
                             setHoveredDayIndex={setHoveredDayIndex}
                             isConfirmingMove={isConfirmingMove}
+                            projects={projects}
+                            content={content}
                         />
                     )
                 })}
@@ -1127,11 +1154,11 @@ export function TasksMatrix() {
                     })
                 }}
                 onEditTask={async (taskId, updates) => {
-                    await editTask(taskId, updates)
-                    await refetch()
+                    // Optimistic update: immediately update modal state so changes are visible
                     if (selectedTaskForModal?.id === taskId) {
-                        setSelectedTaskForModal({ ...selectedTaskForModal, ...updates })
+                        setSelectedTaskForModal(prev => prev ? { ...prev, ...updates } : prev)
                     }
+                    await editTask(taskId, updates)
                 }}
             />
 
