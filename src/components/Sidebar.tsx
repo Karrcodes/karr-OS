@@ -597,12 +597,12 @@ export function Sidebar() {
                                                 if ('sub' in item && item.sub) {
                                                     if (isActive) {
                                                         e.preventDefault()
+                                                        setExpandedFolders(prev => {
+                                                            const next = { ...prev, [item.label]: !prev[item.label] }
+                                                            localStorage.setItem('schro_sidebar_expanded', JSON.stringify(next))
+                                                            return next
+                                                        })
                                                     }
-                                                    setExpandedFolders(prev => {
-                                                        const next = { ...prev, [item.label]: !prev[item.label] }
-                                                        localStorage.setItem('schro_sidebar_expanded', JSON.stringify(next))
-                                                        return next
-                                                    })
                                                 }
                                             }}
                                             className={cn(
