@@ -58,7 +58,7 @@ export function TasksLayout({ children }: { children: React.ReactNode }) {
                         {isPlanner ? (
                             <button
                                 onClick={() => router.push('/tasks/todo')}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border bg-black text-white border-black"
+                                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border bg-black text-white border-black"
                             >
                                 <Activity className="w-3.5 h-3.5" />
                                 <span className="hidden sm:inline">Planner</span>
@@ -66,7 +66,7 @@ export function TasksLayout({ children }: { children: React.ReactNode }) {
                         ) : (
                             <Link
                                 href="/tasks/planner"
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border bg-white text-black/60 border-black/[0.08] hover:border-black/20"
+                                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border bg-white text-black/60 border-black/[0.08] hover:border-black/20"
                             >
                                 <Activity className="w-3.5 h-3.5" />
                                 <span className="hidden sm:inline">Planner</span>
@@ -94,7 +94,7 @@ export function TasksLayout({ children }: { children: React.ReactNode }) {
                         {isOnCalendar ? (
                             <button
                                 onClick={() => router.push('/tasks/todo')}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border bg-black text-white border-black"
+                                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border bg-black text-white border-black"
                             >
                                 <Calendar className="w-3.5 h-3.5" />
                                 <span className="hidden sm:inline">Calendar</span>
@@ -102,7 +102,7 @@ export function TasksLayout({ children }: { children: React.ReactNode }) {
                         ) : (
                             <Link
                                 href="/tasks/calendar"
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border bg-white text-black/60 border-black/[0.08] hover:border-black/20"
+                                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border bg-white text-black/60 border-black/[0.08] hover:border-black/20"
                             >
                                 <Calendar className="w-3.5 h-3.5" />
                                 <span className="hidden sm:inline">Calendar</span>

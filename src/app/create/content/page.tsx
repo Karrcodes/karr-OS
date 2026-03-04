@@ -33,12 +33,13 @@ export default function ContentPage() {
                                 key={value}
                                 onClick={() => setView(value)}
                                 className={cn(
-                                    "flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-tight transition-all",
-                                    view === value ? 'bg-white text-black shadow-sm' : 'text-black/30 hover:text-black/60'
+                                    "items-center gap-1.5 px-4 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-tight transition-all",
+                                    view === value ? 'bg-white text-black shadow-sm' : 'text-black/30 hover:text-black/60',
+                                    value === 'board' ? 'flex' : 'hidden sm:flex'
                                 )}
                             >
                                 <Icon className="w-3.5 h-3.5" />
-                                {label}
+                                <span className={value !== 'board' ? "hidden sm:inline" : ""}>{label}</span>
                             </button>
                         ))}
                     </div>

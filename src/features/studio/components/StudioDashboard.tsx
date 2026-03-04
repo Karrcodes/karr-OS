@@ -9,8 +9,9 @@ import CreateProjectModal from './CreateProjectModal'
 import CreateSparkModal from './CreateSparkModal'
 import ProjectDetailModal from './ProjectDetailModal'
 import SparkDetailModal from './SparkDetailModal'
+import ContentDetailModal from './ContentDetailModal'
 import PlatformIcon from './PlatformIcon'
-import type { StudioProject, StudioSpark } from '../types/studio.types'
+import type { StudioProject, StudioSpark, StudioContent } from '../types/studio.types'
 
 export default function StudioDashboard() {
     const { projects, sparks, content, press, loading, error } = useStudio()
@@ -18,6 +19,7 @@ export default function StudioDashboard() {
     const [isProjectModalOpen, setIsProjectModalOpen] = useState(false)
     const [isSparkModalOpen, setIsSparkModalOpen] = useState(false)
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
+    const [selectedContentId, setSelectedContentId] = useState<string | null>(null)
     const [selectedSparkId, setSelectedSparkId] = useState<string | null>(null)
     const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active')
 
@@ -34,6 +36,7 @@ export default function StudioDashboard() {
     const recentSparks = sparks.slice(0, 4)
 
     const selectedProject = projects.find(p => p.id === selectedProjectId) || null
+    const selectedContent = content.find(c => c.id === selectedContentId) || null
     const selectedSpark = sparks.find(s => s.id === selectedSparkId) || null
 
     return (
@@ -169,10 +172,10 @@ export default function StudioDashboard() {
                                     <div
                                         key={project.id}
                                         onClick={() => setSelectedProjectId(project.id)}
-                                        className="p-4 bg-white border border-black/[0.05] rounded-2xl hover:border-orange-200 hover:shadow-lg transition-all group cursor-pointer"
+                                        className="bg-white border border-black/[0.05] rounded-2xl hover:border-orange-200 hover:shadow-lg transition-all group cursor-pointer overflow-hidden flex flex-col"
                                     >
                                         {project.cover_url && (
-                                            <div className="h-24 -mx-4 -mt-4 mb-4 overflow-hidden relative">
+                                            <div className="h-24 w-full relative shrink-0">
                                                 <img
                                                     src={project.cover_url || `/api/studio/cover?title=${encodeURIComponent(project.title)}&tagline=${encodeURIComponent(project.tagline || '')}&type=${encodeURIComponent(project.type || '')}&id=${project.id}&w=1200&h=630`}
                                                     alt=""
@@ -197,55 +200,57 @@ export default function StudioDashboard() {
                                                 )}
                                             </div>
                                         )}
-                                        <div className="flex justify-between items-start mb-3">
+                                        <div className="p-4 flex flex-col flex-1">
+                                            <div className="flex justify-between items-start mb-3">
 
-                                            <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                                                <div className="flex flex-wrap items-center gap-1.5">
-                                                    {!project.cover_url && project.platforms && project.platforms.length > 0 && (
-                                                        <div className="flex -space-x-1 mr-1">
-                                                            {project.platforms.map(p => (
-                                                                <div
-                                                                    key={p}
-                                                                    className="w-4 h-4 rounded-full bg-white border border-black/[0.1] flex items-center justify-center text-black shadow-sm z-[1]"
-                                                                    title={p}
-                                                                >
-                                                                    <PlatformIcon platform={p} className="w-2 h-2" />
-                                                                </div>
-                                                            ))}
+                                                <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                                                    <div className="flex flex-wrap items-center gap-1.5">
+                                                        {!project.cover_url && project.platforms && project.platforms.length > 0 && (
+                                                            <div className="flex -space-x-1 mr-1">
+                                                                {project.platforms.map(p => (
+                                                                    <div
+                                                                        key={p}
+                                                                        className="w-4 h-4 rounded-full bg-white border border-black/[0.1] flex items-center justify-center text-black shadow-sm z-[1]"
+                                                                        title={p}
+                                                                    >
+                                                                        <PlatformIcon platform={p} className="w-2 h-2" />
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                        <div className={cn(
+                                                            "px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-tight",
+                                                            project.status === 'active' ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"
+                                                        )}>
+                                                            {project.status}
                                                         </div>
-                                                    )}
-                                                    <div className={cn(
-                                                        "px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-tight",
-                                                        project.status === 'active' ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"
-                                                    )}>
-                                                        {project.status}
                                                     </div>
                                                 </div>
-                                            </div>
-                                            <div className="flex flex-col items-end gap-1.5 shrink-0">
-                                                <div className="flex items-center gap-2">
-                                                    {project.target_date && (
-                                                        <div className="flex items-center gap-1 text-[9px] text-black/30 font-bold uppercase tracking-tighter">
-                                                            <Clock className="w-2.5 h-2.5" />
-                                                            {new Date(project.target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                                                        </div>
-                                                    )}
-                                                    {project.impact_score && (
-                                                        <div className="flex items-center gap-0.5">
-                                                            <Zap className="w-3 h-3 text-orange-500 fill-orange-500" />
-                                                            <span className="text-[11px] font-black text-orange-600">
-                                                                {project.impact_score}
-                                                            </span>
-                                                        </div>
-                                                    )}
+                                                <div className="flex flex-col items-end gap-1.5 shrink-0">
+                                                    <div className="flex items-center gap-2">
+                                                        {project.target_date && (
+                                                            <div className="flex items-center gap-1 text-[9px] text-black/30 font-bold uppercase tracking-tighter">
+                                                                <Clock className="w-2.5 h-2.5" />
+                                                                {new Date(project.target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                                                            </div>
+                                                        )}
+                                                        {project.impact_score && (
+                                                            <div className="flex items-center gap-0.5">
+                                                                <Zap className="w-3 h-3 text-orange-500 fill-orange-500" />
+                                                                <span className="text-[11px] font-black text-orange-600">
+                                                                    {project.impact_score}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    {project.gtv_featured && <Shield className="w-3.5 h-3.5 text-blue-500" />}
                                                 </div>
-                                                {project.gtv_featured && <Shield className="w-3.5 h-3.5 text-blue-500" />}
                                             </div>
+
+
+                                            <h4 className="text-[14px] font-black text-black leading-tight group-hover:text-orange-600 transition-colors">{project.title}</h4>
+                                            <p className="text-[11px] text-black/40 mt-1 line-clamp-2">{project.tagline || 'No tagline set'}</p>
                                         </div>
-
-
-                                        <h4 className="text-[14px] font-black text-black leading-tight group-hover:text-orange-600 transition-colors">{project.title}</h4>
-                                        <p className="text-[11px] text-black/40 mt-1 line-clamp-2">{project.tagline || 'No tagline set'}</p>
 
                                     </div>
                                 ))
@@ -280,9 +285,10 @@ export default function StudioDashboard() {
                                 activeContent.slice(0, 4).map(item => (
                                     <div
                                         key={item.id}
-                                        className="p-4 bg-white border border-black/[0.05] rounded-2xl hover:border-blue-200 hover:shadow-lg transition-all group cursor-pointer flex flex-col h-full"
+                                        onClick={() => setSelectedContentId(item.id)}
+                                        className="bg-white border border-black/[0.05] rounded-2xl hover:border-blue-200 hover:shadow-lg transition-all group cursor-pointer overflow-hidden flex flex-col h-full"
                                     >
-                                        <div className="h-24 -mx-4 -mt-4 mb-4 overflow-hidden relative shrink-0 rounded-t-2xl">
+                                        <div className="h-24 w-full relative shrink-0 bg-black/[0.02]">
                                             <img
                                                 src={item.cover_url || `/api/studio/cover?title=${encodeURIComponent(item.title)}&tagline=${encodeURIComponent(item.category || 'Content')}&type=${encodeURIComponent(item.type || '')}&id=${item.id}&w=1200&h=630`}
                                                 alt=""
@@ -299,31 +305,33 @@ export default function StudioDashboard() {
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="flex justify-between items-start mb-3">
-                                            <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                                                <div className="flex flex-wrap items-center gap-1.5">
-                                                    <div className={cn(
-                                                        "px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-tight",
-                                                        item.status === 'scheduled' ? "bg-purple-50 text-purple-600" :
-                                                            item.status === 'edited' ? "bg-emerald-50 text-emerald-600" :
-                                                                item.status === 'filmed' ? "bg-orange-50 text-orange-600" :
-                                                                    "bg-blue-50 text-blue-600"
-                                                    )}>
-                                                        {item.status}
+                                        <div className="p-4 flex flex-col flex-1">
+                                            <div className="flex justify-between items-start mb-3">
+                                                <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                                                    <div className="flex flex-wrap items-center gap-1.5">
+                                                        <div className={cn(
+                                                            "px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-tight",
+                                                            item.status === 'scheduled' ? "bg-purple-50 text-purple-600" :
+                                                                item.status === 'edited' ? "bg-emerald-50 text-emerald-600" :
+                                                                    item.status === 'filmed' ? "bg-orange-50 text-orange-600" :
+                                                                        "bg-blue-50 text-blue-600"
+                                                        )}>
+                                                            {item.status}
+                                                        </div>
                                                     </div>
-                                                </div>
 
+                                                </div>
+                                                <div className="flex flex-col items-end gap-1.5 shrink-0">
+                                                    {(item.priority === 'urgent' || item.priority === 'high') && (
+                                                        <div className="flex items-center gap-0.5">
+                                                            <Zap className={cn("w-3 h-3", item.priority === 'urgent' ? "text-red-500 fill-red-500" : "text-orange-500 fill-orange-500")} />
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <div className="flex flex-col items-end gap-1.5 shrink-0">
-                                                {(item.priority === 'urgent' || item.priority === 'high') && (
-                                                    <div className="flex items-center gap-0.5">
-                                                        <Zap className={cn("w-3 h-3", item.priority === 'urgent' ? "text-red-500 fill-red-500" : "text-orange-500 fill-orange-500")} />
-                                                    </div>
-                                                )}
-                                            </div>
+                                            <h4 className="text-[14px] font-black text-black leading-tight group-hover:text-blue-600 transition-colors line-clamp-2">{item.title}</h4>
+                                            <p className="text-[11px] text-black/40 mt-1 line-clamp-1">{item.category || 'Content'}</p>
                                         </div>
-                                        <h4 className="text-[14px] font-black text-black leading-tight group-hover:text-blue-600 transition-colors line-clamp-2">{item.title}</h4>
-                                        <p className="text-[11px] text-black/40 mt-1 line-clamp-1">{item.category || 'Content'}</p>
                                     </div>
                                 ))
                             )}
@@ -421,6 +429,11 @@ export default function StudioDashboard() {
                 isOpen={!!selectedProjectId}
                 onClose={() => setSelectedProjectId(null)}
                 project={selectedProject}
+            />
+            <ContentDetailModal
+                isOpen={!!selectedContentId}
+                onClose={() => setSelectedContentId(null)}
+                item={selectedContent}
             />
             <SparkDetailModal
                 isOpen={!!selectedSparkId}
