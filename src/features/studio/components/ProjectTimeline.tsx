@@ -27,11 +27,11 @@ const STAGE_CONFIG: Record<StrategicStage, { label: string, desc: string, icon: 
         label: 'Extraction',
         desc: 'Critical delivery window',
         icon: AlertCircle,
-        color: 'text-orange-600 bg-orange-50'
+        color: 'text-amber-600 bg-amber-50'
     },
     secured: {
         label: 'Secured',
-        desc: 'Projects shipped & archived',
+        desc: 'Projects shipped & achieved',
         icon: CheckCircle2,
         color: 'text-emerald-600 bg-emerald-50'
     }
@@ -128,16 +128,30 @@ export default function ProjectTimeline({
                                         <div className="flex items-center justify-between mb-3">
                                             <span className={cn(
                                                 "px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider",
-                                                project.status === 'active' ? "bg-emerald-50 text-emerald-600" : "bg-black/5 text-black/40"
+                                                project.type === 'Architectural Design' || project.type === 'Product Design' ? "bg-emerald-50 text-emerald-600" :
+                                                    project.type === 'Technology' ? "bg-blue-50 text-blue-600" :
+                                                        project.type === 'Media' || project.type === 'Fashion' ? "bg-rose-50 text-rose-600" :
+                                                            "bg-black/5 text-black/40"
                                             )}>
-                                                {project.status}
+                                                {project.type || 'Other'}
                                             </span>
-                                            {project.target_date && (
-                                                <div className="flex items-center gap-1 text-[9px] font-bold text-black/20 uppercase">
-                                                    <Clock className="w-2.5 h-2.5" />
-                                                    {new Date(project.target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                                            <div className="flex flex-col gap-1.5 items-end">
+                                                {project.target_date && (
+                                                    <div className="flex items-center gap-1 text-[9px] font-bold text-black/20 uppercase">
+                                                        <Clock className="w-2.5 h-2.5" />
+                                                        {new Date(project.target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                                                    </div>
+                                                )}
+                                                <div className={cn(
+                                                    "px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider",
+                                                    project.priority === 'urgent' ? "bg-purple-600/10 text-purple-600 animate-pulse" :
+                                                        project.priority === 'high' ? "bg-red-500/10 text-red-600" :
+                                                            project.priority === 'mid' ? "bg-amber-500/10 text-amber-600" :
+                                                                "bg-black/[0.04] text-black/30"
+                                                )}>
+                                                    {project.priority || 'mid'}
                                                 </div>
-                                            )}
+                                            </div>
                                         </div>
 
                                         <h4 className="text-[14px] font-bold text-black mb-1 group-hover:text-blue-600 transition-colors">
@@ -157,11 +171,16 @@ export default function ProjectTimeline({
                                                     className={cn(
                                                         "h-full transition-all duration-500",
                                                         stageId === 'secured' ? "bg-emerald-500" :
-                                                            stageId === 'extraction' ? "bg-orange-500" :
+                                                            stageId === 'extraction' ? "bg-amber-500" :
                                                                 "bg-blue-500"
                                                     )}
                                                 />
                                             </div>
+                                        </div>
+
+                                        {/* Hover Overlay Icon */}
+                                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <ArrowRight className="w-4 h-4 text-black/20" />
                                         </div>
                                     </motion.button>
                                 )
@@ -172,7 +191,7 @@ export default function ProjectTimeline({
                                     <div className="w-8 h-8 rounded-full border border-dashed border-black/10 flex items-center justify-center mb-2">
                                         <div className="w-1.5 h-1.5 rounded-full bg-black/5" />
                                     </div>
-                                    <p className="text-[10px] font-bold text-black/15 uppercase tracking-widest">Latent Stage</p>
+                                    <p className="text-[10px] font-bold text-black/15 uppercase tracking-widest">Inert Stage</p>
                                 </div>
                             )}
                         </div>
