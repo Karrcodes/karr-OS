@@ -833,7 +833,15 @@ export default function ProjectMatrix({ searchQuery = '', filterType = null, sho
                                     setParentType(selected.data.project_id ? 'project' : 'spark')
                                 }
                             } else {
-                                setSelectedTaskId(selected.data.id)
+                                if (selected.data.content_id) {
+                                    setSelectedParentId(selected.data.content_id)
+                                    setParentType('content')
+                                } else if (selected.data.project_id) {
+                                    setSelectedParentId(selected.data.project_id)
+                                    setParentType('project')
+                                } else {
+                                    setSelectedTaskId(selected.data.id)
+                                }
                             }
                         }}
                         isMoveApplied={isConfirmingMove && movingItem?.id !== item.id}

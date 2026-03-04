@@ -102,14 +102,16 @@ export default function ProjectsPage() {
                             ))}
                         </div>
 
-                        <button
-                            onClick={() => setIsCreateModalOpen(true)}
-                            className="flex items-center gap-2 px-5 py-2.5 bg-black text-white rounded-xl text-[12px] font-black hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-black/10 self-start sm:self-auto"
-                        >
-                            <Plus className="w-4 h-4" />
-                            <span className="hidden xs:inline">New Project</span>
-                            <span className="xs:hidden">Add</span>
-                        </button>
+                        {view !== 'matrix' && (
+                            <button
+                                onClick={() => setIsCreateModalOpen(true)}
+                                className="flex items-center gap-2 px-5 py-2.5 bg-black text-white rounded-xl text-[12px] font-black hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-black/10 self-start sm:self-auto"
+                            >
+                                <Plus className="w-4 h-4" />
+                                <span className="hidden xs:inline">New Project</span>
+                                <span className="xs:hidden">Add</span>
+                            </button>
+                        )}
                     </div>
                 </div>
 

@@ -1009,7 +1009,13 @@ export function TasksMatrix() {
                             finalPosition={pos || { x: 50, y: 50, density: 'full' }}
                             onSelectItem={(selected) => {
                                 if (selected.type === 'task') {
-                                    setSelectedTaskForModal(selected.data)
+                                    if (selected.data.content_id) {
+                                        setSelectedContentForModal(content.find(c => c.id === selected.data.content_id))
+                                    } else if (selected.data.project_id) {
+                                        setSelectedProjectForModal(projects.find(p => p.id === selected.data.project_id))
+                                    } else {
+                                        setSelectedTaskForModal(selected.data)
+                                    }
                                 } else if (selected.data.project_id) {
                                     setSelectedProjectForModal(projects.find(p => p.id === selected.data.project_id))
                                 } else if (selected.data.content_id) {
