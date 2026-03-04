@@ -209,7 +209,7 @@ function ItemDot({
             className={cn(
                 "group flex items-center cursor-grab active:cursor-grabbing",
                 "backdrop-blur-[2px] shadow-sm hover:shadow-md",
-                isDragging ? "shadow-2xl ring-4 ring-black/10 scale-110 z-[100] select-none" : "z-10 transition-all duration-300",
+                isDragging ? "shadow-2xl ring-4 ring-black/10 scale-110 z-[100] select-none" : "z-10",
                 item.type === 'milestone' && "border-2",
                 finalPosition.density === 'full' ? cn(
                     "border items-center p-2 pr-4 h-auto min-h-[44px] rounded-xl",
@@ -250,8 +250,10 @@ function ItemDot({
                             "text-[10px] font-semibold tracking-tight leading-none whitespace-nowrap text-black/80 flex items-center gap-1",
                             data.impact_score && data.impact_score >= 8 && "font-black text-[11px]"
                         )}>
-                            {item.type === 'milestone' && (
+                            {item.type === 'milestone' ? (
                                 data.content_id ? <Video className="w-2.5 h-2.5 opacity-40" /> : <Rocket className="w-2.5 h-2.5 opacity-40" />
+                            ) : (
+                                <Zap className="w-2.5 h-2.5 opacity-40 text-amber-500" />
                             )}
                             {data.title}
                         </span>
@@ -268,7 +270,7 @@ function ItemDot({
                             </span>
                         )}
                     </div>
-                    {item.type === 'milestone' && (data.content_id || data.project_id) && (
+                    {(data.content_id || data.project_id) && (
                         <div className="mt-[-3px]">
                             <span className="text-[7px] font-bold text-black/30 bg-black/[0.03] border border-black/5 rounded px-1 py-0.5 w-fit">
                                 {data.content_id
