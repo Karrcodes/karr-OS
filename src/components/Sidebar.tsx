@@ -579,7 +579,9 @@ export function Sidebar() {
                 {isCollapsed ? (
                     /* Collapsed: icon-only nav with tooltips */
                     <nav className="flex-1 flex flex-col items-center py-4 gap-0.5 overflow-y-auto">
-                        {navItems.map(item => {
+                        {orderedTabs.map(label => {
+                            const item = navItems.find(i => i.label === label)
+                            if (!item) return null
                             const Icon = item.icon
                             const isActive = !('disabled' in item && item.disabled) && pathname.startsWith(item.href)
                             if ('disabled' in item && item.disabled) return null
