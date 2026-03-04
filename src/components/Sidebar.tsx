@@ -588,13 +588,16 @@ export function Sidebar() {
                             const isExpanded = !!expandedFolders[item.label]
 
                             return (
-                                <div key={item.label} className="w-full flex justify-center flex-col items-center gap-1 mb-1">
+                                <div key={item.label} className="w-full flex justify-center relative mb-1 z-10">
                                     {/* Main Tab */}
                                     <div className="relative group">
                                         <Link
                                             href={item.href}
-                                            onClick={() => {
+                                            onClick={(e) => {
                                                 if ('sub' in item && item.sub) {
+                                                    if (isActive) {
+                                                        e.preventDefault()
+                                                    }
                                                     setExpandedFolders(prev => {
                                                         const next = { ...prev, [item.label]: !prev[item.label] }
                                                         localStorage.setItem('schro_sidebar_expanded', JSON.stringify(next))
@@ -609,29 +612,29 @@ export function Sidebar() {
                                         >
                                             <Icon className="w-4.5 h-4.5" />
                                         </Link>
-                                        <div className="pointer-events-none absolute left-full ml-2 px-2.5 py-1.5 bg-black text-white text-[11px] font-bold rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-[200] shadow-xl">
+                                        <div className="pointer-events-none absolute left-[calc(100%+12px)] top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-black text-white text-[11px] font-bold rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-[200] shadow-xl">
                                             {item.label}
                                         </div>
                                     </div>
 
-                                    {/* Sub-items drop-down */}
+                                    {/* Sub-items flyout */}
                                     {'sub' in item && item.sub && isExpanded && (
-                                        <div className="flex flex-col gap-1 items-center mt-0.5 mb-1 animate-in slide-in-from-top-2 fade-in duration-200">
+                                        <div className="absolute left-[calc(100%-8px)] top-1/2 -translate-y-1/2 flex flex-col gap-1 p-1.5 bg-white border border-black/[0.08] rounded-2xl shadow-xl z-[100] animate-in fade-in zoom-in-95 duration-200">
                                             {item.sub.map(subItem => {
                                                 const SubIcon = subItem.icon || ((props: any) => <div className={cn("w-1.5 h-1.5 rounded-full bg-current", props.className)} />)
                                                 const isSubActive = pathname === subItem.href
                                                 return (
-                                                    <div key={subItem.href} className="relative group">
+                                                    <div key={subItem.href} className="relative group/sub">
                                                         <Link
                                                             href={subItem.href}
                                                             className={cn(
-                                                                'w-8 h-8 flex items-center justify-center rounded-lg transition-all',
-                                                                isSubActive ? 'bg-black/5 text-black border border-black/[0.05]' : 'text-black/30 hover:text-black/70 hover:bg-black/[0.02]'
+                                                                'w-8 h-8 flex items-center justify-center rounded-xl transition-all',
+                                                                isSubActive ? 'bg-black/5 text-black shadow-sm' : 'text-black/30 hover:text-black/70 hover:bg-black/[0.04]'
                                                             )}
                                                         >
-                                                            <SubIcon className="w-3.5 h-3.5" />
+                                                            <SubIcon className="w-4 h-4" />
                                                         </Link>
-                                                        <div className="pointer-events-none absolute left-full ml-2 px-2.5 py-1.5 bg-black text-white text-[11px] font-bold rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-[200] shadow-xl">
+                                                        <div className="pointer-events-none absolute left-[calc(100%+12px)] top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-black text-white text-[11px] font-bold rounded-lg whitespace-nowrap opacity-0 group-hover/sub:opacity-100 transition-opacity z-[200] shadow-xl">
                                                             {subItem.label}
                                                         </div>
                                                     </div>
