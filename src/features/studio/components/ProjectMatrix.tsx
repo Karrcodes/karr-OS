@@ -10,6 +10,7 @@ import type { Task } from '@/features/tasks/types/tasks.types'
 import { TaskDetailModal } from '@/features/tasks/components/TaskDetailModal'
 import { RefreshCw, Beaker, Factory, Tv, TrendingUp, Zap, Clock, Edit2, Calendar, Check, X, ArrowRight, Briefcase, Video } from 'lucide-react'
 import ProjectDetailModal from './ProjectDetailModal'
+import ContentDetailModal from './ContentDetailModal'
 import { useRota } from '@/features/finance/hooks/useRota'
 import { isShiftDay } from '@/features/finance/utils/rotaUtils'
 
@@ -269,18 +270,10 @@ function ItemDot({
                     </div>
                     {item.type === 'milestone' && (data.content_id || data.project_id) && (
                         <div className="mt-0.5">
-                            <span className="text-[7px] font-bold text-black/30 bg-black/[0.03] border border-black/5 rounded px-1 py-0.5 truncate max-w-[120px] flex items-center gap-1 w-fit">
-                                {data.content_id ? (
-                                    <>
-                                        <Video className="w-2 h-2 shrink-0" />
-                                        {content.find((c: any) => c.id === data.content_id)?.title || 'Content'}
-                                    </>
-                                ) : (
-                                    <>
-                                        <Briefcase className="w-2 h-2 shrink-0" />
-                                        {projects.find((p: StudioProject) => p.id === data.project_id)?.title || 'Project'}
-                                    </>
-                                )}
+                            <span className="text-[7px] font-bold text-black/30 bg-black/[0.03] border border-black/5 rounded px-1 py-0.5 w-fit">
+                                {data.content_id
+                                    ? content.find((c: any) => c.id === data.content_id)?.title || 'Content'
+                                    : projects.find((p: StudioProject) => p.id === data.project_id)?.title || 'Project'}
                             </span>
                         </div>
                     )}
@@ -343,7 +336,7 @@ export default function ProjectMatrix({ searchQuery = '', filterType = null, sho
     const containerRef = useRef<HTMLDivElement>(null)
     const safeZoneRef = useRef<HTMLDivElement>(null)
     const [selectedParentId, setSelectedParentId] = useState<string | null>(null)
-    const [parentType, setParentType] = useState<'project' | 'spark' | null>(null)
+    const [parentType, setParentType] = useState<'project' | 'spark' | 'content' | null>(null)
     const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
     const selectedTaskForModal = tasks.find(t => t.id === selectedTaskId) || null
     const [hoveredDayIndex, setHoveredDayIndex] = useState<number | null>(null)
@@ -756,8 +749,13 @@ export default function ProjectMatrix({ searchQuery = '', filterType = null, sho
                         finalPosition={finalPositions[item.id] || { x: 50, y: 50, density: 'full' }}
                         onSelectItem={(selected) => {
                             if (selected.type === 'milestone') {
-                                setSelectedParentId(selected.data.project_id || selected.data.spark_id || null)
-                                setParentType(selected.data.project_id ? 'project' : 'spark')
+                                if (selected.data.content_id) {
+                                    setSelectedParentId(selected.data.content_id)
+                                    setParentType('content')
+                                } else {
+                                    setSelectedParentId(selected.data.project_id || selected.data.spark_id || null)
+                                    setParentType(selected.data.project_id ? 'project' : 'spark')
+                                }
                             } else {
                                 setSelectedTaskId(selected.data.id)
                             }
@@ -825,6 +823,14 @@ export default function ProjectMatrix({ searchQuery = '', filterType = null, sho
                     isOpen={!!selectedParentId}
                     onClose={() => { setSelectedParentId(null); setParentType(null); }}
                     project={projects.find(x => x.id === selectedParentId) || null}
+                />
+            )}
+
+            {selectedParentId && parentType === 'content' && (
+                <ContentDetailModal
+                    isOpen={!!selectedParentId}
+                    onClose={() => { setSelectedParentId(null); setParentType(null); }}
+                    item={content.find(x => x.id === selectedParentId) || null}
                 />
             )}
         </div>
