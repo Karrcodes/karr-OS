@@ -19,6 +19,7 @@ const PLATFORMS: Platform[] = ['youtube', 'instagram', 'tiktok', 'x', 'web', 'su
 const TYPES = ['video', 'reel', 'post', 'thread', 'article', 'short']
 const STATUSES: ContentStatus[] = ['idea', 'scripted', 'filmed', 'edited', 'scheduled', 'published']
 const CATEGORIES: ContentCategory[] = ['Vlog', 'Thoughts', 'Showcase', 'Concept', 'Update', 'Other']
+const MILESTONE_CATEGORIES = ['rnd', 'production', 'media', 'growth']
 
 const PRIORITY_CONFIG = {
     urgent: { label: 'Urgent', bg: 'bg-purple-500 text-white', border: 'border-purple-300' },
@@ -82,7 +83,7 @@ export default function ContentDetailModal({ isOpen, onClose, item }: ContentDet
     const [newMilestoneTitle, setNewMilestoneTitle] = useState('')
     const [newMilestoneScore, setNewMilestoneScore] = useState(5)
     const [newMilestoneDate, setNewMilestoneDate] = useState('')
-    const [newMilestoneCategory, setNewMilestoneCategory] = useState<string>('Concept')
+    const [newMilestoneCategory, setNewMilestoneCategory] = useState<string>('rnd')
     const [newMilestonePriority, setNewMilestonePriority] = useState<PriorityLevel>('mid')
 
     // Script state
@@ -205,7 +206,7 @@ export default function ContentDetailModal({ isOpen, onClose, item }: ContentDet
             setNewMilestoneTitle('')
             setNewMilestoneScore(5)
             setNewMilestoneDate('')
-            setNewMilestoneCategory('Concept')
+            setNewMilestoneCategory('rnd')
             setNewMilestonePriority('mid')
         } catch (err) { console.error('Failed to add milestone:', err) }
     }
@@ -392,9 +393,9 @@ export default function ContentDetailModal({ isOpen, onClose, item }: ContentDet
                                                             className={cn("w-2 h-2 rounded-full", (m.priority === lvl || (!m.priority && lvl === 'mid')) ? PRIORITY_CONFIG[lvl].bg : "bg-black/[0.05]")} />
                                                     ))}
                                                 </div>
-                                                <select value={m.category || 'Other'} onChange={e => updateMilestone(m.id, { category: e.target.value })}
+                                                <select value={m.category || 'rnd'} onChange={e => updateMilestone(m.id, { category: e.target.value })}
                                                     className="text-[9px] font-black uppercase tracking-widest bg-black/[0.03] border-none rounded-lg px-2 py-1 focus:ring-0">
-                                                    {['Concept', 'Draft', 'Filming', 'Edit', 'Final', 'Other'].map(c => <option key={c} value={c}>{c}</option>)}
+                                                    {MILESTONE_CATEGORIES.map(c => <option key={c} value={c}>{c.toUpperCase()}</option>)}
                                                 </select>
                                                 <button
                                                     onClick={() => setMilestoneToDelete(m.id)}
@@ -470,7 +471,7 @@ export default function ContentDetailModal({ isOpen, onClose, item }: ContentDet
                                             </div>
                                             <select value={newMilestoneCategory} onChange={e => setNewMilestoneCategory(e.target.value)}
                                                 className="bg-white border border-blue-100 rounded-lg px-2 py-1 text-[10px] font-black uppercase tracking-widest text-blue-600 focus:outline-none">
-                                                {['Concept', 'Draft', 'Filming', 'Edit', 'Final', 'Other'].map(c => <option key={c} value={c}>{c}</option>)}
+                                                {MILESTONE_CATEGORIES.map(c => <option key={c} value={c}>{c.toUpperCase()}</option>)}
                                             </select>
                                         </div>
                                         <button
