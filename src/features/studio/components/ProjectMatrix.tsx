@@ -252,13 +252,6 @@ function ItemDot({
                             {item.type === 'milestone' && <span className="text-[8px] font-black mr-1 opacity-40">M</span>}
                             {data.title}
                         </span>
-                        {item.type === 'milestone' && (data.content_id || data.project_id) && (
-                            <span className="text-[7px] font-bold text-black/30 border border-black/5 rounded px-1 truncate max-w-[100px]">
-                                {data.content_id
-                                    ? `C: ${content.find((c: any) => c.id === data.content_id)?.title || 'Content'}`
-                                    : `P: ${projects.find((p: StudioProject) => p.id === data.project_id)?.title || 'Project'}`}
-                            </span>
-                        )}
                         {data.impact_score && finalPosition.density === 'compact' && (
                             <span className="flex items-center gap-0.5 text-[8px] font-black text-amber-600 flex-shrink-0">
                                 <Zap className="w-2 h-2 fill-current" />
@@ -272,6 +265,15 @@ function ItemDot({
                             </span>
                         )}
                     </div>
+                    {item.type === 'milestone' && (data.content_id || data.project_id) && (
+                        <div className="mt-0.5">
+                            <span className="text-[7px] font-bold text-black/30 bg-black/[0.03] border border-black/5 rounded px-1 py-0.5 truncate max-w-[120px] inline-block">
+                                {data.content_id
+                                    ? `C: ${content.find((c: any) => c.id === data.content_id)?.title || 'Content'}`
+                                    : `P: ${projects.find((p: StudioProject) => p.id === data.project_id)?.title || 'Project'}`}
+                            </span>
+                        </div>
+                    )}
                     {finalPosition.density === 'full' && (
                         <div className="flex items-center gap-2 mt-1">
                             {data.impact_score && (
