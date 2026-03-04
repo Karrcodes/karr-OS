@@ -171,16 +171,25 @@ export function useTasks(category: 'todo' | 'grocery' | 'reminder', profileOverr
     }
 
     const editTask = async (id: string, updates: Partial<Task>) => {
+        // Optimistic UI update - immediately reflect the change
+        setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t))
+
         if (settings.is_demo_mode) {
             const allTasks = getSessionTasks() || []
             const updated = allTasks.map((t: Task) => t.id === id ? { ...t, ...updates } : t)
             saveSessionTasks(updated)
+            // fetchTasks usually not strictly needed with optimistic update but good for consistency
             await fetchTasks()
             return
         }
         const { error } = await supabase.from('fin_tasks').update(updates).eq('id', id)
-        if (error) throw error
-        await fetchTasks()
+        if (error) {
+            // Revert on error
+            await fetchTasks()
+            throw error
+        }
+        // Still fetch in background to ensure sync
+        fetchTasks()
     }
 
     const deleteTask = async (id: string) => {
