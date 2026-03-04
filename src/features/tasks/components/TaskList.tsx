@@ -82,6 +82,18 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
     const { milestones, projects, content, loading: studioLoading } = useStudio()
     const loading = tasksLoading || studioLoading
 
+    const pendingData = useMemo(() => {
+        const pTasks = tasks.filter(t => !t.is_completed)
+        const pMilestones = category === 'todo' && activeProfile === 'business'
+            ? milestones.filter(m => m.status !== 'completed' && !m.is_archived)
+            : []
+        return {
+            tasks: pTasks,
+            milestones: pMilestones,
+            count: pTasks.length + pMilestones.length
+        }
+    }, [tasks, milestones, category, activeProfile])
+
     // Internalized title and icon logic
     const title = category === 'todo' ? 'Deployment' : category === 'grocery' ? 'Grocery List' : 'Reminders'
     const Icon = category === 'todo' ? Activity : category === 'grocery' ? ShoppingCart : Bell
