@@ -107,10 +107,14 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
             finalCoverUrl = urlData.publicUrl;
         }
 
+        // Sanitize date
+        const sanitizedProject = { ...project, cover_url: finalCoverUrl }
+        if (sanitizedProject.target_date === '') sanitizedProject.target_date = null as any
+
         // Insert Project
         const { data: projectData, error: projectError } = await supabase
             .from('studio_projects')
-            .insert([{ ...project, cover_url: finalCoverUrl }])
+            .insert([sanitizedProject])
             .select()
             .single();
 
@@ -158,6 +162,8 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
                 finalUpdates.cover_url = urlData.publicUrl;
             }
         }
+
+        if (finalUpdates.target_date === '') finalUpdates.target_date = null as any
 
         if (!finalUpdates || Object.keys(finalUpdates).length === 0) return projects.find(p => p.id === id)!;
         const { data, error } = await supabase.from('studio_projects').update(finalUpdates).eq('id', id).select();
@@ -236,7 +242,10 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     }
 
     const addContent = async (item: Partial<StudioContent>) => {
-        const { data, error } = await supabase.from('studio_content').insert([item]).select()
+        const sanitizedItem = { ...item }
+        if (sanitizedItem.deadline === '') sanitizedItem.deadline = null as any
+
+        const { data, error } = await supabase.from('studio_content').insert([sanitizedItem]).select()
         if (error) {
             // Schema cache may not have new columns yet — do an insert-only and refresh
             console.warn('addContent select error (schema cache), falling back:', error.message)
@@ -253,8 +262,11 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     }
 
     const updateContent = async (id: string, updates: Partial<StudioContent>) => {
-        if (!updates || Object.keys(updates).length === 0) return content.find(c => c.id === id)!
-        const { data, error } = await supabase.from('studio_content').update(updates).eq('id', id).select()
+        const sanitizedUpdates = { ...updates }
+        if (sanitizedUpdates.deadline === '') sanitizedUpdates.deadline = null as any
+
+        if (!sanitizedUpdates || Object.keys(sanitizedUpdates).length === 0) return content.find(c => c.id === id)!
+        const { data, error } = await supabase.from('studio_content').update(sanitizedUpdates).eq('id', id).select()
         if (error) {
             // Schema cache may not have new columns yet — fall back to optimistic local update
             console.warn('updateContent select error (schema cache), applying optimistic update:', error.message)

@@ -64,7 +64,11 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
 
         try {
             setLoading(true)
-            await addProject(formData, milestones, coverFile || undefined)
+            const payload = {
+                ...formData,
+                target_date: formData.target_date || undefined
+            }
+            await addProject(payload as any, milestones, coverFile || undefined)
             onClose()
             // Reset form
             setFormData({
