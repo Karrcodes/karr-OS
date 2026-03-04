@@ -4,7 +4,7 @@ export interface Task {
     title: string
     is_completed: boolean
     category: 'todo' | 'grocery' | 'reminder'
-    strategic_category?: 'finance' | 'career' | 'health' | 'personal'
+    strategic_category?: 'finance' | 'career' | 'health' | 'personal' | 'rnd' | 'production' | 'media' | 'growth'
     priority: 'urgent' | 'high' | 'mid' | 'low'
     amount?: string
     due_date?: string
@@ -42,6 +42,7 @@ export interface Task {
     start_time?: string // "HH:MM" fixed appointment time
     location?: string
     origin_location?: string
+    content_id?: string
 }
 
 export interface DayPlannerSettings {
@@ -90,9 +91,10 @@ export interface TaskTemplate {
     title: string
     category: 'todo' | 'grocery' | 'reminder'
     priority: 'urgent' | 'high' | 'mid' | 'low'
-    strategic_category?: 'finance' | 'career' | 'health' | 'personal'
+    strategic_category?: 'finance' | 'career' | 'health' | 'personal' | 'rnd' | 'production' | 'media' | 'growth'
     amount?: string
     due_date_mode?: 'on' | 'before' | 'range'
+    content_id?: string
     recurrence_config?: Task['recurrence_config']
     estimated_duration?: number
     travel_to_duration?: number

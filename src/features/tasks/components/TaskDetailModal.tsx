@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Calendar, Briefcase, User, CheckSquare, Clock, AlertCircle, Zap, Car, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Task } from '../types/tasks.types'
+import type { StudioProject, StudioContent } from '../../studio/types/studio.types'
 
 interface TaskDetailModalProps {
     task: Task | null
@@ -13,6 +14,8 @@ interface TaskDetailModalProps {
     onToggleSubtask: (taskId: string, index: number) => Promise<void>
     onToggleComplete: (taskId: string, completed: boolean) => Promise<void>
     onEditTask?: (taskId: string, updates: Partial<Task>) => Promise<void>
+    projects?: StudioProject[]
+    content?: StudioContent[]
 }
 
 const PRIORITY_CONFIG = {
@@ -22,7 +25,7 @@ const PRIORITY_CONFIG = {
     low: { label: 'Low', color: 'bg-black/5 text-black/60 border-black/10' }
 }
 
-export function TaskDetailModal({ task, isOpen, onClose, onToggleSubtask, onToggleComplete, onEditTask }: TaskDetailModalProps) {
+export function TaskDetailModal({ task, isOpen, onClose, onToggleSubtask, onToggleComplete, onEditTask, projects = [], content = [] }: TaskDetailModalProps) {
     const [isEditing, setIsEditing] = React.useState(false)
     const [editTitle, setEditTitle] = React.useState('')
     const [editPriority, setEditPriority] = React.useState(task?.priority || 'mid')
@@ -33,6 +36,11 @@ export function TaskDetailModal({ task, isOpen, onClose, onToggleSubtask, onTogg
     const [editStartTime, setEditStartTime] = React.useState('')
     const [editLocation, setEditLocation] = React.useState('')
     const [editOriginLocation, setEditOriginLocation] = React.useState('')
+    const [editProjectId, setEditProjectId] = React.useState<string | null>(task?.project_id || null)
+    const [editContentId, setEditContentId] = React.useState<string | null>(task?.content_id || null)
+    const [linkType, setLinkType] = React.useState<'none' | 'project' | 'content'>(
+        task?.content_id ? 'content' : task?.project_id ? 'project' : 'none'
+    )
 
     React.useEffect(() => {
         if (task && isOpen) {
@@ -45,6 +53,9 @@ export function TaskDetailModal({ task, isOpen, onClose, onToggleSubtask, onTogg
             setEditStartTime(task.start_time || '')
             setEditLocation(task.location || '')
             setEditOriginLocation(task.origin_location || '')
+            setEditProjectId(task.project_id || null)
+            setEditContentId(task.content_id || null)
+            setLinkType(task.content_id ? 'content' : task.project_id ? 'project' : 'none')
         }
     }, [task, isOpen])
 
@@ -55,7 +66,12 @@ export function TaskDetailModal({ task, isOpen, onClose, onToggleSubtask, onTogg
     const totalSubtasks = checklistItems.length
     const progress = totalSubtasks > 0 ? (completedSubtasks / totalSubtasks) * 100 : 0
 
-    const STRATEGIC_CATEGORIES = [
+    const STRATEGIC_CATEGORIES = task?.profile === 'business' ? [
+        { id: 'rnd', label: 'R&D' },
+        { id: 'production', label: 'Production' },
+        { id: 'media', label: 'Media' },
+        { id: 'growth', label: 'Growth' },
+    ] : [
         { id: 'finance', label: 'Finance' },
         { id: 'career', label: 'Career' },
         { id: 'health', label: 'Health' },
@@ -352,6 +368,58 @@ export function TaskDetailModal({ task, isOpen, onClose, onToggleSubtask, onTogg
                                                 />
                                             </div>
                                         </div>
+
+                                        {(task.profile === 'business' || projects.length > 0) && (
+                                            <div className="space-y-4 pt-4 border-t border-black/[0.04]">
+                                                <h3 className="text-[11px] font-bold text-black/30 uppercase tracking-[0.2em]">Studio Linking</h3>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="space-y-2">
+                                                        <label className="text-[9px] font-bold text-black/40 uppercase tracking-widest px-1">Link To</label>
+                                                        <select
+                                                            value={linkType}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value as any
+                                                                setLinkType(val)
+                                                                if (val === 'none') {
+                                                                    setEditProjectId(null)
+                                                                    setEditContentId(null)
+                                                                } else if (val === 'project') {
+                                                                    setEditContentId(null)
+                                                                } else {
+                                                                    setEditProjectId(null)
+                                                                }
+                                                            }}
+                                                            className="w-full bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] text-black outline-none focus:border-black/20 focus:bg-white transition-all appearance-none cursor-pointer"
+                                                        >
+                                                            <option value="none">None</option>
+                                                            <option value="project">Project</option>
+                                                            <option value="content">Content</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <label className="text-[9px] font-bold text-black/40 uppercase tracking-widest px-1">
+                                                            {linkType === 'project' ? 'Select Project' : linkType === 'content' ? 'Select Content' : 'Context'}
+                                                        </label>
+                                                        <select
+                                                            disabled={linkType === 'none'}
+                                                            value={linkType === 'project' ? (editProjectId || '') : (editContentId || '')}
+                                                            onChange={(e) => {
+                                                                if (linkType === 'project') setEditProjectId(e.target.value)
+                                                                else setEditContentId(e.target.value)
+                                                            }}
+                                                            className="w-full bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] text-black outline-none focus:border-black/20 focus:bg-white transition-all appearance-none cursor-pointer disabled:opacity-50"
+                                                        >
+                                                            <option value="">Select...</option>
+                                                            {linkType === 'project' ? (
+                                                                projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)
+                                                            ) : (
+                                                                content.map(c => <option key={c.id} value={c.id}>{c.title}</option>)
+                                                            )}
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )}
@@ -386,7 +454,9 @@ export function TaskDetailModal({ task, isOpen, onClose, onToggleSubtask, onTogg
                                             travel_from_duration: parseInt(editTravelDuration),
                                             start_time: editStartTime || undefined,
                                             location: editLocation || undefined,
-                                            origin_location: editOriginLocation || undefined
+                                            origin_location: editOriginLocation || undefined,
+                                            project_id: editProjectId || undefined,
+                                            content_id: editContentId || undefined
                                         })
                                         setIsEditing(false)
                                     } else if (!isEditing) {

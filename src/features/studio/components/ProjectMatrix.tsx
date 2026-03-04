@@ -816,6 +816,8 @@ export default function ProjectMatrix({ searchQuery = '', filterType = null, sho
                 onToggleSubtask={handleModalToggleSubtask}
                 onToggleComplete={handleModalToggleComplete}
                 onEditTask={editTask}
+                projects={projects}
+                content={content}
             />
 
             {selectedParentId && parentType === 'project' && (
