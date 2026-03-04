@@ -8,7 +8,7 @@ import type { StudioMilestone, ProjectMatrixProps, StudioProject, StudioContent 
 import { useTasks } from '@/features/tasks/hooks/useTasks'
 import type { Task } from '@/features/tasks/types/tasks.types'
 import { TaskDetailModal } from '@/features/tasks/components/TaskDetailModal'
-import { RefreshCw, Beaker, Factory, Tv, TrendingUp, Zap, Clock, Edit2, Calendar, Check, X, ArrowRight } from 'lucide-react'
+import { RefreshCw, Beaker, Factory, Tv, TrendingUp, Zap, Clock, Edit2, Calendar, Check, X, ArrowRight, Briefcase, Video } from 'lucide-react'
 import ProjectDetailModal from './ProjectDetailModal'
 import { useRota } from '@/features/finance/hooks/useRota'
 import { isShiftDay } from '@/features/finance/utils/rotaUtils'
@@ -246,10 +246,12 @@ function ItemDot({
                 <div className="flex flex-col items-start ml-2.5 overflow-hidden">
                     <div className="flex items-center gap-1.5">
                         <span className={cn(
-                            "text-[10px] font-semibold tracking-tight leading-none whitespace-nowrap text-black/80",
+                            "text-[10px] font-semibold tracking-tight leading-none whitespace-nowrap text-black/80 flex items-center gap-1",
                             data.impact_score && data.impact_score >= 8 && "font-black text-[11px]"
                         )}>
-                            {item.type === 'milestone' && <span className="text-[8px] font-black mr-1 opacity-40">M</span>}
+                            {item.type === 'milestone' && (
+                                data.content_id ? <Video className="w-2.5 h-2.5 opacity-40" /> : <Briefcase className="w-2.5 h-2.5 opacity-40" />
+                            )}
                             {data.title}
                         </span>
                         {data.impact_score && finalPosition.density === 'compact' && (
@@ -267,10 +269,18 @@ function ItemDot({
                     </div>
                     {item.type === 'milestone' && (data.content_id || data.project_id) && (
                         <div className="mt-0.5">
-                            <span className="text-[7px] font-bold text-black/30 bg-black/[0.03] border border-black/5 rounded px-1 py-0.5 truncate max-w-[120px] inline-block">
-                                {data.content_id
-                                    ? `C: ${content.find((c: any) => c.id === data.content_id)?.title || 'Content'}`
-                                    : `P: ${projects.find((p: StudioProject) => p.id === data.project_id)?.title || 'Project'}`}
+                            <span className="text-[7px] font-bold text-black/30 bg-black/[0.03] border border-black/5 rounded px-1 py-0.5 truncate max-w-[120px] flex items-center gap-1 w-fit">
+                                {data.content_id ? (
+                                    <>
+                                        <Video className="w-2 h-2 shrink-0" />
+                                        {content.find((c: any) => c.id === data.content_id)?.title || 'Content'}
+                                    </>
+                                ) : (
+                                    <>
+                                        <Briefcase className="w-2 h-2 shrink-0" />
+                                        {projects.find((p: StudioProject) => p.id === data.project_id)?.title || 'Project'}
+                                    </>
+                                )}
                             </span>
                         </div>
                     )}
