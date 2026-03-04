@@ -292,7 +292,7 @@ export default function SparkDetailModal({ isOpen, onClose, spark, projects }: S
                                                         type="date"
                                                         value={m.target_date ? m.target_date.split('T')[0] : ''}
                                                         onChange={(e) => updateMilestone(m.id, { target_date: e.target.value || null })}
-                                                        className="absolute inset-0 w-full h-full text-transparent bg-transparent border-none cursor-pointer z-10 p-0 pointer-events-none"
+                                                        className="absolute inset-0 w-full h-full text-transparent bg-transparent border-none cursor-pointer z-10 p-0"
                                                     />
                                                     <span className="text-[10px] font-bold text-black/40 truncate pointer-events-none">
                                                         {m.target_date ? new Date(m.target_date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'Set date'}

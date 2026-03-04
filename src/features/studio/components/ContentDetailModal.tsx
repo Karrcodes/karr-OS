@@ -584,15 +584,13 @@ export default function ContentDetailModal({ isOpen, onClose, item }: ContentDet
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Deadline</label>
-                                <div className="relative group/maindate h-12 flex items-center px-4 bg-black/[0.02] border border-black/[0.05] rounded-2xl cursor-pointer"
-                                    onClick={() => isEditing && deadlineInputRef.current?.showPicker()}
-                                >
+                                <div className="relative group/maindate h-12 flex items-center px-4 bg-black/[0.02] border border-black/[0.05] rounded-2xl cursor-pointer">
                                     <Calendar className="w-4 h-4 text-black/20 shrink-0 pointer-events-none" />
                                     <input readOnly={!isEditing} type="date"
                                         ref={deadlineInputRef}
                                         value={(editedData.deadline ?? item.deadline ?? '').split('T')[0]}
                                         onChange={e => setEditedData(prev => ({ ...prev, deadline: e.target.value || null }))}
-                                        className="absolute inset-0 w-full h-full text-transparent bg-transparent border-none cursor-pointer z-10 p-0 pointer-events-none" />
+                                        className={cn("absolute inset-0 w-full h-full text-transparent bg-transparent border-none cursor-pointer z-10 p-0", !isEditing && "pointer-events-none")} />
                                     <span className="ml-3 text-[12px] font-bold text-black/40 truncate pointer-events-none">
                                         {(editedData.deadline ?? item.deadline) ? new Date((editedData.deadline ?? item.deadline!) + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'No deadline'}
                                     </span>
@@ -608,15 +606,13 @@ export default function ContentDetailModal({ isOpen, onClose, item }: ContentDet
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Publish Date</label>
-                                <div className="relative group/pubdate h-12 flex items-center px-4 bg-black/[0.02] border border-black/[0.05] rounded-2xl cursor-pointer"
-                                    onClick={() => isEditing && publishDateInputRef.current?.showPicker()}
-                                >
+                                <div className="relative group/pubdate h-12 flex items-center px-4 bg-black/[0.02] border border-black/[0.05] rounded-2xl cursor-pointer">
                                     <Calendar className="w-4 h-4 text-black/20 shrink-0 pointer-events-none" />
                                     <input readOnly={!isEditing} type="date"
                                         ref={publishDateInputRef}
                                         value={(editedData.publish_date ?? item.publish_date ?? '').split('T')[0]}
                                         onChange={e => setEditedData(prev => ({ ...prev, publish_date: e.target.value || null }))}
-                                        className="absolute inset-0 w-full h-full text-transparent bg-transparent border-none cursor-pointer z-10 p-0 pointer-events-none" />
+                                        className={cn("absolute inset-0 w-full h-full text-transparent bg-transparent border-none cursor-pointer z-10 p-0", !isEditing && "pointer-events-none")} />
                                     <span className="ml-3 text-[12px] font-bold text-black/40 truncate pointer-events-none">
                                         {(editedData.publish_date ?? item.publish_date) ? new Date((editedData.publish_date ?? item.publish_date!) + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Not scheduled'}
                                     </span>

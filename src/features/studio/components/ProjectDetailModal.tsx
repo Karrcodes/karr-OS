@@ -365,15 +365,14 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div className="space-y-2">
                                                         <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Target Date</label>
-                                                        <div className="relative group/maindate h-[46px] flex items-center px-4 bg-black/[0.02] border border-black/[0.1] rounded-xl overflow-hidden cursor-pointer"
-                                                            onClick={() => targetDateInputRef.current?.showPicker()}>
+                                                        <div className="relative group/maindate h-[46px] flex items-center px-4 bg-black/[0.02] border border-black/[0.1] rounded-xl overflow-hidden">
                                                             <Calendar className="w-4 h-4 text-black/20 shrink-0 pointer-events-none" />
                                                             <input
                                                                 type="date"
                                                                 ref={targetDateInputRef}
                                                                 value={editedData.target_date ? editedData.target_date.split('T')[0] : (project.target_date ? project.target_date.split('T')[0] : '')}
                                                                 onChange={(e) => setEditedData(prev => ({ ...prev, target_date: e.target.value || null }))}
-                                                                className="absolute inset-0 w-full h-full text-transparent bg-transparent border-none cursor-pointer z-10 p-0 pointer-events-none"
+                                                                className={cn("absolute inset-0 w-full h-full text-transparent bg-transparent border-none z-10 p-0", isEditing && "cursor-pointer", !isEditing && "pointer-events-none")}
                                                             />
                                                             <span className="ml-3 text-[13px] font-bold text-black/40 truncate pointer-events-none">
                                                                 {(editedData.target_date || project.target_date) ? new Date((editedData.target_date ?? project.target_date!) + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Set target date'}
@@ -541,14 +540,13 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                                                 />
                                             </div>
                                             <div className="flex items-center gap-2 shrink-0">
-                                                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-black/[0.03] border border-black/[0.05] rounded-lg group/date relative min-w-0 flex-1 h-7 overflow-hidden cursor-pointer"
-                                                    onClick={(e) => (e.currentTarget.querySelector('input[type="date"]') as any)?.showPicker?.()}>
+                                                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-black/[0.03] border border-black/[0.05] rounded-lg group/date relative min-w-0 flex-1 h-7 overflow-hidden">
                                                     <Calendar className="w-2.5 h-2.5 text-black/10 shrink-0 pointer-events-none" />
                                                     <input
                                                         type="date"
                                                         value={m.target_date ? m.target_date.split('T')[0] : ''}
                                                         onChange={(e) => updateMilestone(m.id, { target_date: e.target.value || null })}
-                                                        className="absolute inset-0 w-full h-full text-transparent bg-transparent border-none cursor-pointer z-10 p-0 pointer-events-none"
+                                                        className="absolute inset-0 w-full h-full text-transparent bg-transparent border-none cursor-pointer z-10 p-0"
                                                     />
                                                     <span className="text-[10px] font-bold text-black/40 truncate pointer-events-none">
                                                         {m.target_date ? new Date(m.target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'Set date'}
@@ -627,7 +625,7 @@ export default function ProjectDetailModal({ isOpen, onClose, project }: Project
                                                 ref={newMilestoneDateRef}
                                                 value={newMilestoneDate}
                                                 onChange={(e) => setNewMilestoneDate(e.target.value)}
-                                                className="absolute inset-0 w-full h-full text-transparent bg-transparent border-none cursor-pointer z-10 p-0 pointer-events-none"
+                                                className="absolute inset-0 w-full h-full text-transparent bg-transparent border-none cursor-pointer z-10 p-0"
                                             />
                                             <span className="text-[11px] font-bold text-orange-600 truncate pointer-events-none">
                                                 {newMilestoneDate ? new Date(newMilestoneDate + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'Deadline'}
