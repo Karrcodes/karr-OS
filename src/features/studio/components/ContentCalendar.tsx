@@ -117,12 +117,12 @@ export default function ContentCalendar() {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-3 px-4 py-2 bg-black/[0.02] border border-black/[0.05] rounded-xl overflow-x-auto no-scrollbar">
+                <div className="flex items-center gap-4 w-full sm:w-auto overflow-x-auto no-scrollbar pb-1 sm:pb-0">
+                    <div className="flex items-center gap-3 px-3 py-1.5 bg-black/[0.02] border border-black/[0.05] rounded-xl">
                         {Object.entries(STATUS_CONFIG).map(([status, config]) => (
                             <div key={status} className="flex items-center gap-1.5 shrink-0">
                                 <div className={cn("w-1.5 h-1.5 rounded-full", config.color.split(' ')[0])} />
-                                <span className="text-[9px] font-bold text-black/30 uppercase tracking-widest">{status}</span>
+                                <span className="text-[9px] font-bold text-black/40 uppercase tracking-widest">{status}</span>
                             </div>
                         ))}
                     </div>
@@ -132,8 +132,8 @@ export default function ContentCalendar() {
             {/* Calendar Grid */}
             <div className="grid grid-cols-7 gap-px bg-black/[0.08] rounded-[24px] overflow-hidden border border-black/[0.08] shadow-sm">
                 {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                    <div key={day} className="bg-black/[0.02] py-3 text-center">
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-black/25">{day}</span>
+                    <div key={day} className="bg-black/[0.02] py-2 text-center">
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-black/30">{day}</span>
                     </div>
                 ))}
 
@@ -145,21 +145,21 @@ export default function ContentCalendar() {
                         <div
                             key={i}
                             className={cn(
-                                "min-h-[140px] bg-white p-3 transition-colors flex flex-col gap-2",
+                                "min-h-[100px] bg-white p-2 transition-colors flex flex-col gap-1.5",
                                 !data.isCurrentMonth && "bg-black/[0.01] opacity-40",
                                 data.isCurrentMonth && "hover:bg-black/[0.01]"
                             )}
                         >
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between px-1">
                                 <span className={cn(
-                                    "text-[13px] font-black tracking-tight",
-                                    isToday ? "flex items-center justify-center w-7 h-7 bg-black text-white rounded-full -ml-1.5" : "text-black/30"
+                                    "text-[12px] font-black tracking-tight",
+                                    isToday ? "flex items-center justify-center w-6 h-6 bg-black text-white rounded-full -ml-1" : "text-black/40"
                                 )}>
                                     {data.day}
                                 </span>
                             </div>
 
-                            <div className="flex flex-col gap-1.5">
+                            <div className="flex flex-col gap-1">
                                 {dayItems.map(item => {
                                     const StatusIcon = item.platforms && item.platforms.length > 0 ? PLATFORM_ICONS[item.platforms[0]] : Clock
                                     const config = STATUS_CONFIG[item.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.idea
@@ -169,25 +169,25 @@ export default function ContentCalendar() {
                                             key={item.id}
                                             onClick={() => setSelectedContentId(item.id)}
                                             className={cn(
-                                                "w-full text-left p-2 rounded-xl border transition-all hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] group",
+                                                "w-full text-left p-1.5 rounded-lg border transition-all hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] group",
                                                 config.color
                                             )}
                                         >
-                                            <div className="flex items-center justify-between gap-1 mb-1">
-                                                <div className="flex items-center gap-1">
-                                                    {StatusIcon && <StatusIcon className="w-2.5 h-2.5 opacity-50" />}
-                                                    <span className="text-[8px] font-black uppercase tracking-widest opacity-40">
+                                            <div className="flex items-center justify-between gap-1 mb-0.5">
+                                                <div className="flex items-center gap-1.5">
+                                                    {StatusIcon && <StatusIcon className="w-2.5 h-2.5 opacity-40" />}
+                                                    <span style={{ fontSize: '7px' }} className="font-bold uppercase tracking-widest opacity-60">
                                                         {item.status}
                                                     </span>
                                                 </div>
                                                 {item.impact_score && (
                                                     <div className="flex items-center gap-0.5 text-[8px] font-black text-amber-600">
-                                                        <Zap className="w-2 h-2 fill-current" />
+                                                        <Zap className="w-2.5 h-2.5 fill-current" />
                                                         {item.impact_score}
                                                     </div>
                                                 )}
                                             </div>
-                                            <h4 className="text-[11px] font-extrabold leading-tight tracking-tight line-clamp-2">
+                                            <h4 style={{ fontSize: '10px' }} className="font-semibold leading-tight tracking-tight line-clamp-2 text-black/90">
                                                 {item.title}
                                             </h4>
                                         </button>
