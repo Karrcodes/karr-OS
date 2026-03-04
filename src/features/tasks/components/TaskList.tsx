@@ -2238,6 +2238,14 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category, setSelected
                                     {task.strategic_category}
                                 </span>
                             )}
+                            {(task.project_id || task.content_id) && (
+                                <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-[0.1em] shrink-0 flex items-center gap-1 bg-orange-50 text-orange-600 border border-orange-100/50">
+                                    {task.project_id ? <Rocket className="w-2.5 h-2.5" /> : <Video className="w-2.5 h-2.5" />}
+                                    {task.content_id
+                                        ? content.find(c => c.id === task.content_id)?.title || 'Content'
+                                        : projects.find(p => p.id === task.project_id)?.title || 'Project'}
+                                </span>
+                            )}
                         </div>
 
                         <div className="flex items-center gap-2">
@@ -2450,6 +2458,7 @@ function MilestoneRow({ milestone, project, content, onProjectClick, onContentCl
                         "px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wider",
                         type === 'Project' ? "bg-purple-50 text-purple-600 border border-purple-100" : "bg-blue-50 text-blue-600 border border-blue-100"
                     )}>
+                        {type === 'Project' ? <Rocket className="w-2 h-2" /> : <Video className="w-2 h-2" />}
                         {type}
                     </span>
                 </div>
