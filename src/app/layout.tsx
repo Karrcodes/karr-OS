@@ -62,8 +62,8 @@ export default async function RootLayout({
                 <VaultProvider>
                   <SecurityLock>
                     {!isLandingPage && <Sidebar />}
-                    {/* md:ml-[220px] — full width on mobile (sidebar is a drawer), shifted on desktop */}
-                    <main className={`${!isLandingPage ? 'md:ml-[220px]' : ''} min-h-screen bg-white`}>
+                    {/* main margin tracks --sidebar-w CSS var set by Sidebar component */}
+                    <main className={`${!isLandingPage ? 'md:main-sidebar-offset' : ''} min-h-screen bg-white transition-[margin] duration-300`}>
                       {children}
                     </main>
                     {!isLandingPage && <GlobalQuickAction />}

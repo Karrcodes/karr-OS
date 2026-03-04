@@ -7,7 +7,7 @@ import { useState, useEffect, useRef } from 'react'
 import {
     BarChart3, Activity, ShoppingCart, Bell,
     SlidersHorizontal, Menu, X, RefreshCw,
-    Shield, ChevronDown, Check,
+    Shield, ChevronDown, Check, ChevronLeft, ChevronRight,
     TrendingUp, Calendar, CreditCard, PiggyBank,
     Moon, Sun, Laptop, Target, Briefcase, Heart, Gift,
     LayoutDashboard, EyeOff, Receipt, Lock, ClipboardIcon, Key, Brain, Sparkles, Award
@@ -183,6 +183,7 @@ export function Sidebar() {
     const [orderedFinanceSubTabs, setOrderedFinanceSubTabs] = useState<string[]>([])
     const [isMounted, setIsMounted] = useState(false)
     const { settings, setSetting, loading: settingsLoading } = useSettings()
+    const [isCollapsed, setIsCollapsed] = useState(false)
 
     // Touch handlers for swipe to close on mobile
     const [touchStartX, setTouchStartX] = useState<number | null>(null)
@@ -210,6 +211,12 @@ export function Sidebar() {
 
     useEffect(() => {
         setIsMounted(true)
+        // Load collapse state
+        const savedCollapsed = localStorage.getItem('schro_sidebar_collapsed')
+        const collapsed = savedCollapsed === 'true'
+        setIsCollapsed(collapsed)
+        document.documentElement.style.setProperty('--sidebar-w', collapsed ? '64px' : '220px')
+
         // Load main tabs order
         const savedOrder = localStorage.getItem('schro_sidebar_order')
         if (savedOrder) {
@@ -289,6 +296,16 @@ export function Sidebar() {
         setOrderedFinanceSubTabs(newOrder)
         localStorage.setItem('schro_finance_subtabs_order', JSON.stringify(newOrder))
         setSetting('schro_finance_subtabs_order', JSON.stringify(newOrder))
+    }
+
+
+    const toggleCollapse = () => {
+        setIsCollapsed(prev => {
+            const next = !prev
+            localStorage.setItem('schro_sidebar_collapsed', String(next))
+            document.documentElement.style.setProperty('--sidebar-w', next ? '64px' : '220px')
+            return next
+        })
     }
 
     // Close drawer on route change and auto-collapse others
@@ -534,17 +551,78 @@ export function Sidebar() {
     return (
         <>
             {/* ── Desktop sidebar (always visible ≥ md) ─────────────────── */}
-            <aside className="hidden md:flex fixed left-0 top-0 h-full w-[220px] bg-white border-r border-black/[0.07] flex-col z-50 shadow-[1px_0_0_0_rgba(0,0,0,0.04)]">
-                <div className="px-5 pt-5 pb-4 border-b border-black/[0.06] flex items-center h-[72px]">
+            <aside className={cn(
+                "hidden md:flex fixed left-0 top-0 h-full flex-col z-50 bg-white border-r border-black/[0.07] shadow-[1px_0_0_0_rgba(0,0,0,0.04)] transition-[width] duration-300 overflow-hidden",
+                isCollapsed ? "w-[64px]" : "w-[220px]"
+            )}>
+                {/* Logo area */}
+                <div className="px-4 pt-5 pb-4 border-b border-black/[0.06] flex items-center justify-between h-[72px] shrink-0">
                     <Link href="/system/control-centre">
-                        <div className="flex items-center">
+                        {isCollapsed ? (
+                            <span className="text-3xl font-serif italic font-medium tracking-tight leading-none select-none">ö</span>
+                        ) : (
                             <span className="text-2xl font-serif italic font-medium tracking-tight">Schrö</span>
-                        </div>
+                        )}
                     </Link>
+                    {!isCollapsed && (
+                        <button
+                            onClick={toggleCollapse}
+                            className="w-6 h-6 rounded-md flex items-center justify-center text-black/20 hover:text-black/60 hover:bg-black/[0.04] transition-colors"
+                            title="Collapse sidebar"
+                        >
+                            <ChevronLeft className="w-3.5 h-3.5" />
+                        </button>
+                    )}
                 </div>
-                {renderNav(false)}
-                <SidebarFooter pathname={pathname} />
-                <ProfileMenu />
+
+                {/* Nav */}
+                {isCollapsed ? (
+                    /* Collapsed: icon-only nav with tooltips */
+                    <nav className="flex-1 flex flex-col items-center py-4 gap-0.5 overflow-y-auto">
+                        {navItems.map(item => {
+                            const Icon = item.icon
+                            const isActive = !('disabled' in item && item.disabled) && pathname.startsWith(item.href)
+                            if ('disabled' in item && item.disabled) return null
+                            return (
+                                <div key={item.label} className="relative group w-full flex justify-center">
+                                    <Link
+                                        href={item.href}
+                                        className={cn(
+                                            'w-10 h-10 flex items-center justify-center rounded-xl transition-all',
+                                            isActive ? 'bg-black/10 text-black' : 'text-black/35 hover:text-black/80 hover:bg-black/[0.04]'
+                                        )}
+                                    >
+                                        <Icon className="w-4.5 h-4.5" />
+                                    </Link>
+                                    {/* Tooltip */}
+                                    <div className="pointer-events-none absolute left-full ml-2 px-2.5 py-1.5 bg-black text-white text-[11px] font-bold rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-[200] shadow-xl">
+                                        {item.label}
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </nav>
+                ) : (
+                    renderNav(false)
+                )}
+
+                {/* Footer + Profile – hide in collapsed state */}
+                {!isCollapsed && <SidebarFooter pathname={pathname} />}
+
+                {/* Expand / Profile row */}
+                {isCollapsed ? (
+                    <div className="pb-4 flex flex-col items-center gap-2 shrink-0">
+                        <button
+                            onClick={toggleCollapse}
+                            className="w-10 h-10 rounded-xl flex items-center justify-center text-black/25 hover:text-black/70 hover:bg-black/[0.04] transition-colors"
+                            title="Expand sidebar"
+                        >
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
+                    </div>
+                ) : (
+                    <ProfileMenu />
+                )}
             </aside>
 
             {/* ── Mobile top bar ─────────────────────────────────────────── */}
