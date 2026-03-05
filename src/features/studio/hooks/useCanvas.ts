@@ -27,13 +27,11 @@ export function useCanvas() {
     }, [fetchEntries])
 
     const createEntry = useCallback(async (data: { title: string; body?: string; tags?: string[]; color?: CanvasColor }) => {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) { console.error('Canvas: no authenticated user'); return }
-
+        // Don't manually resolve user — insert directly like StudioContext does.
+        // user_id is set by a Postgres trigger (DEFAULT auth.uid()).
         const { data: inserted, error } = await supabase
             .from('studio_canvas_entries')
             .insert([{
-                user_id: user.id,
                 title: data.title.trim(),
                 body: data.body?.trim() || null,
                 tags: data.tags || [],
@@ -44,6 +42,8 @@ export function useCanvas() {
 
         if (error) {
             console.error('Canvas insert error:', error)
+            // Fallback: re-fetch so we at least see it if the insert did succeed
+            await fetchEntries()
             return
         }
 
@@ -51,7 +51,6 @@ export function useCanvas() {
         if (newEntry) {
             setEntries(prev => [newEntry as StudioCanvasEntry, ...prev])
         } else {
-            // Fallback: re-fetch if select didn't return anything
             await fetchEntries()
         }
     }, [fetchEntries])
