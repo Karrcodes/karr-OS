@@ -36,7 +36,11 @@ export default function StudioComposer({ draftId, initialNodes = [], onBack }: S
     const handleSave = async () => {
         if (!draft || isSaving) return
         setIsSaving(true)
-        await updateDraft(draft.id, { body, title })
+        await updateDraft(draft.id, {
+            body,
+            title,
+            node_references: draft.node_references
+        })
         setIsSaving(false)
     }
 
@@ -48,7 +52,7 @@ export default function StudioComposer({ draftId, initialNodes = [], onBack }: S
             }
         }, 2000)
         return () => clearTimeout(timer)
-    }, [body, title, draft])
+    }, [body, title, draft?.node_references])
 
     return (
         <div className="fixed inset-0 bg-[#fafafa] z-[100] flex flex-col animate-in fade-in duration-300">
@@ -133,6 +137,32 @@ export default function StudioComposer({ draftId, initialNodes = [], onBack }: S
                         <textarea
                             value={body}
                             onChange={(e) => setBody(e.target.value)}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => {
+                                const jsonData = e.dataTransfer.getData('application/json')
+                                if (jsonData) {
+                                    try {
+                                        const data = JSON.parse(jsonData)
+                                        if (data.id && data.type) {
+                                            // Add to node references if not already there
+                                            setDraft(prev => {
+                                                if (!prev) return prev
+                                                const exists = prev.node_references?.some(r => r.node_id === data.id)
+                                                if (exists) return prev
+                                                return {
+                                                    ...prev,
+                                                    node_references: [
+                                                        ...(prev.node_references || []),
+                                                        { node_id: data.id, node_type: data.type }
+                                                    ]
+                                                }
+                                            })
+                                        }
+                                    } catch (err) {
+                                        console.error('Failed to parse dropped node data', err)
+                                    }
+                                }
+                            }}
                             placeholder="Start writing..."
                             className="w-full min-h-[600px] text-[18px] text-black/80 leading-relaxed bg-transparent outline-none border-none placeholder:text-black/10 resize-none font-medium selection:bg-indigo-100 selection:text-indigo-900"
                             style={{ fontFamily: 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif' }}
@@ -181,14 +211,40 @@ export default function StudioComposer({ draftId, initialNodes = [], onBack }: S
 }
 
 function ResearchNodeCard({ node }: { node: PolymorphicNode }) {
+    const handleDragStart = (e: React.DragEvent) => {
+        // Prepare the block to insert
+        const typeLabel = node.node_type === 'entry' ? 'Note' : node.node_type === 'project' ? 'Project' : 'Content'
+        const bodyContent = node.node_type === 'entry' ? (node as any).body : (node as any).tagline || (node as any).description || ''
+
+        const data = {
+            id: node.id,
+            type: node.node_type,
+            title: node.title,
+            body: bodyContent
+        }
+
+        const textToInsert = `\n\n> [!${typeLabel}: ${node.title}]\n> ${bodyContent.replace(/\n/g, '\n> ')}\n\n`
+
+        e.dataTransfer.setData('text/plain', textToInsert)
+        e.dataTransfer.setData('application/json', JSON.stringify(data))
+        e.dataTransfer.effectAllowed = 'copy'
+    }
+
     return (
-        <div className="p-4 bg-black/[0.02] border border-black/[0.05] rounded-2xl group hover:border-indigo-200 hover:bg-indigo-50/30 transition-all cursor-grab active:cursor-grabbing">
+        <div
+            draggable
+            onDragStart={handleDragStart}
+            className="p-4 bg-black/[0.02] border border-black/[0.05] rounded-2xl group hover:border-indigo-200 hover:bg-indigo-50/30 transition-all cursor-grab active:cursor-grabbing relative"
+        >
+            <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all">
+                <Maximize2 className="w-3 h-3 text-black/20" />
+            </div>
             <h4 className="text-[12px] font-black text-black line-clamp-1 mb-1">{node.title}</h4>
             <p className="text-[10px] text-black/40 line-clamp-2 leading-relaxed font-medium">
                 {node.node_type === 'entry' ? (node as any).body : (node as any).tagline || 'No description provided.'}
             </p>
-            <div className="flex items-center gap-1.5 mt-2 opacity-0 group-hover:opacity-100 transition-all">
-                <span className="text-[9px] font-black uppercase text-indigo-500/70">Drag to insert</span>
+            <div className="flex items-center gap-1.5 mt-2">
+                <span className="text-[9px] font-black uppercase text-indigo-500/40 group-hover:text-indigo-500 transition-all">Drag to insert</span>
             </div>
         </div>
     )

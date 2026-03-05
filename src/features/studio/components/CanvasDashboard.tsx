@@ -718,242 +718,121 @@ export default function CanvasDashboard() {
                                 </p>
                             </div>
                         ) : (
+                            <div className="columns-2 sm:columns-3 lg:columns-4 gap-3 space-y-3">
+                                {filtered.map(entry => (
+                                    <div key={entry.id} className="break-inside-avoid mb-3">
+                                        <CanvasCard
+                                            entry={entry}
+                                            connections={connectionDataMap[entry.id]}
+                                            onClick={() => setSelectedEntry(entry)}
+                                            onPin={() => togglePin(entry.id, entry.pinned)}
+                                            onArchive={() => setConfirmAction({ type: 'archive_note', id: entry.id, title: entry.title })}
+                                            onDelete={() => setConfirmAction({ type: 'delete_note', id: entry.id, title: entry.title })}
+                                            onColorChange={(c: CanvasColor) => updateEntry(entry.id, { color: c })}
+                                        />
                                     </div>
-                                    <h3 className="text-2xl font-black text-black tracking-tight mb-2">Build Your Universe</h3>
-                                    <p className="text-[14px] text-black/40 font-medium leading-relaxed mb-8">
-                                        Each mindmap is an independent dimension of thought. Start your first session now.
-                                    </p>
-                                    <button
-                                        onClick={handleCreateMap}
-                                        className="w-full py-4 bg-indigo-500 text-white rounded-[24px] font-black uppercase text-[12px] tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-600 hover:-translate-y-1 transition-all active:translate-y-0 active:scale-95"
-                                    >
-                                        Create First Mindmap
-                                    </button>
-                                </div>
-                            </div >
-                        )
-}
-                    </div >
-                </>
-            )}
-        </div >
-    ) : (
-    <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
-        <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-20 flex-1 flex flex-col gap-6">
-            {/* Quick Capture Bar */}
-            {activeTab === 'active' && (
-                <div className="flex items-center gap-3 bg-white border border-black/[0.07] rounded-2xl px-4 py-3 shadow-sm hover:border-black/10 transition-all focus-within:border-orange-200 focus-within:shadow-orange-500/5">
-                    <PenLine className="w-4 h-4 text-black/25 shrink-0" />
-                    <input
-                        ref={quickInputRef}
-                        value={quickTitle}
-                        onChange={e => setQuickTitle(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter') handleQuickCreate() }}
-                        placeholder="Capture an idea... press Enter to save"
-                        className="flex-1 text-[14px] font-medium text-black bg-transparent outline-none placeholder:text-black/25"
-                    />
-                    {quickTitle && (
-                        <button onClick={handleQuickCreate} className="flex items-center gap-1.5 px-3 py-1.5 bg-black text-white text-[11px] font-black rounded-xl hover:bg-black/80 transition-all shrink-0">
-                            <Plus className="w-3.5 h-3.5" />
-                            Save
-                        </button>
-                    )}
-                </div>
-            )}
-
-            {/* Filter row */}
-            <div className="flex items-center gap-3 flex-wrap">
-                <div className="relative flex-1 min-w-[180px]">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-black/25" />
-                    <input
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        placeholder="Search ideas..."
-                        className="w-full pl-9 pr-4 py-2 bg-white border border-black/[0.06] rounded-xl text-[12px] font-medium text-black outline-none focus:border-black/20 transition-all"
-                    />
-                </div>
-                {allTags.length > 0 && (
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                        {allTags.slice(0, 8).map(tag => (
-                            <button
-                                key={tag}
-                                onClick={() => setFilterTag(filterTag === tag ? null : tag)}
-                                className={cn(
-                                    "text-[11px] font-bold px-2.5 py-1 rounded-full border transition-all",
-                                    filterTag === tag
-                                        ? 'bg-black text-white border-black'
-                                        : 'bg-white text-black/50 border-black/[0.08] hover:border-black/20'
-                                )}
-                            >
-                                {tag}
-                            </button>
-                        ))}
-                        {filterTag && (
-                            <button onClick={() => setFilterTag(null)} className="w-6 h-6 flex items-center justify-center rounded-full bg-black/[0.05] text-black/40 hover:bg-black/10 transition-all">
-                                <X className="w-3 h-3" />
-                            </button>
+                                ))}
+                            </div>
                         )}
-                    </div>
-                )}
-                <button
-                    onClick={() => setPinnedFirst(p => !p)}
-                    className={cn(
-                        "flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[11px] font-bold transition-all",
-                        pinnedFirst
-                            ? 'bg-black/[0.05] text-black/70 border-black/[0.08]'
-                            : 'bg-white text-black/40 border-black/[0.06] hover:border-black/15'
-                    )}
-                >
-                    <Pin className="w-3 h-3" />
-                    Pinned first
-                </button>
-            </div>
-
-            {/* Stats */}
-            <div className="flex items-center gap-4 text-[11px] text-black/30 font-medium">
-                <span>{entries.length} {entries.length === 1 ? 'idea' : 'ideas'}</span>
-                {entries.filter(e => e.pinned).length > 0 && (
-                    <span>· {entries.filter(e => e.pinned).length} pinned</span>
-                )}
-                {connections.length > 0 && <span>· {connections.length} connection{connections.length !== 1 ? 's' : ''}</span>}
-                {filtered.length !== entries.length && <span>· showing {filtered.length}</span>}
-            </div>
-
-            {/* Grid */}
-            {loading ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {[...Array(8)].map((_, i) => (
-                        <div key={i} className="h-32 bg-black/[0.02] rounded-2xl animate-pulse" />
-                    ))}
+                    </main>
                 </div>
-            ) : filtered.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-24 gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-black/[0.03] flex items-center justify-center">
-                        <PenLine className="w-5 h-5 text-black/20" />
-                    </div>
-                    <p className="text-[13px] font-bold text-black/20">
-                        {search || filterTag ? 'No matching ideas' : 'Your canvas is empty'}
-                    </p>
-                    <p className="text-[11px] text-black/15">
-                        {search || filterTag ? 'Try different filters' : 'Capture your first idea above'}
-                    </p>
-                </div>
-            ) : (
-                <div className="columns-2 sm:columns-3 lg:columns-4 gap-3 space-y-3">
-                    {filtered.map(entry => (
-                        <div key={entry.id} className="break-inside-avoid mb-3">
-                            <CanvasCard
-                                entry={entry}
-                                connections={connectionDataMap[entry.id]}
-                                onClick={() => setSelectedEntry(entry)}
-                                onPin={() => togglePin(entry.id, entry.pinned)}
-                                onArchive={() => setConfirmAction({ type: 'archive_note', id: entry.id, title: entry.title })}
-                                onDelete={() => setConfirmAction({ type: 'delete_note', id: entry.id, title: entry.title })}
-                                onColorChange={(c: CanvasColor) => updateEntry(entry.id, { color: c })}
-                            />
+            )
+            }
+
+            {/* Detail Modal */}
+            <CanvasEntryModal
+                entry={selectedEntry}
+                isOpen={!!selectedEntry}
+                onClose={() => setSelectedEntry(null)}
+                onUpdate={(id, upd) => { updateEntry(id, upd); setSelectedEntry(prev => prev ? { ...prev, ...upd } : prev) }}
+                onDelete={(id) => setConfirmAction({ type: 'delete_note', id, title: selectedEntry?.title || '' })}
+                onArchive={(id) => setConfirmAction({ type: 'archive_note', id, title: selectedEntry?.title || '' })}
+                onPromoteToSpark={handlePromoteToSpark}
+                connections={selectedEntry ? connectionDataMap[selectedEntry.id] : undefined}
+                onAddLink={createConnection}
+                onRemoveLink={(entryId, targetId) => {
+                    const conn = connections.find(c => (c.from_id === entryId && c.to_id === targetId) || (c.from_id === targetId && c.to_id === entryId))
+                    if (conn) deleteConnection(conn.id)
+                }}
+                allTags={allTags}
+            />
+
+            {/* Global Confirmation Modal */}
+            {
+                confirmAction && (
+                    <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[1000] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setConfirmAction(null)}>
+                        <div className="bg-white rounded-[32px] p-8 max-w-[360px] w-full shadow-2xl border border-black/5 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                            <div className={cn(
+                                "w-12 h-12 rounded-2xl flex items-center justify-center mb-6",
+                                confirmAction.type.includes('delete') ? "bg-red-50 text-red-500" : confirmAction.type === 'rename_map' ? "bg-indigo-50 text-indigo-500" : "bg-amber-50 text-amber-500"
+                            )}>
+                                {confirmAction.type.includes('delete') ? <Trash2 className="w-6 h-6" /> : confirmAction.type === 'rename_map' ? <PenLine className="w-6 h-6" /> : <Archive className="w-6 h-6" />}
+                            </div>
+
+                            <h3 className="text-[18px] font-black tracking-tight text-black mb-2">
+                                {confirmAction.type === 'delete_note' && 'Delete Note?'}
+                                {confirmAction.type === 'archive_note' && 'Archive Note?'}
+                                {confirmAction.type === 'delete_map' && 'Delete Mindmap?'}
+                                {confirmAction.type === 'archive_map' && 'Archive Mindmap?'}
+                                {confirmAction.type === 'rename_map' && 'Rename Mindmap'}
+                            </h3>
+
+                            <p className="text-[13px] text-black/50 leading-relaxed mb-6">
+                                {confirmAction.type === 'rename_map' ? 'Enter a new name for your mindmap.' : `Are you sure you want to ${confirmAction.type.includes('delete') ? 'delete' : 'archive'} "${confirmAction.title}"?`}
+                            </p>
+
+                            {confirmAction.type === 'rename_map' && (
+                                <input
+                                    autoFocus
+                                    value={renameValue}
+                                    onChange={e => setRenameValue(e.target.value)}
+                                    className="w-full px-4 py-3 bg-black/[0.03] border border-black/[0.06] rounded-xl text-[14px] font-medium mb-8 outline-none focus:border-indigo-500/30"
+                                    onKeyDown={e => { if (e.key === 'Enter') { renameMap(confirmAction.id, renameValue); setConfirmAction(null) } }}
+                                />
+                            )}
+
+                            <div className="flex flex-col gap-2">
+                                <button
+                                    onClick={async () => {
+                                        if (confirmAction.type === 'delete_note') { await deleteEntry(confirmAction.id); setSelectedEntry(null) }
+                                        else if (confirmAction.type === 'archive_note') { await archiveEntry(confirmAction.id); setSelectedEntry(null) }
+                                        else if (confirmAction.type === 'delete_map') await deleteMap(confirmAction.id)
+                                        else if (confirmAction.type === 'archive_map') await archiveMap(confirmAction.id)
+                                        else if (confirmAction.type === 'rename_map') await renameMap(confirmAction.id, renameValue)
+                                        setConfirmAction(null)
+                                    }}
+                                    className={cn(
+                                        "w-full py-3.5 rounded-2xl font-black text-[11px] uppercase tracking-wider transition-all active:scale-95 shadow-lg",
+                                        confirmAction.type.includes('delete') ? "bg-red-500 text-white hover:bg-red-600" : "bg-black text-white hover:bg-neutral-800"
+                                    )}
+                                >
+                                    {confirmAction.type === 'rename_map' ? 'Update Name' : 'Confirm Action'}
+                                </button>
+                                <button
+                                    onClick={() => setConfirmAction(null)}
+                                    className="w-full py-3.5 rounded-2xl font-black text-[11px] uppercase tracking-wider text-black/40 hover:bg-black/5 transition-all"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
                         </div>
-                    ))}
-                </div>
-            )}
-        </main>
-    </div>
-)
-}
+                    </div>
+                )
+            }
 
-{/* Detail Modal */ }
-<CanvasEntryModal
-    entry={selectedEntry}
-    isOpen={!!selectedEntry}
-    onClose={() => setSelectedEntry(null)}
-    onUpdate={(id, upd) => { updateEntry(id, upd); setSelectedEntry(prev => prev ? { ...prev, ...upd } : prev) }}
-    onDelete={(id) => setConfirmAction({ type: 'delete_note', id, title: selectedEntry?.title || '' })}
-    onArchive={(id) => setConfirmAction({ type: 'archive_note', id, title: selectedEntry?.title || '' })}
-    onPromoteToSpark={handlePromoteToSpark}
-    connections={selectedEntry ? connectionDataMap[selectedEntry.id] : undefined}
-    onAddLink={createConnection}
-    onRemoveLink={(entryId, targetId) => {
-        const conn = connections.find(c => (c.from_id === entryId && c.to_id === targetId) || (c.from_id === targetId && c.to_id === entryId))
-        if (conn) deleteConnection(conn.id)
-    }}
-    allTags={allTags}
-/>
+            {/* Project modal */}
+            <ProjectDetailModal
+                isOpen={!!selectedProjectId}
+                onClose={() => setSelectedProjectId(null)}
+                project={projects.find(p => p.id === selectedProjectId) || null}
+            />
 
-{/* Global Confirmation Modal */ }
-{
-    confirmAction && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[1000] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setConfirmAction(null)}>
-            <div className="bg-white rounded-[32px] p-8 max-w-[360px] w-full shadow-2xl border border-black/5 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                <div className={cn(
-                    "w-12 h-12 rounded-2xl flex items-center justify-center mb-6",
-                    confirmAction.type.includes('delete') ? "bg-red-50 text-red-500" : confirmAction.type === 'rename_map' ? "bg-indigo-50 text-indigo-500" : "bg-amber-50 text-amber-500"
-                )}>
-                    {confirmAction.type.includes('delete') ? <Trash2 className="w-6 h-6" /> : confirmAction.type === 'rename_map' ? <PenLine className="w-6 h-6" /> : <Archive className="w-6 h-6" />}
-                </div>
-
-                <h3 className="text-[18px] font-black tracking-tight text-black mb-2">
-                    {confirmAction.type === 'delete_note' && 'Delete Note?'}
-                    {confirmAction.type === 'archive_note' && 'Archive Note?'}
-                    {confirmAction.type === 'delete_map' && 'Delete Mindmap?'}
-                    {confirmAction.type === 'archive_map' && 'Archive Mindmap?'}
-                    {confirmAction.type === 'rename_map' && 'Rename Mindmap'}
-                </h3>
-
-                <p className="text-[13px] text-black/50 leading-relaxed mb-6">
-                    {confirmAction.type === 'rename_map' ? 'Enter a new name for your mindmap.' : `Are you sure you want to ${confirmAction.type.includes('delete') ? 'delete' : 'archive'} "${confirmAction.title}"?`}
-                </p>
-
-                {confirmAction.type === 'rename_map' && (
-                    <input
-                        autoFocus
-                        value={renameValue}
-                        onChange={e => setRenameValue(e.target.value)}
-                        className="w-full px-4 py-3 bg-black/[0.03] border border-black/[0.06] rounded-xl text-[14px] font-medium mb-8 outline-none focus:border-indigo-500/30"
-                        onKeyDown={e => { if (e.key === 'Enter') { renameMap(confirmAction.id, renameValue); setConfirmAction(null) } }}
-                    />
-                )}
-
-                <div className="flex flex-col gap-2">
-                    <button
-                        onClick={async () => {
-                            if (confirmAction.type === 'delete_note') { await deleteEntry(confirmAction.id); setSelectedEntry(null) }
-                            else if (confirmAction.type === 'archive_note') { await archiveEntry(confirmAction.id); setSelectedEntry(null) }
-                            else if (confirmAction.type === 'delete_map') await deleteMap(confirmAction.id)
-                            else if (confirmAction.type === 'archive_map') await archiveMap(confirmAction.id)
-                            else if (confirmAction.type === 'rename_map') await renameMap(confirmAction.id, renameValue)
-                            setConfirmAction(null)
-                        }}
-                        className={cn(
-                            "w-full py-3.5 rounded-2xl font-black text-[11px] uppercase tracking-wider transition-all active:scale-95 shadow-lg",
-                            confirmAction.type.includes('delete') ? "bg-red-500 text-white hover:bg-red-600" : "bg-black text-white hover:bg-neutral-800"
-                        )}
-                    >
-                        {confirmAction.type === 'rename_map' ? 'Update Name' : 'Confirm Action'}
-                    </button>
-                    <button
-                        onClick={() => setConfirmAction(null)}
-                        className="w-full py-3.5 rounded-2xl font-black text-[11px] uppercase tracking-wider text-black/40 hover:bg-black/5 transition-all"
-                    >
-                        Cancel
-                    </button>
-                </div>
-            </div>
-        </div>
-    )
-}
-
-{/* Project modal */ }
-<ProjectDetailModal
-    isOpen={!!selectedProjectId}
-    onClose={() => setSelectedProjectId(null)}
-    project={projects.find(p => p.id === selectedProjectId) || null}
-/>
-
-{/* Content modal */ }
-<ContentDetailModal
-    isOpen={!!selectedContentId}
-    onClose={() => setSelectedContentId(null)}
-    item={content.find(c => c.id === selectedContentId) || null}
-/>
+            {/* Content modal */}
+            <ContentDetailModal
+                isOpen={!!selectedContentId}
+                onClose={() => setSelectedContentId(null)}
+                item={content.find(c => c.id === selectedContentId) || null}
+            />
         </div >
     )
 }
