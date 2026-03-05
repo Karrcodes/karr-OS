@@ -41,7 +41,7 @@ export function useCanvas() {
             .select()
 
         if (error) {
-            console.error('Canvas insert error:', error)
+            console.error('Canvas insert error:', error.message, error.code, (error as any).details, (error as any).hint)
             // Fallback: re-fetch so we at least see it if the insert did succeed
             await fetchEntries()
             return

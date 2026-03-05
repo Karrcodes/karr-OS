@@ -77,11 +77,14 @@ export default function CanvasEntryModal({ entry, isOpen, onClose, onUpdate, onD
     const { bg } = COLOR_MAP[color] || COLOR_MAP.default
 
     return (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className={cn(
-                "relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl border border-black/[0.08] flex flex-col",
-                bg
-            )}>
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
+            <div
+                className={cn(
+                    "relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl border border-black/[0.08] flex flex-col",
+                    bg
+                )}
+                onClick={e => e.stopPropagation()}
+            >
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 pt-6 pb-0 shrink-0">
                     <div className="flex items-center gap-2">
