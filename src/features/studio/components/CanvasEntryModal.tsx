@@ -93,7 +93,7 @@ export default function CanvasEntryModal({ entry, isOpen, onClose, onUpdate, onD
                             {COLORS.map(c => (
                                 <button
                                     key={c}
-                                    onClick={() => change(() => setColor(c))}
+                                    onClick={() => change(() => setColor(color === c ? 'default' : c))}
                                     className={cn(
                                         "w-4 h-4 rounded-full transition-all hover:scale-110",
                                         COLOR_MAP[c].dot,

@@ -86,7 +86,7 @@ export default function CanvasCard({ entry, onClick, onPin, onDelete, onColorCha
                             {COLORS.map(c => (
                                 <button
                                     key={c}
-                                    onClick={() => { onColorChange(c); setShowPalette(false) }}
+                                    onClick={() => { onColorChange(entry.color === c ? 'default' : c); setShowPalette(false) }}
                                     className={cn("w-5 h-5 rounded-full border-2 transition-all hover:scale-110", COLOR_MAP[c].dot,
                                         entry.color === c ? 'border-black/40' : 'border-transparent'
                                     )}
