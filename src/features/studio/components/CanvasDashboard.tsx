@@ -722,8 +722,39 @@ function EmptyLibrary({ message }: { message: string }) {
 
 function LibraryItem({ id, title, type = 'entry', onClick }: { id: string; title: string; type?: 'entry' | 'project' | 'content'; onClick: () => void }) {
     const handleDragStart = (e: React.DragEvent) => {
-        e.dataTransfer.setData('application/json', JSON.stringify({ id, type }))
+        const payload = JSON.stringify({ id, type })
+        e.dataTransfer.setData('application/json', payload)
+        e.dataTransfer.setData('text/plain', payload)
         e.dataTransfer.effectAllowed = 'copy'
+
+        // Create custom drag image to look like a Project Card
+        const ghost = document.createElement('div')
+        ghost.style.cssText = [
+            'position:absolute',
+            'top:-1000px',
+            'width:180px',
+            'background:white',
+            'border-radius:14px',
+            'box-shadow:0 24px 48px rgba(0,0,0,0.18),0 0 0 1px rgba(0,0,0,0.06)',
+            'padding:10px 12px',
+            'font-family:ui-sans-serif, system-ui, sans-serif',
+            'color:#000',
+            'pointer-events:none'
+        ].join(';')
+
+        ghost.innerHTML = `
+            <div style="font-size:11px;font-weight:800;color:#000;margin-bottom:2px;">${title}</div>
+            <div style="font-size:9px;color:rgba(0,0,0,0.4);text-transform:uppercase;font-weight:bold;">${type}</div>
+        `
+        document.body.appendChild(ghost)
+
+        // Set drag image with center offset roughly
+        e.dataTransfer.setDragImage(ghost, 90, 30)
+
+        // Cleanup after browser captures it
+        requestAnimationFrame(() => {
+            if (ghost.parentNode) ghost.remove()
+        })
     }
 
     return (

@@ -299,13 +299,18 @@ export default function CanvasWebView({
 
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault()
-        const data = e.dataTransfer.getData('application/json')
+        let data = e.dataTransfer.getData('application/json')
+        if (!data) data = e.dataTransfer.getData('text/plain')
         if (!data) return
 
         try {
-            const { id, type } = JSON.parse(data)
+            const parsed = JSON.parse(data)
+            // handle string or object payload depending on browser quirk
+            const id = typeof parsed === 'string' ? JSON.parse(parsed).id : parsed.id
+            const type = typeof parsed === 'string' ? JSON.parse(parsed).type : parsed.type
+
             const rect = containerRef.current?.getBoundingClientRect()
-            if (rect) {
+            if (rect && id && type) {
                 const x = (e.clientX - rect.left - pan.x) / zoom - (NODE_W / 2)
                 const y = (e.clientY - rect.top - pan.y) / zoom - 20
                 onDropNode(id, type, x, y)
@@ -323,6 +328,7 @@ export default function CanvasWebView({
             onMouseMove={onMouseMove}
             onMouseUp={onMouseUp}
             onMouseLeave={onMouseUp}
+            onDragEnter={e => e.preventDefault()}
             onDragOver={e => e.preventDefault()}
             onDrop={handleDrop}
             onDoubleClick={(e) => {

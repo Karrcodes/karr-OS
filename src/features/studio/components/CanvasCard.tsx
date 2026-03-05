@@ -44,8 +44,30 @@ export default function CanvasCard({ entry, connectionCount = 0, onClick, onPin,
                 </div>
             )}
 
-            {/* Color dot */}
-            <div className={cn("w-2 h-2 rounded-full shrink-0", dot)} />
+            {/* Header Row */}
+            <div className="flex items-center gap-2 mb-1">
+                {/* Color dot */}
+                <div className={cn("w-2 h-2 rounded-full shrink-0", dot)} />
+
+                {/* Semantic Links */}
+                {links && links.length > 0 && (
+                    <div className="flex items-center gap-1.5 flex-1 min-w-0 pr-6">
+                        <div className="flex -space-x-1 shrink-0">
+                            {links.slice(0, 3).map((link, i) => (
+                                <div key={link.id} className={cn(
+                                    "w-3.5 h-3.5 rounded-full flex items-center justify-center border border-white text-white",
+                                    link.type === 'project' ? "bg-orange-500" : "bg-blue-500"
+                                )} title={link.title}>
+                                    {link.type === 'project' ? <Rocket className="w-2 h-2" /> : <Video className="w-2 h-2" />}
+                                </div>
+                            ))}
+                        </div>
+                        <p className="text-[9px] font-black text-black/40 truncate flex-1 leading-none">
+                            {links.length === 1 ? links[0].title : `${links.length} links`}
+                        </p>
+                    </div>
+                )}
+            </div>
 
             {/* Content Row */}
             <div className="flex gap-4">
@@ -86,40 +108,17 @@ export default function CanvasCard({ entry, connectionCount = 0, onClick, onPin,
             )}
 
             {/* Date + connection indicator */}
-            <div className="flex items-center justify-between mt-1">
+            <div className="flex items-center justify-between mt-1 pt-1">
                 <p className="text-[10px] text-black/25 font-medium">
                     {new Date(entry.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                 </p>
                 {connectionCount > 0 && (
-                    <span className="flex items-center gap-1 text-[9px] font-bold text-indigo-400">
+                    <span className="flex items-center gap-1 text-[9px] font-bold text-indigo-400 mr-12">
                         <Link2 className="w-2.5 h-2.5" />
                         {connectionCount}
                     </span>
                 )}
             </div>
-
-            {/* Semantic Links */}
-            {links && links.length > 0 && (
-                <div className="flex items-center gap-2 mt-1 py-1 px-2 bg-black/[0.03] rounded-lg border border-black/[0.04]">
-                    <div className="flex -space-x-1">
-                        {links.slice(0, 3).map((link, i) => (
-                            <div key={link.id} className={cn(
-                                "w-4 h-4 rounded-full flex items-center justify-center border border-white text-white",
-                                link.type === 'project' ? "bg-orange-500" : "bg-blue-500"
-                            )} title={link.title}>
-                                {link.type === 'project' ? <Rocket className="w-2 h-2" /> : <Video className="w-2 h-2" />}
-                            </div>
-                        ))}
-                    </div>
-                    <p className="text-[9px] font-black text-black/40 truncate flex-1">
-                        {links.length === 1 ? (
-                            links[0].title
-                        ) : (
-                            `${links.length} links`
-                        )}
-                    </p>
-                </div>
-            )}
 
             {/* Action buttons - always visible but low opacity until hover */}
             <div
