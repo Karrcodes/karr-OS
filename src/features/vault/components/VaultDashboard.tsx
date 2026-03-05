@@ -16,21 +16,23 @@ export function VaultDashboard({ defaultTab }: { defaultTab?: VaultTab }) {
 
     return (
         <div className="min-h-screen bg-[#FDFDFD] flex flex-col w-full overflow-x-hidden">
-            {/* Header */}
-            <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-black/[0.06] px-4 sm:px-6 py-3 sm:py-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between max-w-5xl mx-auto gap-3 sm:gap-4">
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-black text-white flex items-center justify-center shadow-lg shadow-black/10 shrink-0">
-                            <Shield className="w-4 h-3.5 sm:w-5 sm:h-4" />
-                        </div>
-                        <div className="min-w-0">
-                            <h1 className="text-lg sm:text-xl font-bold text-black tracking-tight leading-tight">Vault</h1>
-                            <p className="text-[11px] sm:text-[12px] text-black/40 font-medium truncate">Secure Cross-Device Storage</p>
-                        </div>
+            {/* Page Header */}
+            <div className="flex items-center justify-between px-6 py-5 h-[96px] border-b border-black/[0.06] bg-[#fafafa] flex-shrink-0 shadow-sm z-10">
+                <div>
+                    <h1 className="text-[22px] font-bold text-black tracking-tight">Vault</h1>
+                    <p className="text-[12px] text-black/35 mt-0.5">Secure Cross-Device Storage</p>
+                </div>
+                <div className="flex items-center gap-3">
+                    <div className="text-[11px] text-black/25 uppercase tracking-wider font-medium">
+                        {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
                     </div>
+                </div>
+            </div>
 
+            <div className="flex-1 flex flex-col min-h-0 overflow-y-auto bg-[#fafafa]">
+                <main className="w-full max-w-5xl mx-auto px-4 sm:px-6 pt-6 pb-20 flex-1">
                     {/* Sub-navigation Tabs */}
-                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <div className="flex items-center justify-end gap-3 w-full mb-8">
                         <button
                             onClick={toggleVaultPrivacy}
                             className={cn(
@@ -68,11 +70,8 @@ export function VaultDashboard({ defaultTab }: { defaultTab?: VaultTab }) {
                             </Link>
                         </div>
                     </div>
-                </div>
-            </header>
 
-            <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
-                <main className="w-full max-w-5xl mx-auto px-4 sm:px-6 pt-8 pb-20 flex-1">
+
                     {activeTab === 'clipboard' ? (
                         <section className="animate-in fade-in slide-in-from-bottom-2 duration-500">
                             <div className="mb-6">

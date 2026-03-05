@@ -11,7 +11,7 @@ import {
     TrendingUp, Calendar, CreditCard, PiggyBank,
     Moon, Sun, Laptop, Target, Briefcase, Heart, Gift, Rocket,
     LayoutDashboard, EyeOff, Receipt, Lock, ClipboardIcon, Key, Brain, Sparkles, Award,
-    Video
+    Video, PenLine
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Reorder } from 'framer-motion'
@@ -61,6 +61,7 @@ const navItems = [
         sub: [
             { label: 'Projects', href: '/create/projects', icon: Rocket },
             { label: 'Content', href: '/create/content', icon: Video },
+            { label: 'Canvas', href: '/create/canvas', icon: PenLine },
             { label: 'Sparks', href: '/create/sparks', icon: Target },
             { label: 'Network', href: '/create/network', icon: Activity },
             { label: 'Press', href: '/create/press', icon: Award },
@@ -85,13 +86,20 @@ function CapBadge({ cap }: { cap: 'P' | 'B' }) {
 }
 
 function SidebarFooter({ pathname }: { pathname: string }) {
+    const [isSettingsHovered, setIsSettingsHovered] = useState(false)
     return (
         <div className="px-5 py-3 border-t border-black/[0.03] space-y-3">
             <Link
                 href="/system/settings"
+                onMouseEnter={() => setIsSettingsHovered(true)}
+                onMouseLeave={() => setIsSettingsHovered(false)}
                 className={cn(
-                    "flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-all text-[13px] font-medium",
-                    pathname === '/system/settings' ? 'bg-black/10 text-black' : 'text-black/50 hover:text-black/80 hover:bg-black/[0.04]'
+                    "flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-all text-[13px] font-medium outline-none select-none",
+                    pathname === '/system/settings'
+                        ? 'bg-black/10 text-black'
+                        : isSettingsHovered
+                            ? 'bg-black/[0.04] text-black/80'
+                            : 'text-black/50 active:bg-black/[0.04] active:text-black/80'
                 )}
             >
                 <SlidersHorizontal className={cn("w-4 h-4", pathname === '/system/settings' ? 'text-black' : 'text-black/35')} />
@@ -112,6 +120,7 @@ function SidebarFooter({ pathname }: { pathname: string }) {
 function ProfileMenu() {
     const [isOpen, setIsOpen] = useState(false)
     const [isRefreshing, setIsRefreshing] = useState(false)
+    const [isRefreshHovered, setIsRefreshHovered] = useState(false)
     const menuRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
@@ -159,11 +168,18 @@ function ProfileMenu() {
                         setIsRefreshing(true)
                         window.location.reload()
                     }}
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-black/35 hover:text-black/80 hover:bg-black/[0.05] transition-colors shrink-0"
+                    onMouseEnter={() => setIsRefreshHovered(true)}
+                    onMouseLeave={() => setIsRefreshHovered(false)}
+                    className={cn(
+                        "w-8 h-8 rounded-lg flex items-center justify-center transition-colors shrink-0 outline-none select-none",
+                        isRefreshHovered
+                            ? 'bg-red-500/10 text-red-600'
+                            : 'text-black/35 active:bg-red-500/10 active:text-red-600'
+                    )}
                     title="Refresh App"
                     disabled={isRefreshing}
                 >
-                    <RefreshCw className={cn("w-4 h-4 transition-transform", isRefreshing && "animate-spin")} />
+                    <RefreshCw className={cn("w-4 h-4 transition-transform", isRefreshing && "animate-spin text-red-500")} />
                 </button>
             </div>
         </div>
@@ -385,6 +401,11 @@ export function Sidebar() {
                         <Link
                             href={item.href}
                             draggable={false}
+                            onMouseEnter={() => {
+                                if ('sub' in item && item.sub) {
+                                    setExpandedFolders({ [item.href]: true });
+                                }
+                            }}
                             className={cn(
                                 'flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-all duration-150 relative group',
                                 isActive ? 'bg-black/10 text-black' : 'text-black/50 hover:text-black/80 hover:bg-black/[0.04]'
@@ -646,14 +667,14 @@ export function Sidebar() {
                                         </Link>
                                         <div className={cn(
                                             "pointer-events-none absolute left-[calc(100%+12px)] top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-black text-white text-[11px] font-bold rounded-lg whitespace-nowrap transition-opacity z-[200] shadow-xl",
-                                            hoveredItem === item.label && !('sub' in item && item.sub && isActive) ? "opacity-100" : "opacity-0"
+                                            hoveredItem === item.label && !('sub' in item && item.sub) ? "opacity-100" : "opacity-0"
                                         )}>
                                             {item.label}
                                         </div>
                                     </div>
 
                                     {/* Sub-items flyout */}
-                                    {'sub' in item && item.sub && (isExpanded || (hoveredItem === item.label && isActive)) && (
+                                    {'sub' in item && item.sub && hoveredItem === item.label && (
                                         <div className="absolute left-[calc(100%-8px)] top-1/2 -translate-y-1/2 flex flex-col gap-1 p-1.5 bg-white border border-black/[0.08] rounded-2xl shadow-xl z-[100] animate-in fade-in zoom-in-95 duration-200">
                                             {item.sub.map(subItem => {
                                                 const SubIcon = subItem.icon || ((props: any) => <div className={cn("w-1.5 h-1.5 rounded-full bg-current", props.className)} />)
@@ -701,9 +722,24 @@ export function Sidebar() {
                 {/* Expand / Profile row */}
                 {isCollapsed ? (
                     <div className="pb-4 flex flex-col items-center gap-1 shrink-0 px-2">
-                        <Link href="/system/settings" className="relative group w-10 h-10 flex items-center justify-center rounded-xl text-black/35 hover:text-black/80 hover:bg-black/[0.04] transition-all">
+                        <Link
+                            href="/system/settings"
+                            onMouseEnter={() => setHoveredItem('settings')}
+                            onMouseLeave={() => setHoveredItem(null)}
+                            className={cn(
+                                "relative w-10 h-10 flex items-center justify-center rounded-xl transition-all outline-none select-none",
+                                pathname === '/system/settings'
+                                    ? 'bg-black/10 text-black'
+                                    : hoveredItem === 'settings'
+                                        ? 'bg-black/[0.04] text-black/80'
+                                        : 'text-black/35 active:bg-black/[0.04] active:text-black/80'
+                            )}
+                        >
                             <SlidersHorizontal className="w-4 h-4" />
-                            <div className="pointer-events-none absolute left-full ml-2 px-2.5 py-1.5 bg-black text-white text-[11px] font-bold rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-[200] shadow-xl">
+                            <div className={cn(
+                                "hidden md:block pointer-events-none absolute left-full ml-2 px-2.5 py-1.5 bg-black text-white text-[11px] font-bold rounded-lg whitespace-nowrap transition-opacity z-[200] shadow-xl",
+                                hoveredItem === 'settings' ? 'opacity-100' : 'opacity-0'
+                            )}>
                                 System Settings
                             </div>
                         </Link>
@@ -713,11 +749,21 @@ export function Sidebar() {
                                 setIsRefreshing(true)
                                 setTimeout(() => window.location.reload(), 600)
                             }}
+                            onMouseEnter={() => setHoveredItem('refresh')}
+                            onMouseLeave={() => setHoveredItem(null)}
                             disabled={isRefreshing}
-                            className="relative group w-10 h-10 flex items-center justify-center rounded-xl text-black/35 hover:text-black/80 hover:bg-black/[0.04] transition-all"
+                            className={cn(
+                                "relative w-10 h-10 flex items-center justify-center rounded-xl transition-all outline-none select-none",
+                                hoveredItem === 'refresh'
+                                    ? 'bg-red-500/10 text-red-600'
+                                    : 'text-black/35 active:bg-red-500/10 active:text-red-600'
+                            )}
                         >
-                            <RefreshCw className={cn("w-4 h-4", isRefreshing && "animate-spin text-orange-500")} />
-                            <div className="pointer-events-none absolute left-full ml-2 px-2.5 py-1.5 bg-black text-white text-[11px] font-bold rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-[200] shadow-xl">
+                            <RefreshCw className={cn("w-4 h-4", isRefreshing && "animate-spin text-red-500")} />
+                            <div className={cn(
+                                "hidden md:block pointer-events-none absolute left-full ml-2 px-2.5 py-1.5 bg-black text-white text-[11px] font-bold rounded-lg whitespace-nowrap transition-opacity z-[200] shadow-xl",
+                                hoveredItem === 'refresh' ? 'opacity-100' : 'opacity-0'
+                            )}>
                                 Sync Database
                             </div>
                         </button>

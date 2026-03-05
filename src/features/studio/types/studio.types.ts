@@ -157,3 +157,18 @@ export interface ProjectKanbanProps {
     filterType?: string | null;
     showArchived?: boolean;
 }
+
+// Canvas
+export type CanvasColor = 'default' | 'yellow' | 'blue' | 'green' | 'purple' | 'red';
+
+export interface StudioCanvasEntry {
+    id: string;
+    title: string;
+    body?: string;
+    tags?: string[];
+    color: CanvasColor;
+    pinned: boolean;
+    promoted_to_spark_id?: string | null;
+    created_at: string;
+    updated_at: string;
+}
