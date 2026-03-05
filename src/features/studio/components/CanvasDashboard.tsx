@@ -144,8 +144,8 @@ export default function CanvasDashboard() {
         return list
     }, [content, mapNodes, libraryFilter])
 
-    const projectTypes = useMemo(() => [...new Set(projects.map(p => p.type).filter(Boolean))], [projects])
-    const contentPlatforms = useMemo(() => [...new Set(content.map(c => (c as any).platform || (c as any).type).filter(Boolean))], [content])
+    const projectTypes = useMemo(() => Array.from(new Set(projects.map(p => p.type).filter((t): t is ProjectType => !!t))), [projects])
+    const contentPlatforms = useMemo(() => Array.from(new Set(content.map(c => (c as any).platform || (c as any).type).filter((p): p is string => !!p))), [content])
 
     const getLinkedInfo = (entryId: string) => {
         return nodeLinks
@@ -483,7 +483,7 @@ export default function CanvasDashboard() {
                                                         >All</button>
                                                         {projectTypes.map(t => (
                                                             <button key={t}
-                                                                onClick={() => setLibraryFilter(f => f === t ? null : t)}
+                                                                onClick={() => setLibraryFilter(f => f === t ? null : t as string)}
                                                                 className={cn("px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter transition-all", libraryFilter === t ? "bg-orange-500 text-white" : "bg-black/[0.04] text-black/40 hover:bg-orange-50 hover:text-orange-600")}
                                                             >{t}</button>
                                                         ))}
@@ -495,9 +495,9 @@ export default function CanvasDashboard() {
                                                             onClick={() => setLibraryFilter(null)}
                                                             className={cn("px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter transition-all", !libraryFilter ? "bg-indigo-500 text-white" : "bg-black/[0.04] text-black/40 hover:bg-black/[0.08]")}
                                                         >All</button>
-                                                        {contentPlatforms.map(p => p && (
+                                                        {contentPlatforms.map(p => (
                                                             <button key={p}
-                                                                onClick={() => setLibraryFilter(f => f === p ? null : p!)}
+                                                                onClick={() => setLibraryFilter(f => f === p ? null : p)}
                                                                 className={cn("px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter transition-all", libraryFilter === p ? "bg-blue-500 text-white" : "bg-black/[0.04] text-black/40 hover:bg-blue-50 hover:text-blue-600")}
                                                             >{p}</button>
                                                         ))}
