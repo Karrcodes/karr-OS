@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { Pin, Trash2, Palette, ArrowUpRight, Link2, Archive, List } from 'lucide-react'
+import { Pin, Trash2, Palette, ArrowUpRight, Link2, Archive, List, Rocket, Video } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { StudioCanvasEntry, CanvasColor } from '../types/studio.types'
 
@@ -22,9 +22,10 @@ interface Props {
     onDelete: () => void
     onArchive: () => void
     onColorChange: (color: CanvasColor) => void
+    links?: { id: string; type: 'project' | 'content'; title: string }[]
 }
 
-export default function CanvasCard({ entry, connectionCount = 0, onClick, onPin, onDelete, onArchive, onColorChange }: Props) {
+export default function CanvasCard({ entry, connectionCount = 0, onClick, onPin, onDelete, onArchive, onColorChange, links = [] }: Props) {
     const [showPalette, setShowPalette] = useState(false)
     const { card, dot } = COLOR_MAP[entry.color] || COLOR_MAP.default
 
@@ -97,9 +98,32 @@ export default function CanvasCard({ entry, connectionCount = 0, onClick, onPin,
                 )}
             </div>
 
-            {/* Action buttons - show on hover */}
+            {/* Semantic Links */}
+            {links && links.length > 0 && (
+                <div className="flex items-center gap-2 mt-1 py-1 px-2 bg-black/[0.03] rounded-lg border border-black/[0.04]">
+                    <div className="flex -space-x-1">
+                        {links.slice(0, 3).map((link, i) => (
+                            <div key={link.id} className={cn(
+                                "w-4 h-4 rounded-full flex items-center justify-center border border-white text-white",
+                                link.type === 'project' ? "bg-orange-500" : "bg-blue-500"
+                            )} title={link.title}>
+                                {link.type === 'project' ? <Rocket className="w-2 h-2" /> : <Video className="w-2 h-2" />}
+                            </div>
+                        ))}
+                    </div>
+                    <p className="text-[9px] font-black text-black/40 truncate flex-1">
+                        {links.length === 1 ? (
+                            links[0].title
+                        ) : (
+                            `${links.length} links`
+                        )}
+                    </p>
+                </div>
+            )}
+
+            {/* Action buttons - always visible but low opacity until hover */}
             <div
-                className="absolute bottom-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute bottom-3 right-3 flex items-center gap-1 opacity-25 group-hover:opacity-100 transition-opacity"
                 onClick={e => e.stopPropagation()}
             >
                 {/* Color palette */}

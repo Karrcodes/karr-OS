@@ -1,8 +1,10 @@
 'use client'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ZoomIn, ZoomOut, Maximize2, Shuffle, ArrowUpRight, Archive, Trash2, Plus } from 'lucide-react'
+import { ZoomIn, ZoomOut, Maximize2, Shuffle, ArrowUpRight, Archive, Trash2, Plus, Rocket, Video } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { CanvasConnection, CanvasColor, StudioCanvasEntry } from '../types/studio.types'
+import type { CanvasConnection, CanvasColor, StudioCanvasEntry, StudioProject, StudioContent } from '../types/studio.types'
+
+type PolymorphicNode = (StudioCanvasEntry | StudioProject | StudioContent) & { web_x?: number | null, web_y?: number | null, node_type: 'entry' | 'project' | 'content' }
 
 const NODE_W = 180
 const NODE_H = 100
@@ -25,21 +27,21 @@ const COLOR_BORDER: Record<CanvasColor, string> = {
     red: 'border-rose-200',
 }
 
-function autoPosition(entries: StudioCanvasEntry[]) {
+function autoPosition(nodes: PolymorphicNode[]) {
     // Place unpositioned nodes in a grid
-    const cols = Math.ceil(Math.sqrt(entries.length))
+    const cols = Math.ceil(Math.sqrt(nodes.length))
     const gap = 220
-    return entries.map((e, i) => ({
-        id: e.id,
-        x: e.web_x ?? (i % cols) * gap + 80,
-        y: e.web_y ?? Math.floor(i / cols) * (NODE_H + gap * 0.6) + 80,
+    return nodes.map((n, i) => ({
+        id: n.id,
+        x: n.web_x ?? (i % cols) * gap + 80,
+        y: n.web_y ?? Math.floor(i / cols) * (NODE_H + gap * 0.6) + 80,
     }))
 }
 
 interface Props {
-    entries: StudioCanvasEntry[]
+    entries: PolymorphicNode[]
     connections: CanvasConnection[]
-    onNodeClick: (entry: StudioCanvasEntry) => void
+    onNodeClick: (node: PolymorphicNode) => void
     onCreateConnection: (fromId: string, toId: string) => void
     onDeleteConnection: (id: string) => void
     onUpdatePosition: (id: string, x: number, y: number) => void
@@ -133,15 +135,15 @@ export default function CanvasWebView({
                 let closest: string | null = null
                 let minD = 50 // Pixels proximity
 
-                entries.forEach(entry => {
-                    if (entry.id === connectingFrom.id) return
-                    const p = getPos(entry.id)
+                entries.forEach(node => {
+                    if (node.id === connectingFrom.id) return
+                    const p = getPos(node.id)
                     const dx = mx - (p.x + NODE_W / 2)
                     const dy = my - (p.y + NODE_H / 2)
                     const dist = Math.sqrt(dx * dx + dy * dy)
                     if (dist < minD) {
                         minD = dist
-                        closest = entry.id
+                        closest = node.id
                     }
                 })
                 setMagneticNode(closest)
@@ -187,12 +189,12 @@ export default function CanvasWebView({
         else setHoverSide(dy > 0 ? 'bottom' : 'top')
     }
 
-    const handleNodeClick = (e: React.MouseEvent, entry: StudioCanvasEntry) => {
+    const handleNodeClick = (e: React.MouseEvent, node: PolymorphicNode) => {
         e.stopPropagation()
         if (draggingId) return
         if (connectingFrom) {
-            if (connectingFrom.id !== entry.id) {
-                onCreateConnection(connectingFrom.id, entry.id)
+            if (connectingFrom.id !== node.id) {
+                onCreateConnection(connectingFrom.id, node.id)
             }
             setConnectingFrom(null)
             setPendingLine(null)
@@ -428,53 +430,72 @@ export default function CanvasWebView({
                 </svg>
 
                 {/* Nodes */}
-                {entries.map(entry => {
-                    const pos = getPos(entry.id)
-                    const isConnecting = connectingFrom?.id === entry.id
-                    const isHovered = hoveredNode === entry.id
-                    const connCount = connections.filter(c => c.from_id === entry.id || c.to_id === entry.id).length
+                {entries.map(node => {
+                    const pos = getPos(node.id)
+                    const isConnecting = connectingFrom?.id === node.id
+                    const isHovered = hoveredNode === node.id
+                    const connCount = connections.filter(c => c.from_id === node.id || c.to_id === node.id).length
+
+                    const color = (node as any).color || 'default'
+                    const body = (node as any).body || (node as any).description || (node as any).notes || (node as any).tagline || ''
+                    const icon = node.node_type === 'project' ? <Rocket className="w-3 h-3 text-orange-500" /> : node.node_type === 'content' ? <Video className="w-3 h-3 text-blue-500" /> : null
 
                     return (
                         <div
-                            key={entry.id}
+                            key={node.id}
                             data-node="1"
                             style={{ position: 'absolute', left: pos.x, top: pos.y, width: NODE_W, paddingTop: 20, paddingBottom: 40, marginTop: -20 }}
-                            onMouseEnter={() => setHoveredNode(entry.id)}
-                            onMouseMove={e => onNodeMouseMove(e, entry.id)}
+                            onMouseEnter={() => setHoveredNode(node.id)}
+                            onMouseMove={e => onNodeMouseMove(e, node.id)}
                             onMouseLeave={() => { setHoveredNode(null); setHoverSide('right') }}
-                            onMouseDown={e => onNodeMouseDown(e, entry.id)}
-                            onClick={e => handleNodeClick(e, entry)}
+                            onMouseDown={e => onNodeMouseDown(e, node.id)}
+                            onClick={e => handleNodeClick(e, node)}
                         >
                             <div className={cn(
                                 "bg-white border rounded-2xl px-3.5 py-3 shadow-sm cursor-grab active:cursor-grabbing transition-all duration-150 relative",
-                                COLOR_BORDER[entry.color],
-                                draggingId === entry.id && 'shadow-2xl ring-2 ring-black/10 scale-105 rotate-1 z-[100] cursor-grabbing',
-                                !!connectingFrom && connectingFrom.id === entry.id && 'ring-2 ring-indigo-400 shadow-md',
-                                isHovered && !connectingFrom && draggingId !== entry.id && 'shadow-md',
-                                (connectingFrom && connectingFrom.id !== entry.id && magneticNode === entry.id) && 'ring-4 ring-indigo-500/30 scale-[1.02] shadow-xl z-50',
-                                connectingFrom && connectingFrom.id !== entry.id && !magneticNode && 'hover:ring-2 hover:ring-indigo-300'
+                                node.node_type === 'project' ? "border-orange-200" : node.node_type === 'content' ? "border-blue-200" : COLOR_BORDER[color as CanvasColor],
+                                draggingId === node.id && 'shadow-2xl ring-2 ring-black/10 scale-105 rotate-1 z-[100] cursor-grabbing',
+                                !!connectingFrom && connectingFrom.id === node.id && 'ring-2 ring-indigo-400 shadow-md',
+                                isHovered && !connectingFrom && draggingId !== node.id && 'shadow-md',
+                                (connectingFrom && connectingFrom.id !== node.id && magneticNode === node.id) && 'ring-4 ring-indigo-500/30 scale-[1.02] shadow-xl z-50',
+                                connectingFrom && connectingFrom.id !== node.id && !magneticNode && 'hover:ring-2 hover:ring-indigo-300'
                             )}
                                 style={{ height: NODE_H }}
                             >
                                 <div className="flex flex-col h-full">
                                     <div className="flex items-start gap-2">
-                                        <div className={cn("w-2 h-2 rounded-full mt-1.5 shrink-0", COLOR_DOT[entry.color])} />
+                                        {node.node_type === 'entry' ? (
+                                            <div className={cn("w-2 h-2 rounded-full mt-1.5 shrink-0", COLOR_DOT[color as CanvasColor])} />
+                                        ) : (
+                                            <div className="shrink-0 mt-0.5">{icon}</div>
+                                        )}
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-[12px] font-bold text-black leading-tight line-clamp-1">{entry.title}</p>
+                                            <p className="text-[12px] font-bold text-black leading-tight line-clamp-1">{node.title}</p>
                                         </div>
                                         {/* Image thumbnail */}
-                                        {entry.images && entry.images.length > 0 && (
-                                            <img src={entry.images[0]} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0 border border-black/[0.06]" />
-                                        )}
+                                        {(node as any).images?.[0] || (node as any).cover_url ? (
+                                            <img src={(node as any).images?.[0] || (node as any).cover_url} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0 border border-black/[0.06]" />
+                                        ) : null}
                                     </div>
 
                                     <div className="flex-1 min-w-0 mt-2">
-                                        {entry.body ? (
-                                            <p className="text-[10px] text-black/50 leading-relaxed line-clamp-3">{entry.body}</p>
+                                        {body ? (
+                                            <p className="text-[10px] text-black/50 leading-relaxed line-clamp-3">{body}</p>
                                         ) : (
                                             <p className="text-[10px] text-black/20 italic">No notes...</p>
                                         )}
                                     </div>
+
+                                    {node.node_type !== 'entry' && (
+                                        <div className="mt-auto mb-1">
+                                            <span className={cn(
+                                                "text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md",
+                                                node.node_type === 'project' ? "bg-orange-50 text-orange-500" : "bg-blue-50 text-blue-500"
+                                            )}>
+                                                {(node as any).status || node.node_type}
+                                            </span>
+                                        </div>
+                                    )}
 
                                     {connCount > 0 && (
                                         <div className="flex items-center gap-1 mt-auto overflow-hidden">
@@ -486,10 +507,10 @@ export default function CanvasWebView({
                                 </div>
 
                                 {/* Connection Handle - Dynamic */}
-                                {(isHovered || magneticNode === entry.id) && !draggingId && (!connectingFrom || magneticNode === entry.id) && (
+                                {(isHovered || magneticNode === node.id) && !draggingId && (!connectingFrom || magneticNode === node.id) && (
                                     <div
                                         data-handle={hoverSide}
-                                        onMouseDown={e => startConnect(e, entry.id, hoverSide)}
+                                        onMouseDown={e => startConnect(e, node.id, hoverSide)}
                                         className={cn(
                                             "absolute w-5 h-5 bg-indigo-500 text-white rounded-full flex items-center justify-center cursor-crosshair hover:scale-125 transition-all shadow-lg z-20 border-2 border-white",
                                             hoverSide === 'top' && "-top-2.5 left-1/2 -translate-x-1/2",
@@ -504,18 +525,25 @@ export default function CanvasWebView({
                             </div>
 
                             {/* Hover actions: Open + Archive + Delete */}
-                            {isHovered && !connectingFrom && draggingId !== entry.id && (
+                            {isHovered && !connectingFrom && draggingId !== node.id && (
                                 <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 flex items-center gap-1 z-10" onClick={e => e.stopPropagation()}>
                                     <button
-                                        onClick={e => { e.stopPropagation(); onNodeClick(entry) }}
+                                        onClick={e => { e.stopPropagation(); onNodeClick(node) }}
                                         className="h-7 px-2.5 bg-black text-white text-[9px] font-black rounded-lg shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-1"
                                         onMouseDown={e => e.stopPropagation()}
                                     >
                                         <ArrowUpRight className="w-3 h-3" />
                                         OPEN
                                     </button>
-                                    <button onClick={e => { e.stopPropagation(); setConfirmAction({ id: entry.id, type: 'archive' }) }} className="w-7 h-7 bg-amber-50 text-amber-500 rounded-lg flex items-center justify-center hover:bg-amber-100 transition-all border border-amber-200" title="Archive" onMouseDown={e => e.stopPropagation()}>▿</button>
-                                    <button onClick={e => { e.stopPropagation(); setConfirmAction({ id: entry.id, type: 'delete' }) }} className="w-7 h-7 bg-red-50 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-100 transition-all border border-red-200" title="Delete" onMouseDown={e => e.stopPropagation()}>✕</button>
+                                    {node.node_type === 'entry' && (
+                                        <>
+                                            <button onClick={e => { e.stopPropagation(); setConfirmAction({ id: node.id, type: 'archive' }) }} className="w-7 h-7 bg-amber-50 text-amber-500 rounded-lg flex items-center justify-center hover:bg-amber-100 transition-all border border-amber-200" title="Archive" onMouseDown={e => e.stopPropagation()}>▿</button>
+                                            <button onClick={e => { e.stopPropagation(); setConfirmAction({ id: node.id, type: 'delete' }) }} className="w-7 h-7 bg-red-50 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-100 transition-all border border-red-200" title="Delete" onMouseDown={e => e.stopPropagation()}>✕</button>
+                                        </>
+                                    )}
+                                    {node.node_type !== 'entry' && (
+                                        <button onClick={e => { e.stopPropagation(); onDeleteNode(node.id) }} className="w-7 h-7 bg-red-50 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-100 transition-all border border-red-200" title="Remove from Map" onMouseDown={e => e.stopPropagation()}>✕</button>
+                                    )}
                                 </div>
                             )}
                         </div>

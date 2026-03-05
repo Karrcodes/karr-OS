@@ -190,6 +190,7 @@ export interface CanvasMap {
     id: string;
     name: string;
     user_id: string;
+    is_archived: boolean;
     created_at: string;
     updated_at: string;
 }
@@ -197,8 +198,18 @@ export interface CanvasMap {
 export interface CanvasMapNode {
     id: string;
     map_id: string;
-    entry_id: string;
+    entry_id?: string | null;
+    project_id?: string | null;
+    content_id?: string | null;
     x: number;
     y: number;
+    created_at: string;
+}
+
+export interface StudioCanvasNodeLink {
+    id: string;
+    entry_id: string;
+    target_id: string;
+    target_type: 'project' | 'content';
     created_at: string;
 }

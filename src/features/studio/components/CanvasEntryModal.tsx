@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import { X, Pin, Trash2, ArrowUpRight, Tag, Archive, Image as ImageIcon, List, Loader2, Plus } from 'lucide-react'
+import { X, Pin, Trash2, ArrowUpRight, Tag, Archive, Image as ImageIcon, List, Loader2, Plus, Rocket, Video, Link2 } from 'lucide-react'
+import { useStudioContext } from '../context/StudioContext'
 import { cn } from '@/lib/utils'
 import ConfirmationModal from '@/components/ConfirmationModal'
 import type { StudioCanvasEntry, CanvasColor } from '../types/studio.types'
@@ -23,9 +24,16 @@ interface Props {
     onDelete: (id: string) => void
     onArchive: (id: string) => void
     onPromoteToSpark: (entry: StudioCanvasEntry) => void
+    links?: { id: string; target_id: string; target_type: 'project' | 'content' }[]
+    onAddLink: (entryId: string, targetId: string, targetType: 'project' | 'content') => void
+    onRemoveLink: (entryId: string, targetId: string) => void
 }
 
-export default function CanvasEntryModal({ entry, isOpen, onClose, onUpdate, onDelete, onArchive, onPromoteToSpark }: Props) {
+export default function CanvasEntryModal({
+    entry, isOpen, onClose, onUpdate, onDelete, onArchive, onPromoteToSpark,
+    links = [], onAddLink, onRemoveLink
+}: Props) {
+    const { projects, content } = useStudioContext()
     const [title, setTitle] = useState('')
     const [body, setBody] = useState('')
     const [tagInput, setTagInput] = useState('')
@@ -37,6 +45,8 @@ export default function CanvasEntryModal({ entry, isOpen, onClose, onUpdate, onD
     const [isUploading, setIsUploading] = useState(false)
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [showArchiveConfirm, setShowArchiveConfirm] = useState(false)
+    const [showAddLink, setShowAddLink] = useState(false)
+    const [linkTab, setLinkTab] = useState<'project' | 'content'>('project')
     const bodyRef = useRef<HTMLTextAreaElement>(null)
     const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -284,6 +294,97 @@ export default function CanvasEntryModal({ entry, isOpen, onClose, onUpdate, onD
                                 ))}
                             </div>
                         )}
+
+                        {/* Semantic Links Section */}
+                        <div className="border-t border-black/[0.06] pt-4 mt-2">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                    <Link2 className="w-3.5 h-3.5 text-black/40" />
+                                    <h4 className="text-[11px] font-black uppercase tracking-wider text-black/50">Semantic Links</h4>
+                                </div>
+                                <button
+                                    onClick={() => setShowAddLink(!showAddLink)}
+                                    className="p-1 rounded-lg hover:bg-black/[0.05] text-indigo-500 transition-all"
+                                >
+                                    <Plus className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
+
+                            {links.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mb-3">
+                                    {links.map(link => {
+                                        const target = link.target_type === 'project'
+                                            ? projects.find(p => p.id === link.target_id)
+                                            : content.find(c => c.id === link.target_id)
+                                        if (!target) return null
+                                        return (
+                                            <div key={link.id} className="flex items-center gap-2 py-1.5 px-3 bg-black/[0.03] border border-black/[0.04] rounded-xl group animate-in zoom-in-95 duration-200">
+                                                {link.target_type === 'project' ? <Rocket className="w-3 h-3 text-orange-500" /> : <Video className="w-3 h-3 text-blue-500" />}
+                                                <span className="text-[11px] font-bold text-black/70">{target.title}</span>
+                                                <button
+                                                    onClick={() => onRemoveLink(entry.id, link.target_id)}
+                                                    className="w-4 h-4 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white transition-all text-black/20"
+                                                >
+                                                    <X className="w-2.5 h-2.5" />
+                                                </button>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            )}
+
+                            {showAddLink && (
+                                <div className="p-3 bg-black/[0.03] rounded-2xl border border-black/[0.04] animate-in slide-in-from-top-2 duration-200">
+                                    <div className="flex bg-black/[0.05] p-1 rounded-xl mb-3">
+                                        {(['project', 'content'] as const).map(tab => (
+                                            <button
+                                                key={tab}
+                                                onClick={() => setLinkTab(tab)}
+                                                className={cn(
+                                                    "flex-1 py-1 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all",
+                                                    linkTab === tab ? "bg-white text-black shadow-sm" : "text-black/30 hover:text-black/50"
+                                                )}
+                                            >
+                                                {tab}s
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="max-h-32 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+                                        {linkTab === 'project' ? (
+                                            projects
+                                                .filter(p => !links.some(l => l.target_id === p.id))
+                                                .map(p => (
+                                                    <button
+                                                        key={p.id}
+                                                        onClick={() => { onAddLink(entry.id, p.id, 'project'); setShowAddLink(false) }}
+                                                        className="w-full text-left py-2 px-3 hover:bg-white rounded-xl transition-all flex items-center gap-2 group"
+                                                    >
+                                                        <Rocket className="w-3 h-3 text-orange-400 opacity-50 group-hover:opacity-100" />
+                                                        <span className="text-[11px] font-bold text-black/60 group-hover:text-black">{p.title}</span>
+                                                    </button>
+                                                ))
+                                        ) : (
+                                            content
+                                                .filter(c => !links.some(l => l.target_id === c.id))
+                                                .map(c => (
+                                                    <button
+                                                        key={c.id}
+                                                        onClick={() => { onAddLink(entry.id, c.id, 'content'); setShowAddLink(false) }}
+                                                        className="w-full text-left py-2 px-3 hover:bg-white rounded-xl transition-all flex items-center gap-2 group"
+                                                    >
+                                                        <Video className="w-3 h-3 text-blue-400 opacity-50 group-hover:opacity-100" />
+                                                        <span className="text-[11px] font-bold text-black/60 group-hover:text-black">{c.title}</span>
+                                                    </button>
+                                                ))
+                                        )}
+                                        {((linkTab === 'project' && projects.filter(p => !links.some(l => l.target_id === p.id)).length === 0) ||
+                                            (linkTab === 'content' && content.filter(c => !links.some(l => l.target_id === c.id)).length === 0)) && (
+                                                <p className="text-[10px] text-black/20 text-center py-2 italic">Nothing more to link</p>
+                                            )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
 
                         {/* Tags */}
                         <div className="border-t border-black/[0.06] pt-4">

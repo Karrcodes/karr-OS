@@ -1,7 +1,7 @@
 'use client'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import type { CanvasConnection, StudioCanvasEntry, CanvasColor, CanvasMap, CanvasMapNode } from '../types/studio.types'
+import type { CanvasConnection, StudioCanvasEntry, CanvasColor, CanvasMap, CanvasMapNode, StudioCanvasNodeLink } from '../types/studio.types'
 
 export function useCanvas() {
     const [entries, setEntries] = useState<StudioCanvasEntry[]>([])
@@ -9,6 +9,7 @@ export function useCanvas() {
     const [maps, setMaps] = useState<CanvasMap[]>([])
     const [currentMapId, setCurrentMapId] = useState<string | null>(null)
     const [mapNodes, setMapNodes] = useState<CanvasMapNode[]>([])
+    const [nodeLinks, setNodeLinks] = useState<StudioCanvasNodeLink[]>([])
     const [loading, setLoading] = useState(true)
     const posDebounce = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
 
@@ -24,8 +25,11 @@ export function useCanvas() {
         setLoading(false)
     }, [])
 
-    const fetchMaps = useCallback(async () => {
-        const { data, error } = await supabase.from('studio_canvas_maps').select('*').order('created_at', { ascending: false })
+    const fetchMaps = useCallback(async (showArchived = false) => {
+        let query = supabase.from('studio_canvas_maps').select('*')
+        if (!showArchived) query = query.eq('is_archived', false)
+        
+        const { data, error } = await query.order('created_at', { ascending: false })
         if (error) console.error('Canvas fetch maps error:', error.message)
         else {
             setMaps(data as CanvasMap[])
@@ -49,10 +53,17 @@ export function useCanvas() {
         else setConnections((data || []) as CanvasConnection[])
     }, [currentMapId])
 
+    const fetchNodeLinks = useCallback(async () => {
+        const { data, error } = await supabase.from('studio_canvas_node_links').select('*')
+        if (error) console.error('Canvas node links fetch error:', error.message)
+        else setNodeLinks((data || []) as StudioCanvasNodeLink[])
+    }, [])
+
     useEffect(() => {
         fetchMaps()
         fetchEntries()
-    }, [fetchMaps, fetchEntries])
+        fetchNodeLinks()
+    }, [fetchMaps, fetchEntries, fetchNodeLinks])
 
     useEffect(() => {
         if (currentMapId) {
@@ -115,17 +126,24 @@ export function useCanvas() {
                 await supabase.from('studio_canvas_entries').update({ web_x: x, web_y: y, updated_at: new Date().toISOString() }).eq('id', id)
             }, 400)
         } else {
-            setMapNodes(prev => prev.map(n => n.entry_id === id ? { ...n, x, y } : n))
+            setMapNodes(prev => prev.map(n => {
+                const isMatch = n.entry_id === id || n.project_id === id || n.content_id === id
+                return isMatch ? { ...n, x, y } : n
+            }))
             if (posDebounce.current[id]) clearTimeout(posDebounce.current[id])
             posDebounce.current[id] = setTimeout(async () => {
-                await supabase.from('studio_canvas_map_nodes').upsert([{
-                    map_id: currentMapId,
-                    entry_id: id,
-                    x, y
-                }], { onConflict: 'map_id,entry_id' })
+                const node = mapNodes.find(n => n.entry_id === id || n.project_id === id || n.content_id === id)
+                if (!node) return
+
+                const upsertData: any = { map_id: currentMapId, x, y }
+                if (node.entry_id) upsertData.entry_id = node.entry_id
+                else if (node.project_id) upsertData.project_id = node.project_id
+                else if (node.content_id) upsertData.content_id = node.content_id
+
+                await supabase.from('studio_canvas_map_nodes').upsert([upsertData])
             }, 400)
         }
-    }, [currentMapId])
+    }, [currentMapId, mapNodes])
 
     const deleteEntry = useCallback(async (id: string) => {
         // Clear connections first
@@ -177,23 +195,27 @@ export function useCanvas() {
         }
     }, [])
 
-    const addNodeToMap = useCallback(async (entryId: string, x: number = 100, y: number = 100) => {
+    const addNodeToMap = useCallback(async (id: string, type: 'entry' | 'project' | 'content' = 'entry', x: number = 100, y: number = 100) => {
         if (!currentMapId) return
-        const { error } = await supabase.from('studio_canvas_map_nodes').insert([{
-            map_id: currentMapId,
-            entry_id: entryId,
-            x, y
-        }])
+        const nodeData: any = { map_id: currentMapId, x, y }
+        if (type === 'entry') nodeData.entry_id = id
+        else if (type === 'project') nodeData.project_id = id
+        else if (type === 'content') nodeData.content_id = id
+
+        const { error } = await supabase.from('studio_canvas_map_nodes').insert([nodeData])
         if (error) console.error('Add node to map error:', error.message)
         else fetchMapNodes()
     }, [currentMapId, fetchMapNodes])
 
-    const deleteMapNode = useCallback(async (entryId: string) => {
+    const deleteMapNode = useCallback(async (id: string) => {
         if (!currentMapId) return
-        const { error } = await supabase.from('studio_canvas_map_nodes').delete().eq('map_id', currentMapId).eq('entry_id', entryId)
+        const node = mapNodes.find(n => n.entry_id === id || n.project_id === id || n.content_id === id)
+        if (!node) return
+
+        const { error } = await supabase.from('studio_canvas_map_nodes').delete().eq('id', node.id)
         if (error) console.error('Delete map node error:', error.message)
         else fetchMapNodes()
-    }, [currentMapId, fetchMapNodes])
+    }, [currentMapId, mapNodes, fetchMapNodes])
 
     const deleteMap = useCallback(async (id: string) => {
         const { error } = await supabase.from('studio_canvas_maps').delete().eq('id', id)
@@ -208,18 +230,45 @@ export function useCanvas() {
         setMaps(prev => prev.map(m => m.id === id ? { ...m, name } : m))
     }, [])
 
+    const archiveMap = useCallback(async (id: string) => {
+        const { error } = await supabase.from('studio_canvas_maps').update({ is_archived: true }).eq('id', id)
+        if (error) { console.error('Archive map error:', error.message); return }
+        setMaps(prev => prev.filter(m => m.id !== id))
+        if (currentMapId === id) setCurrentMapId(null)
+    }, [currentMapId])
+
     const deleteConnection = useCallback(async (id: string) => {
         const { error } = await supabase.from('studio_canvas_connections').delete().eq('id', id)
         if (error) { console.error('Canvas delete connection error:', error.message); return }
         setConnections(prev => prev.filter(c => c.id !== id))
     }, [])
 
+    const nodeAddLink = useCallback(async (entryId: string, targetId: string, targetType: 'project' | 'content') => {
+        const { data, error } = await supabase
+            .from('studio_canvas_node_links')
+            .insert([{ entry_id: entryId, target_id: targetId, target_type: targetType }])
+            .select()
+        if (error) { console.error('Node link error:', error.message); return }
+        if (data?.[0]) setNodeLinks(prev => [...prev, data[0] as StudioCanvasNodeLink])
+    }, [])
+
+    const nodeRemoveLink = useCallback(async (entryId: string, targetId: string) => {
+        const { error } = await supabase
+            .from('studio_canvas_node_links')
+            .delete()
+            .eq('entry_id', entryId)
+            .eq('target_id', targetId)
+        if (error) { console.error('Remove link error:', error.message); return }
+        setNodeLinks(prev => prev.filter(l => !(l.entry_id === entryId && l.target_id === targetId)))
+    }, [])
+
     return {
         entries, connections, loading,
-        maps, currentMapId, setCurrentMapId, mapNodes,
+        maps, currentMapId, setCurrentMapId, mapNodes, nodeLinks,
         createEntry, updateEntry, updateNodePosition, deleteEntry, archiveEntry, togglePin,
         createConnection, deleteConnection,
-        createMap, addNodeToMap, deleteMapNode, deleteMap, renameMap,
+        createMap, addNodeToMap, deleteMapNode, deleteMap, archiveMap, renameMap,
+        nodeAddLink, nodeRemoveLink,
         refresh: fetchEntries
     }
 }
