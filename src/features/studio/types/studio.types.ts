@@ -213,3 +213,9 @@ export interface StudioCanvasNodeLink {
     target_type: 'project' | 'content';
     created_at: string;
 }
+
+export type PolymorphicNode = (StudioCanvasEntry | StudioProject | StudioContent) & {
+    web_x?: number | null;
+    web_y?: number | null;
+    node_type: 'entry' | 'project' | 'content';
+}

@@ -8,7 +8,7 @@ import CanvasWebView from './CanvasWebView'
 import { useStudioContext } from '../context/StudioContext'
 import { useCanvas } from '../hooks/useCanvas'
 import { supabase } from '@/lib/supabase'
-import type { StudioCanvasEntry, CanvasColor, StudioProject, StudioContent, CanvasMap, CanvasMapNode, CanvasConnection } from '../types/studio.types'
+import type { StudioCanvasEntry, CanvasColor, StudioProject, StudioContent, CanvasMap, CanvasMapNode, CanvasConnection, PolymorphicNode } from '../types/studio.types'
 
 type ViewMode = 'board' | 'web'
 
@@ -104,7 +104,7 @@ export default function CanvasDashboard() {
                 return c ? { ...c, web_x: mn.x, web_y: mn.y, node_type: 'content' as const } : null
             }
             return null
-        }).filter(Boolean) as any[]
+        }).filter(Boolean) as PolymorphicNode[]
     }, [mapNodes, entries, projects, content, currentMapId])
 
     const unmappedEntries = useMemo(() => {
@@ -451,7 +451,11 @@ export default function CanvasDashboard() {
                                     <CanvasWebView
                                         entries={entriesInMap}
                                         connections={connections}
-                                        onNodeClick={setSelectedEntry}
+                                        onNodeClick={(node) => {
+                                            if (node.node_type === 'entry') {
+                                                setSelectedEntry(node as StudioCanvasEntry)
+                                            }
+                                        }}
                                         onCreateConnection={createConnection}
                                         onDeleteConnection={deleteConnection}
                                         onUpdatePosition={updateNodePosition}

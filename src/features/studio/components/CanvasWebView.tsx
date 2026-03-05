@@ -2,9 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ZoomIn, ZoomOut, Maximize2, Shuffle, ArrowUpRight, Archive, Trash2, Plus, Rocket, Video } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { CanvasConnection, CanvasColor, StudioCanvasEntry, StudioProject, StudioContent } from '../types/studio.types'
-
-type PolymorphicNode = (StudioCanvasEntry | StudioProject | StudioContent) & { web_x?: number | null, web_y?: number | null, node_type: 'entry' | 'project' | 'content' }
+import type { CanvasConnection, CanvasColor, StudioCanvasEntry, StudioProject, StudioContent, PolymorphicNode } from '../types/studio.types'
 
 const NODE_W = 180
 const NODE_H = 100
