@@ -169,7 +169,18 @@ export interface StudioCanvasEntry {
     color: CanvasColor;
     pinned: boolean;
     is_archived?: boolean;
+    images?: string[];
     promoted_to_spark_id?: string | null;
+    web_x?: number | null;
+    web_y?: number | null;
     created_at: string;
     updated_at: string;
+}
+
+export interface CanvasConnection {
+    id: string;
+    from_id: string;
+    to_id: string;
+    label?: string;
+    created_at: string;
 }

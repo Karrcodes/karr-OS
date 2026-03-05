@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { Pin, Trash2, Palette, ArrowUpRight } from 'lucide-react'
+import { Pin, Trash2, Palette, ArrowUpRight, Link2, Archive } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { StudioCanvasEntry, CanvasColor } from '../types/studio.types'
 
@@ -16,13 +16,15 @@ const COLORS: CanvasColor[] = ['default', 'yellow', 'blue', 'green', 'purple', '
 
 interface Props {
     entry: StudioCanvasEntry
+    connectionCount?: number
     onClick: () => void
     onPin: () => void
     onDelete: () => void
+    onArchive: () => void
     onColorChange: (color: CanvasColor) => void
 }
 
-export default function CanvasCard({ entry, onClick, onPin, onDelete, onColorChange }: Props) {
+export default function CanvasCard({ entry, connectionCount = 0, onClick, onPin, onDelete, onArchive, onColorChange }: Props) {
     const [showPalette, setShowPalette] = useState(false)
     const { card, dot } = COLOR_MAP[entry.color] || COLOR_MAP.default
 
@@ -49,7 +51,21 @@ export default function CanvasCard({ entry, onClick, onPin, onDelete, onColorCha
 
             {/* Body */}
             {entry.body && (
-                <p className="text-[12px] text-black/50 leading-relaxed line-clamp-4">{entry.body}</p>
+                <p className="text-[12px] text-black/50 leading-relaxed line-clamp-4 whitespace-pre-line">{entry.body}</p>
+            )}
+
+            {/* Image thumbnail strip */}
+            {entry.images && entry.images.length > 0 && (
+                <div className="flex gap-1.5 mt-1">
+                    {entry.images.slice(0, 3).map((url, i) => (
+                        <img key={i} src={url} alt="" className="w-12 h-12 rounded-xl object-cover border border-black/[0.06]" />
+                    ))}
+                    {entry.images.length > 3 && (
+                        <div className="w-12 h-12 rounded-xl bg-black/[0.04] flex items-center justify-center text-[10px] font-bold text-black/40">
+                            +{entry.images.length - 3}
+                        </div>
+                    )}
+                </div>
             )}
 
             {/* Tags */}
@@ -63,10 +79,18 @@ export default function CanvasCard({ entry, onClick, onPin, onDelete, onColorCha
                 </div>
             )}
 
-            {/* Date */}
-            <p className="text-[10px] text-black/25 font-medium mt-1">
-                {new Date(entry.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-            </p>
+            {/* Date + connection indicator */}
+            <div className="flex items-center justify-between mt-1">
+                <p className="text-[10px] text-black/25 font-medium">
+                    {new Date(entry.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                </p>
+                {connectionCount > 0 && (
+                    <span className="flex items-center gap-1 text-[9px] font-bold text-indigo-400">
+                        <Link2 className="w-2.5 h-2.5" />
+                        {connectionCount}
+                    </span>
+                )}
+            </div>
 
             {/* Action buttons - show on hover */}
             <div
@@ -102,6 +126,13 @@ export default function CanvasCard({ entry, onClick, onPin, onDelete, onColorCha
                     )}
                 >
                     <Pin className="w-3.5 h-3.5" />
+                </button>
+                <button
+                    onClick={onArchive}
+                    className="w-6 h-6 rounded-lg flex items-center justify-center text-black/30 hover:text-amber-500 hover:bg-amber-50 transition-all"
+                    title="Archive"
+                >
+                    <Archive className="w-3.5 h-3.5" />
                 </button>
                 <button
                     onClick={onDelete}
