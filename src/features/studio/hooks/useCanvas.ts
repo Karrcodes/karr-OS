@@ -27,7 +27,7 @@ export function useCanvas() {
 
     const fetchMaps = useCallback(async (showArchived = false) => {
         let query = supabase.from('studio_canvas_maps').select('*')
-        if (!showArchived) query = query.eq('is_archived', false)
+        query = query.eq('is_archived', showArchived)
 
         const { data, error } = await query.order('created_at', { ascending: false })
         if (error) console.error('Canvas fetch maps error:', error.message)
@@ -38,10 +38,11 @@ export function useCanvas() {
     }, [currentMapId])
 
     const fetchMapNodes = useCallback(async () => {
-        const { data, error } = await supabase.from('studio_canvas_map_nodes').select('*')
+        if (!currentMapId) { setMapNodes([]); return }
+        const { data, error } = await supabase.from('studio_canvas_map_nodes').select('*').eq('map_id', currentMapId)
         if (error) console.error('Canvas fetch map nodes error:', error.message)
         else setMapNodes(data as CanvasMapNode[])
-    }, [])
+    }, [currentMapId])
 
     const fetchConnections = useCallback(async () => {
         const query = supabase.from('studio_canvas_connections').select('*').order('created_at', { ascending: true })
@@ -204,17 +205,17 @@ export function useCanvas() {
 
         const { error } = await supabase.from('studio_canvas_map_nodes').insert([nodeData])
         if (error) console.error('Add node to map error:', error.message)
-        else fetchMapNodes()
+        else await fetchMapNodes()
     }, [currentMapId, fetchMapNodes])
 
     const deleteMapNode = useCallback(async (id: string) => {
         if (!currentMapId) return
-        const node = mapNodes.find(n => n.entry_id === id || n.project_id === id || n.content_id === id)
+        const node = mapNodes.find(n => (n.entry_id === id || n.project_id === id || n.content_id === id) && n.map_id === currentMapId)
         if (!node) return
 
         const { error } = await supabase.from('studio_canvas_map_nodes').delete().eq('id', node.id)
         if (error) console.error('Delete map node error:', error.message)
-        else fetchMapNodes()
+        else await fetchMapNodes()
     }, [currentMapId, mapNodes, fetchMapNodes])
 
     const deleteMap = useCallback(async (id: string) => {

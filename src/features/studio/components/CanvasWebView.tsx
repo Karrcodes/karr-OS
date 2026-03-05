@@ -63,7 +63,6 @@ export default function CanvasWebView({
     const [hoverSide, setHoverSide] = useState<'top' | 'bottom' | 'left' | 'right'>('right')
     const [hoveredEdge, setHoveredEdge] = useState<string | null>(null)
     const [hoveredControl, setHoveredControl] = useState<string | null>(null)
-    const [confirmAction, setConfirmAction] = useState<{ id: string, type: 'archive' | 'delete' } | null>(null)
     const [magneticNode, setMagneticNode] = useState<string | null>(null)
 
     const dragStart = useRef<{ mx: number; my: number; nx: number; ny: number } | null>(null)
@@ -516,6 +515,7 @@ export default function CanvasWebView({
                                             hoverSide === 'left' && "-left-2.5 top-1/2 -translate-y-1/2",
                                             hoverSide === 'right' && "-right-2.5 top-1/2 -translate-y-1/2"
                                         )}
+                                        title="Click and drag to connect"
                                     >
                                         <Plus className="w-3 h-3" />
                                     </div>
@@ -527,7 +527,7 @@ export default function CanvasWebView({
                                 <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 flex items-center gap-1 z-10" onClick={e => e.stopPropagation()}>
                                     <button
                                         onClick={e => { e.stopPropagation(); onNodeClick(node) }}
-                                        className="h-7 px-2.5 bg-black text-white text-[9px] font-black rounded-lg shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-1"
+                                        className="h-7 px-2.5 bg-black text-white text-[9px] font-black rounded-lg shadow-md hover:scale-110 active:scale-95 transition-all flex items-center gap-1"
                                         onMouseDown={e => e.stopPropagation()}
                                     >
                                         <ArrowUpRight className="w-3 h-3" />
@@ -535,12 +535,18 @@ export default function CanvasWebView({
                                     </button>
                                     {node.node_type === 'entry' && (
                                         <>
-                                            <button onClick={e => { e.stopPropagation(); setConfirmAction({ id: node.id, type: 'archive' }) }} className="w-7 h-7 bg-amber-50 text-amber-500 rounded-lg flex items-center justify-center hover:bg-amber-100 transition-all border border-amber-200" title="Archive" onMouseDown={e => e.stopPropagation()}>▿</button>
-                                            <button onClick={e => { e.stopPropagation(); setConfirmAction({ id: node.id, type: 'delete' }) }} className="w-7 h-7 bg-red-50 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-100 transition-all border border-red-200" title="Delete" onMouseDown={e => e.stopPropagation()}>✕</button>
+                                            <button onClick={e => { e.stopPropagation(); onArchiveNode(node.id) }} className="w-7 h-7 bg-amber-50 text-amber-500 rounded-lg flex items-center justify-center hover:bg-amber-100 hover:scale-110 active:scale-95 transition-all border border-amber-200" title="Archive" onMouseDown={e => e.stopPropagation()}>
+                                                <Archive className="w-3 h-3" />
+                                            </button>
+                                            <button onClick={e => { e.stopPropagation(); onDeleteNode(node.id) }} className="w-7 h-7 bg-red-50 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-100 hover:scale-110 active:scale-95 transition-all border border-red-200" title="DeletePermanently" onMouseDown={e => e.stopPropagation()}>
+                                                <Trash2 className="w-3 h-3" />
+                                            </button>
                                         </>
                                     )}
                                     {node.node_type !== 'entry' && (
-                                        <button onClick={e => { e.stopPropagation(); onDeleteNode(node.id) }} className="w-7 h-7 bg-red-50 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-100 transition-all border border-red-200" title="Remove from Map" onMouseDown={e => e.stopPropagation()}>✕</button>
+                                        <button onClick={e => { e.stopPropagation(); onDeleteNode(node.id) }} className="w-7 h-7 bg-red-50 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-100 hover:scale-110 active:scale-95 transition-all border border-red-200" title="Remove from Map" onMouseDown={e => e.stopPropagation()}>
+                                            <X className="w-3 h-3" />
+                                        </button>
                                     )}
                                 </div>
                             )}
@@ -548,49 +554,6 @@ export default function CanvasWebView({
                     )
                 })}
             </div>
-
-            {/* Confirmation Modal */}
-            {confirmAction && (
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[1000] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setConfirmAction(null)}>
-                    <div className="bg-white rounded-[32px] p-8 max-w-[320px] w-full shadow-2xl border border-black/5 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                        <div className={cn(
-                            "w-12 h-12 rounded-2xl flex items-center justify-center mb-6",
-                            confirmAction.type === 'delete' ? "bg-red-50 text-red-500" : "bg-amber-50 text-amber-500"
-                        )}>
-                            {confirmAction.type === 'delete' ? <Trash2 className="w-6 h-6" /> : <Archive className="w-6 h-6" />}
-                        </div>
-                        <h3 className="text-[18px] font-black tracking-tight text-black mb-2">
-                            {confirmAction.type === 'delete' ? 'Delete Idea?' : 'Archive Idea?'}
-                        </h3>
-                        <p className="text-[13px] text-black/50 leading-relaxed mb-8">
-                            {confirmAction.type === 'delete'
-                                ? 'This will permanently remove this idea and all its links. This action cannot be undone.'
-                                : 'This will hide the idea and remove its links from the map. You can find it in Archived Notes later.'}
-                        </p>
-                        <div className="flex flex-col gap-2">
-                            <button
-                                onClick={() => {
-                                    if (confirmAction.type === 'delete') onDeleteNode(confirmAction.id)
-                                    else onArchiveNode(confirmAction.id)
-                                    setConfirmAction(null)
-                                }}
-                                className={cn(
-                                    "w-full py-3.5 rounded-2xl font-black text-[11px] uppercase tracking-wider transition-all active:scale-95 shadow-lg",
-                                    confirmAction.type === 'delete' ? "bg-red-500 text-white hover:bg-red-600" : "bg-black text-white hover:bg-neutral-800 shadow-amber-500/10"
-                                )}
-                            >
-                                {confirmAction.type === 'delete' ? 'Delete Permanently' : 'Confirm Archive'}
-                            </button>
-                            <button
-                                onClick={() => setConfirmAction(null)}
-                                className="w-full py-3.5 rounded-2xl font-black text-[11px] uppercase tracking-wider text-black/40 hover:bg-black/5 transition-all"
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* Empty state */}
             {entries.length === 0 && (

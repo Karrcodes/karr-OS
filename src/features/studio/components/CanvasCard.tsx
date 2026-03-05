@@ -150,24 +150,30 @@ export default function CanvasCard({ entry, connectionCount = 0, onClick, onPin,
                 </div>
                 <button
                     onClick={onPin}
-                    className={cn("w-6 h-6 rounded-lg flex items-center justify-center transition-all",
-                        entry.pinned ? 'text-black/60 bg-black/[0.05]' : 'text-black/30 hover:text-black/60 hover:bg-black/[0.05]'
+                    className={cn(
+                        "w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:scale-110 active:scale-95",
+                        entry.pinned ? "bg-black text-white" : "text-black/30 hover:text-black hover:bg-black/5"
                     )}
+                    title={entry.pinned ? "Unpin" : "Pin"}
                 >
-                    <Pin className="w-3.5 h-3.5" />
+                    <Pin className={cn("w-4 h-4", entry.pinned && "fill-current")} />
                 </button>
+
+                <div className="w-px h-4 bg-black/[0.05] mx-0.5" />
+
                 <button
                     onClick={onArchive}
-                    className="w-6 h-6 rounded-lg flex items-center justify-center text-black/30 hover:text-amber-500 hover:bg-amber-50 transition-all"
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-black/30 hover:text-amber-500 hover:bg-amber-50 transition-all hover:scale-110 active:scale-95"
                     title="Archive"
                 >
-                    <Archive className="w-3.5 h-3.5" />
+                    <Archive className="w-4 h-4" />
                 </button>
                 <button
                     onClick={onDelete}
-                    className="w-6 h-6 rounded-lg flex items-center justify-center text-black/30 hover:text-red-500 hover:bg-red-50 transition-all"
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-black/30 hover:text-red-500 hover:bg-red-50 transition-all hover:scale-110 active:scale-95"
+                    title="Delete"
                 >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-4 h-4" />
                 </button>
             </div>
 

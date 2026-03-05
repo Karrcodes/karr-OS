@@ -36,6 +36,12 @@ export default function CanvasDashboard() {
     const [filterTag, setFilterTag] = useState<string | null>(null)
     const [pinnedFirst, setPinnedFirst] = useState(true)
     const [quickTitle, setQuickTitle] = useState('')
+    const [confirmAction, setConfirmAction] = useState<{
+        type: 'delete_note' | 'archive_note' | 'delete_map' | 'archive_map' | 'rename_map',
+        id: string,
+        title: string
+    } | null>(null)
+    const [renameValue, setRenameValue] = useState('')
     const quickInputRef = useRef<HTMLInputElement>(null)
 
     const loading = studioLoading || canvasLoading
@@ -304,32 +310,45 @@ export default function CanvasDashboard() {
                                                     </div>
                                                     <div className="flex items-center gap-1.5 translate-x-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
                                                         <button
-                                                            onClick={(e) => { e.stopPropagation(); const n = prompt('Rename Mindmap:', map.name); if (n) renameMap(map.id, n) }}
-                                                            className="p-2.5 hover:bg-black/5 rounded-xl text-black/40 hover:text-black transition-colors"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setRenameValue(map.name);
+                                                                setConfirmAction({ type: 'rename_map', id: map.id, title: map.name })
+                                                            }}
+                                                            className="p-2.5 hover:bg-black/5 rounded-xl text-black/40 hover:text-black hover:scale-110 active:scale-95 transition-all"
                                                             title="Rename"
                                                         >
                                                             <PenLine className="w-4 h-4" />
                                                         </button>
                                                         {!showArchivedMaps ? (
                                                             <button
-                                                                onClick={(e) => { e.stopPropagation(); if (confirm('Archive this mindmap?')) archiveMap(map.id) }}
-                                                                className="p-2.5 hover:bg-amber-50 rounded-xl text-black/40 hover:text-amber-500 transition-colors"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setConfirmAction({ type: 'archive_map', id: map.id, title: map.name })
+                                                                }}
+                                                                className="p-2.5 hover:bg-amber-50 rounded-xl text-black/40 hover:text-amber-500 hover:scale-110 active:scale-95 transition-all"
                                                                 title="Archive"
                                                             >
                                                                 <Archive className="w-4 h-4" />
                                                             </button>
                                                         ) : (
                                                             <button
-                                                                onClick={(e) => { e.stopPropagation(); supabase.from('studio_canvas_maps').update({ is_archived: false }).eq('id', map.id).then(() => fetchMaps(true)) }}
-                                                                className="p-2.5 hover:bg-emerald-50 rounded-xl text-black/40 hover:text-emerald-500 transition-colors"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    supabase.from('studio_canvas_maps').update({ is_archived: false }).eq('id', map.id).then(() => fetchMaps(true))
+                                                                }}
+                                                                className="p-2.5 hover:bg-emerald-50 rounded-xl text-black/40 hover:text-emerald-500 hover:scale-110 active:scale-95 transition-all"
                                                                 title="Restore"
                                                             >
                                                                 <RotateCcw className="w-4 h-4" />
                                                             </button>
                                                         )}
                                                         <button
-                                                            onClick={(e) => { e.stopPropagation(); if (confirm('Delete this mindmap? All associations will be lost.')) deleteMap(map.id) }}
-                                                            className="p-2.5 hover:bg-red-50 rounded-xl text-black/40 hover:text-red-500 transition-colors"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setConfirmAction({ type: 'delete_map', id: map.id, title: map.name })
+                                                            }}
+                                                            className="p-2.5 hover:bg-red-50 rounded-xl text-black/40 hover:text-red-500 hover:scale-110 active:scale-95 transition-all"
                                                             title="Delete"
                                                         >
                                                             <Trash2 className="w-4 h-4" />
@@ -597,8 +616,8 @@ export default function CanvasDashboard() {
                                             connectionCount={connectionCountMap[entry.id] || 0}
                                             onClick={() => setSelectedEntry(entry)}
                                             onPin={() => togglePin(entry.id, entry.pinned)}
-                                            onArchive={() => archiveEntry(entry.id)}
-                                            onDelete={() => deleteEntry(entry.id)}
+                                            onArchive={() => setConfirmAction({ type: 'archive_note', id: entry.id, title: entry.title })}
+                                            onDelete={() => setConfirmAction({ type: 'delete_note', id: entry.id, title: entry.title })}
                                             onColorChange={(c: CanvasColor) => updateEntry(entry.id, { color: c })}
                                         />
                                     </div>
@@ -615,13 +634,74 @@ export default function CanvasDashboard() {
                 isOpen={!!selectedEntry}
                 onClose={() => setSelectedEntry(null)}
                 onUpdate={(id, upd) => { updateEntry(id, upd); setSelectedEntry(prev => prev ? { ...prev, ...upd } : prev) }}
-                onDelete={(id) => { deleteEntry(id); setSelectedEntry(null) }}
-                onArchive={(id) => { archiveEntry(id); setSelectedEntry(null) }}
+                onDelete={(id) => setConfirmAction({ type: 'delete_note', id, title: selectedEntry?.title || '' })}
+                onArchive={(id) => setConfirmAction({ type: 'archive_note', id, title: selectedEntry?.title || '' })}
                 onPromoteToSpark={handlePromoteToSpark}
                 links={selectedEntry ? nodeLinks.filter(l => l.entry_id === selectedEntry.id) : []}
                 onAddLink={nodeAddLink}
                 onRemoveLink={nodeRemoveLink}
             />
+
+            {/* Global Confirmation Modal */}
+            {confirmAction && (
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[1000] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setConfirmAction(null)}>
+                    <div className="bg-white rounded-[32px] p-8 max-w-[360px] w-full shadow-2xl border border-black/5 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                        <div className={cn(
+                            "w-12 h-12 rounded-2xl flex items-center justify-center mb-6",
+                            confirmAction.type.includes('delete') ? "bg-red-50 text-red-500" : confirmAction.type === 'rename_map' ? "bg-indigo-50 text-indigo-500" : "bg-amber-50 text-amber-500"
+                        )}>
+                            {confirmAction.type.includes('delete') ? <Trash2 className="w-6 h-6" /> : confirmAction.type === 'rename_map' ? <PenLine className="w-6 h-6" /> : <Archive className="w-6 h-6" />}
+                        </div>
+
+                        <h3 className="text-[18px] font-black tracking-tight text-black mb-2">
+                            {confirmAction.type === 'delete_note' && 'Delete Note?'}
+                            {confirmAction.type === 'archive_note' && 'Archive Note?'}
+                            {confirmAction.type === 'delete_map' && 'Delete Mindmap?'}
+                            {confirmAction.type === 'archive_map' && 'Archive Mindmap?'}
+                            {confirmAction.type === 'rename_map' && 'Rename Mindmap'}
+                        </h3>
+
+                        <p className="text-[13px] text-black/50 leading-relaxed mb-6">
+                            {confirmAction.type === 'rename_map' ? 'Enter a new name for your mindmap.' : `Are you sure you want to ${confirmAction.type.includes('delete') ? 'delete' : 'archive'} "${confirmAction.title}"?`}
+                        </p>
+
+                        {confirmAction.type === 'rename_map' && (
+                            <input
+                                autoFocus
+                                value={renameValue}
+                                onChange={e => setRenameValue(e.target.value)}
+                                className="w-full px-4 py-3 bg-black/[0.03] border border-black/[0.06] rounded-xl text-[14px] font-medium mb-8 outline-none focus:border-indigo-500/30"
+                                onKeyDown={e => { if (e.key === 'Enter') { renameMap(confirmAction.id, renameValue); setConfirmAction(null) } }}
+                            />
+                        )}
+
+                        <div className="flex flex-col gap-2">
+                            <button
+                                onClick={async () => {
+                                    if (confirmAction.type === 'delete_note') { await deleteEntry(confirmAction.id); setSelectedEntry(null) }
+                                    else if (confirmAction.type === 'archive_note') { await archiveEntry(confirmAction.id); setSelectedEntry(null) }
+                                    else if (confirmAction.type === 'delete_map') await deleteMap(confirmAction.id)
+                                    else if (confirmAction.type === 'archive_map') await archiveMap(confirmAction.id)
+                                    else if (confirmAction.type === 'rename_map') await renameMap(confirmAction.id, renameValue)
+                                    setConfirmAction(null)
+                                }}
+                                className={cn(
+                                    "w-full py-3.5 rounded-2xl font-black text-[11px] uppercase tracking-wider transition-all active:scale-95 shadow-lg",
+                                    confirmAction.type.includes('delete') ? "bg-red-500 text-white hover:bg-red-600" : "bg-black text-white hover:bg-neutral-800"
+                                )}
+                            >
+                                {confirmAction.type === 'rename_map' ? 'Update Name' : 'Confirm Action'}
+                            </button>
+                            <button
+                                onClick={() => setConfirmAction(null)}
+                                className="w-full py-3.5 rounded-2xl font-black text-[11px] uppercase tracking-wider text-black/40 hover:bg-black/5 transition-all"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
