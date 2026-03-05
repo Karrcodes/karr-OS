@@ -27,14 +27,18 @@ export function useCanvas() {
     }, [fetch])
 
     const createEntry = useCallback(async (data: { title: string; body?: string; tags?: string[]; color?: CanvasColor }) => {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
         const { error } = await supabase.from('studio_canvas_entries').insert({
+            user_id: user.id,
             title: data.title.trim(),
             body: data.body?.trim() || null,
             tags: data.tags || [],
             color: data.color || 'default',
             pinned: false,
         })
-        if (!error) fetch()
+        if (error) console.error('Canvas insert error:', error)
+        else fetch()
     }, [fetch])
 
     const updateEntry = useCallback(async (id: string, updates: Partial<StudioCanvasEntry>) => {
