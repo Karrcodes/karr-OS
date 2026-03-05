@@ -28,7 +28,7 @@ export function useCanvas() {
     const fetchMaps = useCallback(async (showArchived = false) => {
         let query = supabase.from('studio_canvas_maps').select('*')
         if (!showArchived) query = query.eq('is_archived', false)
-        
+
         const { data, error } = await query.order('created_at', { ascending: false })
         if (error) console.error('Canvas fetch maps error:', error.message)
         else {
@@ -267,7 +267,7 @@ export function useCanvas() {
         maps, currentMapId, setCurrentMapId, mapNodes, nodeLinks,
         createEntry, updateEntry, updateNodePosition, deleteEntry, archiveEntry, togglePin,
         createConnection, deleteConnection,
-        createMap, addNodeToMap, deleteMapNode, deleteMap, archiveMap, renameMap,
+        createMap, fetchMaps, addNodeToMap, deleteMapNode, deleteMap, archiveMap, renameMap,
         nodeAddLink, nodeRemoveLink,
         refresh: fetchEntries
     }

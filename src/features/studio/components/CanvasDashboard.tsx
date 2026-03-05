@@ -7,6 +7,7 @@ import CanvasEntryModal from './CanvasEntryModal'
 import CanvasWebView from './CanvasWebView'
 import { useStudioContext } from '../context/StudioContext'
 import { useCanvas } from '../hooks/useCanvas'
+import { supabase } from '@/lib/supabase'
 import type { StudioCanvasEntry, CanvasColor, StudioProject, StudioContent, CanvasMap, CanvasMapNode, CanvasConnection } from '../types/studio.types'
 
 type ViewMode = 'board' | 'web'
@@ -22,7 +23,7 @@ export default function CanvasDashboard() {
         refresh: refreshCanvas
     } = useCanvas()
 
-    const { projects, content, loading: studioLoading, supabase } = useStudioContext()
+    const { projects, content, loading: studioLoading } = useStudioContext()
 
     const [viewMode, setViewMode] = useState<ViewMode>('board')
     const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active')
