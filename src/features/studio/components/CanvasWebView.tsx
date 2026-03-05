@@ -47,11 +47,12 @@ interface Props {
     onArchiveNode: (id: string) => void
     onRemoveNode: (id: string) => void
     onCreateNode: (data: { title: string; x: number; y: number }) => void
+    onDropNode: (id: string, type: 'entry' | 'project' | 'content', x: number, y: number) => void
 }
 
 export default function CanvasWebView({
     entries, connections, onNodeClick, onCreateConnection, onDeleteConnection, onUpdatePosition,
-    onDeleteNode, onArchiveNode, onRemoveNode, onCreateNode
+    onDeleteNode, onArchiveNode, onRemoveNode, onCreateNode, onDropNode
 }: Props) {
     const containerRef = useRef<HTMLDivElement>(null)
     const [pan, setPan] = useState({ x: 60, y: 60 })
@@ -307,14 +308,7 @@ export default function CanvasWebView({
             if (rect) {
                 const x = (e.clientX - rect.left - pan.x) / zoom - (NODE_W / 2)
                 const y = (e.clientY - rect.top - pan.y) / zoom - 20
-
-                    // This will trigger the parent's addNodeToMap via onCreateNode-like logic or direct call
-                    // Here we use a generic 'onDrop' or similar if we want to be clean, 
-                    // but let's assume we can trigger a refresh from parent.
-                    // We'll pass this back as a custom event or handled via standard props.
-                    (window as any).dispatchEvent(new CustomEvent('studio-canvas-drop', {
-                        detail: { id, type, x, y }
-                    }))
+                onDropNode(id, type, x, y)
             }
         } catch (err) {
             console.error('Canvas drop error:', err)

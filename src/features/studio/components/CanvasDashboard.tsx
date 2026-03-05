@@ -54,15 +54,6 @@ export default function CanvasDashboard() {
         fetchMaps(showArchivedMaps)
     }, [fetchMaps, showArchivedMaps])
 
-    useEffect(() => {
-        const handleCanvasDrop = (e: any) => {
-            const { id, type, x, y } = e.detail
-            addNodeToMap(id, type, x, y)
-        }
-        window.addEventListener('studio-canvas-drop', handleCanvasDrop)
-        return () => window.removeEventListener('studio-canvas-drop', handleCanvasDrop)
-    }, [addNodeToMap])
-
     const isBoard = viewMode === 'board'
 
     useEffect(() => {
@@ -491,6 +482,7 @@ export default function CanvasDashboard() {
                                         onUpdatePosition={updateNodePosition}
                                         onDeleteNode={(id) => setConfirmAction({ type: 'delete_note', id, title: 'Note' })}
                                         onRemoveNode={deleteMapNode}
+                                        onDropNode={addNodeToMap}
                                         onArchiveNode={(id) => setConfirmAction({ type: 'archive_note', id, title: 'Note' })}
                                         onCreateNode={(data) => createEntry({ ...data })}
                                     />
