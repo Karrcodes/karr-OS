@@ -45,12 +45,13 @@ interface Props {
     onUpdatePosition: (id: string, x: number, y: number) => void
     onDeleteNode: (id: string) => void
     onArchiveNode: (id: string) => void
+    onRemoveNode: (id: string) => void
     onCreateNode: (data: { title: string; x: number; y: number }) => void
 }
 
 export default function CanvasWebView({
     entries, connections, onNodeClick, onCreateConnection, onDeleteConnection, onUpdatePosition,
-    onDeleteNode, onArchiveNode, onCreateNode
+    onDeleteNode, onArchiveNode, onRemoveNode, onCreateNode
 }: Props) {
     const containerRef = useRef<HTMLDivElement>(null)
     const [pan, setPan] = useState({ x: 60, y: 60 })
@@ -126,23 +127,32 @@ export default function CanvasWebView({
             if (rect) {
                 const mx = (e.clientX - rect.left - pan.x) / zoom
                 const my = (e.clientY - rect.top - pan.y) / zoom
-                setPendingLine({ x: mx, y: my })
 
-                // Magnetic Proximity Detection
+                // Precise Port Snapping Detection
                 let closest: string | null = null
-                let minD = 50 // Pixels proximity
+                let minD = 50
+                let snappedPoint = { x: mx, y: my }
 
                 entries.forEach(node => {
                     if (node.id === connectingFrom.id) return
                     const p = getPos(node.id)
-                    const dx = mx - (p.x + NODE_W / 2)
-                    const dy = my - (p.y + NODE_H / 2)
-                    const dist = Math.sqrt(dx * dx + dy * dy)
-                    if (dist < minD) {
-                        minD = dist
-                        closest = node.id
-                    }
+
+                    // Check all 4 ports of each node for snapping
+                    const sides: ('top' | 'bottom' | 'left' | 'right')[] = ['top', 'bottom', 'left', 'right']
+                    sides.forEach(side => {
+                        const portPos = getPortPos(p, side)
+                        const dx = mx - portPos.x
+                        const dy = my - portPos.y
+                        const dist = Math.sqrt(dx * dx + dy * dy)
+                        if (dist < minD) {
+                            minD = dist
+                            closest = node.id
+                            snappedPoint = portPos
+                        }
+                    })
                 })
+
+                setPendingLine(snappedPoint)
                 setMagneticNode(closest)
             }
         }
@@ -280,7 +290,35 @@ export default function CanvasWebView({
         const dy = Math.abs(from.y - pendingLine.y) * 0.5
         let c1 = { x: from.x, y: from.y }
         if (side === 'right') c1.x += dx; else if (side === 'left') c1.x -= dx; else if (side === 'bottom') c1.y += dy; else c1.y -= dy
+
+        // If snapped to a magnetic node, use the target side logic for C2 curvature
+        // For now, simplicity is better for pending lines
         return `M ${from.x} ${from.y} C ${c1.x} ${c1.y}, ${pendingLine.x} ${pendingLine.y}, ${pendingLine.x} ${pendingLine.y}`
+    }
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault()
+        const data = e.dataTransfer.getData('application/json')
+        if (!data) return
+
+        try {
+            const { id, type } = JSON.parse(data)
+            const rect = containerRef.current?.getBoundingClientRect()
+            if (rect) {
+                const x = (e.clientX - rect.left - pan.x) / zoom - (NODE_W / 2)
+                const y = (e.clientY - rect.top - pan.y) / zoom - 20
+
+                    // This will trigger the parent's addNodeToMap via onCreateNode-like logic or direct call
+                    // Here we use a generic 'onDrop' or similar if we want to be clean, 
+                    // but let's assume we can trigger a refresh from parent.
+                    // We'll pass this back as a custom event or handled via standard props.
+                    (window as any).dispatchEvent(new CustomEvent('studio-canvas-drop', {
+                        detail: { id, type, x, y }
+                    }))
+            }
+        } catch (err) {
+            console.error('Canvas drop error:', err)
+        }
     }
 
     return (
@@ -291,6 +329,8 @@ export default function CanvasWebView({
             onMouseMove={onMouseMove}
             onMouseUp={onMouseUp}
             onMouseLeave={onMouseUp}
+            onDragOver={e => e.preventDefault()}
+            onDrop={handleDrop}
             onDoubleClick={(e) => {
                 if ((e.target as HTMLElement).closest('[data-node]')) return
                 const rect = containerRef.current?.getBoundingClientRect()
@@ -533,20 +573,18 @@ export default function CanvasWebView({
                                         <ArrowUpRight className="w-3 h-3" />
                                         OPEN
                                     </button>
+                                    <button onClick={e => { e.stopPropagation(); onRemoveNode(node.id) }} className="w-7 h-7 bg-white text-black/40 rounded-lg flex items-center justify-center hover:bg-neutral-800 hover:text-white hover:scale-110 active:scale-95 transition-all border border-black/5 shadow-sm hover:shadow-black/20" title="Remove from Map" onMouseDown={e => e.stopPropagation()}>
+                                        <X className="w-3 h-3" />
+                                    </button>
                                     {node.node_type === 'entry' && (
                                         <>
-                                            <button onClick={e => { e.stopPropagation(); onArchiveNode(node.id) }} className="w-7 h-7 bg-amber-50 text-amber-500 rounded-lg flex items-center justify-center hover:bg-amber-100 hover:scale-110 active:scale-95 transition-all border border-amber-200" title="Archive" onMouseDown={e => e.stopPropagation()}>
+                                            <button onClick={e => { e.stopPropagation(); onArchiveNode(node.id) }} className="w-7 h-7 bg-white text-black/40 rounded-lg flex items-center justify-center hover:bg-amber-500 hover:text-white hover:scale-110 active:scale-95 transition-all border border-black/5 shadow-sm hover:shadow-amber-500/20" title="Archive Permanently" onMouseDown={e => e.stopPropagation()}>
                                                 <Archive className="w-3 h-3" />
                                             </button>
-                                            <button onClick={e => { e.stopPropagation(); onDeleteNode(node.id) }} className="w-7 h-7 bg-red-50 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-100 hover:scale-110 active:scale-95 transition-all border border-red-200" title="DeletePermanently" onMouseDown={e => e.stopPropagation()}>
+                                            <button onClick={e => { e.stopPropagation(); onDeleteNode(node.id) }} className="w-7 h-7 bg-white text-black/40 rounded-lg flex items-center justify-center hover:bg-red-500 hover:text-white hover:scale-110 active:scale-95 transition-all border border-black/5 shadow-sm hover:shadow-red-500/20" title="Delete Permanently" onMouseDown={e => e.stopPropagation()}>
                                                 <Trash2 className="w-3 h-3" />
                                             </button>
                                         </>
-                                    )}
-                                    {node.node_type !== 'entry' && (
-                                        <button onClick={e => { e.stopPropagation(); onDeleteNode(node.id) }} className="w-7 h-7 bg-red-50 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-100 hover:scale-110 active:scale-95 transition-all border border-red-200" title="Remove from Map" onMouseDown={e => e.stopPropagation()}>
-                                            <X className="w-3 h-3" />
-                                        </button>
                                     )}
                                 </div>
                             )}

@@ -55,6 +55,17 @@ export default function CanvasDashboard() {
     }, [fetchMaps, showArchivedMaps])
 
     useEffect(() => {
+        const handleCanvasDrop = (e: any) => {
+            const { id, type, x, y } = e.detail
+            addNodeToMap(id, type, x, y)
+        }
+        window.addEventListener('studio-canvas-drop', handleCanvasDrop)
+        return () => window.removeEventListener('studio-canvas-drop', handleCanvasDrop)
+    }, [addNodeToMap])
+
+    const isBoard = viewMode === 'board'
+
+    useEffect(() => {
         if (viewMode === 'board') quickInputRef.current?.focus()
     }, [viewMode])
 
@@ -308,7 +319,7 @@ export default function CanvasDashboard() {
                                                     )}>
                                                         <Network className="w-6 h-6" />
                                                     </div>
-                                                    <div className="flex items-center gap-1.5 translate-x-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
+                                                    <div className="flex items-center gap-1.5 opacity-20 group-hover:opacity-100 transition-all duration-300">
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
@@ -326,7 +337,7 @@ export default function CanvasDashboard() {
                                                                     e.stopPropagation();
                                                                     setConfirmAction({ type: 'archive_map', id: map.id, title: map.name })
                                                                 }}
-                                                                className="p-2.5 hover:bg-amber-50 rounded-xl text-black/40 hover:text-amber-500 hover:scale-110 active:scale-95 transition-all"
+                                                                className="p-2.5 rounded-xl text-black/40 hover:text-white hover:bg-amber-500 hover:scale-110 active:scale-95 transition-all shadow-sm hover:shadow-amber-500/20"
                                                                 title="Archive"
                                                             >
                                                                 <Archive className="w-4 h-4" />
@@ -337,7 +348,7 @@ export default function CanvasDashboard() {
                                                                     e.stopPropagation();
                                                                     supabase.from('studio_canvas_maps').update({ is_archived: false }).eq('id', map.id).then(() => fetchMaps(true))
                                                                 }}
-                                                                className="p-2.5 hover:bg-emerald-50 rounded-xl text-black/40 hover:text-emerald-500 hover:scale-110 active:scale-95 transition-all"
+                                                                className="p-2.5 rounded-xl text-black/40 hover:text-white hover:bg-emerald-500 hover:scale-110 active:scale-95 transition-all shadow-sm hover:shadow-emerald-500/20"
                                                                 title="Restore"
                                                             >
                                                                 <RotateCcw className="w-4 h-4" />
@@ -348,7 +359,7 @@ export default function CanvasDashboard() {
                                                                 e.stopPropagation();
                                                                 setConfirmAction({ type: 'delete_map', id: map.id, title: map.name })
                                                             }}
-                                                            className="p-2.5 hover:bg-red-50 rounded-xl text-black/40 hover:text-red-500 hover:scale-110 active:scale-95 transition-all"
+                                                            className="p-2.5 rounded-xl text-black/40 hover:text-white hover:bg-red-500 hover:scale-110 active:scale-95 transition-all shadow-sm hover:shadow-red-500/20"
                                                             title="Delete"
                                                         >
                                                             <Trash2 className="w-4 h-4" />
@@ -439,7 +450,7 @@ export default function CanvasDashboard() {
                                                 <EmptyLibrary message="No unmapped ideas" />
                                             ) : (
                                                 unmappedEntries.map(e => (
-                                                    <LibraryItem key={e.id} title={e.title} onClick={() => addNodeToMap(e.id, 'entry' as const)} />
+                                                    <LibraryItem key={e.id} id={e.id} type="entry" title={e.title} onClick={() => addNodeToMap(e.id, 'entry' as const)} />
                                                 ))
                                             )
                                         )}
@@ -448,7 +459,7 @@ export default function CanvasDashboard() {
                                                 <EmptyLibrary message="No unmapped projects" />
                                             ) : (
                                                 unmappedProjects.map(p => (
-                                                    <LibraryItem key={p.id} title={p.title} type="project" onClick={() => addNodeToMap(p.id, 'project' as const)} />
+                                                    <LibraryItem key={p.id} id={p.id} title={p.title} type="project" onClick={() => addNodeToMap(p.id, 'project' as const)} />
                                                 ))
                                             )
                                         )}
@@ -457,7 +468,7 @@ export default function CanvasDashboard() {
                                                 <EmptyLibrary message="No unmapped content" />
                                             ) : (
                                                 unmappedContent.map(c => (
-                                                    <LibraryItem key={c.id} title={c.title} type="content" onClick={() => addNodeToMap(c.id, 'content' as const)} />
+                                                    <LibraryItem key={c.id} id={c.id} title={c.title} type="content" onClick={() => addNodeToMap(c.id, 'content' as const)} />
                                                 ))
                                             )
                                         )}
@@ -478,8 +489,9 @@ export default function CanvasDashboard() {
                                         onCreateConnection={createConnection}
                                         onDeleteConnection={deleteConnection}
                                         onUpdatePosition={updateNodePosition}
-                                        onDeleteNode={deleteMapNode}
-                                        onArchiveNode={archiveEntry}
+                                        onDeleteNode={(id) => setConfirmAction({ type: 'delete_note', id, title: 'Note' })}
+                                        onRemoveNode={deleteMapNode}
+                                        onArchiveNode={(id) => setConfirmAction({ type: 'archive_note', id, title: 'Note' })}
                                         onCreateNode={(data) => createEntry({ ...data })}
                                     />
                                 ) : (
@@ -716,9 +728,16 @@ function EmptyLibrary({ message }: { message: string }) {
     )
 }
 
-function LibraryItem({ title, type, onClick }: { title: string; type?: 'project' | 'content'; onClick: () => void }) {
+function LibraryItem({ id, title, type = 'entry', onClick }: { id: string; title: string; type?: 'entry' | 'project' | 'content'; onClick: () => void }) {
+    const handleDragStart = (e: React.DragEvent) => {
+        e.dataTransfer.setData('application/json', JSON.stringify({ id, type }))
+        e.dataTransfer.effectAllowed = 'copy'
+    }
+
     return (
         <button
+            draggable
+            onDragStart={handleDragStart}
             onClick={onClick}
             className="w-full text-left p-4 rounded-2xl border border-black/[0.05] hover:border-indigo-300 hover:bg-indigo-50/30 transition-all group relative overflow-hidden"
         >

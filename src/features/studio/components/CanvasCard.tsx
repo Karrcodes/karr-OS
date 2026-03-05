@@ -163,14 +163,14 @@ export default function CanvasCard({ entry, connectionCount = 0, onClick, onPin,
 
                 <button
                     onClick={onArchive}
-                    className="w-7 h-7 rounded-lg flex items-center justify-center text-black/30 hover:text-amber-500 hover:bg-amber-50 transition-all hover:scale-110 active:scale-95"
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-black/30 hover:text-white hover:bg-amber-500 transition-all hover:scale-110 active:scale-95 shadow-sm hover:shadow-amber-500/20"
                     title="Archive"
                 >
                     <Archive className="w-4 h-4" />
                 </button>
                 <button
                     onClick={onDelete}
-                    className="w-7 h-7 rounded-lg flex items-center justify-center text-black/30 hover:text-red-500 hover:bg-red-50 transition-all hover:scale-110 active:scale-95"
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-black/30 hover:text-white hover:bg-red-500 transition-all hover:scale-110 active:scale-95 shadow-sm hover:shadow-red-500/20"
                     title="Delete"
                 >
                     <Trash2 className="w-4 h-4" />
