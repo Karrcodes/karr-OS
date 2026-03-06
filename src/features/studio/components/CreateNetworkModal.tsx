@@ -26,7 +26,7 @@ const STATUSES: { value: NetworkStatus; label: string; type: NetworkType[] }[] =
 ]
 
 export default function CreateNetworkModal({ isOpen, onClose }: CreateNetworkModalProps) {
-    const { addNetwork } = useStudio()
+    const { addNetwork, networks } = useStudio()
     const [loading, setLoading] = useState(false)
     const [tagsInput, setTagsInput] = useState('')
     const [formData, setFormData] = useState({
@@ -37,8 +37,13 @@ export default function CreateNetworkModal({ isOpen, onClose }: CreateNetworkMod
         notes: '',
         status: 'interested' as NetworkStatus,
         event_date: '',
-        last_contact: ''
+        last_contact: '',
+        category: ''
     })
+
+    const allUniqueTags = Array.from(new Set(networks.flatMap(n => n.tags || []))).sort()
+    const currentTags = tagsInput.split(',').map(t => t.trim().toLowerCase()).filter(Boolean)
+    const suggestedTags = allUniqueTags.filter(tag => !currentTags.includes(tag.toLowerCase())).slice(0, 10)
 
     if (!isOpen) return null
 
@@ -65,7 +70,8 @@ export default function CreateNetworkModal({ isOpen, onClose }: CreateNetworkMod
                 notes: '',
                 status: 'interested',
                 event_date: '',
-                last_contact: ''
+                last_contact: '',
+                category: ''
             })
             setTagsInput('')
         } catch (err: any) {
@@ -218,6 +224,26 @@ export default function CreateNetworkModal({ isOpen, onClose }: CreateNetworkMod
                             {/* Tags */}
                             <div className="space-y-2">
                                 <label className="text-[11px] font-black uppercase tracking-widest text-black/30 ml-2">Tags / Keywords</label>
+
+                                {suggestedTags.length > 0 && (
+                                    <div className="flex flex-wrap gap-1.5 mb-2 px-1">
+                                        <span className="text-[9px] font-black uppercase tracking-tighter text-black/25 w-full mb-0.5">Quick Select</span>
+                                        {suggestedTags.map(tag => (
+                                            <button
+                                                key={tag}
+                                                type="button"
+                                                onClick={() => {
+                                                    const current = tagsInput ? `${tagsInput}, ` : ''
+                                                    setTagsInput(`${current}${tag}`)
+                                                }}
+                                                className="text-[10px] font-bold text-black/40 bg-black/[0.03] hover:bg-black/[0.06] border border-transparent px-2 py-0.5 rounded-lg transition-all"
+                                            >
+                                                + {tag}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+
                                 <div className="relative">
                                     <Hash className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
                                     <input

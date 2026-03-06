@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { Activity, Plus, Search, Users, Globe, MapPin, ExternalLink, MessageCircle, Hash, Calendar } from 'lucide-react'
 import { useStudio } from '@/features/studio/hooks/useStudio'
+import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
 import CreateNetworkModal from '@/features/studio/components/CreateNetworkModal'
 import NetworkDetailModal from '@/features/studio/components/NetworkDetailModal'
 import type { StudioNetwork, NetworkType } from '@/features/studio/types/studio.types'
@@ -22,17 +23,23 @@ const TYPE_COLORS: Record<NetworkType, string> = {
 
 export default function NetworkPage() {
     const { networks, loading } = useStudio()
+    const { settings } = useSystemSettings()
+    const networkReachOutDays = settings.network_reach_out_days || 30
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [selectedItem, setSelectedItem] = useState<StudioNetwork | null>(null)
     const [searchQuery, setSearchQuery] = useState('')
     const [filterType, setFilterType] = useState<NetworkType | 'all'>('all')
+    const [selectedTags, setSelectedTags] = useState<string[]>([])
+
+    const allUniqueTags = Array.from(new Set(networks.flatMap(n => n.tags || []))).sort()
 
     const filteredNetworks = networks.filter(item => {
         const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             (item.platform && item.platform.toLowerCase().includes(searchQuery.toLowerCase())) ||
             (item.tags && item.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase())))
         const matchesType = filterType === 'all' || item.type === filterType
-        return matchesSearch && matchesType
+        const matchesTags = selectedTags.length === 0 || selectedTags.every(t => item.tags?.includes(t))
+        return matchesSearch && matchesType && matchesTags
     })
 
     return (
@@ -95,10 +102,44 @@ export default function NetworkPage() {
                     ))}
                 </div>
 
+                {/* Tag Filters */}
+                {allUniqueTags.length > 0 && (
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-4 custom-scrollbar">
+                        <Hash className="w-4 h-4 text-black/20 shrink-0 mr-1" />
+                        {allUniqueTags.map(tag => {
+                            const isSelected = selectedTags.includes(tag)
+                            return (
+                                <button
+                                    key={tag}
+                                    onClick={() => setSelectedTags(prev =>
+                                        isSelected ? prev.filter(t => t !== tag) : [...prev, tag]
+                                    )}
+                                    className={cn(
+                                        "px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all border shrink-0",
+                                        isSelected
+                                            ? "bg-purple-50 text-purple-600 border-purple-200"
+                                            : "bg-white text-black/40 border-black/[0.05] hover:border-black/20"
+                                    )}
+                                >
+                                    #{tag}
+                                </button>
+                            )
+                        })}
+                        {selectedTags.length > 0 && (
+                            <button
+                                onClick={() => setSelectedTags([])}
+                                className="px-2 py-1 ml-1 text-[10px] font-bold text-red-500 hover:bg-red-50 rounded-lg transition-colors shrink-0"
+                            >
+                                Clear
+                            </button>
+                        )}
+                    </div>
+                )}
+
                 {/* Network List Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 min-h-[400px]">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 min-h-[400px]">
                     {filteredNetworks.map(item => (
-                        <NetworkCard key={item.id} item={item} onClick={() => setSelectedItem(item)} />
+                        <NetworkCard key={item.id} item={item} onClick={() => setSelectedItem(item)} thresholdDays={networkReachOutDays} />
                     ))}
                     {filteredNetworks.length === 0 && !loading && (
                         <div className="col-span-full py-20 bg-black/[0.015] border-2 border-dashed border-black/[0.05] rounded-[40px] flex flex-col items-center justify-center text-center px-6">
@@ -122,8 +163,16 @@ export default function NetworkPage() {
     )
 }
 
-function NetworkCard({ item, onClick }: { item: StudioNetwork; onClick: () => void }) {
+function NetworkCard({ item, onClick, thresholdDays }: { item: StudioNetwork; onClick: () => void; thresholdDays: number }) {
     const Icon = TYPE_ICONS[item.type]
+
+    const getHostName = (url: string) => {
+        try {
+            return new URL(url).hostname.replace('www.', '')
+        } catch {
+            return url.length > 20 ? url.substring(0, 20) + '...' : url
+        }
+    }
 
     return (
         <div
@@ -162,14 +211,37 @@ function NetworkCard({ item, onClick }: { item: StudioNetwork; onClick: () => vo
             )}
 
             <div className="mt-auto pt-4 border-t border-black/[0.05] flex items-center justify-between">
-                <span className={cn(
-                    "text-[9px] font-black uppercase px-2 py-1 rounded-lg",
-                    item.status === 'connected' || item.status === 'attended' || item.status === 'attending'
-                        ? "bg-purple-50 text-purple-600"
-                        : "bg-black/[0.04] text-black/30"
-                )}>
-                    {item.status.replace('_', ' ')}
-                </span>
+                {(() => {
+                    let label = item.status.replace('_', ' ')
+                    let colorClass = "bg-black/[0.04] text-black/30"
+
+                    if (item.type === 'person') {
+                        if (!item.last_contact) {
+                            label = "New Contact"
+                            colorClass = "bg-blue-50 text-blue-600"
+                        } else {
+                            const daysSinceContact = Math.floor((new Date().getTime() - new Date(item.last_contact).getTime()) / (1000 * 3600 * 24))
+                            if (daysSinceContact > thresholdDays) {
+                                label = "Reach Out Soon"
+                                colorClass = "bg-orange-50 text-orange-600"
+                            } else {
+                                label = "Recently Contacted"
+                                colorClass = "bg-emerald-50 text-emerald-600"
+                            }
+                        }
+                    } else if (item.category) {
+                        label = item.category
+                        colorClass = "bg-purple-50 text-purple-600"
+                    } else if (item.status === 'connected' || item.status === 'attended' || item.status === 'attending') {
+                        colorClass = "bg-purple-50 text-purple-600"
+                    }
+
+                    return (
+                        <span className={cn("text-[9px] font-black uppercase px-2 py-1 rounded-lg", colorClass)}>
+                            {label}
+                        </span>
+                    )
+                })()}
 
                 <div className="flex items-center gap-2">
                     {item.event_date && item.type === 'event' && (
@@ -178,7 +250,18 @@ function NetworkCard({ item, onClick }: { item: StudioNetwork; onClick: () => vo
                             {new Date(item.event_date).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })}
                         </div>
                     )}
-                    {item.url && <ExternalLink className="w-3.5 h-3.5 text-black/20" />}
+                    {item.url && (
+                        <a
+                            href={item.url.startsWith('http') ? item.url : `https://${item.url}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-black/[0.03] hover:bg-black/[0.06] transition-colors group/link"
+                        >
+                            <span className="text-[10px] font-bold text-black/40 group-hover/link:text-black/60 truncate max-w-[100px]">{getHostName(item.url)}</span>
+                            <ExternalLink className="w-3 h-3 text-black/30 group-hover/link:text-black/50" />
+                        </a>
+                    )}
                 </div>
             </div>
         </div>

@@ -20,6 +20,7 @@ interface SystemSettings {
     shift_off_days: number
     shift_start_date: string
     is_demo_mode: boolean
+    network_reach_out_days: number
     [key: string]: any
 }
 
@@ -47,6 +48,7 @@ const defaultSettings: SystemSettings = {
     shift_off_days: 3,
     shift_start_date: '',
     is_demo_mode: false,
+    network_reach_out_days: 30,
 }
 
 const SystemSettingsContext = createContext<SystemSettingsContextType | undefined>(undefined)

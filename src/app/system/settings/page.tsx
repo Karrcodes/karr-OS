@@ -24,6 +24,7 @@ export default function SettingsPage() {
     const [userName, setUserName] = useState(settings.user_name || '')
     const [userEmail, setUserEmail] = useState(settings.user_email || '')
     const [profilePic, setProfilePic] = useState(settings.profile_picture_url || '')
+    const [networkReachOutDays, setNetworkReachOutDays] = useState(settings.network_reach_out_days || 30)
     const [offDays, setOffDays] = useState<string[]>(settings.off_days || [])
     const [scheduleType, setScheduleType] = useState<'mon-fri' | 'shift'>(settings.schedule_type || 'mon-fri')
     const [shiftOn, setShiftOn] = useState(settings.shift_on_days || 3)
@@ -39,6 +40,7 @@ export default function SettingsPage() {
         setUserName(settings.user_name || '')
         setUserEmail(settings.user_email || '')
         setProfilePic(settings.profile_picture_url || '')
+        setNetworkReachOutDays(settings.network_reach_out_days || 30)
         setOffDays(settings.off_days || [])
         setScheduleType(settings.schedule_type || 'mon-fri')
         setShiftOn(settings.shift_on_days || 3)
@@ -88,7 +90,8 @@ export default function SettingsPage() {
             await Promise.all([
                 updateSetting('user_name', userName),
                 updateSetting('user_email', userEmail),
-                updateSetting('profile_picture_url', profilePic)
+                updateSetting('profile_picture_url', profilePic),
+                updateSetting('network_reach_out_days', networkReachOutDays)
             ])
 
             await refreshSettings()
@@ -299,12 +302,21 @@ export default function SettingsPage() {
                                                 className="w-full bg-black/[0.03] border border-black/[0.06] rounded-xl px-4 py-2 text-[13px] outline-none focus:border-black/30 transition-colors"
                                             />
                                         </div>
-                                        <div className="space-y-1.5">
+                                        <div className="space-y-1.5 min-w-0">
                                             <label className="text-[11px] font-bold text-black/40 ml-1">Email Address</label>
                                             <input
                                                 type="email"
                                                 value={userEmail}
                                                 onChange={(e) => setUserEmail(e.target.value)}
+                                                className="w-full bg-black/[0.03] border border-black/[0.06] rounded-xl px-4 py-2 text-[13px] outline-none focus:border-black/30 transition-colors"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5 col-span-1 sm:col-span-2">
+                                            <label className="text-[11px] font-bold text-black/40 ml-1">Network Reach Out Threshold (Days)</label>
+                                            <input
+                                                type="number"
+                                                value={networkReachOutDays}
+                                                onChange={(e) => setNetworkReachOutDays(parseInt(e.target.value) || 30)}
                                                 className="w-full bg-black/[0.03] border border-black/[0.06] rounded-xl px-4 py-2 text-[13px] outline-none focus:border-black/30 transition-colors"
                                             />
                                         </div>

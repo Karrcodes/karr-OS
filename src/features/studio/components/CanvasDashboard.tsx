@@ -114,6 +114,18 @@ export default function CanvasDashboard() {
         setQuickTitle('')
     }
 
+    const handleQuickTweet = async () => {
+        if (!quickTitle.trim()) return
+        if (boardTab === 'notes') {
+            await createEntry({
+                title: quickTitle.trim(),
+                tags: ['to tweet'],
+                color: 'blue'
+            })
+        }
+        setQuickTitle('')
+    }
+
     const handlePromoteToSpark = async (entry: StudioCanvasEntry) => {
         window.open(`/create/sparks?from_canvas=${encodeURIComponent(entry.title)}`, '_self')
     }
@@ -763,10 +775,17 @@ export default function CanvasDashboard() {
                                     className="flex-1 text-[14px] font-medium text-black bg-transparent outline-none placeholder:text-black/25"
                                 />
                                 {quickTitle && (
-                                    <button onClick={handleQuickCreate} className="flex items-center gap-1.5 px-3 py-1.5 bg-black text-white text-[11px] font-black rounded-xl hover:bg-black/80 transition-all shrink-0">
-                                        <Plus className="w-3.5 h-3.5" />
-                                        Save
-                                    </button>
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                        {boardTab === 'notes' && (
+                                            <button onClick={handleQuickTweet} className="flex items-center gap-1 flex-shrink-0 px-3 py-1.5 bg-blue-500 text-white text-[11px] font-black rounded-xl hover:bg-blue-600 transition-all shadow-sm shadow-blue-500/20">
+                                                Tweet
+                                            </button>
+                                        )}
+                                        <button onClick={handleQuickCreate} className="flex items-center gap-1.5 px-3 py-1.5 bg-black text-white text-[11px] font-black rounded-xl hover:bg-black/80 transition-all">
+                                            <Plus className="w-3.5 h-3.5" />
+                                            Save
+                                        </button>
+                                    </div>
                                 )}
                             </div>
                         )}

@@ -114,6 +114,7 @@ export interface StudioNetwork {
     url?: string;
     notes?: string;
     status: NetworkStatus;
+    category?: string;
     event_date?: string;
     last_contact?: string;
     tags?: string[];

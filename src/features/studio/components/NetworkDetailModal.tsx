@@ -28,11 +28,15 @@ const STATUSES: { value: NetworkStatus; label: string; type: NetworkType[] }[] =
 ]
 
 export default function NetworkDetailModal({ isOpen, onClose, item }: NetworkDetailModalProps) {
-    const { updateNetwork, deleteNetwork } = useStudio()
+    const { updateNetwork, deleteNetwork, networks } = useStudio()
     const [isEditing, setIsEditing] = useState(false)
     const [editedData, setEditedData] = useState<Partial<StudioNetwork>>({})
     const [tagsInput, setTagsInput] = useState('')
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
+    const allUniqueTags = Array.from(new Set(networks.flatMap((n: StudioNetwork) => n.tags || []))).sort()
+    const currentTags = tagsInput.split(',').map(t => t.trim().toLowerCase()).filter(Boolean)
+    const suggestedTags = allUniqueTags.filter(tag => !currentTags.includes(tag.toLowerCase())).slice(0, 10)
 
     useEffect(() => {
         if (item) {
@@ -158,6 +162,28 @@ export default function NetworkDetailModal({ isOpen, onClose, item }: NetworkDet
                             </div>
                         </div>
 
+                        {currentTypeVal !== 'person' && (
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Category</label>
+                                <div className="relative">
+                                    <select
+                                        disabled={!isEditing}
+                                        value={editedData.category ?? item.category ?? ''}
+                                        onChange={e => setEditedData(prev => ({ ...prev, category: e.target.value }))}
+                                        className="w-full px-5 py-3.5 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-purple-200 appearance-none disabled:opacity-100 cursor-pointer"
+                                    >
+                                        <option value="" disabled>Select Category...</option>
+                                        <option value="Startups">Startups</option>
+                                        <option value="Tech">Tech</option>
+                                        <option value="Creatives">Creatives</option>
+                                        <option value="Design">Design</option>
+                                        <option value="Finance">Finance</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="space-y-3">
                             <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Platform / Source</label>
                             <div className="relative">
@@ -229,6 +255,26 @@ export default function NetworkDetailModal({ isOpen, onClose, item }: NetworkDet
                     {/* Tags */}
                     <div className="space-y-3">
                         <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-2">Tags / Keywords</label>
+
+                        {isEditing && suggestedTags.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mb-2 px-1">
+                                <span className="text-[9px] font-black uppercase tracking-tighter text-black/25 w-full mb-0.5">Quick Select</span>
+                                {suggestedTags.map((tag: string) => (
+                                    <button
+                                        key={tag}
+                                        type="button"
+                                        onClick={() => {
+                                            const current = tagsInput ? `${tagsInput}, ` : ''
+                                            setTagsInput(`${current}${tag}`)
+                                        }}
+                                        className="text-[10px] font-bold text-black/40 bg-black/[0.03] hover:bg-black/[0.06] border border-transparent px-2 py-0.5 rounded-lg transition-all"
+                                    >
+                                        + {tag}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
                         <div className="relative">
                             <Hash className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
                             <input
@@ -241,7 +287,7 @@ export default function NetworkDetailModal({ isOpen, onClose, item }: NetworkDet
                         </div>
                         {!isEditing && item.tags && item.tags.length > 0 && (
                             <div className="flex flex-wrap gap-2 mt-2">
-                                {item.tags.map((tag, i) => (
+                                {item.tags.map((tag: string, i: number) => (
                                     <span key={i} className="px-3 py-1 bg-black/[0.03] text-black/60 rounded-lg text-[11px] font-bold">
                                         #{tag}
                                     </span>
