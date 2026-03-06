@@ -12,7 +12,7 @@ import {
     TrendingUp, Calendar, CreditCard, PiggyBank,
     Moon, Sun, Laptop, Target, Briefcase, Heart, Gift, Rocket,
     LayoutDashboard, EyeOff, Receipt, Lock, ClipboardIcon, Key, Brain, Sparkles, Award,
-    Video, PenLine
+    Video, PenLine, Users
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Reorder } from 'framer-motion'
@@ -64,7 +64,7 @@ const navItems = [
             { label: 'Content', href: '/create/content', icon: Video },
             { label: 'Canvas', href: '/create/canvas', icon: PenLine },
             { label: 'Sparks', href: '/create/sparks', icon: Target },
-            { label: 'Network', href: '/create/network', icon: Activity },
+            { label: 'Network', href: '/create/network', icon: Users },
             { label: 'Press', href: '/create/press', icon: Award },
             { label: 'Portfolio', href: '/create/portfolio', icon: Shield }
         ]

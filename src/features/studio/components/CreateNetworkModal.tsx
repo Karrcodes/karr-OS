@@ -88,7 +88,7 @@ export default function CreateNetworkModal({ isOpen, onClose }: CreateNetworkMod
                     <div className="p-8 pb-6 flex items-center justify-between border-b border-black/[0.1]">
                         <div className="flex items-center gap-4">
                             <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center">
-                                <Activity className="w-6 h-6 text-purple-600" />
+                                <Users className="w-6 h-6 text-purple-600" />
                             </div>
                             <div>
                                 <h2 className="text-xl font-black text-black leading-none">New Network Entry</h2>
@@ -196,7 +196,7 @@ export default function CreateNetworkModal({ isOpen, onClose }: CreateNetworkMod
                                             type="date"
                                             value={formData.event_date}
                                             onChange={e => setFormData(prev => ({ ...prev, event_date: e.target.value }))}
-                                            className="w-full pl-12 pr-4 py-3.5 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-purple-200 cursor-pointer"
+                                            className="w-full pl-12 pr-4 py-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[12px] font-bold focus:outline-none focus:border-purple-200 cursor-pointer h-[46px]"
                                         />
                                     </div>
                                 </div>
@@ -209,7 +209,7 @@ export default function CreateNetworkModal({ isOpen, onClose }: CreateNetworkMod
                                             type="date"
                                             value={formData.last_contact}
                                             onChange={e => setFormData(prev => ({ ...prev, last_contact: e.target.value }))}
-                                            className="w-full pl-12 pr-4 py-3.5 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-purple-200 cursor-pointer"
+                                            className="w-full pl-12 pr-4 py-3 bg-black/[0.02] border border-black/[0.05] rounded-2xl text-[12px] font-bold focus:outline-none focus:border-purple-200 cursor-pointer h-[46px]"
                                         />
                                     </div>
                                 </div>

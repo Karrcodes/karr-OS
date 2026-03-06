@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Sparkles, Briefcase, Target, LayoutDashboard, Shield, Plus, Clock, ExternalLink, ArrowRight, Activity, Award, Zap, Video, Rocket } from 'lucide-react'
+import { Sparkles, Briefcase, Target, LayoutDashboard, Shield, Plus, Clock, ExternalLink, ArrowRight, Activity, Award, Zap, Video, Rocket, Users } from 'lucide-react'
 import { useStudio } from '../hooks/useStudio'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
@@ -89,7 +89,7 @@ export default function StudioDashboard() {
                     { label: 'Projects', href: '/create/projects', icon: Rocket, color: 'text-orange-600', bg: 'bg-orange-500/10' },
                     { label: 'Content', href: '/create/content', icon: Video, color: 'text-blue-600', bg: 'bg-blue-600/10' },
                     { label: 'Sparks', href: '/create/sparks', icon: Target, color: 'text-emerald-600', bg: 'bg-emerald-500/10' },
-                    { label: 'Network', href: '/create/network', icon: Activity, color: 'text-purple-600', bg: 'bg-purple-500/10' },
+                    { label: 'Network', href: '/create/network', icon: Users, color: 'text-purple-600', bg: 'bg-purple-500/10' },
                     { label: 'Press', href: '/create/press', icon: Award, color: 'text-amber-600', bg: 'bg-amber-500/10' },
                     { label: 'Portfolio', href: '/create/portfolio', icon: Shield, color: 'text-blue-600', bg: 'bg-blue-500/10' }
                 ].map((item) => (
