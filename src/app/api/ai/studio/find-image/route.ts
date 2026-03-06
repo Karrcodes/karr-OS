@@ -28,14 +28,21 @@ export async function POST(req: NextRequest) {
         if (!keywords) keywords = 'nature,minimalist'
 
         // Fetch the initial redirect from loremflickr to get a permanent URL
-        const imageRes = await fetch(`https://loremflickr.com/1200/800/${keywords}?lock=${Math.floor(Math.random() * 1000)}`, { redirect: 'manual' })
+        const imageRes = await fetch(`https://loremflickr.com/1200/800/${keywords}?lock=${Math.floor(Math.random() * 1000)}`, {
+            redirect: 'manual'
+        })
 
-        let finalUrl = imageRes.url
+        let finalUrl = `https://loremflickr.com/1200/800/${keywords}` // Basic fallback
+
+        // Manual redirect handling
         if (imageRes.status >= 300 && imageRes.status < 400) {
-            const dest = imageRes.headers.get('location')
-            if (dest) {
-                finalUrl = dest.startsWith('http') ? dest : `https://loremflickr.com${dest}`
+            const location = imageRes.headers.get('location')
+            if (location) {
+                finalUrl = location.startsWith('http') ? location : `https://loremflickr.com${location}`
             }
+        } else {
+            // If not a redirect, maybe it's already the image or another status
+            finalUrl = imageRes.url || finalUrl
         }
 
         return NextResponse.json({ url: finalUrl })

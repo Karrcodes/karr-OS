@@ -176,7 +176,7 @@ export const ZenEditor = forwardRef<ZenEditorRef, ZenEditorProps>(({ content, on
 
         // Find the top-level block start to insert ABOVE it, not replacing text
         const { $from } = editor.state.selection
-        const insertPos = $from.before(1) // Root-level before the current paragraph
+        const insertPos = $from.depth > 0 ? $from.before(1) : 0
 
         editor.chain().focus().insertContentAt(insertPos, {
             type: 'aiLoader',
@@ -209,9 +209,13 @@ export const ZenEditor = forwardRef<ZenEditorRef, ZenEditorProps>(({ content, on
                         attrs: { src: data.url, alt: selectedText }
                     })
                     .run()
-            } else if (loaderPos !== -1) {
-                console.warn('Image generation failed or URL missing', data)
-                editor.chain().focus().deleteRange({ from: loaderPos, to: loaderPos + 1 }).run()
+            } else {
+                const errorMsg = !res.ok ? (data.error || 'Server error') : (!data.url ? 'No image URL returned' : 'Loader lost position')
+                console.warn('Image generation failed:', errorMsg, data)
+                if (loaderPos !== -1) {
+                    editor.chain().focus().deleteRange({ from: loaderPos, to: loaderPos + 1 }).run()
+                }
+                alert(`Nanobana Gen Error: ${errorMsg}`)
             }
         } catch (err) {
             console.error('AI Image Generation Failed:', err)
@@ -244,7 +248,7 @@ export const ZenEditor = forwardRef<ZenEditorRef, ZenEditorProps>(({ content, on
 
         // Find the top-level block start to insert ABOVE it, not replacing text
         const { $from } = editor.state.selection
-        const insertPos = $from.before(1)
+        const insertPos = $from.depth > 0 ? $from.before(1) : 0
 
         editor.chain().focus().insertContentAt(insertPos, {
             type: 'aiLoader',
@@ -277,9 +281,13 @@ export const ZenEditor = forwardRef<ZenEditorRef, ZenEditorProps>(({ content, on
                         attrs: { src: data.url, alt: selectedText }
                     })
                     .run()
-            } else if (loaderPos !== -1) {
-                console.warn('Image search failed or URL missing', data)
-                editor.chain().focus().deleteRange({ from: loaderPos, to: loaderPos + 1 }).run()
+            } else {
+                const errorMsg = !res.ok ? (data.error || 'Server error') : (!data.url ? 'No image URL returned' : 'Loader lost position')
+                console.warn('Image search failed:', errorMsg, data)
+                if (loaderPos !== -1) {
+                    editor.chain().focus().deleteRange({ from: loaderPos, to: loaderPos + 1 }).run()
+                }
+                alert(`Find AI Photo Error: ${errorMsg}`)
             }
         } catch (err) {
             console.error('AI Image Search Failed:', err)
