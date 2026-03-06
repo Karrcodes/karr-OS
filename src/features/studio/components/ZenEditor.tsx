@@ -327,8 +327,8 @@ export const ZenEditor = forwardRef<ZenEditorRef, ZenEditorProps>(({ content, on
 
     return (
         <div className="w-full relative studio-editor-wrapper">
-            {/* Persistent Vertical Floating Toolbar */}
-            <div className="absolute top-0 -right-20 flex flex-col gap-2 z-50 animate-in slide-in-from-right-4 duration-500">
+            {/* Persistent Vertical Floating Toolbar - Moved to left to avoid being covered by Assistant */}
+            <div className="absolute top-0 -left-24 flex flex-col gap-2 z-50 animate-in slide-in-from-left-4 duration-500">
                 <div className="flex flex-col gap-1 bg-white/90 backdrop-blur-2xl border border-black/10 p-1.5 rounded-[24px] shadow-2xl shadow-indigo-500/10 ring-1 ring-black/5">
                     {/* Text Formatting Group */}
                     <div className="flex flex-col gap-1 mb-2 pb-2 border-b border-black/[0.05]">

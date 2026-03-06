@@ -224,12 +224,7 @@ export default function StudioComposer({ draftId, initialDraft, initialNodes = [
     }, [body, title, nodeRefs, draft?.id])
 
     return (
-        <div className={cn(
-            "bg-[#fafafa] z-[100] flex flex-col transition-all duration-500 ease-in-out",
-            isMinimized
-                ? "fixed bottom-6 right-6 w-[420px] h-[600px] rounded-[32px] shadow-[0_32px_80px_rgba(0,0,0,0.25)] border-2 border-black/10 overflow-hidden"
-                : "fixed inset-0"
-        )}>
+        <div className="fixed inset-0 bg-[#fafafa]/50 backdrop-blur-sm z-[100] flex flex-col transition-all duration-500 ease-in-out">
             {/* Header */}
             <header className="h-[72px] border-b border-black/[0.05] bg-white flex items-center justify-between px-6 shrink-0 z-20 shadow-sm relative">
                 <div className="flex items-center gap-4">
@@ -258,47 +253,35 @@ export default function StudioComposer({ draftId, initialDraft, initialNodes = [
                 </div>
 
                 <div className="flex items-center gap-4">
-                    {!isMinimized && (
-                        <div className="flex bg-black/[0.03] p-1.5 rounded-2xl border border-black/5 mr-4 gap-1.5">
-                            <button
-                                onClick={() => setShowScaffold(!showScaffold)}
-                                className={cn(
-                                    "p-3 rounded-xl transition-all active:scale-90",
-                                    showScaffold ? "bg-white text-indigo-500 shadow-sm" : "text-black/30 hover:text-black/60"
-                                )}
-                                title="Toggle Scaffold"
-                            >
-                                <Layers className="w-5 h-5" />
-                            </button>
-                            <button
-                                onClick={() => setShowContext(!showContext)}
-                                className={cn(
-                                    "p-3 rounded-xl transition-all active:scale-90",
-                                    showContext ? "bg-white text-indigo-500 shadow-sm" : "text-black/30 hover:text-black/60"
-                                )}
-                                title="Toggle Assistant"
-                            >
-                                <Sparkles className="w-5 h-5" />
-                            </button>
-                        </div>
-                    )}
+                    <div className="flex bg-black/[0.03] p-1.5 rounded-2xl border border-black/5 mr-4 gap-1.5">
+                        <button
+                            onClick={() => setShowScaffold(!showScaffold)}
+                            className={cn(
+                                "p-3 rounded-xl transition-all active:scale-90",
+                                showScaffold ? "bg-white text-indigo-500 shadow-sm" : "text-black/30 hover:text-black/60"
+                            )}
+                            title="Toggle Scaffold"
+                        >
+                            <Layers className="w-5 h-5" />
+                        </button>
+                        <button
+                            onClick={() => setShowContext(!showContext)}
+                            className={cn(
+                                "p-3 rounded-xl transition-all active:scale-90",
+                                showContext ? "bg-white text-indigo-500 shadow-sm" : "text-black/30 hover:text-black/60"
+                            )}
+                            title="Toggle Assistant"
+                        >
+                            <Sparkles className="w-5 h-5" />
+                        </button>
+                    </div>
 
                     <button
-                        onClick={() => setIsMinimized(!isMinimized)}
-                        className="p-3 bg-black/[0.03] border border-black/5 rounded-xl text-black/40 hover:text-black transition-all active:scale-90"
-                        title={isMinimized ? "Expand Editor" : "Minimize Editor"}
+                        onClick={() => setIsPublishModalOpen(true)}
+                        className="px-6 py-3 bg-black text-white rounded-2xl text-[12px] font-black uppercase tracking-widest shadow-xl hover:bg-black/80 transition-all active:scale-95 touch-manipulation"
                     >
-                        {isMinimized ? <Maximize2 className="w-5 h-5" /> : <Minimize2 className="w-5 h-5" />}
+                        Publish
                     </button>
-
-                    {!isMinimized && (
-                        <button
-                            onClick={() => setIsPublishModalOpen(true)}
-                            className="px-6 py-3 bg-black text-white rounded-2xl text-[12px] font-black uppercase tracking-widest shadow-xl hover:bg-black/80 transition-all active:scale-95 touch-manipulation"
-                        >
-                            Publish
-                        </button>
-                    )}
                 </div>
             </header>
 
@@ -308,7 +291,7 @@ export default function StudioComposer({ draftId, initialDraft, initialNodes = [
                 <aside
                     className={cn(
                         "w-[340px] bg-white border-r border-black/[0.05] flex flex-col transition-all duration-300 overflow-hidden shrink-0",
-                        (!showScaffold || isMinimized) && "w-0 opacity-0"
+                        !showScaffold && "w-0 opacity-0"
                     )}
                 >
                     <div className="flex border-b border-black/[0.03] shrink-0">
@@ -463,45 +446,68 @@ export default function StudioComposer({ draftId, initialDraft, initialNodes = [
                     )}
                 </aside>
 
-                {/* Center: Zen Editor */}
-                <section className={cn(
-                    "flex-1 overflow-y-auto bg-white flex flex-col items-center relative transition-all duration-300",
-                    (showContext && !isMinimized) ? "pr-[100px]" : "pr-0"
-                )}>
-                    <div className="w-full max-w-[720px] pb-[60vh] pt-[64px] px-8 flex flex-col">
-                        {/* Title & Metadata Area */}
-                        <div className="mb-12">
-                            <textarea
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                className="w-full text-[42px] font-black tracking-[-0.03em] text-black bg-transparent outline-none border-none placeholder:text-black/20 font-serif leading-tight mb-4 resize-none overflow-hidden"
-                                placeholder="Draft Title"
-                                rows={1}
-                                onInput={(e) => {
-                                    const target = e.target as HTMLTextAreaElement;
-                                    target.style.height = 'auto';
-                                    target.style.height = `${target.scrollHeight}px`;
-                                }}
-                                ref={(el) => {
-                                    if (el) {
-                                        el.style.height = 'auto';
-                                        el.style.height = `${el.scrollHeight}px`;
-                                    }
-                                }}
-                            />
-                            <div className="flex items-center gap-3 text-[13px] font-medium text-black/40">
-                                <span>{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
-                                <span className="w-1 h-1 rounded-full bg-black/20" />
-                                <span>{Math.ceil(body.split(' ').length / 200)} min read</span>
+                {/* Center: Zen Editor - Floating Docked Card */}
+                <section className="flex-1 overflow-hidden flex justify-end relative transition-all duration-500">
+                    <div className={cn(
+                        "transition-all duration-500 ease-in-out flex flex-col bg-white shadow-[0_40px_100px_rgba(0,0,0,0.1)] border border-black/5 relative shrink-0",
+                        isMinimized
+                            ? "w-[420px] h-[80px] mt-auto mb-10 mr-10 rounded-[28px] overflow-hidden"
+                            : "w-[820px] h-[calc(100vh-120px)] mt-6 mr-6 rounded-[40px] overflow-y-auto"
+                    )}>
+                        {/* Editor Card Header (Always visible) */}
+                        <div className="shrink-0 flex items-center justify-between px-8 py-6 border-b border-black/[0.03]">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-indigo-50 rounded-xl">
+                                    <BookOpen className="w-4 h-4 text-indigo-500" />
+                                </div>
+                                <h3 className="text-[12px] font-black uppercase tracking-widest">{isMinimized ? title : 'Editing Draft'}</h3>
                             </div>
+                            <button
+                                onClick={() => setIsMinimized(!isMinimized)}
+                                className="p-2.5 bg-black/[0.03] border border-black/5 rounded-xl text-black/40 hover:text-black transition-all active:scale-90"
+                                title={isMinimized ? "Expand Editor" : "Minimize Editor"}
+                            >
+                                {isMinimized ? <Maximize2 className="w-4.5 h-4.5" /> : <Minimize2 className="w-4.5 h-4.5" />}
+                            </button>
                         </div>
 
-                        <ZenEditor
-                            ref={editorRef}
-                            content={body}
-                            onChange={setBody}
-                            onDropNode={handleDropNode}
-                        />
+                        {!isMinimized && (
+                            <div className="flex-1 w-full max-w-[820px] mx-auto pb-64 pt-12 px-12 flex flex-col">
+                                {/* Title & Metadata Area */}
+                                <div className="mb-8">
+                                    <textarea
+                                        value={title}
+                                        onChange={(e) => setTitle(e.target.value)}
+                                        className="w-full text-[42px] font-black tracking-[-0.03em] text-black bg-transparent outline-none border-none placeholder:text-black/20 font-serif leading-tight mb-3 resize-none overflow-hidden"
+                                        placeholder="Draft Title"
+                                        rows={1}
+                                        onInput={(e) => {
+                                            const target = e.target as HTMLTextAreaElement;
+                                            target.style.height = 'auto';
+                                            target.style.height = `${target.scrollHeight}px`;
+                                        }}
+                                        ref={(el) => {
+                                            if (el) {
+                                                el.style.height = 'auto';
+                                                el.style.height = `${el.scrollHeight}px`;
+                                            }
+                                        }}
+                                    />
+                                    <div className="flex items-center gap-3 text-[13px] font-medium text-black/40">
+                                        <span>{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                                        <span className="w-1 h-1 rounded-full bg-black/20" />
+                                        <span>{Math.ceil(body.split(' ').length / 200)} min read</span>
+                                    </div>
+                                </div>
+
+                                <ZenEditor
+                                    ref={editorRef}
+                                    content={body}
+                                    onChange={setBody}
+                                    onDropNode={handleDropNode}
+                                />
+                            </div>
+                        )}
                     </div>
                 </section>
 
@@ -509,7 +515,7 @@ export default function StudioComposer({ draftId, initialDraft, initialNodes = [
                 <aside
                     className={cn(
                         "w-[340px] bg-white border-l border-black/[0.05] flex flex-col transition-all duration-300 overflow-hidden shrink-0",
-                        (!showContext || isMinimized) && "w-0 opacity-0 border-l-0"
+                        !showContext && "w-0 opacity-0"
                     )}
                 >
                     <div className="p-6 border-b border-black/[0.03] flex items-center justify-between">
