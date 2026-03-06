@@ -11,7 +11,12 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Text is required' }, { status: 400 })
         }
 
-        const prompt = `Given this text snippet: "${text.substring(0, 500)}". Extract exactly 1 or 2 highest-quality generic visual keywords representing it to find a relevant stock photo on a stock photography site. DO NOT include any punctuation, quotes, or conversational text. ONLY output the keywords separated by a comma. Example: 'nature,mountain' or 'urban,night' or 'minimalist,office'. Keep it broad enough to guarantee a search hit.`
+        const prompt = `Text: "${text.substring(0, 800)}".
+        Task: Extract exactly 2 visual and conceptual keywords that best represent the overall mood or subject of this text for a high-quality stock photo search.
+        Instructions:
+        - Output ONLY the keywords separated by a comma (e.g. "minimalist,office" or "nature,tranquil").
+        - NO explanation, NO quotes, NO extra text.
+        - Prioritize broad, searchable terms like "technology", "nature", "success", "creativity".`
 
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
         const result = await model.generateContent(prompt)
@@ -32,16 +37,16 @@ export async function POST(req: NextRequest) {
             redirect: 'manual'
         })
 
-        let finalUrl = `https://loremflickr.com/1200/800/${keywords}` // Basic fallback
+        let finalUrl = `https://loremflickr.com/1200/800/${keywords}` // Fallback
 
-        // Manual redirect handling
+        // Manual redirect handling to get the STABLE static image URL
         if (imageRes.status >= 300 && imageRes.status < 400) {
             const location = imageRes.headers.get('location')
             if (location) {
                 finalUrl = location.startsWith('http') ? location : `https://loremflickr.com${location}`
             }
         } else {
-            // If not a redirect, maybe it's already the image or another status
+            // If it didn't redirect, use the final response URL if available
             finalUrl = imageRes.url || finalUrl
         }
 

@@ -385,26 +385,26 @@ export const ZenEditor = forwardRef<ZenEditorRef, ZenEditorProps>(({ content, on
                             <div className="absolute top-full left-0 mt-2 bg-white/95 backdrop-blur-xl border border-black/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] p-2 min-w-[200px] z-[60] flex flex-col gap-1 animate-in slide-in-from-top-2 duration-200">
                                 <button
                                     onClick={handleFindImage}
-                                    className="flex items-center gap-3 p-3 hover:bg-black/5 rounded-xl transition-all text-left group"
+                                    className="flex items-center gap-3 p-3 hover:bg-indigo-50 rounded-xl transition-all text-left group"
                                 >
                                     <div className="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-500 group-hover:scale-110 transition-transform shadow-sm">
                                         <Search className="w-4.5 h-4.5" />
                                     </div>
                                     <div className="flex-1">
-                                        <div className="text-[11px] font-black text-black">Find AI Photo</div>
-                                        <div className="text-[9px] text-black/40 font-medium whitespace-nowrap">Authentic stock search</div>
+                                        <div className="text-[11px] font-black text-black leading-none mb-1">Find AI Photo</div>
+                                        <div className="text-[9px] text-black/40 font-medium whitespace-nowrap uppercase tracking-tighter">Authentic Stock Search</div>
                                     </div>
                                 </button>
                                 <button
-                                    onClick={handleGenerateImage}
-                                    className="flex items-center gap-3 p-3 hover:bg-emerald-50 rounded-xl transition-all text-left group"
+                                    disabled
+                                    className="flex items-center gap-3 p-3 opacity-40 rounded-xl text-left cursor-not-allowed group relative overflow-hidden"
                                 >
-                                    <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform shadow-sm">
+                                    <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-500 shadow-sm">
                                         <Dna className="w-4.5 h-4.5" />
                                     </div>
                                     <div className="flex-1">
-                                        <div className="text-[11px] font-black text-black">Nanobana Gen</div>
-                                        <div className="text-[9px] text-black/40 font-medium whitespace-nowrap">Create masterpiece art</div>
+                                        <div className="text-[11px] font-black text-black leading-none mb-1">Nanobana Gen</div>
+                                        <div className="text-[9px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-100/50 px-1.5 py-0.5 rounded-sm inline-block">Coming Soon</div>
                                     </div>
                                 </button>
                             </div>
