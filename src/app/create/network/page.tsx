@@ -1,11 +1,12 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Activity, Plus, Search, Users, Globe, MapPin, ExternalLink, MessageCircle, Hash, Calendar, Inbox, CheckCircle2 } from 'lucide-react'
+import { Activity, Plus, Search, Users, Globe, MapPin, ExternalLink, MessageCircle, Hash, Calendar, Inbox, CheckCircle2, Trash2 } from 'lucide-react'
 import { useStudio } from '@/features/studio/hooks/useStudio'
 import { useSystemSettings } from '@/features/system/contexts/SystemSettingsContext'
 import CreateNetworkModal from '@/features/studio/components/CreateNetworkModal'
 import NetworkDetailModal from '@/features/studio/components/NetworkDetailModal'
+import ConfirmationModal from '@/components/ConfirmationModal'
 import type { StudioNetwork, NetworkType } from '@/features/studio/types/studio.types'
 import { cn } from '@/lib/utils'
 
@@ -22,17 +23,18 @@ const TYPE_COLORS: Record<NetworkType, string> = {
 }
 
 export default function NetworkPage() {
-    const { networks, loading, updateNetwork } = useStudio()
+    const { networks, loading, updateNetwork, deleteNetwork } = useStudio()
     const { settings } = useSystemSettings()
     const networkReachOutDays = settings.network_reach_out_days || 30
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [selectedItem, setSelectedItem] = useState<StudioNetwork | null>(null)
     const [searchQuery, setSearchQuery] = useState('')
-    const [filterType, setFilterType] = useState<NetworkType | 'all'>('all')
+    const [filterType, setFilterType] = useState<NetworkType>('person')
     const [selectedTags, setSelectedTags] = useState<string[]>([])
+    const [networkToDelete, setNetworkToDelete] = useState<StudioNetwork | null>(null)
 
     // Person Focus Tabs & DnD State
-    const [activePersonCategory, setActivePersonCategory] = useState<'all' | 'new_contact' | 'reach_out_soon' | 'recently_contacted'>('all')
+    const [activePersonCategory, setActivePersonCategory] = useState<'new_contact' | 'reach_out_soon' | 'recently_contacted'>('new_contact')
     const [draggingId, setDraggingId] = useState<string | null>(null)
     const [dragOverCategory, setDragOverCategory] = useState<'new_contact' | 'reach_out_soon' | 'recently_contacted' | null>(null)
 
@@ -94,11 +96,11 @@ export default function NetworkPage() {
         const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             (item.platform && item.platform.toLowerCase().includes(searchQuery.toLowerCase())) ||
             (item.tags && item.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase())))
-        const matchesType = filterType === 'all' || item.type === filterType
+        const matchesType = item.type === filterType
         const matchesTags = selectedTags.length === 0 || selectedTags.every(t => item.tags?.includes(t))
 
         let matchesPersonCategory = true
-        if (filterType === 'person' && item.type === 'person' && activePersonCategory !== 'all') {
+        if (filterType === 'person' && item.type === 'person') {
             const daysSinceContact = item.last_contact
                 ? Math.floor((new Date().getTime() - new Date(item.last_contact).getTime()) / (1000 * 3600 * 24))
                 : -1
@@ -146,15 +148,6 @@ export default function NetworkPage() {
 
                 {/* Tabs */}
                 <div className="flex items-center gap-2 border-b border-black/[0.05] overflow-x-auto pb-4">
-                    <button
-                        onClick={() => setFilterType('all')}
-                        className={cn(
-                            "px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all",
-                            filterType === 'all' ? "bg-black text-white" : "bg-white border border-black/[0.05] text-black/40 hover:border-black/20"
-                        )}
-                    >
-                        All Entries
-                    </button>
                     {(Object.keys(TYPE_ICONS) as NetworkType[]).map(type => (
                         <button
                             key={type}
@@ -176,18 +169,7 @@ export default function NetworkPage() {
 
                 {/* Focus Tabs for Persons */}
                 {filterType === 'person' && (
-                    <div className="flex items-center gap-1 p-1 bg-black/[0.03] rounded-2xl w-fit max-w-full overflow-x-auto no-scrollbar pb-0">
-                        <button
-                            onClick={() => setActivePersonCategory('all')}
-                            className={cn(
-                                "flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all relative whitespace-nowrap",
-                                activePersonCategory === 'all'
-                                    ? "bg-white text-black shadow-sm"
-                                    : "text-black/30 hover:text-black/60"
-                            )}
-                        >
-                            All
-                        </button>
+                    <div className="flex items-center gap-1 p-1 mt-3 bg-black/[0.03] rounded-2xl w-fit max-w-full overflow-x-auto no-scrollbar">
                         {PERSON_COLUMNS.map(column => {
                             const isActive = activePersonCategory === column.value
                             const isOver = dragOverCategory === column.value
@@ -260,6 +242,7 @@ export default function NetworkPage() {
                             onPointerDragOver={handlePointerDragOver}
                             onPointerDrop={handlePointerDrop}
                             onPointerDragEnd={() => { setDraggingId(null); setDragOverCategory(null) }}
+                            onDelete={(i) => setNetworkToDelete(i)}
                         />
                     ))}
                     {filteredNetworks.length === 0 && !loading && (
@@ -280,19 +263,34 @@ export default function NetworkPage() {
                 onClose={() => setSelectedItem(null)}
                 item={selectedItem}
             />
+            <ConfirmationModal
+                isOpen={!!networkToDelete}
+                onClose={() => setNetworkToDelete(null)}
+                onConfirm={async () => {
+                    if (networkToDelete) {
+                        await deleteNetwork(networkToDelete.id)
+                        setNetworkToDelete(null)
+                    }
+                }}
+                title="Delete Contact"
+                message={`Are you sure you want to delete "${networkToDelete?.name}"? This action cannot be undone.`}
+                confirmText="Delete"
+                type="danger"
+            />
         </main>
     )
 }
 
 function NetworkCard({
     item, onClick, thresholdDays,
-    onPointerDragStart, onPointerDragOver, onPointerDrop, onPointerDragEnd
+    onPointerDragStart, onPointerDragOver, onPointerDrop, onPointerDragEnd, onDelete
 }: {
     item: StudioNetwork; onClick: () => void; thresholdDays: number;
     onPointerDragStart?: (id: string) => void;
     onPointerDragOver?: (x: number, y: number) => void;
     onPointerDrop?: (id: string, x: number, y: number) => void;
     onPointerDragEnd?: () => void;
+    onDelete?: (item: StudioNetwork) => void;
 }) {
     const Icon = TYPE_ICONS[item.type]
 
@@ -387,7 +385,7 @@ function NetworkCard({
             onClick={() => { if (!isDraggingThis) onClick() }}
             style={{ touchAction: 'none' }}
             className={cn(
-                "p-5 bg-white border border-black/[0.05] rounded-[32px] hover:border-purple-200 hover:shadow-xl transition-all group cursor-pointer flex flex-col h-full select-none",
+                "p-4 bg-white border border-black/[0.05] rounded-[32px] hover:border-purple-200 hover:shadow-xl transition-all group cursor-pointer flex flex-col select-none",
                 isDraggingThis && "opacity-30 scale-95 shadow-none"
             )}
         >
@@ -396,12 +394,25 @@ function NetworkCard({
                     <Icon className="w-3 h-3" />
                     {item.type}
                 </div>
-                {item.platform && (
-                    <div className="flex items-center gap-1 text-[10px] font-bold text-black/30">
-                        <MessageCircle className="w-3 h-3" />
-                        {item.platform}
-                    </div>
-                )}
+                <div className="flex items-center gap-2 opacity-100">
+                    {item.platform && (
+                        <div className="flex items-center gap-1 text-[10px] font-bold text-black/30">
+                            <MessageCircle className="w-3 h-3" />
+                            {item.platform}
+                        </div>
+                    )}
+                    {onDelete && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onDelete(item);
+                            }}
+                            className="p-1 rounded-md text-red-400 hover:bg-red-50 hover:text-red-500 transition-all flex items-center justify-center shrink-0"
+                        >
+                            <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                    )}
+                </div>
             </div>
 
             <h3 className="text-[16px] font-black text-black group-hover:text-purple-600 transition-colors leading-tight mb-3">{item.name}</h3>
@@ -472,18 +483,6 @@ function NetworkCard({
                             <Calendar className="w-3 h-3" />
                             {new Date(item.event_date).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })}
                         </div>
-                    )}
-                    {item.url && (
-                        <a
-                            href={item.url.startsWith('http') ? item.url : `https://${item.url}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-black/[0.03] hover:bg-black/[0.06] transition-colors group/link"
-                        >
-                            <span className="text-[10px] font-bold text-black/40 group-hover/link:text-black/60 truncate max-w-[100px]">{getHostName(item.url)}</span>
-                            <ExternalLink className="w-3 h-3 text-black/30 group-hover/link:text-black/50" />
-                        </a>
                     )}
                 </div>
             </div>
