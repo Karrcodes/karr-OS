@@ -27,10 +27,18 @@ export async function POST(req: NextRequest) {
 
         if (!keywords) keywords = 'nature,minimalist'
 
-        // Using LoremFlickr for a high-quality random stock photo based on AI keywords
-        const imageUrl = `https://loremflickr.com/1200/800/${keywords}?lock=${Math.floor(Math.random() * 1000)}`
+        // Fetch the initial redirect from loremflickr to get a permanent URL
+        const imageRes = await fetch(`https://loremflickr.com/1200/800/${keywords}?lock=${Math.floor(Math.random() * 1000)}`, { redirect: 'manual' })
 
-        return NextResponse.json({ url: imageUrl })
+        let finalUrl = imageRes.url
+        if (imageRes.status >= 300 && imageRes.status < 400) {
+            const dest = imageRes.headers.get('location')
+            if (dest) {
+                finalUrl = dest.startsWith('http') ? dest : `https://loremflickr.com${dest}`
+            }
+        }
+
+        return NextResponse.json({ url: finalUrl })
     } catch (err: any) {
         console.error('[Studio Find Image Error]', err)
         return NextResponse.json({ error: err.message || 'AI service error' }, { status: 500 })

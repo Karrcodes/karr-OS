@@ -1,4 +1,7 @@
+import { GoogleGenerativeAI } from '@google/generative-ai'
 import { NextRequest, NextResponse } from 'next/server'
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
 
 export async function POST(req: NextRequest) {
     try {
@@ -8,14 +11,36 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Prompt is required' }, { status: 400 })
         }
 
-        // Use Pollinations AI for quick, free image generation based on a prompt
-        const cleanPrompt = (prompt || "aesthetic artistic creation").substring(0, 150).replace(/[^a-zA-Z0-9\s]/g, '')
-        const encodedPrompt = encodeURIComponent(cleanPrompt + " cinematic, high resolution, professional photography")
-        const imageUrl = `https://pollinations.ai/p/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${Math.floor(Math.random() * 1000000)}`
+        // Use Gemini's Imagen 3 model for high-quality cinematic generation
+        const model = genAI.getGenerativeModel({ model: "imagen-3.0-generate-001" })
 
-        return NextResponse.json({ url: imageUrl })
+        const result = await model.generateContent({
+            contents: [{
+                role: 'user',
+                parts: [{
+                    text: `Cinematic, highly detailed, professional photography of: ${prompt}. 4k resolution, artistic lighting, studio quality, centered composition.`
+                }]
+            }]
+        })
+
+        const response = result.response
+        const candidates = response.candidates
+        if (!candidates || candidates.length === 0) {
+            throw new Error('No image generated')
+        }
+
+        // Gemini returns the image as inlineData (base64) for generated images usually, 
+        // or a URL if uploaded. For Imagen 3, we often get the image data back.
+        // Let's check for the image part.
+        const part = candidates[0].content.parts[0]
+        if (part.inlineData) {
+            const base64Image = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`
+            return NextResponse.json({ url: base64Image })
+        }
+
+        throw new Error('Unexpected response format from Gemini')
     } catch (err: any) {
-        console.error('[Studio Image Gen Error]', err)
+        console.error('[Studio Imagen Gen Error]', err)
         return NextResponse.json({ error: err.message || 'AI service error' }, { status: 500 })
     }
 }
