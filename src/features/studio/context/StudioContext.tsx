@@ -40,6 +40,15 @@ const StudioContext = createContext<StudioContextType | undefined>(undefined)
 
 const LOCAL_STORAGE_KEY = 'schrö_demo_studio_v2'
 
+const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.readAsDataURL(file)
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = error => reject(error)
+    })
+}
+
 export function StudioProvider({ children }: { children: React.ReactNode }) {
     const { settings } = useSystemSettings()
     const [projects, setProjects] = useState<StudioProject[]>([])
@@ -136,12 +145,22 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
 
     const addProject = async (project: Partial<StudioProject>, initialMilestones?: { title: string; impact_score?: number; category?: string; target_date?: string }[], coverFile?: File) => {
         if (settings.is_demo_mode) {
+            let cover_url = project.cover_url
+            if (coverFile) {
+                try {
+                    cover_url = await fileToBase64(coverFile)
+                } catch (e) {
+                    console.error('Failed to convert cover image', e)
+                }
+            }
+
             const newProject: StudioProject = {
                 ...project,
                 id: `demo-p-${Date.now()}`,
                 created_at: new Date().toISOString(),
                 status: project.status || 'active',
-                type: project.type || 'Technology'
+                type: project.type || 'Technology',
+                cover_url: cover_url || project.cover_url
             } as StudioProject
             const session = getSessionStudio()
             const updated = { ...session, projects: [newProject, ...(session.projects || [])] }
@@ -204,8 +223,20 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
 
     const updateProject = async (id: string, updates: Partial<StudioProject>, coverFile?: File) => {
         if (settings.is_demo_mode) {
+            let cover_url = updates.cover_url
+            if (coverFile) {
+                try {
+                    cover_url = await fileToBase64(coverFile)
+                } catch (e) {
+                    console.error('Failed to convert cover image', e)
+                }
+            }
             const session = getSessionStudio()
-            const updatedProjects = session.projects.map((p: any) => p.id === id ? { ...p, ...updates } : p)
+            const updatedProjects = session.projects.map((p: any) => p.id === id ? {
+                ...p,
+                ...updates,
+                cover_url: cover_url !== undefined ? cover_url : p.cover_url
+            } : p)
             const updated = { ...session, projects: updatedProjects }
             saveSessionStudio(updated)
             setProjects(updatedProjects)

@@ -127,7 +127,7 @@ export const MOCK_GOALS = [
         status: 'active',
         priority: 'urgent',
         timeframe: 'long',
-        vision_image_url: '/brain/c60f96e1-94d9-4b29-a7b7-916a20d17ee8/karr_apartment_vision_1771863229585.png',
+        vision_image_url: 'https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=800&q=80',
         target_date: '2027-12-31',
         created_at: '2025-01-01T00:00:00Z'
     },
@@ -139,7 +139,7 @@ export const MOCK_GOALS = [
         status: 'active',
         priority: 'high',
         timeframe: 'medium',
-        vision_image_url: '/brain/c60f96e1-94d9-4b29-a7b7-916a20d17ee8/karr_studio_vision_1771863332418.png',
+        vision_image_url: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80',
         target_date: '2026-08-31',
         created_at: '2025-06-15T00:00:00Z'
     },
@@ -151,7 +151,7 @@ export const MOCK_GOALS = [
         status: 'active',
         priority: 'high',
         timeframe: 'medium',
-        vision_image_url: '/brain/c60f96e1-94d9-4b29-a7b7-916a20d17ee8/karr_tokyo_vision_1771863422548.png',
+        vision_image_url: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800&q=80',
         target_date: '2026-10-15',
         created_at: '2025-09-10T00:00:00Z'
     },
@@ -163,7 +163,7 @@ export const MOCK_GOALS = [
         status: 'active',
         priority: 'mid',
         timeframe: 'short',
-        vision_image_url: '/brain/c60f96e1-94d9-4b29-a7b7-916a20d17ee8/karr_marathon_vision_1771864882137.png',
+        vision_image_url: 'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=800&q=80',
         target_date: '2026-04-26',
         created_at: '2025-11-20T00:00:00Z'
     }

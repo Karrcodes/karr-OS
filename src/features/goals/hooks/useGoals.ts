@@ -6,11 +6,33 @@ import { useSystemSettings } from '@/features/system/contexts/SystemSettingsCont
 import { MOCK_GOALS, MOCK_MILESTONES } from '@/lib/demoData'
 import type { Goal, Milestone, CreateGoalData } from '../types/goals.types'
 
+const LOCAL_STORAGE_KEY = 'schrö_demo_goals_v1'
+
+const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.readAsDataURL(file)
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = error => reject(error)
+    })
+}
+
 export function useGoals() {
     const [goals, setGoals] = useState<Goal[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const { settings } = useSystemSettings()
+
+    const getSessionGoals = useCallback(() => {
+        if (typeof window === 'undefined') return null
+        const stored = localStorage.getItem(LOCAL_STORAGE_KEY)
+        return stored ? JSON.parse(stored) : null
+    }, [])
+
+    const saveSessionGoals = useCallback((data: Goal[]) => {
+        if (typeof window === 'undefined') return
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data))
+    }, [])
 
     const fetchGoals = useCallback(async () => {
         if (goals.length === 0) setLoading(true)
@@ -18,12 +40,15 @@ export function useGoals() {
 
         try {
             if (settings.is_demo_mode) {
-                // In demo mode, we simulate fetching goals with their milestones
-                const transformedGoals = MOCK_GOALS.map(goal => ({
-                    ...goal,
-                    milestones: MOCK_MILESTONES.filter(m => m.goal_id === goal.id)
-                })) as Goal[]
-                setGoals(transformedGoals)
+                let session = getSessionGoals()
+                if (!session) {
+                    session = MOCK_GOALS.map((goal: any) => ({
+                        ...goal,
+                        milestones: MOCK_MILESTONES.filter((m: any) => m.goal_id === goal.id)
+                    }))
+                    saveSessionGoals(session as Goal[])
+                }
+                setGoals(session as Goal[])
                 setLoading(false)
                 return
             }
@@ -36,7 +61,6 @@ export function useGoals() {
 
             if (goalsError) throw goalsError
 
-            // Sort milestones by position safely
             const sortedGoals = (goalsData || []).map((goal: any) => ({
                 ...goal,
                 milestones: (goal.milestones || []).sort((a: any, b: any) => (a.position || 0) - (b.position || 0))
@@ -49,11 +73,21 @@ export function useGoals() {
         } finally {
             setLoading(false)
         }
-    }, [settings.is_demo_mode, goals.length])
+    }, [settings.is_demo_mode, goals.length, getSessionGoals, saveSessionGoals])
 
     const createGoal = async (data: CreateGoalData, imageFile?: File) => {
         try {
             if (settings.is_demo_mode) {
+                let vision_image_url = data.vision_image_url
+                if (imageFile) {
+                    try {
+                        vision_image_url = await fileToBase64(imageFile)
+                    } catch (e) {
+                        console.error('Failed to convert image to base64', e)
+                        vision_image_url = URL.createObjectURL(imageFile)
+                    }
+                }
+
                 const newGoal: Goal = {
                     id: Math.random().toString(36).substring(2, 9),
                     user_id: 'demo-user',
@@ -64,7 +98,7 @@ export function useGoals() {
                     target_date: data.target_date || null,
                     priority: data.priority || 'mid',
                     timeframe: data.timeframe || 'short',
-                    vision_image_url: imageFile ? URL.createObjectURL(imageFile) : data.vision_image_url,
+                    vision_image_url: vision_image_url,
                     created_at: new Date().toISOString(),
                     milestones: data.milestones?.map((m, idx) => ({
                         id: Math.random().toString(36).substring(2, 9),
@@ -74,9 +108,12 @@ export function useGoals() {
                         impact_score: m.impact_score || 5,
                         position: idx,
                         created_at: new Date().toISOString()
-                    }))
+                    })) || []
                 }
-                setGoals(prev => [newGoal, ...prev])
+                const session = getSessionGoals() || []
+                const updated = [newGoal, ...session]
+                saveSessionGoals(updated)
+                setGoals(updated)
                 return
             }
 
@@ -84,14 +121,10 @@ export function useGoals() {
             if (sessionError) console.error('Session retrieval error:', sessionError)
 
             const userId = session?.user?.id
-            console.log('Creation check - Session:', !!session, 'User ID:', userId, 'Role:', session?.user?.role)
-
             let finalImageUrl = data.vision_image_url
-            if (imageFile) {
-                // Use userId or 'public' as top-level folder
-                const storageFolder = userId || 'public'
-                console.log(`Attempting storage upload for: ${imageFile.name} to bucket: goal-images (folder: ${storageFolder})`)
 
+            if (imageFile) {
+                const storageFolder = userId || 'public'
                 const ext = imageFile.name.split('.').pop() || 'jpg'
                 const path = `goals/${storageFolder}/${Date.now()}.${ext}`
 
@@ -99,14 +132,10 @@ export function useGoals() {
                     .from('goal-images')
                     .upload(path, imageFile, { upsert: true, cacheControl: '3600' })
 
-                if (uploadError) {
-                    console.error('Storage Upload Error Detail:', uploadError)
-                    throw new Error(`Upload failed: ${uploadError.message}. Check if "goal-images" bucket exists and policies are public.`)
-                }
+                if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`)
 
                 const { data: urlData } = supabase.storage.from('goal-images').getPublicUrl(path)
                 finalImageUrl = urlData.publicUrl
-                console.log('Image uploaded successfully:', finalImageUrl)
             }
 
             const { data: goal, error: goalError } = await supabase
@@ -147,15 +176,24 @@ export function useGoals() {
     const updateGoal = async (id: string, updates: Partial<CreateGoalData>, imageFile?: File) => {
         try {
             if (settings.is_demo_mode) {
-                setGoals(prev => prev.map(g => {
+                let vision_image_url = updates.vision_image_url
+                if (imageFile) {
+                    try {
+                        vision_image_url = await fileToBase64(imageFile)
+                    } catch (e) {
+                        console.error('Failed to convert image to base64', e)
+                    }
+                }
+
+                const session = getSessionGoals() || []
+                const updated = session.map((g: any) => {
                     if (g.id === id) {
                         return {
                             ...g,
                             ...updates,
-                            vision_image_url: imageFile ? URL.createObjectURL(imageFile) :
-                                (updates.vision_image_url !== undefined ? updates.vision_image_url : g.vision_image_url),
-                            milestones: updates.milestones ? updates.milestones.map((m, idx) => ({
-                                id: Math.random().toString(36).substring(2, 9),
+                            vision_image_url: vision_image_url !== undefined ? vision_image_url : g.vision_image_url,
+                            milestones: updates.milestones ? updates.milestones.map((m: any, idx: number) => ({
+                                id: (m as any).id || Math.random().toString(36).substring(2, 9),
                                 goal_id: id,
                                 title: m.title,
                                 is_completed: m.is_completed || false,
@@ -166,38 +204,30 @@ export function useGoals() {
                         }
                     }
                     return g
-                }))
+                })
+                saveSessionGoals(updated)
+                setGoals(updated)
                 return
             }
 
             const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-            if (sessionError) console.error('Update session retrieval error:', sessionError)
-
             const userId = session?.user?.id
-            console.log('Update check - Session:', !!session, 'User ID:', userId, 'Role:', session?.user?.role)
 
-            // Fetch the existing goal to get the current vision_image_url if needed
             const { data: existingGoal } = await supabase.from('sys_goals').select('vision_image_url').eq('id', id).single()
 
             let finalImageUrl = imageFile ? undefined : (updates.vision_image_url !== undefined ? updates.vision_image_url : existingGoal?.vision_image_url)
             if (imageFile) {
                 const storageFolder = userId || 'public'
-                console.log(`Attempting storage update for: ${imageFile.name} (folder: ${storageFolder})`)
-
                 const ext = imageFile.name.split('.').pop() || 'jpg'
                 const path = `goals/${storageFolder}/${Date.now()}.${ext}`
                 const { error: uploadError } = await supabase.storage
                     .from('goal-images')
                     .upload(path, imageFile, { upsert: true, cacheControl: '3600' })
 
-                if (uploadError) {
-                    console.error('Image upload failed during update:', uploadError)
-                    throw new Error(`Upload failed: ${uploadError.message}. Ensure bucket policies are public.`)
-                }
+                if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`)
 
                 const { data: urlData } = supabase.storage.from('goal-images').getPublicUrl(path)
                 finalImageUrl = urlData.publicUrl
-                console.log('Image updated successfully:', finalImageUrl)
             }
 
             const { error: goalError } = await supabase
@@ -240,7 +270,10 @@ export function useGoals() {
     const deleteGoal = async (id: string) => {
         try {
             if (settings.is_demo_mode) {
-                setGoals(prev => prev.filter(g => g.id !== id))
+                const session = getSessionGoals() || []
+                const updated = session.filter(g => g.id !== id)
+                saveSessionGoals(updated)
+                setGoals(updated)
                 return
             }
 
@@ -254,6 +287,19 @@ export function useGoals() {
     }
 
     const toggleMilestone = async (milestoneId: string, isCompleted: boolean) => {
+        if (settings.is_demo_mode) {
+            const session = getSessionGoals() || []
+            const updated = session.map((goal: any) => ({
+                ...goal,
+                milestones: goal.milestones?.map((m: any) =>
+                    m.id === milestoneId ? { ...m, is_completed: isCompleted } : m
+                )
+            }))
+            saveSessionGoals(updated as Goal[])
+            setGoals(updated as Goal[])
+            return
+        }
+
         const originalGoals = [...goals]
         setGoals(prev => prev.map(goal => ({
             ...goal,
@@ -263,8 +309,6 @@ export function useGoals() {
         })))
 
         try {
-            if (settings.is_demo_mode) return
-
             const { error: mError } = await supabase
                 .from('sys_milestones')
                 .update({ is_completed: isCompleted })
@@ -278,7 +322,21 @@ export function useGoals() {
             throw err
         }
     }
+
     const updateMilestone = async (milestoneId: string, updates: Partial<Milestone>) => {
+        if (settings.is_demo_mode) {
+            const session = getSessionGoals() || []
+            const updated = session.map((goal: any) => ({
+                ...goal,
+                milestones: goal.milestones?.map((m: any) =>
+                    m.id === milestoneId ? { ...m, ...updates } : m
+                )
+            }))
+            saveSessionGoals(updated as Goal[])
+            setGoals(updated as Goal[])
+            return
+        }
+
         const originalGoals = [...goals]
         setGoals(prev => prev.map(goal => ({
             ...goal,
@@ -288,8 +346,6 @@ export function useGoals() {
         })))
 
         try {
-            if (settings.is_demo_mode) return
-
             const { error: mError } = await supabase
                 .from('sys_milestones')
                 .update(updates)
