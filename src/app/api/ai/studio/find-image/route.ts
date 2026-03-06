@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
 
         const prompt = `Given this text snippet: "${text.substring(0, 500)}". Extract exactly 1 or 2 highest-quality generic visual keywords representing it to find a relevant stock photo on a stock photography site. DO NOT include any punctuation, quotes, or conversational text. ONLY output the keywords separated by a comma. Example: 'nature,mountain' or 'urban,night' or 'minimalist,office'. Keep it broad enough to guarantee a search hit.`
 
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
         const result = await model.generateContent(prompt)
         const rawResponse = result.response.text().trim().toLowerCase()
 
