@@ -15,9 +15,17 @@ export async function POST(req: NextRequest) {
 
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
         const result = await model.generateContent(prompt)
-        const keywords = result.response.text().trim().toLowerCase().replace(/[^a-z0-9,]/g, '')
+        const rawResponse = result.response.text().trim().toLowerCase()
 
-        if (!keywords) throw new Error('No keywords')
+        // Extract keywords more robustly: split by comma, clean each part, join with commas
+        const keywords = rawResponse
+            .split(',')
+            .map(k => k.replace(/[^a-z0-9\s]/g, '').trim().replace(/\s+/g, '-'))
+            .filter(k => k.length > 0)
+            .slice(0, 3)
+            .join(',')
+
+        if (!keywords) throw new Error('No valid keywords extracted from AI response')
 
         // Using LoremFlickr for a high-quality random stock photo based on AI keywords
         const imageUrl = `https://loremflickr.com/1200/800/${keywords}?lock=${Math.floor(Math.random() * 1000)}`

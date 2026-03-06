@@ -27,6 +27,7 @@ const AILoaderNode = Node.create({
     addAttributes() {
         return {
             label: { default: 'Working...' },
+            id: { default: null }
         }
     },
     parseHTML() {
@@ -163,20 +164,20 @@ export const ZenEditor = forwardRef<ZenEditorRef, ZenEditorProps>(({ content, on
 
     const handleGenerateImage = async () => {
         if (!editor || editor.state.selection.empty) return
-        const { from } = editor.state.selection
         const selectedText = editor.state.doc.textBetween(
             editor.state.selection.from,
             editor.state.selection.to,
             ' '
         )
 
+        const loaderId = `gen-${Date.now()}`
         setIsGeneratingImage(true)
         setShowImageOptions(false)
 
-        // Insert loader above selection
-        editor.chain().focus().insertContentAt(from, {
+        // Insert loader at current selection
+        editor.chain().focus().insertContent({
             type: 'aiLoader',
-            attrs: { label: 'Generating Art...' }
+            attrs: { label: 'Generating Art...', id: loaderId }
         }).run()
 
         try {
@@ -187,34 +188,38 @@ export const ZenEditor = forwardRef<ZenEditorRef, ZenEditorProps>(({ content, on
             })
             const data = await res.json()
 
-            // Find current loader position
+            // Find specific loader by ID
             let loaderPos = -1
             editor.state.doc.descendants((node, pos) => {
-                if (node.type.name === 'aiLoader') {
+                if (node.type.name === 'aiLoader' && node.attrs.id === loaderId) {
                     loaderPos = pos
                     return false
                 }
             })
 
             if (res.ok && data.url && loaderPos !== -1) {
-                editor.chain()
-                    .focus()
-                    .deleteRange({ from: loaderPos, to: loaderPos + 1 })
-                    .insertContentAt(loaderPos, {
-                        type: 'image',
-                        attrs: { src: data.url, alt: selectedText }
-                    })
-                    .run()
+                // Small delay to ensure state and DOM are in sync before replacement
+                setTimeout(() => {
+                    if (!editor) return
+                    editor.chain()
+                        .focus()
+                        .deleteRange({ from: loaderPos, to: loaderPos + 1 })
+                        .insertContentAt(loaderPos, {
+                            type: 'image',
+                            attrs: { src: data.url, alt: selectedText }
+                        })
+                        .run()
+                }, 50)
             } else if (loaderPos !== -1) {
                 console.warn('Image generation failed or URL missing', data)
                 editor.chain().focus().deleteRange({ from: loaderPos, to: loaderPos + 1 }).run()
             }
         } catch (err) {
             console.error(err)
-            // Cleanup loader on error
+            // Cleanup specific loader
             let loaderPos = -1
             editor.state.doc.descendants((node, pos) => {
-                if (node.type.name === 'aiLoader') {
+                if (node.type.name === 'aiLoader' && node.attrs.id === loaderId) {
                     loaderPos = pos
                     return false
                 }
@@ -229,20 +234,20 @@ export const ZenEditor = forwardRef<ZenEditorRef, ZenEditorProps>(({ content, on
 
     const handleFindImage = async () => {
         if (!editor || editor.state.selection.empty) return
-        const { from } = editor.state.selection
         const selectedText = editor.state.doc.textBetween(
             editor.state.selection.from,
             editor.state.selection.to,
             ' '
         )
 
+        const loaderId = `find-${Date.now()}`
         setIsFindingImage(true)
         setShowImageOptions(false)
 
-        // Insert loader above selection
-        editor.chain().focus().insertContentAt(from, {
+        // Insert loader at current selection
+        editor.chain().focus().insertContent({
             type: 'aiLoader',
-            attrs: { label: 'Finding AI Photo...' }
+            attrs: { label: 'Finding AI Photo...', id: loaderId }
         }).run()
 
         try {
@@ -253,34 +258,38 @@ export const ZenEditor = forwardRef<ZenEditorRef, ZenEditorProps>(({ content, on
             })
             const data = await res.json()
 
-            // Find current loader position
+            // Find specific loader by ID
             let loaderPos = -1
             editor.state.doc.descendants((node, pos) => {
-                if (node.type.name === 'aiLoader') {
+                if (node.type.name === 'aiLoader' && node.attrs.id === loaderId) {
                     loaderPos = pos
                     return false
                 }
             })
 
             if (res.ok && data.url && loaderPos !== -1) {
-                editor.chain()
-                    .focus()
-                    .deleteRange({ from: loaderPos, to: loaderPos + 1 })
-                    .insertContentAt(loaderPos, {
-                        type: 'image',
-                        attrs: { src: data.url, alt: selectedText }
-                    })
-                    .run()
+                // Small delay to ensure state and DOM are in sync before replacement
+                setTimeout(() => {
+                    if (!editor) return
+                    editor.chain()
+                        .focus()
+                        .deleteRange({ from: loaderPos, to: loaderPos + 1 })
+                        .insertContentAt(loaderPos, {
+                            type: 'image',
+                            attrs: { src: data.url, alt: selectedText }
+                        })
+                        .run()
+                }, 50)
             } else if (loaderPos !== -1) {
                 console.warn('Image search failed or URL missing', data)
                 editor.chain().focus().deleteRange({ from: loaderPos, to: loaderPos + 1 }).run()
             }
         } catch (err) {
             console.error(err)
-            // Cleanup loader on error
+            // Cleanup specific loader
             let loaderPos = -1
             editor.state.doc.descendants((node, pos) => {
-                if (node.type.name === 'aiLoader') {
+                if (node.type.name === 'aiLoader' && node.attrs.id === loaderId) {
                     loaderPos = pos
                     return false
                 }
