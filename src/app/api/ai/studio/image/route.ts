@@ -8,9 +8,10 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Prompt is required' }, { status: 400 })
         }
 
-        // Use Pollinations AI for quick, free image generation based on the text prompt
-        const encodedPrompt = encodeURIComponent(prompt.substring(0, 100).replace(/[^a-zA-Z0-9\s]/g, '') + " cinematic, detailed, artistic")
-        const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${Math.floor(Math.random() * 1000)}`
+        // Use Pollinations AI for quick, free image generation based on a prompt
+        const cleanPrompt = (prompt || "aesthetic artistic creation").substring(0, 150).replace(/[^a-zA-Z0-9\s]/g, '')
+        const encodedPrompt = encodeURIComponent(cleanPrompt + " cinematic, high resolution, professional photography")
+        const imageUrl = `https://pollinations.ai/p/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${Math.floor(Math.random() * 1000000)}`
 
         return NextResponse.json({ url: imageUrl })
     } catch (err: any) {

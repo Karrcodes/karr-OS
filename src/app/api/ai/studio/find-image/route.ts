@@ -17,15 +17,15 @@ export async function POST(req: NextRequest) {
         const result = await model.generateContent(prompt)
         const rawResponse = result.response.text().trim().toLowerCase()
 
-        // Extract keywords more robustly: split by comma, clean each part, join with commas
-        const keywords = rawResponse
+        // Extract keywords more robustly
+        let keywords = (rawResponse || "")
             .split(',')
             .map(k => k.replace(/[^a-z0-9\s]/g, '').trim().replace(/\s+/g, '-'))
             .filter(k => k.length > 0)
-            .slice(0, 3)
+            .slice(0, 2)
             .join(',')
 
-        if (!keywords) throw new Error('No valid keywords extracted from AI response')
+        if (!keywords) keywords = 'nature,minimalist'
 
         // Using LoremFlickr for a high-quality random stock photo based on AI keywords
         const imageUrl = `https://loremflickr.com/1200/800/${keywords}?lock=${Math.floor(Math.random() * 1000)}`
