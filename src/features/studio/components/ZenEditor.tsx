@@ -90,9 +90,9 @@ export const ZenEditor = forwardRef<ZenEditorRef, ZenEditorProps>(({ content, on
                 placeholder: 'Start writing...',
             }),
             Image.configure({
-                inline: true,
+                inline: false,
                 HTMLAttributes: {
-                    class: 'rounded-3xl shadow-2xl my-10 max-w-full bg-black/5 mx-auto border border-black/5 animate-in slide-in-from-bottom-4 duration-700',
+                    class: 'rounded-[40px] shadow-2xl my-12 max-w-full bg-black/5 mx-auto border border-black/5 animate-in slide-in-from-bottom-6 duration-1000',
                 },
             }),
         ],
@@ -196,7 +196,7 @@ export const ZenEditor = forwardRef<ZenEditorRef, ZenEditorProps>(({ content, on
                 }
             })
 
-            if (data.url && loaderPos !== -1) {
+            if (res.ok && data.url && loaderPos !== -1) {
                 editor.chain()
                     .focus()
                     .deleteRange({ from: loaderPos, to: loaderPos + 1 })
@@ -206,6 +206,7 @@ export const ZenEditor = forwardRef<ZenEditorRef, ZenEditorProps>(({ content, on
                     })
                     .run()
             } else if (loaderPos !== -1) {
+                console.warn('Image generation failed or URL missing', data)
                 editor.chain().focus().deleteRange({ from: loaderPos, to: loaderPos + 1 }).run()
             }
         } catch (err) {
@@ -261,7 +262,7 @@ export const ZenEditor = forwardRef<ZenEditorRef, ZenEditorProps>(({ content, on
                 }
             })
 
-            if (data.url && loaderPos !== -1) {
+            if (res.ok && data.url && loaderPos !== -1) {
                 editor.chain()
                     .focus()
                     .deleteRange({ from: loaderPos, to: loaderPos + 1 })
@@ -271,6 +272,7 @@ export const ZenEditor = forwardRef<ZenEditorRef, ZenEditorProps>(({ content, on
                     })
                     .run()
             } else if (loaderPos !== -1) {
+                console.warn('Image search failed or URL missing', data)
                 editor.chain().focus().deleteRange({ from: loaderPos, to: loaderPos + 1 }).run()
             }
         } catch (err) {
