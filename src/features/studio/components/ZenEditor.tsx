@@ -306,112 +306,123 @@ export const ZenEditor = forwardRef<ZenEditorRef, ZenEditorProps>(({ content, on
         }
     }
 
+    const fileInputRef = useRef<HTMLInputElement>(null)
+
+    const handleLocalImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0]
+        if (!file || !editor) return
+
+        const reader = new FileReader()
+        reader.onload = (e) => {
+            const base64 = e.target?.result as string
+            editor.chain().focus().setImage({ src: base64, alt: file.name }).run()
+        }
+        reader.readAsDataURL(file)
+
+        // Reset input
+        if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+
     if (!editor) return null
 
     return (
         <div className="w-full relative studio-editor-wrapper">
-            {editor && (
-                <BubbleMenu editor={editor} className="flex items-center gap-1.5 bg-white/95 backdrop-blur-xl border border-black/10 p-2 rounded-2xl shadow-2xl shadow-black/10 z-50 ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-200">
-                    <button
-                        onClick={() => editor.chain().focus().toggleBold().run()}
-                        className={cn("p-2.5 rounded-xl transition-all active:scale-90", editor.isActive('bold') ? "bg-black/10" : "hover:bg-black/5")}
-                    >
-                        <Bold className="w-5 h-5 text-black/80" />
-                    </button>
-                    <button
-                        onClick={() => editor.chain().focus().toggleItalic().run()}
-                        className={cn("p-2.5 rounded-xl transition-all active:scale-90", editor.isActive('italic') ? "bg-black/10" : "hover:bg-black/5")}
-                    >
-                        <Italic className="w-5 h-5 text-black/80" />
-                    </button>
-                    <div className="w-px h-4 bg-black/10 mx-1" />
-
-                    <button
-                        onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-                        className={cn("p-2.5 rounded-xl transition-all active:scale-90", editor.isActive('heading', { level: 1 }) ? "bg-black/10" : "hover:bg-black/5")}
-                    >
-                        <Heading1 className="w-5 h-5 text-black/80" />
-                    </button>
-                    <button
-                        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-                        className={cn("p-2.5 rounded-xl transition-all active:scale-90", editor.isActive('heading', { level: 2 }) ? "bg-black/10" : "hover:bg-black/5")}
-                    >
-                        <Heading2 className="w-5 h-5 text-black/80" />
-                    </button>
-                    <button
-                        onClick={() => editor.chain().focus().setParagraph().run()}
-                        className={cn("p-2.5 rounded-xl transition-all active:scale-90", editor.isActive('paragraph') ? "bg-black/10" : "hover:bg-black/5")}
-                    >
-                        <Type className="w-5 h-5 text-black/80" />
-                    </button>
-                    <div className="w-px h-4 bg-black/10 mx-1" />
-
-                    {/* Expand with Approval */}
-                    <button
-                        onClick={handleExpandSelection}
-                        disabled={isExpanding || !!expandPreview}
-                        className={cn(
-                            "p-2.5 hover:bg-indigo-50 rounded-xl transition-all active:scale-90 flex items-center gap-2 group",
-                            (isExpanding || expandPreview) && "opacity-50"
-                        )}
-                    >
-                        {isExpanding ? <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" /> : <Wand2 className="w-5 h-5 text-indigo-500 group-hover:scale-110 transition-transform" />}
-                        <span className="text-[12px] font-black text-indigo-600 tracking-wide pr-1">Expand</span>
-                    </button>
-
-                    {/* AI Image Dual Menu */}
-                    <div className="relative">
+            {/* Persistent Vertical Floating Toolbar */}
+            <div className="absolute top-0 -right-20 flex flex-col gap-2 z-50 animate-in slide-in-from-right-4 duration-500">
+                <div className="flex flex-col gap-1 bg-white/90 backdrop-blur-2xl border border-black/10 p-1.5 rounded-[24px] shadow-2xl shadow-indigo-500/10 ring-1 ring-black/5">
+                    {/* Text Formatting Group */}
+                    <div className="flex flex-col gap-1 mb-2 pb-2 border-b border-black/[0.05]">
                         <button
-                            onClick={(e) => {
-                                e.stopPropagation()
-                                setShowImageOptions(!showImageOptions)
-                            }}
-                            disabled={isGeneratingImage || isFindingImage}
-                            className={cn(
-                                "p-2.5 hover:bg-emerald-50 rounded-xl transition-all active:scale-90 flex items-center gap-2 group",
-                                (showImageOptions || isGeneratingImage || isFindingImage) && "bg-emerald-50"
-                            )
-                            }
+                            onClick={() => editor.chain().focus().toggleBold().run()}
+                            className={cn("w-10 h-10 rounded-xl flex items-center justify-center transition-all active:scale-90", editor.isActive('bold') ? "bg-black text-white shadow-lg" : "hover:bg-black/5 text-black/40 hover:text-black")}
+                            title="Bold"
                         >
-                            {isGeneratingImage || isFindingImage ? (
-                                <Loader2 className="w-5 h-5 text-emerald-500 animate-spin" />
-                            ) : (
-                                <ImageIcon className="w-5 h-5 text-emerald-500 group-hover:scale-110 transition-transform" />
+                            <Bold className="w-4.5 h-4.5" />
+                        </button>
+                        <button
+                            onClick={() => editor.chain().focus().toggleItalic().run()}
+                            className={cn("w-10 h-10 rounded-xl flex items-center justify-center transition-all active:scale-90", editor.isActive('italic') ? "bg-black text-white shadow-lg" : "hover:bg-black/5 text-black/40 hover:text-black")}
+                            title="Italic"
+                        >
+                            <Italic className="w-4.5 h-4.5" />
+                        </button>
+                        <button
+                            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+                            className={cn("w-10 h-10 rounded-xl flex items-center justify-center transition-all active:scale-90", editor.isActive('heading', { level: 1 }) ? "bg-black text-white shadow-lg" : "hover:bg-black/5 text-black/40 hover:text-black")}
+                            title="H1"
+                        >
+                            <Heading1 className="w-4.5 h-4.5" />
+                        </button>
+                        <button
+                            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+                            className={cn("w-10 h-10 rounded-xl flex items-center justify-center transition-all active:scale-90", editor.isActive('heading', { level: 2 }) ? "bg-black text-white shadow-lg" : "hover:bg-black/5 text-black/40 hover:text-black")}
+                            title="H2"
+                        >
+                            <Heading2 className="w-4.5 h-4.5" />
+                        </button>
+                    </div>
+
+                    {/* AI Actions Group */}
+                    <div className="flex flex-col gap-1 mb-2 pb-2 border-b border-black/[0.05]">
+                        <button
+                            onClick={handleExpandSelection}
+                            disabled={isExpanding || editor.state.selection.empty}
+                            className={cn(
+                                "w-10 h-10 rounded-xl flex items-center justify-center transition-all active:scale-90",
+                                (isExpanding || editor.state.selection.empty) ? "opacity-30 grayscale cursor-not-allowed" : "text-indigo-500 hover:bg-indigo-50 hover:shadow-indigo-500/10"
                             )}
-                            <span className="text-[12px] font-black text-emerald-600 tracking-wide pr-1">Image</span>
+                            title="AI Expand Selection"
+                        >
+                            {isExpanding ? <Loader2 className="w-4.5 h-4.5 animate-spin" /> : <Wand2 className="w-4.5 h-4.5" />}
                         </button>
 
-                        {showImageOptions && (
-                            <div className="absolute top-full left-0 mt-2 bg-white/95 backdrop-blur-xl border border-black/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] p-2 min-w-[200px] z-[60] flex flex-col gap-1 animate-in slide-in-from-top-2 duration-200">
-                                <button
-                                    onClick={handleFindImage}
-                                    className="flex items-center gap-3 p-3 hover:bg-indigo-50 rounded-xl transition-all text-left group"
-                                >
-                                    <div className="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-500 group-hover:scale-110 transition-transform shadow-sm">
-                                        <Search className="w-4.5 h-4.5" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="text-[11px] font-black text-black leading-none mb-1">Find AI Photo</div>
-                                        <div className="text-[9px] text-black/40 font-medium whitespace-nowrap uppercase tracking-tighter">Authentic Stock Search</div>
-                                    </div>
-                                </button>
-                                <button
-                                    disabled
-                                    className="flex items-center gap-3 p-3 opacity-40 rounded-xl text-left cursor-not-allowed group relative overflow-hidden"
-                                >
-                                    <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-500 shadow-sm">
-                                        <Dna className="w-4.5 h-4.5" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="text-[11px] font-black text-black leading-none mb-1">Nanobana Gen</div>
-                                        <div className="text-[9px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-100/50 px-1.5 py-0.5 rounded-sm inline-block">Coming Soon</div>
-                                    </div>
-                                </button>
+                        <div className="relative group/ai-image">
+                            <button
+                                onClick={handleFindImage}
+                                disabled={isFindingImage || editor.state.selection.empty}
+                                className={cn(
+                                    "w-10 h-10 rounded-xl flex items-center justify-center transition-all active:scale-90",
+                                    (isFindingImage || editor.state.selection.empty) ? "opacity-30 grayscale cursor-not-allowed" : "text-emerald-500 hover:bg-emerald-50 hover:shadow-emerald-500/10"
+                                )}
+                                title="Find AI Photo"
+                            >
+                                {isFindingImage ? <Loader2 className="w-4.5 h-4.5 animate-spin" /> : <Search className="w-4.5 h-4.5" />}
+                            </button>
+
+                            {/* Hidden Tooltip/Label */}
+                            <div className="absolute left-full ml-3 px-3 py-1.5 bg-black text-white text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover/ai-image:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl">
+                                AI Photo Search
                             </div>
-                        )}
+                        </div>
                     </div>
-                </BubbleMenu>
-            )}
+
+                    {/* Local Actions Group */}
+                    <div className="flex flex-col gap-1">
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept="image/*"
+                            onChange={handleLocalImageUpload}
+                        />
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            className="w-10 h-10 rounded-xl flex items-center justify-center transition-all active:scale-90 text-blue-500 hover:bg-blue-50 hover:shadow-blue-500/10"
+                            title="Upload Local Image"
+                        >
+                            <Plus className="w-5 h-5" />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Status Dot */}
+                <div className="flex justify-center mt-1">
+                    <div className={cn(
+                        "w-1.5 h-1.5 rounded-full transition-all duration-500",
+                        (isExpanding || isFindingImage) ? "bg-indigo-500 animate-pulse scale-125 shadow-[0_0_10px_rgba(79,70,229,0.5)]" : "bg-black/10"
+                    )} />
+                </div>
+            </div>
 
             {/* AI Expansion Proposal Overlay */}
             {expandPreview && (

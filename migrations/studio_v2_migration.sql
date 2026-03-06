@@ -39,6 +39,9 @@ END $$;
 DO $$ 
 BEGIN 
     IF (SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'studio_projects')) THEN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='studio_projects' AND column_name='cover_url') THEN
+            ALTER TABLE studio_projects ADD COLUMN cover_url TEXT;
+        END IF;
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='studio_projects' AND column_name='gtv_featured') THEN
             ALTER TABLE studio_projects ADD COLUMN gtv_featured BOOLEAN DEFAULT false;
         END IF;
@@ -68,7 +71,20 @@ BEGIN
     END IF;
 END $$;
 
--- 5. Enable RLS (Recommended)
+-- 5. Align studio_press with GTV Portfolio features
+DO $$ 
+BEGIN 
+    IF (SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'studio_press')) THEN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='studio_press' AND column_name='gtv_category') THEN
+            ALTER TABLE studio_press ADD COLUMN gtv_category TEXT;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='studio_press' AND column_name='project_id') THEN
+            ALTER TABLE studio_press ADD COLUMN project_id UUID REFERENCES studio_projects(id) ON DELETE SET NULL;
+        END IF;
+    END IF;
+END $$;
+
+-- 6. Enable RLS (Recommended)
 ALTER TABLE IF EXISTS studio_drafts ENABLE ROW LEVEL SECURITY;
 
 -- 6. Trigger for updated_at
