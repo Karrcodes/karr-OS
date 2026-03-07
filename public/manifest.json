@@ -1,7 +1,7 @@
 {
-    "name": "KarrOS",
-    "short_name": "KarrOS",
-    "description": "Personal Finance Operating System — Studio Karrtesian",
+    "name": "Schrö",
+    "short_name": "Schrö",
+    "description": "Schrö Personal Operating System",
     "start_url": "/system/control-centre",
     "scope": "/",
     "display": "standalone",

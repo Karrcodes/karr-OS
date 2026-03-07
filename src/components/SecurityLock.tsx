@@ -26,23 +26,23 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
         setIsMounted(true)
 
         // Handle Shield ID (Hardware Fingerprint)
-        let sid = localStorage.getItem('karrOS_shield_id')
+        let sid = localStorage.getItem('schro_shield_id')
         if (!sid) {
             sid = crypto.randomUUID()
-            localStorage.setItem('karrOS_shield_id', sid)
+            localStorage.setItem('schro_shield_id', sid)
         }
         setShieldId(sid)
 
         // Initial Authorization Check
         checkAuthorization(sid)
 
-        const unlocked = localStorage.getItem('karrOS_unlocked')
+        const unlocked = localStorage.getItem('schro_unlocked')
         if (unlocked === 'true') {
             setIsUnlocked(true)
         }
 
         // Check if biometric is enrolled
-        const credentialId = localStorage.getItem('karrOS_biometric_id')
+        const credentialId = localStorage.getItem('schro_biometric_id')
         if (credentialId) {
             setIsEnrolled(true)
         }
@@ -140,7 +140,7 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
 
     const handleUnlock = () => {
         setIsUnlocked(true)
-        localStorage.setItem('karrOS_unlocked', 'true')
+        localStorage.setItem('schro_unlocked', 'true')
     }
 
     const enrollBiometrics = async () => {
@@ -195,7 +195,7 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
 
             if (credential) {
                 const rawId = new Uint8Array(credential.rawId)
-                localStorage.setItem('karrOS_biometric_id', btoa(String.fromCharCode(...rawId)))
+                localStorage.setItem('schro_biometric_id', btoa(String.fromCharCode(...rawId)))
                 setIsEnrolled(true)
                 setIsSetupMode(false)
                 handleUnlock()
@@ -224,7 +224,7 @@ export function SecurityLock({ children }: { children: React.ReactNode }) {
         setIsProcessing(true)
         try {
             const challenge = crypto.getRandomValues(new Uint8Array(32))
-            const storedId = localStorage.getItem('karrOS_biometric_id')
+            const storedId = localStorage.getItem('schro_biometric_id')
             if (!storedId) throw new Error('No enrolled biometrics found.')
 
             const credentialId = Uint8Array.from(atob(storedId), c => c.charCodeAt(0))

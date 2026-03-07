@@ -29,11 +29,11 @@ export function FinanceProfileProvider({ children }: { children: React.ReactNode
     const [isLogging, setIsLogging] = useState(false)
 
     useEffect(() => {
-        const saved = localStorage.getItem('karrOS_finance_profile') as ProfileType
+        const saved = localStorage.getItem('schro_finance_profile') as ProfileType
         if (saved && (saved === 'personal' || saved === 'business')) {
             setActiveProfile(saved)
         }
-        const savedPrivacy = localStorage.getItem('karrOS_finance_privacy')
+        const savedPrivacy = localStorage.getItem('schro_finance_privacy')
         if (savedPrivacy === 'true') {
             setIsPrivacyEnabled(true)
         }
@@ -54,7 +54,7 @@ export function FinanceProfileProvider({ children }: { children: React.ReactNode
 
     const handleSetProfile = (profile: ProfileType) => {
         setActiveProfile(profile)
-        localStorage.setItem('karrOS_finance_profile', profile)
+        localStorage.setItem('schro_finance_profile', profile)
         // Manual profile switch also triggers a fresh fetch implicitly by hook dependencies,
         // but let's increment refresh just in case.
         setRefreshTrigger(prev => prev + 1)
@@ -64,7 +64,7 @@ export function FinanceProfileProvider({ children }: { children: React.ReactNode
     const togglePrivacy = () => {
         setIsPrivacyEnabled(prev => {
             const next = !prev
-            localStorage.setItem('karrOS_finance_privacy', String(next))
+            localStorage.setItem('schro_finance_privacy', String(next))
             return next
         })
     }

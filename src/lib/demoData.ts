@@ -274,7 +274,7 @@ export const MOCK_STUDIO = {
             status: 'submitted',
             deadline: '2026-05-15',
             url: 'https://techcrunch.com',
-            notes: 'Presenting the KarrOS architecture.'
+            notes: 'Presenting the Schrö architecture.'
         }
     ],
     canvas: [

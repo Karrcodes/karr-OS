@@ -14,7 +14,7 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     const [mounted, setMounted] = useState(false)
 
     useEffect(() => {
-        const savedPrivacy = localStorage.getItem('karrOS_vault_privacy')
+        const savedPrivacy = localStorage.getItem('schro_vault_privacy')
         if (savedPrivacy === 'true') {
             setIsVaultPrivate(true)
         }
@@ -24,7 +24,7 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     const toggleVaultPrivacy = () => {
         setIsVaultPrivate(prev => {
             const next = !prev
-            localStorage.setItem('karrOS_vault_privacy', String(next))
+            localStorage.setItem('schro_vault_privacy', String(next))
             return next
         })
     }

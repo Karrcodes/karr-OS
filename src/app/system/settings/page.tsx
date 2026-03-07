@@ -76,9 +76,9 @@ export default function SettingsPage() {
         if (!error) {
             setAuthorizedDevices(prev => prev.filter(d => d.device_id !== deviceId))
             // If current device, force reload
-            if (typeof window !== 'undefined' && localStorage.getItem('karrOS_shield_id') === deviceId) {
-                localStorage.removeItem('karrOS_unlocked')
-                localStorage.removeItem('karrOS_shield_id')
+            if (typeof window !== 'undefined' && localStorage.getItem('schro_shield_id') === deviceId) {
+                localStorage.removeItem('schro_unlocked')
+                localStorage.removeItem('schro_shield_id')
                 window.location.reload()
             }
         }
@@ -570,7 +570,7 @@ export default function SettingsPage() {
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 {authorizedDevices.map((device) => {
-                                    const isCurrent = typeof window !== 'undefined' && device.device_id === localStorage.getItem('karrOS_shield_id')
+                                    const isCurrent = typeof window !== 'undefined' && device.device_id === localStorage.getItem('schro_shield_id')
                                     return (
                                         <div key={device.id} className={cn(
                                             "p-4 rounded-2xl border flex items-center justify-between group",
