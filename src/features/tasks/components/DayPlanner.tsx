@@ -641,6 +641,8 @@ function getIcon(id: string, type: string, isStalled?: boolean) {
     if (type === 'shift') return <Zap className="w-4 h-4" />
     if (type === 'transit') return <Bus className="w-4 h-4" />
     if (type === 'task') return <Activity className="w-4 h-4" />
+    if (type === 'sleep') return <Moon className="w-4 h-4" />
+    if (type === 'meal') return <Utensils className="w-4 h-4" />
 
     if (id.includes('wake')) return <Coffee className="w-4 h-4" />
     if (id.includes('shower')) return <ShowerHeadIcon className="w-4 h-4" />

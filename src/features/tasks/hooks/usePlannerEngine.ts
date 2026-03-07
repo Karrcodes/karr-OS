@@ -6,7 +6,7 @@ import { useSystemSettings } from '@/features/system/contexts/SystemSettingsCont
 import { useRota } from '@/features/finance/hooks/useRota'
 import { isShiftDay } from '@/features/finance/utils/rotaUtils'
 import { useTasks } from './useTasks'
-import type { Task, DayPlannerSettings, PlannerInitialization } from '../types/tasks.types'
+import type { Task, DayPlannerSettings, PlannerInitialization, RoutineAnchor } from '../types/tasks.types'
 import { addMinutes, timeToMinutes, minutesToTime, formatTime } from '@/lib/utils'
 
 export interface PlannerItem {
@@ -15,7 +15,7 @@ export interface PlannerItem {
     time: string
     end_time?: string
     duration: number
-    type: 'routine' | 'task' | 'shift' | 'transit' | 'buffer'
+    type: 'routine' | 'task' | 'shift' | 'transit' | 'buffer' | 'sleep' | 'meal'
     class: 'A' | 'B' | 'C'
     is_completed?: boolean
     project_id?: string | null
@@ -67,7 +67,7 @@ export function usePlannerEngine(date: Date = new Date()) {
     // 1. Determine Final Work Status
     const isWorkDay = useMemo(() => {
         const baseIsWorkDay = isShiftDay(date)
-        const dayOverride = overrides.find(o => o.date === dateStr)
+        const dayOverride = overrides.find((o: any) => o.date === dateStr)
 
         if (dayOverride) {
             if (dayOverride.type === 'absence' || dayOverride.type === 'holiday') return false
@@ -136,11 +136,11 @@ export function usePlannerEngine(date: Date = new Date()) {
         const items: PlannerItem[] = []
 
         // Filter tasks based on date and profile
-        const personalTasks = allPersonalTasks.filter(t =>
+        const personalTasks = allPersonalTasks.filter((t: Task) =>
             !t.is_completed && t.category !== 'reminder' &&
             (t.due_date_mode === 'on' ? t.due_date === dateStr : true)
         )
-        const businessTasks = allBusinessTasks.filter(t =>
+        const businessTasks = allBusinessTasks.filter((t: Task) =>
             !t.is_completed && t.category !== 'reminder' &&
             (t.due_date_mode === 'on' ? t.due_date === dateStr : true)
         )
@@ -162,195 +162,64 @@ export function usePlannerEngine(date: Date = new Date()) {
             return nowMins >= start && nowMins < start + duration
         }
 
-        // A. Handle Work Day Protocol (Automatic T-Zero 03:30)
-        if (isWorkDay) {
-            items.push({ id: 'wake', title: 'Wake / Prep', time: '03:30', duration: 45, type: 'routine', class: 'A', is_current: isCurrentItem('03:30', 45) })
-            items.push({ id: 'commute-out', title: 'Commute (Shift)', time: '04:15', duration: 90, type: 'transit', class: 'A', is_current: isCurrentItem('04:15', 90) })
-            items.push({ id: 'shift-start', title: 'GXO Shift', time: '06:00', duration: 210, type: 'shift', class: 'A', is_current: isCurrentItem('06:00', 210) })
-            items.push({ id: 'break-1', title: 'First Break (Meal)', time: '09:30', duration: 30, type: 'routine', class: 'A', is_current: isCurrentItem('09:30', 30) })
-            items.push({ id: 'shift-mid', title: 'GXO Shift', time: '10:00', duration: 240, type: 'shift', class: 'A', is_current: isCurrentItem('10:00', 240) })
-            items.push({ id: 'break-2', title: 'Second Break', time: '14:00', duration: 30, type: 'routine', class: 'A', is_current: isCurrentItem('14:00', 30) })
-            items.push({ id: 'shift-end', title: 'GXO Shift', time: '14:30', duration: 210, type: 'shift', class: 'A', is_current: isCurrentItem('14:30', 210) })
-            items.push({ id: 'commute-in', title: 'Return Commute', time: '18:15', duration: 85, type: 'transit', class: 'A', is_current: isCurrentItem('18:15', 85) })
-            items.push({ id: 'evening-routine', title: 'Meal + Shower + Oats', time: '19:40', duration: 60, type: 'routine', class: 'A', is_current: isCurrentItem('19:40', 60) })
+        // A. Base Anchor Blocks (The Skeleton)
+        const activeAnchors: RoutineAnchor[] = isWorkDay ? (settings.anchors_work || []) : (settings.anchors_off || [])
 
-            const eveningStart = '20:40'
-            const bedTime = settings.bed_time_work || '21:30'
-
-            const allowedTasks = [...personalTasks, ...businessTasks]
-                .filter(t => settings.evening_constraints?.allowed_categories.includes(t.strategic_category || ''))
-                .sort((a, b) => (b.impact_score || 0) - (a.impact_score || 0))
-
-            let currentTime = eveningStart
-            allowedTasks.forEach(task => {
-                const taskDuration = task.estimated_duration || 30
-                const travelTo = task.travel_to_duration || 0
-                const travelFrom = task.travel_from_duration || 0
-                const totalDuration = travelTo + taskDuration + travelFrom
-
-                if (timeToMinutes(currentTime) + totalDuration <= timeToMinutes(bedTime)) {
-                    if (travelTo > 0) {
-                        items.push({ id: `transit-to-${task.id}`, title: 'Transit (To)', time: currentTime, duration: travelTo, type: 'transit', class: 'C', is_current: isCurrentItem(currentTime, travelTo), sort_priority: 1 })
-                        currentTime = addMinutes(currentTime, travelTo)
-                    }
-
-                    // Respect start_time if provided for 'appointment' feel
-                    const effectiveStartTime = task.start_time || currentTime
-
-                    items.push({
-                        id: task.id,
-                        title: task.title,
-                        time: effectiveStartTime,
-                        end_time: addMinutes(effectiveStartTime, taskDuration),
-                        duration: taskDuration,
-                        type: 'task',
-                        class: 'B',
-                        project_id: task.project_id,
-                        impact_score: task.impact_score,
-                        is_active: activeTaskId === task.id || activeTaskId === `${task.id}-${dateStr}`,
-                        is_current: isCurrentItem(effectiveStartTime, taskDuration),
-                        sort_priority: 2,
-                        location: task.location,
-                        profile: task.profile,
-                        strategic_category: task.strategic_category,
-                        priority: task.priority
-                    })
-
-                    currentTime = addMinutes(effectiveStartTime, taskDuration)
-
-                    if (travelFrom > 0) {
-                        items.push({ id: `transit-from-${task.id}`, title: 'Transit (Return)', time: currentTime, duration: travelFrom, type: 'transit', class: 'C', is_current: isCurrentItem(currentTime, travelFrom), sort_priority: 3 })
-                        currentTime = addMinutes(currentTime, travelFrom)
-                    }
-                    currentTime = addMinutes(currentTime, 10)
-                }
+        activeAnchors.forEach(anchor => {
+            items.push({
+                id: anchor.id,
+                title: anchor.name,
+                time: anchor.start_time,
+                end_time: anchor.end_time,
+                duration: timeToMinutes(anchor.end_time) < timeToMinutes(anchor.start_time)
+                    ? (timeToMinutes(anchor.end_time) + 24 * 60) - timeToMinutes(anchor.start_time)
+                    : timeToMinutes(anchor.end_time) - timeToMinutes(anchor.start_time),
+                type: anchor.type as any,
+                class: anchor.is_flexible ? 'B' : 'A',
+                is_current: isCurrentItem(anchor.start_time, timeToMinutes(anchor.end_time) < timeToMinutes(anchor.start_time) ? (timeToMinutes(anchor.end_time) + 24 * 60) - timeToMinutes(anchor.start_time) : timeToMinutes(anchor.end_time) - timeToMinutes(anchor.start_time)),
+                sort_priority: anchor.type === 'sleep' ? 999 : 0
             })
-            items.push({ id: 'sleep', title: 'Sleep', time: bedTime, duration: 480, type: 'routine', class: 'A', is_current: isCurrentItem(bedTime, 480) })
-        }
-        // B. Handle Day Off Protocol (Manual T-Zero)
-        else {
-            if (!initialization && !settings.chill_mode_active) {
-                return { items: [], reminders: [] }
-            }
-            if (settings.chill_mode_active) {
-                // Chill Mode: Just a flat list of habits and high priority tasks
-                return {
-                    items: ([...personalTasks, ...businessTasks]
-                        .filter(t => t.priority === 'urgent')
-                        .map(t => ({
-                            id: t.id,
-                            title: t.title,
-                            time: '--:--',
-                            duration: t.estimated_duration || 30,
-                            type: 'task',
-                            class: 'B',
-                            sort_priority: 1
-                        })) as PlannerItem[]),
-                    reminders: []
-                }
-            }
+        })
 
-            const tZero = formatTime(new Date(initialization!.t_zero))
-            const tZeroMins = timeToMinutes(tZero)
-            let currentTime = tZero
+        // B. Fluid Tasks (The River)
+        // For Phase 2, we just load them into the items array as floating tasks without hardcoding times.
+        // The UI will handle rendering them as bubbles in the fluid zones in Phase 3.
+        const backlog = [...personalTasks, ...businessTasks].sort((a, b) => {
+            const weights = { urgent: 4, high: 3, mid: 2, low: 1 }
+            const weightA = weights[a.priority as keyof typeof weights] || 0
+            const weightB = weights[b.priority as keyof typeof weights] || 0
+            if (a.priority !== b.priority) return weightB - weightA
+            return (b.impact_score || 0) - (a.impact_score || 0)
+        })
 
-            if (tZeroMins < timeToMinutes('10:00')) {
-                items.push({ id: 'wake-off', title: 'Wake Up', time: currentTime, duration: 30, type: 'routine', class: 'A', is_current: isCurrentItem(currentTime, 30), sort_priority: 10 })
-                currentTime = addMinutes(currentTime, 30)
-            }
-
-            const gymDur = settings.routine_defaults?.gym.duration || 90
-            const gymWindow = settings.routine_defaults?.gym.preferred_window || ['08:00', '12:00']
-
-            if (tZeroMins < timeToMinutes(gymWindow[1])) {
-                const gymStart = tZeroMins < timeToMinutes(gymWindow[0]) ? gymWindow[0] : currentTime
-                items.push({ id: 'gym-off', title: 'Gym Session', time: gymStart, duration: gymDur, type: 'routine', class: 'B', is_current: isCurrentItem(gymStart, gymDur), sort_priority: 20 })
-                currentTime = addMinutes(gymStart, gymDur + 15)
-            }
-
-            if (settings.routine_defaults?.meal_prep.required) {
-                const prepDur = settings.routine_defaults.meal_prep.duration
-                items.push({ id: 'meal-prep-off', title: 'Meal Prep', time: currentTime, duration: prepDur, type: 'routine', class: 'A', is_current: isCurrentItem(currentTime, prepDur), sort_priority: 30 })
-                currentTime = addMinutes(currentTime, prepDur + 10)
-            }
-
-            const backlog = [...personalTasks, ...businessTasks]
-                .sort((a, b) => {
-                    if (a.priority !== b.priority) {
-                        const weights = { urgent: 4, high: 3, mid: 2, low: 1 }
-                        return weights[b.priority] - weights[a.priority]
-                    }
-                    return (b.impact_score || 0) - (a.impact_score || 0)
-                })
-
-            let consecutiveWorkMins = 0
-            backlog.forEach(task => {
-                const taskDuration = task.estimated_duration || 30
-                const travelTo = task.travel_to_duration || 0
-                const travelFrom = task.travel_from_duration || 0
-                const scheduledMins = timeToMinutes(currentTime)
-                const isAfterNow = scheduledMins > nowMins
-                const isCurrent = !isAfterNow && (nowMins < scheduledMins + taskDuration)
-
-                if (isFlowActive && isAfterNow && task.priority !== 'urgent' && task.deadline_type !== 'hard') {
-                    return
-                }
-
-                if (consecutiveWorkMins >= 180) {
-                    items.push({ id: 'recovery-auto', title: 'Recovery (Walk/Rest)', time: currentTime, duration: 30, type: 'routine', class: 'C', is_current: isCurrentItem(currentTime, 30) })
-                    currentTime = addMinutes(currentTime, 30 + 5)
-                    consecutiveWorkMins = 0
-                }
-
-                if (travelTo > 0) {
-                    items.push({ id: `transit-to-${task.id}`, title: 'Transit (To)', time: currentTime, duration: travelTo, type: 'transit', class: 'C', is_current: isCurrentItem(currentTime, travelTo), sort_priority: 1 })
-                    currentTime = addMinutes(currentTime, travelTo)
-                }
-
-                const isStalled = !task.is_completed && !isAfterNow && (nowMins - scheduledMins > 15)
-
-                // Respect start_time if provided
-                const effectiveStartTime = task.start_time || currentTime
-
-                items.push({
-                    id: task.id,
-                    title: task.title,
-                    time: effectiveStartTime,
-                    end_time: addMinutes(effectiveStartTime, taskDuration),
-                    duration: taskDuration,
-                    type: 'task',
-                    class: 'B',
-                    is_completed: task.is_completed,
-                    project_id: task.project_id,
-                    is_stalled: isStalled,
-                    impact_score: task.impact_score,
-                    is_active: activeTaskId === task.id || activeTaskId === `${task.id}-${dateStr}`,
-                    is_current: isCurrent,
-                    sort_priority: 2,
-                    location: task.location,
-                    profile: task.profile,
-                    strategic_category: task.strategic_category,
-                    priority: task.priority
-                })
-
-                currentTime = addMinutes(effectiveStartTime, taskDuration)
-                if (travelFrom > 0) {
-                    items.push({ id: `transit-from-${task.id}`, title: 'Transit (Return)', time: currentTime, duration: travelFrom, type: 'transit', class: 'C', is_current: isCurrentItem(currentTime, travelFrom), sort_priority: 3 })
-                    currentTime = addMinutes(currentTime, travelFrom)
-                }
-                currentTime = addMinutes(currentTime, 10)
-                consecutiveWorkMins += taskDuration
+        backlog.forEach(task => {
+            items.push({
+                id: task.id,
+                title: task.title,
+                time: '', // Fluid tasks don't have fixed times initially
+                duration: task.estimated_duration || 30,
+                type: 'task',
+                class: 'C',
+                is_completed: task.is_completed,
+                project_id: task.project_id,
+                impact_score: task.impact_score,
+                is_active: activeTaskId === task.id || activeTaskId === `${task.id}-${dateStr}`,
+                location: task.location,
+                profile: task.profile,
+                strategic_category: task.strategic_category,
+                priority: task.priority,
+                sort_priority: 50 // Keep floating tasks below fixed anchors when sorting without times
             })
+        })
 
-            items.push({ id: 'sleep-off', title: 'Sleep', time: settings.bed_time_off || '00:00', end_time: '09:00', duration: 480, type: 'routine', class: 'A', is_current: isCurrentItem(settings.bed_time_off || '00:00', 480) })
-        }
-
-        // Separate sleep items — they must always be last regardless of time string sort
         let sleepItems = items.filter(i => i.id.startsWith('sleep'))
         const nonSleepItems = items.filter(i => !i.id.startsWith('sleep'))
 
         // Sort all non-sleep items
         const sorted = nonSleepItems.sort((a, b) => {
+            // Un-timed items (e.g., fluid tasks) go at the end of their priority section
+            if (!a.time && b.time) return 1
+            if (a.time && !b.time) return -1
             if (a.time !== b.time) return a.time.localeCompare(b.time)
             return (a.sort_priority || 0) - (b.sort_priority || 0)
         })
@@ -402,7 +271,7 @@ export function usePlannerEngine(date: Date = new Date()) {
     }, [plannerItems, isFlowActive])
 
     const toggleFlow = useCallback(() => {
-        setIsFlowActive(prev => !prev)
+        setIsFlowActive((prev: boolean) => !prev)
     }, [])
 
     const initializeDay = async () => {

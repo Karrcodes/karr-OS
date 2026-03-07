@@ -45,6 +45,15 @@ export interface Task {
     content_id?: string | null
 }
 
+export interface RoutineAnchor {
+    id: string
+    name: string
+    start_time: string // "HH:MM"
+    end_time: string // "HH:MM"
+    type: 'routine' | 'transit' | 'sleep' | 'meal'
+    is_flexible?: boolean
+}
+
 export interface DayPlannerSettings {
     profile: string
     wake_up_time_work: string
@@ -77,6 +86,10 @@ export interface DayPlannerSettings {
         max_duration_minutes: number
     }
     chill_mode_active?: boolean
+
+    // Flow Planner Anchors
+    anchors_work?: RoutineAnchor[]
+    anchors_off?: RoutineAnchor[]
 }
 
 export interface PlannerInitialization {
