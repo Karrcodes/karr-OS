@@ -10,7 +10,7 @@ import {
     ChevronRight, Save, Beaker, Factory, Tv, TrendingUp, Zap,
     Type, ListChecks, ShoppingCart, Bell, Car,
     ChevronDown, ChevronUp, Lock,
-    Grid, List, Tag, Eye, EyeOff,
+    Grid, List, Tag, Eye, EyeOff, Check,
     Wallet, Heart
 } from 'lucide-react'
 import { TaskTemplate, Category, Priority, StrategicCategory } from '../types/tasks.types'
