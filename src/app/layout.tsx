@@ -36,6 +36,7 @@ import { VaultProvider } from '@/features/vault/contexts/VaultContext'
 import { StudioProvider } from '@/features/studio/context/StudioContext'
 import { SecurityLock } from '@/components/SecurityLock'
 import { GlobalQuickAction } from '@/components/GlobalQuickAction'
+import { AuthProvider } from '@/contexts/AuthContext'
 import { headers } from 'next/headers'
 
 export default async function RootLayout({
@@ -45,7 +46,8 @@ export default async function RootLayout({
 }) {
   const headersList = await headers()
   const pathname = headersList.get('x-pathname') || ''
-  const isLandingPage = pathname === '/home'
+  // Pages that don't use the main app shell (sidebar, security lock, etc.)
+  const isShellFreePage = pathname === '/home' || pathname.startsWith('/login') || pathname.startsWith('/waitlist')
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -55,24 +57,30 @@ export default async function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Schrö" />
       </head>
       <body className={`${inter.className} bg-white text-[#0a0a0a] antialiased`}>
-        <SystemSettingsProvider>
-          <FinanceProfileProvider>
-            <TasksProfileProvider>
-              <StudioProvider>
-                <VaultProvider>
-                  <SecurityLock>
-                    {!isLandingPage && <Sidebar />}
-                    {/* main margin tracks --sidebar-w CSS var set by Sidebar component */}
-                    <main className={`${!isLandingPage ? 'md:main-sidebar-offset' : ''} min-h-screen bg-white transition-[margin] duration-300`}>
-                      {children}
-                    </main>
-                    {!isLandingPage && <GlobalQuickAction />}
-                  </SecurityLock>
-                </VaultProvider>
-              </StudioProvider>
-            </TasksProfileProvider>
-          </FinanceProfileProvider>
-        </SystemSettingsProvider>
+        <AuthProvider>
+          <SystemSettingsProvider>
+            <FinanceProfileProvider>
+              <TasksProfileProvider>
+                <StudioProvider>
+                  <VaultProvider>
+                    {isShellFreePage ? (
+                      <>{children}</>
+                    ) : (
+                      <SecurityLock>
+                        <Sidebar />
+                        {/* main margin tracks --sidebar-w CSS var set by Sidebar component */}
+                        <main className="md:main-sidebar-offset min-h-screen bg-white transition-[margin] duration-300">
+                          {children}
+                        </main>
+                        <GlobalQuickAction />
+                      </SecurityLock>
+                    )}
+                  </VaultProvider>
+                </StudioProvider>
+              </TasksProfileProvider>
+            </FinanceProfileProvider>
+          </SystemSettingsProvider>
+        </AuthProvider>
       </body>
     </html>
   )
