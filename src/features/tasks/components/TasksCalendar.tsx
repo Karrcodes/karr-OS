@@ -101,7 +101,7 @@ export function TasksCalendar() {
     const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
     return (
-        <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="w-full space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="rounded-2xl border border-black/[0.08] bg-white overflow-hidden shadow-sm">
                 {/* Calendar Header */}
                 <div className="p-5 flex items-center justify-between">
