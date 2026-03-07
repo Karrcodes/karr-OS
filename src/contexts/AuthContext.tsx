@@ -76,9 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const signOut = async () => {
         await supabase.auth.signOut()
-        setUser(null)
-        setProfile(null)
-        setSession(null)
+        window.location.href = '/login'
     }
 
     const isAdmin = profile?.status === 'admin'
