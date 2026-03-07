@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
@@ -7,14 +8,18 @@ export async function GET(request: Request) {
     const next = searchParams.get('next') ?? '/system/control-centre'
 
     if (code) {
+        // Use anon client to exchange code for session (sets cookies)
         const supabase = await createClient()
         const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
         if (!error && data.user) {
             const user = data.user
 
+            // Use service role client for DB reads/writes (bypasses RLS)
+            const service = createServiceClient()
+
             // Check if user_profile exists, create if not
-            const { data: existingProfile } = await supabase
+            const { data: existingProfile } = await service
                 .from('user_profiles')
                 .select('id, status')
                 .eq('id', user.id)
@@ -23,9 +28,11 @@ export async function GET(request: Request) {
             if (!existingProfile) {
                 // Determine initial status — check if this is the admin email
                 const adminEmail = process.env.ADMIN_EMAIL
-                const status = adminEmail && user.email === adminEmail ? 'admin' : 'waitlist'
+                const status = adminEmail && user.email?.toLowerCase() === adminEmail.toLowerCase()
+                    ? 'admin'
+                    : 'waitlist'
 
-                await supabase.from('user_profiles').insert({
+                await service.from('user_profiles').insert({
                     id: user.id,
                     email: user.email,
                     display_name: user.user_metadata?.full_name ?? user.email,
@@ -40,12 +47,9 @@ export async function GET(request: Request) {
                     },
                 })
 
-                // If admin, go directly to app
                 if (status === 'admin') {
                     return NextResponse.redirect(`${origin}${next}`)
                 }
-
-                // Otherwise send to waitlist
                 return NextResponse.redirect(`${origin}/waitlist`)
             }
 

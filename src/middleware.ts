@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
+import { createClient } from '@supabase/supabase-js'
 
 // Routes that don't require authentication
 const PUBLIC_ROUTES = [
@@ -16,6 +17,21 @@ function isPublicRoute(pathname: string) {
     return PUBLIC_ROUTES.some(route => pathname.startsWith(route))
 }
 
+async function getUserStatus(userId: string): Promise<string | null> {
+    // Use service role key to bypass RLS in middleware
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        { auth: { autoRefreshToken: false, persistSession: false } }
+    )
+    const { data } = await supabase
+        .from('user_profiles')
+        .select('status')
+        .eq('id', userId)
+        .single()
+    return data?.status ?? null
+}
+
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl
 
@@ -29,17 +45,29 @@ export async function middleware(request: NextRequest) {
     // Copy x-pathname to the supabase response headers
     supabaseResponse.headers.set('x-pathname', pathname)
 
-    // If visiting root, redirect to appropriate page
+    // If visiting root, redirect based on auth state
     if (pathname === '/') {
-        const redirectUrl = user ? '/system/control-centre' : '/home'
+        if (!user) {
+            return NextResponse.redirect(new URL('/login', request.url))
+        }
+        // Has session — check if approved
+        const status = await getUserStatus(user.id)
+        const redirectUrl = (status === 'beta' || status === 'admin')
+            ? '/system/control-centre'
+            : '/waitlist'
         return NextResponse.redirect(new URL(redirectUrl, request.url))
     }
 
     // Allow public routes through
     if (isPublicRoute(pathname)) {
-        // If already logged in and visiting login, go to app
+        // If already logged in and approved, skip past login page
         if (pathname === '/login' && user) {
-            return NextResponse.redirect(new URL('/system/control-centre', request.url))
+            const status = await getUserStatus(user.id)
+            if (status === 'beta' || status === 'admin') {
+                return NextResponse.redirect(new URL('/system/control-centre', request.url))
+            }
+            // Logged in but not approved — let them see login or go to waitlist
+            return NextResponse.redirect(new URL('/waitlist', request.url))
         }
         return supabaseResponse
     }
@@ -51,6 +79,12 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(loginUrl)
     }
 
+    // Has session but check approval status for all protected routes
+    const status = await getUserStatus(user.id)
+    if (!status || status === 'waitlist') {
+        return NextResponse.redirect(new URL('/waitlist', request.url))
+    }
+
     return supabaseResponse
 }
 
@@ -59,3 +93,4 @@ export const config = {
         '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
     ],
 }
+
