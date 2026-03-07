@@ -1,10 +1,27 @@
 import { NextResponse } from 'next/server'
 import { MonzoService } from '@/features/finance/services/MonzoService'
-import { supabase } from '@/lib/supabase'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 export async function POST() {
     try {
-        const userId = 'karr'
+        const cookieStore = await cookies()
+        const supabase = createServerClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            {
+                cookies: {
+                    get(name: string) { return cookieStore.get(name)?.value },
+                },
+            }
+        )
+
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        if (authError || !user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
+        const userId = user.id
         console.log(`[Sync Route] Starting sync for userId: ${userId}`)
 
         // Ensure webhooks are registered for real-time notifications

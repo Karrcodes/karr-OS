@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { MonzoService } from '@/features/finance/services/MonzoService'
-import { supabase } from '@/lib/supabase'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
@@ -10,8 +11,23 @@ export async function GET(request: Request) {
     if (!code) return NextResponse.json({ error: 'No code provided' }, { status: 400 })
 
     try {
-        // This is a single-user system identifying as 'karr'
-        const userId = 'karr'
+        const cookieStore = await cookies()
+        const supabase = createServerClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            {
+                cookies: {
+                    get(name: string) { return cookieStore.get(name)?.value },
+                },
+            }
+        )
+
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        if (authError || !user) {
+            return NextResponse.redirect(new URL('/login?error=unauthorized', request.url))
+        }
+
+        const userId = user.id
 
         const tokenData = await MonzoService.exchangeCode(code)
         await MonzoService.saveToken(userId, tokenData)
