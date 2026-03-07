@@ -1,78 +1,34 @@
-'use client'
+"use client"
 
-import { useState, useRef, useEffect, useMemo } from 'react'
+import * as React from 'react'
+import { useState, useEffect, useRef, useMemo, memo } from 'react'
+import type { FormEvent, DragEvent } from 'react'
+import { motion, AnimatePresence, useAnimation, Reorder, useDragControls } from 'framer-motion'
 import {
-    Plus,
-    Search,
-    Calendar,
-    Clock,
-    ChevronDown,
-    ChevronUp,
-    MoreVertical,
-    Trash2,
-    Edit2,
-    GripVertical,
-    Zap,
-    Briefcase,
-    User,
-    CheckSquare,
-    AlertCircle,
-    ArrowRight,
-    Activity,
-    ShoppingCart,
-    Bell,
-    X,
-    RefreshCw,
-    LayoutList,
-    Type,
-    List,
-    ListChecks,
-    Wallet,
-    Heart,
-    Filter,
-    LayoutGrid,
-    Settings2,
-    Car,
-    MapPin,
-    Rocket,
-    Video
+    Plus, Search, Filter, Calendar, CheckSquare,
+    Clock, AlertCircle, Trash2, ChevronRight, ChevronDown,
+    MoreVertical, Edit2, Briefcase, User, Zap, Car, MapPin,
+    ArrowRight, Info, Check, X, Settings2, Sparkles, BarChart2,
+    Target, ShoppingCart, Bell, LayoutGrid, LayoutList, GripVertical, Activity, ChevronUp, RefreshCw, Rocket, Video, Type, List, ListChecks, Wallet, Heart, Star, Save,
+    Beaker, Factory, Tv, TrendingUp, Shield
 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { useTasksProfile } from '../contexts/TasksProfileContext'
-import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion'
 import { useTasks } from '../hooks/useTasks'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
-import type { Task, TaskTemplate } from '../types/tasks.types'
+import type { Task, TaskTemplate, Category, Priority, StrategicCategory, RecurrenceMode } from '../types/tasks.types'
 import { TaskDetailModal } from './TaskDetailModal'
 import { TaskSettingsModal } from './TaskSettingsModal'
+import { CATEGORIES, PRIORITIES, STRATEGIC_CATEGORIES, PRIORITY_MAP } from '../constants/tasks.constants'
 import { getNextOffPeriod, isShiftDay } from '@/features/finance/utils/rotaUtils'
-import { Beaker, Factory, Tv, TrendingUp, Shield } from 'lucide-react'
 import { useStudio } from '@/features/studio/hooks/useStudio'
 import type { StudioMilestone } from '@/features/studio/types/studio.types'
 import ProjectDetailModal from '@/features/studio/components/ProjectDetailModal'
 import ContentDetailModal from '@/features/studio/components/ContentDetailModal'
 
-const PRIORITY_CONFIG = {
-    urgent: { label: 'Urgent', color: 'bg-purple-50 text-purple-600 border-purple-200', sort: 0 },
-    high: { label: 'High', color: 'bg-red-50 text-red-600 border-red-200', sort: 1 },
-    mid: { label: 'Mid', color: 'bg-yellow-50 text-yellow-600 border-yellow-200', sort: 2 },
-    low: { label: 'Low', color: 'bg-black/5 text-black/60 border-black/10', sort: 3 }
-} as const
-
-const PERSONAL_CATEGORIES = [
-    { id: 'finance', label: 'Finance', icon: Wallet, color: 'text-emerald-600 bg-emerald-50 border-emerald-100' },
-    { id: 'career', label: 'Career', icon: Briefcase, color: 'text-blue-600 bg-blue-50 border-blue-200' },
-    { id: 'health', label: 'Health', icon: Heart, color: 'text-rose-600 bg-rose-50 border-rose-100' },
-    { id: 'personal', label: 'Personal', icon: User, color: 'text-amber-600 bg-amber-50 border-amber-200' },
-] as const
-
-const BUSINESS_CATEGORIES = [
-    { id: 'rnd', label: 'R&D', icon: Beaker, color: 'text-purple-600 bg-purple-50 border-purple-100' },
-    { id: 'production', label: 'Production', icon: Factory, color: 'text-orange-600 bg-orange-50 border-orange-100' },
-    { id: 'media', label: 'Media', icon: Tv, color: 'text-rose-600 bg-rose-50 border-rose-100' },
-    { id: 'growth', label: 'Growth', icon: TrendingUp, color: 'text-emerald-600 bg-emerald-50 border-emerald-100' },
-    { id: 'general', label: 'General', icon: Briefcase, color: 'text-neutral-600 bg-neutral-50 border-neutral-100' },
-] as const
+const PERSONAL_CATEGORIES = STRATEGIC_CATEGORIES.personal
+const BUSINESS_CATEGORIES = STRATEGIC_CATEGORIES.business
 
 export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminder' }) {
     const { activeProfile } = useTasksProfile()
@@ -82,39 +38,39 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
     const { milestones, projects, content, updateMilestone, loading: studioLoading } = useStudio()
     const loading = tasksLoading || studioLoading
 
-    const pendingData = useMemo(() => {
-        const pTasks = tasks.filter(t => !t.is_completed)
-        const pMilestones = category === 'todo' && activeProfile === 'business'
-            ? milestones.filter(m => {
-                if (m.status === 'completed') return false
-                // Filter out if parent is archived
-                if (m.project_id) {
-                    const parent = projects.find(p => p.id === m.project_id)
-                    if (!parent || parent.is_archived) return false
-                }
-                if (m.content_id) {
-                    const parent = content.find(c => c.id === m.content_id)
-                    if (!parent || parent.is_archived) return false
-                }
-                return true
-            })
-            : []
-        return {
-            tasks: pTasks,
-            milestones: pMilestones,
-            count: pTasks.length + pMilestones.length
-        }
-    }, [tasks, milestones, category, activeProfile])
-
-    // Internalized title and icon logic
-    const title = category === 'todo' ? 'Deployment' : category === 'grocery' ? 'Grocery List' : 'Reminders'
-    const Icon = category === 'todo' ? Activity : category === 'grocery' ? ShoppingCart : Bell
+    // State Declarations
+    const [selectedTask, setSelectedTask] = useState<Task | null>(null)
     const [selectedTaskForModal, setSelectedTaskForModal] = useState<Task | null>(null)
-    const [selectedMilestoneForModal, setSelectedMilestoneForModal] = useState<StudioMilestone | null>(null)
+    const [selectedMilestoneForModal, setSelectedMilestoneForModal] = useState<any | null>(null)
+    const [isMenuOpen, setIsMenuOpen] = useState(false)
+    const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({})
+    const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
+        todo: true,
+        done: false,
+        reminders: true,
+        groceries: true,
+        recurring: true
+    })
+    const [expandedRecurring, setExpandedRecurring] = useState<Record<string, boolean>>({})
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+    const [editingId, setEditingId] = useState<string | null>(null)
+    const [editValue, setEditValue] = useState("")
+    const [editPriority, setEditPriority] = useState<Priority>("urgent")
+    const [showCompleted, setShowCompleted] = useState(false)
+    const [sortBy, setSortBy] = useState<'manual' | 'priority' | 'impact' | 'duration' | 'deadline' | 'date'>('manual')
+    const [draggedItem, setDraggedItem] = useState<string | null>(null)
+    const [searchQuery, setSearchQuery] = useState("")
+    const [activeFilter, setActiveFilter] = useState<string>('all')
+    const [expandedTaskIds, setExpandedTaskIds] = useState<Set<string>>(new Set())
+
+    const [isCalculatingTravel, setIsCalculatingTravel] = useState(false)
+    const [startFromMode, setStartFromMode] = useState<'home' | 'other'>('home')
+    const [travelMode, setTravelMode] = useState<'none' | 'walking' | 'transit' | 'uber'>(category === 'todo' ? 'none' : 'walking')
+    const [showSettings, setShowSettings] = useState(false)
+    const [templates, setTemplates] = useState<TaskTemplate[]>([])
     const [selectedProjectForModal, setSelectedProjectForModal] = useState<any>(null)
     const [selectedContentForModal, setSelectedContentForModal] = useState<any>(null)
     const [newTask, setNewTask] = useState('')
-    const [searchQuery, setSearchQuery] = useState('')
     const [amount, setAmount] = useState('1')
     const [priority, setPriority] = useState<'urgent' | 'high' | 'mid' | 'low'>('low')
     const [dueDate, setDueDate] = useState('')
@@ -129,17 +85,11 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
     const [showCreateNotes, setShowCreateNotes] = useState(false)
     const [createNotesType, setCreateNotesType] = useState<'text' | 'bullets' | 'checklist'>('text')
     const [createNotesContent, setCreateNotesContent] = useState<any>('')
-
     const [isAppointment, setIsAppointment] = useState(false)
     const [appointmentTime, setAppointmentTime] = useState('09:00')
     const [isLocationActive, setIsLocationActive] = useState(false)
     const [destination, setDestination] = useState('')
     const [startFrom, setStartFrom] = useState('7 ruby street cardiff CF24 1LP')
-    const [isCalculatingTravel, setIsCalculatingTravel] = useState(false)
-    const [startFromMode, setStartFromMode] = useState<'home' | 'other'>('home')
-    const [travelMode, setTravelMode] = useState<'walking' | 'transit' | 'uber'>('walking')
-    const [showSettings, setShowSettings] = useState(false)
-    const [templates, setTemplates] = useState<TaskTemplate[]>([])
     const [showAllFields, setShowAllFields] = useState(false)
     const [newCreateChecklistItem, setNewCreateChecklistItem] = useState('')
     const [selectedStrategicCategory, setSelectedStrategicCategory] = useState<'all' | string>('all')
@@ -148,7 +98,75 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
     const [newProjectId, setNewProjectId] = useState<string | undefined>(undefined)
     const [newContentId, setNewContentId] = useState<string | undefined>(undefined)
     const [estimatedDuration, setEstimatedDuration] = useState('30')
-    const [travelDuration, setTravelDuration] = useState('15')
+
+    const scrollContainerRef = useRef<HTMLDivElement>(null)
+    const inputRef = useRef<HTMLInputElement>(null)
+
+    // Derived State and Logic
+    const pendingData = useMemo(() => {
+        const pTasks = tasks.filter((t: Task) => !t.is_completed)
+        const pMilestones = category === 'todo' && activeProfile === 'business'
+            ? milestones.filter((m: any) => {
+                if (m.status === 'completed') return false
+                if (m.project_id) {
+                    const parent = projects.find((p: any) => p.id === m.project_id)
+                    if (!parent || parent.is_archived) return false
+                }
+                if (m.content_id) {
+                    const parent = content.find((c: any) => c.id === m.content_id)
+                    if (!parent || parent.is_archived) return false
+                }
+                return true
+            })
+            : []
+        return {
+            tasks: pTasks,
+            milestones: pMilestones,
+            count: pTasks.length + pMilestones.length
+        }
+    }, [tasks, milestones, category, activeProfile, projects, content])
+
+    // filteredTasks is currently unused, leaving as is but could be removed
+    const filteredTasks = useMemo(() => {
+        let result = tasks.filter((t: Task) => {
+            const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (typeof t.notes?.content === 'string' ? t.notes.content.toLowerCase().includes(searchQuery.toLowerCase()) : false)
+            const matchesCategory = t.category === category
+            return matchesSearch && matchesCategory
+        })
+
+        if (!showCompleted) {
+            result = result.filter((t: Task) => !t.is_completed)
+        }
+
+        if (activeFilter !== 'all') {
+            result = result.filter((t: Task) => t.priority === activeFilter)
+        }
+
+        return result
+    }, [tasks, searchQuery, category, showCompleted, activeFilter])
+
+    const title = category === 'todo' ? 'Deployment' : category === 'grocery' ? 'Grocery List' : 'Reminders'
+    const Icon = category === 'todo' ? Activity : category === 'grocery' ? ShoppingCart : Bell
+
+    // Handlers
+    const toggleFolder = (folderId: string) => {
+        setExpandedFolders((prev: Record<string, boolean>) => ({ ...prev, [folderId]: !prev[folderId] }))
+    }
+
+    const toggleCategory = (cat: string) => {
+        setExpandedCategories((prev: Record<string, boolean>) => ({ ...prev, [cat]: !prev[cat] }))
+    }
+
+    const toggleTaskExpansion = (taskId: string) => {
+        setExpandedTaskIds((prev: Set<string>) => {
+            const next = new Set(prev)
+            if (next.has(taskId)) next.delete(taskId)
+            else next.add(taskId)
+            return next
+        })
+    }
+    const [travelDuration, setTravelDuration] = useState(category === 'todo' ? '0' : '15')
     const [impactScore, setImpactScore] = useState('5')
     const [locationSuggestions, setLocationSuggestions] = useState<{ display_name: string, name: string, place_id: string }[]>([])
     const [showLocationSuggestions, setShowLocationSuggestions] = useState(false)
@@ -174,7 +192,7 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
     })
 
     const handleModalToggleSubtask = async (taskId: string, idx: number) => {
-        const t = tasks.find(item => item.id === taskId)
+        const t = tasks.find((item: Task) => item.id === taskId)
         if (!t?.notes || t.notes.type !== 'checklist') return
 
         const newContent = [...(t.notes.content as any[])]
@@ -186,7 +204,7 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
                 content: newContent
             }
         })
-        setSelectedTaskForModal(prev => {
+        setSelectedTaskForModal((prev: Task | null) => {
             if (prev?.id === taskId && prev.notes && prev.notes.type === 'checklist') {
                 return {
                     ...prev,
@@ -202,7 +220,7 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
 
     const handleModalToggleComplete = async (taskId: string, completed: boolean) => {
         await toggleTask(taskId, completed)
-        setSelectedTaskForModal(prev => prev?.id === taskId ? { ...prev, is_completed: completed } : prev)
+        setSelectedTaskForModal((prev: Task | null) => prev?.id === taskId ? { ...prev, is_completed: completed } : prev)
     }
 
     // Intelligent Task System states
@@ -468,30 +486,32 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
                 if (!impactScore || impactScore === '5') finalImpact = 2 // default to 2 if not changed
             }
 
+            const isGrocery = (category as string) === 'grocery'
+
             await createTask({
                 title: finalTitle,
                 priority: finalPriority,
-                due_date: dueDateMode !== 'none' && dueDateMode !== 'recurring' ? dueDate || undefined : undefined,
-                amount: (category as string) === 'grocery' ? finalAmount : undefined,
-                due_date_mode: dueDateMode !== 'none' && dueDateMode !== 'recurring' ? (dueDateMode as 'on' | 'before' | 'range') : undefined,
-                end_date: endDate || undefined,
-                recurrence_config: dueDateMode === 'recurring' ? {
+                due_date: !isGrocery && dueDateMode !== 'none' && dueDateMode !== 'recurring' ? dueDate || undefined : undefined,
+                amount: isGrocery ? finalAmount : undefined,
+                due_date_mode: !isGrocery && dueDateMode !== 'none' && dueDateMode !== 'recurring' ? (dueDateMode as 'on' | 'before' | 'range') : undefined,
+                end_date: !isGrocery ? endDate || undefined : undefined,
+                recurrence_config: !isGrocery && dueDateMode === 'recurring' ? {
                     type: recurringType,
                     time: recurringTime || undefined,
                     duration_minutes: recurringDuration ? parseInt(recurringDuration) : undefined,
                     days_of_week: recurringType === 'custom' ? recurringDays : undefined
                 } : null,
                 notes: showCreateNotes ? { type: createNotesType, content: createNotesContent } : undefined,
-                strategic_category: finalCategory as any,
-                estimated_duration: estimatedDuration ? parseInt(estimatedDuration) : undefined,
-                impact_score: finalImpact,
-                travel_to_duration: parseInt(travelDuration),
-                travel_from_duration: parseInt(travelDuration),
-                start_time: isAppointment ? appointmentTime : undefined,
-                location: isLocationActive ? destination : undefined,
-                origin_location: isLocationActive ? startFrom : undefined,
-                project_id: linkType === 'project' ? newProjectId : undefined,
-                content_id: linkType === 'content' ? newContentId : undefined
+                strategic_category: isGrocery ? undefined : finalCategory as any,
+                estimated_duration: isGrocery ? undefined : (estimatedDuration ? parseInt(estimatedDuration) : undefined),
+                impact_score: isGrocery ? undefined : finalImpact,
+                travel_to_duration: isGrocery ? undefined : parseInt(travelDuration),
+                travel_from_duration: isGrocery ? undefined : parseInt(travelDuration),
+                start_time: !isGrocery && isAppointment ? appointmentTime : undefined,
+                location: !isGrocery && isLocationActive ? destination : undefined,
+                origin_location: !isGrocery && isLocationActive ? startFrom : undefined,
+                project_id: !isGrocery && linkType === 'project' ? newProjectId : undefined,
+                content_id: !isGrocery && linkType === 'content' ? newContentId : undefined
             })
             setNewTask('')
             setAmount('1')
@@ -504,7 +524,7 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
             setRecurringDuration('60')
             setRecurringDays([])
             setEstimatedDuration('30')
-            setTravelDuration('15')
+            setTravelDuration(category === 'todo' ? '0' : '15')
             setImpactScore('5')
             setShowAllFields(false)
             setShowCreateNotes(false)
@@ -576,6 +596,17 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
         }
     }
 
+    const projectMap = useMemo(() => {
+        const map: Record<string, string> = {}
+        tasks.forEach((t: Task) => {
+            if (t.project_id) map[t.id] = t.project_id
+        })
+        milestones.forEach((m: any) => {
+            if (m.project_id) map[m.id as string] = m.project_id
+        })
+        return map
+    }, [tasks, milestones])
+
     const filteredItems = useMemo(() => {
         const taskItems = tasks.map(t => ({ id: t.id, type: 'task' as const, data: t }))
         // Milestones only for business profile and todo category
@@ -583,11 +614,11 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
             ? milestones
                 .filter(m => {
                     if (m.project_id) {
-                        const parent = projects.find(p => p.id === m.project_id)
+                        const parent = projects.find((p: any) => p.id === m.project_id)
                         if (!parent || parent.is_archived) return false
                     }
                     if (m.content_id) {
-                        const parent = content.find(c => c.id === m.content_id)
+                        const parent = content.find((c: any) => c.id === m.content_id)
                         if (!parent || parent.is_archived) return false
                     }
                     return true
@@ -599,27 +630,56 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
         const combined = [...taskItems, ...milestoneItems]
 
         return combined.filter(item => {
-            const project = item.type === 'milestone' ? projects.find(p => p.id === item.data.project_id) : null
-            const contentItem = item.type === 'milestone' ? content.find(c => c.id === item.data.content_id) : null
+            const project = item.type === 'milestone' ? projects.find((p: any) => p.id === item.data.project_id) : null
+            const contentItem = item.type === 'milestone' ? content.find((c: any) => c.id === item.data.content_id) : null
 
             const strategicCategory = item.type === 'task'
                 ? item.data.strategic_category
                 : (project?.strategic_category || contentItem?.category) // Use content category as fallback
 
             const title = item.data.title
-            const matchesSearch = title?.toLowerCase().includes(searchQuery.toLowerCase())
+            const matchesSearch = title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (item.type === 'task' && typeof item.data.notes?.content === 'string' ? item.data.notes.content.toLowerCase().includes(searchQuery.toLowerCase()) : false)
             const matchesCategory = selectedStrategicCategory === 'all' || strategicCategory === selectedStrategicCategory
             return matchesSearch && matchesCategory
         })
     }, [tasks, milestones, content, projects, searchQuery, selectedStrategicCategory, category, activeProfile])
 
-    // Sort: Uncompleted first, Completed last. Tasks use position, Milestones are mixed in.
+    // Sort: Uncompleted first, Completed last. Apply custom sorting, fallback to manual.
     const sortedItems = [...filteredItems].sort((a, b) => {
         const aCompleted = a.type === 'task' ? a.data.is_completed : a.data.status === 'completed'
         const bCompleted = b.type === 'task' ? b.data.is_completed : b.data.status === 'completed'
 
         if (aCompleted !== bCompleted) {
             return aCompleted ? 1 : -1
+        }
+
+        if (sortBy === 'priority') {
+            const priorityOrder = { urgent: 0, high: 1, mid: 2, low: 3 }
+            const aPri = a.type === 'task' ? (a.data.priority || 'low') : 'mid'
+            const bPri = b.type === 'task' ? (b.data.priority || 'low') : 'mid'
+            const diff = (priorityOrder[aPri as keyof typeof priorityOrder] ?? 3) - (priorityOrder[bPri as keyof typeof priorityOrder] ?? 3)
+            if (diff !== 0) return diff
+        } else if (sortBy === 'impact') {
+            const aImp = a.type === 'task' ? (a.data.impact_score || 0) : (a.data.impact_score || 0)
+            const bImp = b.type === 'task' ? (b.data.impact_score || 0) : (b.data.impact_score || 0)
+            const diff = bImp - aImp // High to Low
+            if (diff !== 0) return diff
+        } else if (sortBy === 'duration') {
+            const aDur = a.type === 'task' ? (a.data.estimated_duration || 0) : 0
+            const bDur = b.type === 'task' ? (b.data.estimated_duration || 0) : 0
+            const diff = aDur - bDur // Short to Long
+            if (diff !== 0) return diff
+        } else if (sortBy === 'deadline') {
+            const aDead = a.type === 'task' && a.data.due_date ? new Date(a.data.due_date).getTime() : Infinity
+            const bDead = b.type === 'task' && b.data.due_date ? new Date(b.data.due_date).getTime() : Infinity
+            const diff = aDead - bDead // Soonest to Latest
+            if (diff !== 0) return diff
+        } else if (sortBy === 'date') {
+            const aDate = new Date(a.data.created_at).getTime()
+            const bDate = new Date(b.data.created_at).getTime()
+            const diff = bDate - aDate // Newest to Oldest
+            if (diff !== 0) return diff
         }
 
         const aPos = a.type === 'task' ? (a.data.position || 0) : 0
@@ -644,7 +704,7 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
     // It will show up once on the list for today.
     const dateStr = today.toISOString().split('T')[0]
     const dayOfWeek = today.getDay()
-    const expandedItems: ((any) & { _recurringDate?: string })[] = []
+    const processedItems: (({ id: string, type: 'task', data: Task } | { id: string, type: 'milestone', data: StudioMilestone }) & { _recurringDate?: string })[] = []
 
     sortedItems.forEach(item => {
         if (item.type === 'task') {
@@ -660,13 +720,13 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
                 else if (type === 'custom' && daysOfWeek.includes(dayOfWeek)) shouldInclude = true
 
                 if (shouldInclude) {
-                    expandedItems.push({ ...item, id: `${item.id}__${dateStr}`, _recurringDate: dateStr })
+                    processedItems.push({ ...item, id: `${item.id}__${dateStr}`, _recurringDate: dateStr })
                 }
             } else {
-                expandedItems.push(item)
+                processedItems.push(item)
             }
         } else {
-            expandedItems.push(item)
+            processedItems.push(item)
         }
     })
 
@@ -748,39 +808,64 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
                 onClose={() => setShowSettings(false)}
             />
 
-            {/* Strategic Category Filter */}
-            <div className="flex items-center gap-2 mb-4 overflow-x-auto no-scrollbar pb-1">
-                <div className="flex items-center gap-1.5 px-2 py-1.5 text-[9px] font-bold uppercase tracking-widest text-black/30 border-r border-black/5 mr-1 shrink-0">
-                    <Filter className="w-3 h-3" />
-                    Filter
-                </div>
-                <button
-                    onClick={() => setSelectedStrategicCategory('all')}
-                    className={cn(
-                        "whitespace-nowrap px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all border shrink-0",
-                        selectedStrategicCategory === 'all'
-                            ? "bg-black text-white border-black shadow-sm"
-                            : "bg-black/[0.03] text-black/40 border-transparent hover:bg-black/5"
-                    )}
-                >
-                    <LayoutGrid className="w-3 h-3 inline-block mr-1.5 -mt-0.5" />
-                    All
-                </button>
-                {strategicCategories.map((cat) => (
+            {/* Strategic Category Filter & Sort */}
+            <div className="flex flex-col gap-2 mb-4">
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 pr-2">
+                    <div className="flex items-center gap-1.5 px-2 py-1.5 text-[9px] font-bold uppercase tracking-widest text-black/30 border-r border-black/5 mr-1 shrink-0">
+                        <Filter className="w-3 h-3" />
+                        Filter
+                    </div>
                     <button
-                        key={cat.id}
-                        onClick={() => setSelectedStrategicCategory(cat.id)}
+                        onClick={() => setSelectedStrategicCategory('all')}
                         className={cn(
-                            "whitespace-nowrap px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all border shrink-0 flex items-center gap-1.5",
-                            selectedStrategicCategory === cat.id
+                            "whitespace-nowrap px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all border shrink-0",
+                            selectedStrategicCategory === 'all'
                                 ? "bg-black text-white border-black shadow-sm"
                                 : "bg-black/[0.03] text-black/40 border-transparent hover:bg-black/5"
                         )}
                     >
-                        <cat.icon className={cn("w-3 h-3", selectedStrategicCategory === cat.id ? "text-white" : "text-black/30")} />
-                        {cat.label}
+                        <LayoutGrid className="w-3 h-3 inline-block mr-1.5 -mt-0.5" />
+                        All
                     </button>
-                ))}
+                    {strategicCategories.map((cat) => (
+                        <button
+                            key={cat.id}
+                            onClick={() => setSelectedStrategicCategory(cat.id)}
+                            className={cn(
+                                "whitespace-nowrap px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all border shrink-0 flex items-center gap-1.5",
+                                selectedStrategicCategory === cat.id
+                                    ? "bg-black text-white border-black shadow-sm"
+                                    : "bg-black/[0.03] text-black/40 border-transparent hover:bg-black/5"
+                            )}
+                        >
+                            <cat.icon className={cn("w-3 h-3", selectedStrategicCategory === cat.id ? "text-white" : "text-black/30")} />
+                            {cat.label}
+                        </button>
+                    ))}
+
+                    <div className="flex items-center gap-1.5 px-2 py-1.5 text-[9px] font-bold uppercase tracking-widest text-black/30 border-l border-black/5 ml-1 pl-3 shrink-0">
+                        <ListChecks className="w-3 h-3" />
+                        Sort
+                    </div>
+                    <div className="relative flex-shrink-0">
+                        <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value as any)}
+                            className={cn(
+                                "appearance-none bg-black/[0.03] text-black/60 hover:text-black hover:bg-black/5 font-bold text-[10px] uppercase tracking-widest pl-3 pr-8 py-1.5 rounded-lg cursor-pointer outline-none transition-all border border-transparent focus:border-black/10 inline-flex items-center h-[26px]",
+                                sortBy !== 'manual' && "bg-black/[0.06] text-black"
+                            )}
+                        >
+                            <option value="manual">Manual</option>
+                            <option value="priority">Priority</option>
+                            <option value="impact">Impact</option>
+                            <option value="duration">Duration</option>
+                            <option value="deadline">Deadline</option>
+                            <option value="date">Date Added</option>
+                        </select>
+                        <ChevronDown className="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-black/40" />
+                    </div>
+                </div>
             </div>
 
             {showUndo && (
@@ -797,7 +882,8 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
 
             <form onSubmit={handleSubmit} className="mb-5 flex flex-col gap-2">
                 <div className="flex gap-1.5 sm:gap-2">
-                    {category === 'grocery' && (
+                    {/* Amount hidden for groceries as per "ONLY priority and notes" rule */}
+                    {false && category === 'grocery' && (
                         <input
                             type="text"
                             value={amount}
@@ -903,7 +989,7 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
                                         }}
                                         className={cn(
                                             "flex items-center gap-1.5 px-2 py-1 rounded-md border text-[10px] font-bold uppercase tracking-wide transition-all hover:scale-[1.02] active:scale-95 group",
-                                            (PRIORITY_CONFIG[suggestedPriority.level as keyof typeof PRIORITY_CONFIG] || PRIORITY_CONFIG.urgent).color,
+                                            (PRIORITY_MAP[suggestedPriority.level as keyof typeof PRIORITY_MAP] || PRIORITY_MAP.urgent).color,
                                             "shadow-sm ring-2 ring-offset-1 ring-black/5"
                                         )}
                                     >
@@ -925,37 +1011,39 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
                                     className={cn(
                                         "px-2.5 py-1.5 text-[10px] font-bold rounded-lg border transition-all uppercase tracking-tight",
                                         priority === p
-                                            ? PRIORITY_CONFIG[p].color + " shadow-sm scale-105"
+                                            ? PRIORITY_MAP[p as keyof typeof PRIORITY_MAP].color + " shadow-sm scale-105"
                                             : "bg-transparent text-black/30 border-transparent hover:text-black/50 hover:bg-black/5"
                                     )}
                                 >
-                                    {PRIORITY_CONFIG[p].label}
+                                    {PRIORITY_MAP[p as keyof typeof PRIORITY_MAP].label}
                                 </button>
                             ))}
                         </div>
 
-                        {/* Date mode selector */}
-                        <div className="flex flex-wrap gap-1.5">
-                            {(['none', 'on', 'before', 'range', 'recurring'] as const).map(mode => (
-                                <button
-                                    key={mode}
-                                    type="button"
-                                    onClick={() => setDueDateMode(mode)}
-                                    className={cn(
-                                        "px-2.5 py-1 text-[10px] font-bold rounded-lg border transition-all uppercase tracking-tight flex items-center gap-1",
-                                        dueDateMode === mode
-                                            ? mode === 'recurring' ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-black text-white border-black'
-                                            : 'bg-black/[0.03] border-black/5 text-black/40 hover:text-black/60'
-                                    )}
-                                >
-                                    {mode === 'none' && '✕ None'}
-                                    {mode === 'on' && '📅 On'}
-                                    {mode === 'before' && '⏰ By'}
-                                    {mode === 'range' && '↔ Range'}
-                                    {mode === 'recurring' && '🔁 Recurring'}
-                                </button>
-                            ))}
-                        </div>
+                        {/* Date mode selector - hidden for groceries */}
+                        {category !== 'grocery' && (
+                            <div className="flex flex-wrap gap-1.5">
+                                {(['none', 'on', 'before', 'range', 'recurring'] as const).map(mode => (
+                                    <button
+                                        key={mode}
+                                        type="button"
+                                        onClick={() => setDueDateMode(mode)}
+                                        className={cn(
+                                            "px-2.5 py-1 text-[10px] font-bold rounded-lg border transition-all uppercase tracking-tight flex items-center gap-1",
+                                            dueDateMode === mode
+                                                ? mode === 'recurring' ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-black text-white border-black'
+                                                : 'bg-black/[0.03] border-black/5 text-black/40 hover:text-black/60'
+                                        )}
+                                    >
+                                        {mode === 'none' && '✕ None'}
+                                        {mode === 'on' && '📅 On'}
+                                        {mode === 'before' && '⏰ By'}
+                                        {mode === 'range' && '↔ Range'}
+                                        {mode === 'recurring' && '🔁 Recurring'}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
 
                         {/* Date fields — hidden when None or Recurring */}
                         {dueDateMode !== 'none' && dueDateMode !== 'recurring' && (
@@ -1075,30 +1163,32 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
                         )}
 
                         {/* Strategic Category Selection */}
-                        <div className="flex flex-col gap-2 mt-1">
-                            <span className="text-[9px] font-bold text-black/30 uppercase tracking-widest px-1">Tactical Tag</span>
-                            <div className="flex flex-wrap gap-1.5">
-                                {strategicCategories.map(cat => (
-                                    <button
-                                        key={cat.id}
-                                        type="button"
-                                        onClick={() => setNewStrategicCategory(newStrategicCategory === cat.id ? undefined : cat.id)}
-                                        className={cn(
-                                            "flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest border transition-all",
-                                            newStrategicCategory === cat.id
-                                                ? "bg-black text-white border-black shadow-md scale-[1.02]"
-                                                : "bg-white text-black/40 border-black/[0.08] hover:border-black/20"
-                                        )}
-                                    >
-                                        <cat.icon className={cn("w-3.5 h-3.5", newStrategicCategory === cat.id ? "text-white" : "text-black/20")} />
-                                        {cat.label}
-                                    </button>
-                                ))}
+                        {category !== 'grocery' && (
+                            <div className="flex flex-col gap-2 mt-1">
+                                <span className="text-[9px] font-bold text-black/30 uppercase tracking-widest px-1">Tactical Tag</span>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {strategicCategories.map(cat => (
+                                        <button
+                                            key={cat.id}
+                                            type="button"
+                                            onClick={() => setNewStrategicCategory(newStrategicCategory === cat.id ? undefined : cat.id)}
+                                            className={cn(
+                                                "flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest border transition-all",
+                                                newStrategicCategory === cat.id
+                                                    ? "bg-black text-white border-black shadow-md scale-[1.02]"
+                                                    : "bg-white text-black/40 border-black/[0.08] hover:border-black/20"
+                                            )}
+                                        >
+                                            <cat.icon className={cn("w-3.5 h-3.5", newStrategicCategory === cat.id ? "text-white" : "text-black/20")} />
+                                            {cat.label}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* Algorithmic Params: Duration & Impact */}
-                        {newStrategicCategory !== 'reminder' && (
+                        {newStrategicCategory !== 'reminder' && category !== 'grocery' && (
                             <div className="flex gap-4 mt-2 transition-all animate-in fade-in slide-in-from-top-1">
                                 <div className="flex-1 flex flex-col gap-1.5">
                                     <span className="text-[9px] font-bold text-black/30 uppercase tracking-widest px-1 flex items-center gap-1">
@@ -1161,7 +1251,7 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
                                         <div className="grid grid-cols-2 gap-2">
                                             <select
                                                 value={linkType}
-                                                onChange={(e) => setLinkType(e.target.value as any)}
+                                                onChange={(e) => setLinkType(e.target.value as 'none' | 'project' | 'content')}
                                                 className="bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-2 text-[12px] text-black outline-none focus:border-black/40 transition-colors appearance-none cursor-pointer"
                                             >
                                                 <option value="none">General Task</option>
@@ -1191,40 +1281,42 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
                         )}
 
                         {/* Toggles: Appointment & Location */}
-                        <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-black/[0.05]">
-                            <div className="flex items-center justify-between px-1">
-                                <span className="text-[9px] font-bold text-black/30 uppercase tracking-widest">Fixed Time</span>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsAppointment(!isAppointment)}
-                                    className={cn(
-                                        "w-10 h-5 rounded-full transition-all relative",
-                                        isAppointment ? "bg-black" : "bg-black/10"
-                                    )}
-                                >
-                                    <div className={cn(
-                                        "absolute top-1 w-3 h-3 rounded-full bg-white transition-all",
-                                        isAppointment ? "left-6" : "left-1"
-                                    )} />
-                                </button>
+                        {category !== 'grocery' && (
+                            <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-black/[0.05]">
+                                <div className="flex items-center justify-between px-1">
+                                    <span className="text-[9px] font-bold text-black/30 uppercase tracking-widest">Fixed Time</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsAppointment(!isAppointment)}
+                                        className={cn(
+                                            "w-10 h-5 rounded-full transition-all relative",
+                                            isAppointment ? "bg-black" : "bg-black/10"
+                                        )}
+                                    >
+                                        <div className={cn(
+                                            "absolute top-1 w-3 h-3 rounded-full bg-white transition-all",
+                                            isAppointment ? "left-6" : "left-1"
+                                        )} />
+                                    </button>
+                                </div>
+                                <div className="flex items-center justify-between px-1">
+                                    <span className="text-[9px] font-bold text-black/30 uppercase tracking-widest">Location</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsLocationActive(!isLocationActive)}
+                                        className={cn(
+                                            "w-10 h-5 rounded-full transition-all relative",
+                                            isLocationActive ? "bg-black" : "bg-black/10"
+                                        )}
+                                    >
+                                        <div className={cn(
+                                            "absolute top-1 w-3 h-3 rounded-full bg-white transition-all",
+                                            isLocationActive ? "left-6" : "left-1"
+                                        )} />
+                                    </button>
+                                </div>
                             </div>
-                            <div className="flex items-center justify-between px-1">
-                                <span className="text-[9px] font-bold text-black/30 uppercase tracking-widest">Location</span>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsLocationActive(!isLocationActive)}
-                                    className={cn(
-                                        "w-10 h-5 rounded-full transition-all relative",
-                                        isLocationActive ? "bg-black" : "bg-black/10"
-                                    )}
-                                >
-                                    <div className={cn(
-                                        "absolute top-1 w-3 h-3 rounded-full bg-white transition-all",
-                                        isLocationActive ? "left-6" : "left-1"
-                                    )} />
-                                </button>
-                            </div>
-                        </div>
+                        )}
 
                         {/* Conditional Inputs: Time & Location */}
                         {(isAppointment || isLocationActive) && (
@@ -1332,6 +1424,7 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
                                             <span className="text-[9px] font-bold text-black/30 uppercase">Travel Mode</span>
                                             <div className="flex gap-2">
                                                 {([
+                                                    { id: 'none', label: '❌ None', },
                                                     { id: 'walking', label: '🚶 Walk', },
                                                     { id: 'transit', label: '🚌 Bus/Train', },
                                                     { id: 'uber', label: '🚗 Uber', },
@@ -1339,7 +1432,12 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
                                                     <button
                                                         key={m.id}
                                                         type="button"
-                                                        onClick={() => setTravelMode(m.id)}
+                                                        onClick={() => {
+                                                            setTravelMode(m.id)
+                                                            if (m.id === 'none') {
+                                                                setTravelDuration('0')
+                                                            }
+                                                        }}
                                                         className={cn(
                                                             "flex-1 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
                                                             travelMode === m.id
@@ -1352,15 +1450,17 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
                                                 ))}
                                             </div>
                                         </div>
-                                        <button
-                                            type="button"
-                                            onClick={calculateTravelTime}
-                                            className="w-full py-2 bg-black text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                                            disabled={isCalculatingTravel}
-                                        >
-                                            {isCalculatingTravel ? <RefreshCw className="w-3 h-3 animate-spin" /> : <MapPin className="w-3 h-3" />}
-                                            Calculate {travelMode === 'walking' ? 'Walk' : travelMode === 'transit' ? 'Transit' : 'Uber'} Time
-                                        </button>
+                                        {travelMode !== 'none' && (
+                                            <button
+                                                type="button"
+                                                onClick={calculateTravelTime}
+                                                className="w-full py-2 bg-black text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                                disabled={isCalculatingTravel}
+                                            >
+                                                {isCalculatingTravel ? <RefreshCw className="w-3 h-3 animate-spin" /> : <MapPin className="w-3 h-3" />}
+                                                Calculate {travelMode === 'walking' ? 'Walk' : travelMode === 'transit' ? 'Transit' : 'Uber'} Time
+                                            </button>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -1538,24 +1638,24 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
 
             <Reorder.Group
                 axis="y"
-                values={expandedItems}
+                values={processedItems}
                 onReorder={(newOrder) => {
                     const tasksOnly = newOrder.filter(i => i.type === 'task').map(i => i.data)
                     updateTaskPositions(tasksOnly)
                 }}
                 className="flex-1 pr-1 space-y-2 no-scrollbar"
             >
-                {loading && expandedItems.length === 0 ? (
+                {loading && processedItems.length === 0 ? (
                     <div className="flex items-center justify-center h-32">
                         <RefreshCw className="w-5 h-5 text-black/20 animate-spin" />
                     </div>
-                ) : expandedItems.length === 0 ? (
+                ) : processedItems.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-32 text-center">
                         <p className="text-[13px] font-medium text-black/40">All caught up.</p>
                         <p className="text-[11px] text-black/30">Add something above to get started.</p>
                     </div>
                 ) : (
-                    expandedItems.map((item) => (
+                    processedItems.map((item) => (
                         item.type === 'task' ? (
                             <TaskRow
                                 key={item.id}
@@ -1574,8 +1674,8 @@ export function TaskList({ category }: { category: 'todo' | 'grocery' | 'reminde
                             <MilestoneRow
                                 key={item.id}
                                 milestone={item.data}
-                                project={projects.find(p => p.id === item.data.project_id)}
-                                content={content.find(c => c.id === item.data.content_id)}
+                                project={projects.find((p: any) => p.id === item.data.project_id)}
+                                content={content.find((c: any) => c.id === item.data.content_id)}
                                 onSelectItem={(m) => {
                                     if (m.content_id) {
                                         setSelectedContentForModal(content.find(c => c.id === m.content_id))
@@ -1699,19 +1799,21 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category, setSelected
         if (e) e.preventDefault()
         if (!editValue.trim()) return
 
+        const isGrocery = category === 'grocery'
+
         const updates: Partial<Task> = {
             title: editValue.trim(),
             notes: {
                 type: editNotesType,
                 content: editNotesContent
             },
-            strategic_category: editStrategicCategory,
-            estimated_duration: parseInt(editDuration),
-            travel_to_duration: parseInt(editTravelDuration),
-            travel_from_duration: parseInt(editTravelDuration),
-            impact_score: parseInt(editImpact),
-            project_id: editProjectId || null,
-            content_id: editContentId || null
+            strategic_category: isGrocery ? undefined : editStrategicCategory,
+            estimated_duration: isGrocery ? undefined : parseInt(editDuration),
+            travel_to_duration: isGrocery ? undefined : parseInt(editTravelDuration),
+            travel_from_duration: isGrocery ? undefined : parseInt(editTravelDuration),
+            impact_score: isGrocery ? undefined : parseInt(editImpact),
+            project_id: isGrocery ? null : (editProjectId || null),
+            content_id: isGrocery ? null : (editContentId || null),
         }
         if (editAmount.trim() !== (task.amount || '')) {
             let val = editAmount.trim()
@@ -1729,7 +1831,12 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category, setSelected
             updates.end_date = editEndDate || undefined
         }
 
-        if (editDueDateMode === 'recurring') {
+        if (isGrocery) {
+            updates.recurrence_config = null
+            updates.due_date = undefined
+            updates.due_date_mode = undefined
+            updates.end_date = undefined
+        } else if (editDueDateMode === 'recurring') {
             updates.recurrence_config = {
                 type: editRecurrence,
                 time: editRecurringTime || undefined,
@@ -1787,7 +1894,8 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category, setSelected
         return (
             <div className="flex flex-col gap-3 p-3 rounded-xl border bg-white border-black/[0.15] shadow-lg animate-in fade-in zoom-in-95 duration-200">
                 <div className="flex gap-2">
-                    {category === 'grocery' && (
+                    {/* Amount hidden for groceries as per requirements */}
+                    {/* {category === 'grocery' && (
                         <input
                             type="text"
                             value={editAmount}
@@ -1795,7 +1903,7 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category, setSelected
                             placeholder="x1"
                             className="w-16 bg-black/[0.03] border border-black/[0.08] rounded-lg px-2 py-1.5 text-[13px] text-center text-black font-bold outline-none focus:border-black/30"
                         />
-                    )}
+                    )} */}
                     <input
                         type="text"
                         value={editValue}
@@ -1909,132 +2017,134 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category, setSelected
                     </div>
 
                     {/* Scheduling Options */}
-                    <div className="flex items-center gap-2 flex-wrap">
-                        {/* Date/Recurrence mode selector */}
-                        <div className="flex flex-wrap gap-1.5">
-                            {(['none', 'on', 'before', 'range', 'recurring'] as const).map(mode => (
-                                <button
-                                    key={mode}
-                                    type="button"
-                                    onClick={() => setEditDueDateMode(mode)}
-                                    className={cn(
-                                        "px-2 py-1 text-[9px] font-bold rounded-lg border transition-all uppercase tracking-tight",
-                                        editDueDateMode === mode
-                                            ? mode === 'recurring' ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-black text-white border-black'
-                                            : 'bg-black/[0.03] border-black/5 text-black/40 hover:text-black/60'
-                                    )}
-                                >
-                                    {mode === 'none' && 'None'}
-                                    {mode === 'on' && 'On'}
-                                    {mode === 'before' && 'By'}
-                                    {mode === 'range' && 'Range'}
-                                    {mode === 'recurring' && '🔁 Recurring'}
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Date inputs — hidden when None or Recurring */}
-                        {editDueDateMode !== 'none' && editDueDateMode !== 'recurring' && (
-                            <div className="flex flex-wrap items-center gap-2">
-                                <div className="flex items-center gap-2 bg-black/[0.03] border border-black/5 rounded-lg px-2.5 py-1 min-w-[110px]">
-                                    <Calendar className="w-3 h-3 text-black/30 shrink-0" />
-                                    <input
-                                        type="date"
-                                        value={editDueDate}
-                                        onChange={(e) => setEditDueDate(e.target.value)}
-                                        className="bg-transparent text-[10px] font-bold text-black/60 outline-none uppercase tracking-tight w-full"
-                                    />
-                                </div>
-                                {editDueDateMode === 'range' && (
-                                    <>
-                                        <span className="text-[10px] font-bold text-black/20 uppercase tracking-tighter">to</span>
-                                        <div className="flex items-center gap-2 bg-black/[0.03] border border-black/5 rounded-lg px-2.5 py-1 min-w-[110px]">
-                                            <Calendar className="w-3 h-3 text-black/30 shrink-0" />
-                                            <input
-                                                type="date"
-                                                value={editEndDate}
-                                                onChange={(e) => setEditEndDate(e.target.value)}
-                                                className="bg-transparent text-[10px] font-bold text-black/60 outline-none uppercase tracking-tight w-full"
-                                            />
-                                        </div>
-                                    </>
-                                )}
+                    {category !== 'grocery' && (
+                        <div className="flex items-center gap-2 flex-wrap">
+                            {/* Date/Recurrence mode selector */}
+                            <div className="flex flex-wrap gap-1.5">
+                                {(['none', 'on', 'before', 'range', 'recurring'] as const).map(mode => (
+                                    <button
+                                        key={mode}
+                                        type="button"
+                                        onClick={() => setEditDueDateMode(mode)}
+                                        className={cn(
+                                            "px-2 py-1 text-[9px] font-bold rounded-lg border transition-all uppercase tracking-tight",
+                                            editDueDateMode === mode
+                                                ? mode === 'recurring' ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-black text-white border-black'
+                                                : 'bg-black/[0.03] border-black/5 text-black/40 hover:text-black/60'
+                                        )}
+                                    >
+                                        {mode === 'none' && 'None'}
+                                        {mode === 'on' && 'On'}
+                                        {mode === 'before' && 'By'}
+                                        {mode === 'range' && 'Range'}
+                                        {mode === 'recurring' && '🔁 Recurring'}
+                                    </button>
+                                ))}
                             </div>
-                        )}
 
-                        {/* Recurring sub-panel */}
-                        {editDueDateMode === 'recurring' && (
-                            <div className="flex flex-col gap-2 p-2.5 bg-emerald-50 border border-emerald-100 rounded-xl">
-                                <div className="flex flex-wrap gap-1">
-                                    {(['daily', 'work_days', 'off_days', 'custom'] as const).map(rt => (
-                                        <button
-                                            key={rt}
-                                            type="button"
-                                            onClick={() => setEditRecurrence(rt as any)}
-                                            className={cn(
-                                                "px-2 py-0.5 text-[9px] font-bold rounded-md border transition-all uppercase tracking-tight",
-                                                editRecurrence === rt
-                                                    ? 'bg-emerald-600 text-white border-emerald-700'
-                                                    : 'bg-white text-black/40 border-emerald-200 hover:text-black/60'
-                                            )}
-                                        >
-                                            {rt.replace('_', ' ')}
-                                        </button>
-                                    ))}
-                                </div>
-                                <div className="flex flex-wrap gap-2">
-                                    <div className="flex items-center gap-1 bg-white border border-emerald-200 rounded-md px-2 py-1">
-                                        <span className="text-[9px] font-bold text-black/40 uppercase">Time</span>
-                                        <input type="time" value={editRecurringTime} onChange={e => setEditRecurringTime(e.target.value)} className="bg-transparent text-[10px] font-bold text-black/60 outline-none" />
+                            {/* Date inputs — hidden when None or Recurring */}
+                            {editDueDateMode !== 'none' && editDueDateMode !== 'recurring' && (
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <div className="flex items-center gap-2 bg-black/[0.03] border border-black/5 rounded-lg px-2.5 py-1 min-w-[110px]">
+                                        <Calendar className="w-3 h-3 text-black/30 shrink-0" />
+                                        <input
+                                            type="date"
+                                            value={editDueDate}
+                                            onChange={(e) => setEditDueDate(e.target.value)}
+                                            className="bg-transparent text-[10px] font-bold text-black/60 outline-none uppercase tracking-tight w-full"
+                                        />
                                     </div>
-                                    <div className="flex items-center gap-1 bg-white border border-emerald-200 rounded-md px-2 py-1 flex-1">
-                                        <span className="text-[9px] font-bold text-black/40 uppercase">Dur.</span>
-                                        <select value={editRecurringDuration} onChange={e => setEditRecurringDuration(e.target.value)} className="bg-transparent text-[10px] font-bold text-black/60 outline-none w-full">
-                                            <option value="">Duration</option>
-                                            {[30, 60, 90, 120, 150, 180, 240, 300, 360].map(mins => {
-                                                const hrs = mins / 60
-                                                const label = hrs >= 1 ? `${hrs}${hrs % 1 === 0 ? '' : '.5'}h` : `${mins}m`
-                                                return <option key={mins} value={mins}>{label}</option>
-                                            })}
-                                        </select>
-                                    </div>
+                                    {editDueDateMode === 'range' && (
+                                        <>
+                                            <span className="text-[10px] font-bold text-black/20 uppercase tracking-tighter">to</span>
+                                            <div className="flex items-center gap-2 bg-black/[0.03] border border-black/5 rounded-lg px-2.5 py-1 min-w-[110px]">
+                                                <Calendar className="w-3 h-3 text-black/30 shrink-0" />
+                                                <input
+                                                    type="date"
+                                                    value={editEndDate}
+                                                    onChange={(e) => setEditEndDate(e.target.value)}
+                                                    className="bg-transparent text-[10px] font-bold text-black/60 outline-none uppercase tracking-tight w-full"
+                                                />
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
-                                {editRecurrence === 'custom' && (
-                                    <div className="flex gap-1 mt-1 animate-in fade-in zoom-in-95 duration-200">
-                                        {[
-                                            { d: 'M', v: 1 },
-                                            { d: 'T', v: 2 },
-                                            { d: 'W', v: 3 },
-                                            { d: 'Th', v: 4 },
-                                            { d: 'F', v: 5 },
-                                            { d: 'Sa', v: 6 },
-                                            { d: 'Su', v: 0 }
-                                        ].map((day) => (
+                            )}
+
+                            {/* Recurring sub-panel */}
+                            {editDueDateMode === 'recurring' && (
+                                <div className="flex flex-col gap-2 p-2.5 bg-emerald-50 border border-emerald-100 rounded-xl">
+                                    <div className="flex flex-wrap gap-1">
+                                        {(['daily', 'work_days', 'off_days', 'custom'] as const).map(rt => (
                                             <button
-                                                key={day.v}
+                                                key={rt}
                                                 type="button"
-                                                onClick={() => {
-                                                    setEditRecurringDays(prev =>
-                                                        prev.includes(day.v)
-                                                            ? prev.filter(d => d !== day.v)
-                                                            : [...prev, day.v]
-                                                    )
-                                                }}
+                                                onClick={() => setEditRecurrence(rt as any)}
                                                 className={cn(
-                                                    "w-7 h-7 rounded-md text-[10px] font-bold border transition-all",
-                                                    editRecurringDays.includes(day.v)
-                                                        ? "bg-emerald-600 border-emerald-700 text-white"
-                                                        : "bg-white border-emerald-200 text-black/40 hover:bg-emerald-50"
+                                                    "px-2 py-0.5 text-[9px] font-bold rounded-md border transition-all uppercase tracking-tight",
+                                                    editRecurrence === rt
+                                                        ? 'bg-emerald-600 text-white border-emerald-700'
+                                                        : 'bg-white text-black/40 border-emerald-200 hover:text-black/60'
                                                 )}
                                             >
-                                                {day.d}
+                                                {rt.replace('_', ' ')}
                                             </button>
                                         ))}
                                     </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        <div className="flex items-center gap-1 bg-white border border-emerald-200 rounded-md px-2 py-1">
+                                            <span className="text-[9px] font-bold text-black/40 uppercase">Time</span>
+                                            <input type="time" value={editRecurringTime} onChange={e => setEditRecurringTime(e.target.value)} className="bg-transparent text-[10px] font-bold text-black/60 outline-none" />
+                                        </div>
+                                        <div className="flex items-center gap-1 bg-white border border-emerald-200 rounded-md px-2 py-1 flex-1">
+                                            <span className="text-[9px] font-bold text-black/40 uppercase">Dur.</span>
+                                            <select value={editRecurringDuration} onChange={e => setEditRecurringDuration(e.target.value)} className="bg-transparent text-[10px] font-bold text-black/60 outline-none w-full">
+                                                <option value="">Duration</option>
+                                                {[30, 60, 90, 120, 150, 180, 240, 300, 360].map(mins => {
+                                                    const hrs = mins / 60
+                                                    const label = hrs >= 1 ? `${hrs}${hrs % 1 === 0 ? '' : '.5'}h` : `${mins}m`
+                                                    return <option key={mins} value={mins}>{label}</option>
+                                                })}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    {editRecurrence === 'custom' && (
+                                        <div className="flex gap-1 mt-1 animate-in fade-in zoom-in-95 duration-200">
+                                            {[
+                                                { d: 'M', v: 1 },
+                                                { d: 'T', v: 2 },
+                                                { d: 'W', v: 3 },
+                                                { d: 'Th', v: 4 },
+                                                { d: 'F', v: 5 },
+                                                { d: 'Sa', v: 6 },
+                                                { d: 'Su', v: 0 }
+                                            ].map((day) => (
+                                                <button
+                                                    key={day.v}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setEditRecurringDays(prev =>
+                                                            prev.includes(day.v)
+                                                                ? prev.filter(d => d !== day.v)
+                                                                : [...prev, day.v]
+                                                        )
+                                                    }}
+                                                    className={cn(
+                                                        "w-7 h-7 rounded-md text-[10px] font-bold border transition-all",
+                                                        editRecurringDays.includes(day.v)
+                                                            ? "bg-emerald-600 border-emerald-700 text-white"
+                                                            : "bg-white border-emerald-200 text-black/40 hover:bg-emerald-50"
+                                                    )}
+                                                >
+                                                    {day.d}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     <div className="flex items-center justify-between flex-wrap gap-y-3 gap-x-2 border-t border-black/5 pt-3">
                         <div className="flex gap-1 p-1 bg-black/[0.03] rounded-lg border border-black/5">
@@ -2046,108 +2156,113 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category, setSelected
                                     className={cn(
                                         "px-2 py-1 text-[9px] font-bold rounded-md border transition-all uppercase tracking-tight whitespace-nowrap",
                                         editPriority === p
-                                            ? PRIORITY_CONFIG[p].color + " shadow-sm"
+                                            ? PRIORITY_MAP[p as keyof typeof PRIORITY_MAP].color + " shadow-sm"
                                             : "bg-transparent text-black/30 border-transparent hover:text-black/50"
                                     )}
                                 >
-                                    {PRIORITY_CONFIG[p].label}
+                                    {PRIORITY_MAP[p as keyof typeof PRIORITY_MAP].label}
                                 </button>
                             ))}
                         </div>
                         {/* Profile Toggle */}
-                        <div className="flex gap-1 p-1 bg-black/[0.03] rounded-lg border border-black/5">
-                            {[
-                                { id: 'personal', label: 'Personal', icon: User },
-                                { id: 'business', label: 'Business', icon: Briefcase }
-                            ].map(p => (
-                                <button
-                                    key={p.id}
-                                    type="button"
-                                    onClick={() => setEditProfile(p.id)}
-                                    className={cn(
-                                        "px-2 py-1 text-[9px] font-bold rounded-md border transition-all uppercase tracking-tight whitespace-nowrap flex items-center gap-1",
-                                        editProfile === p.id
-                                            ? "bg-white text-black border-black/[0.08] shadow-sm"
-                                            : "bg-transparent text-black/30 border-transparent hover:text-black/50"
-                                    )}
-                                >
-                                    <p.icon className="w-2.5 h-2.5" />
-                                    {p.label}
-                                </button>
-                            ))}
-                        </div>
+                        {category !== 'grocery' && (
+                            <div className="flex gap-1 p-1 bg-black/[0.03] rounded-lg border border-black/5">
+                                {[
+                                    { id: 'personal', label: 'Personal', icon: User },
+                                    { id: 'business', label: 'Business', icon: Briefcase }
+                                ].map(p => (
+                                    <button
+                                        key={p.id}
+                                        type="button"
+                                        onClick={() => setEditProfile(p.id)}
+                                        className={cn(
+                                            "px-2 py-1 text-[9px] font-bold rounded-md border transition-all uppercase tracking-tight whitespace-nowrap flex items-center gap-1",
+                                            editProfile === p.id
+                                                ? "bg-white text-black border-black/[0.08] shadow-sm"
+                                                : "bg-transparent text-black/30 border-transparent hover:text-black/50"
+                                        )}
+                                    >
+                                        <p.icon className="w-2.5 h-2.5" />
+                                        {p.label}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                         {/* Strategic Category selection in Edit Mode */}
-                        <div className="flex gap-1 p-1 bg-black/[0.03] rounded-lg border border-black/5">
-                            {strategicCategories.map((p: any) => (
-                                <button
-                                    key={p.id}
-                                    type="button"
-                                    onClick={() => setEditStrategicCategory(editStrategicCategory === p.id ? undefined : p.id)}
-                                    className={cn(
-                                        "px-2 py-1 text-[9px] font-bold rounded-md border transition-all uppercase tracking-tight whitespace-nowrap flex items-center gap-1",
-                                        editStrategicCategory === p.id
-                                            ? p.color + " shadow-sm bg-white"
-                                            : "bg-transparent text-black/30 border-transparent hover:text-black/50"
-                                    )}
-                                >
-                                    <p.icon className="w-2.5 h-2.5" />
-                                    {p.label}
-                                </button>
-                            ))}
-                        </div>
+                        {category !== 'grocery' && (
+                            <div className="flex gap-1 p-1 bg-black/[0.03] rounded-lg border border-black/5">
+                                {strategicCategories.map((p: any) => (
+                                    <button
+                                        key={p.id}
+                                        type="button"
+                                        onClick={() => setEditStrategicCategory(editStrategicCategory === p.id ? undefined : p.id)}
+                                        className={cn(
+                                            "px-2 py-1 text-[9px] font-bold rounded-md border transition-all uppercase tracking-tight whitespace-nowrap flex items-center gap-1",
+                                            editStrategicCategory === p.id
+                                                ? p.color + " shadow-sm bg-white"
+                                                : "bg-transparent text-black/30 border-transparent hover:text-black/50"
+                                        )}
+                                    >
+                                        <p.icon className="w-2.5 h-2.5" />
+                                        {p.label}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                         {/* Algorithmic Param edits */}
-                        <div className="flex gap-4 p-2 bg-black/[0.02] rounded-xl border border-black/5 w-full sm:w-auto mt-2">
-                            <div className="flex-1 flex flex-col gap-1">
-                                <span className="text-[8px] font-bold text-black/30 uppercase tracking-widest px-1 flex items-center gap-1">
-                                    <Clock className="w-2.5 h-2.5" /> Duration
-                                </span>
-                                <select
-                                    value={editDuration}
-                                    onChange={(e) => setEditDuration(e.target.value)}
-                                    className="bg-black/[0.03] border border-black/[0.08] rounded-xl px-2 py-1 text-[11px] text-black outline-none focus:border-black/40 transition-colors appearance-none cursor-pointer"
-                                >
-                                    {Array.from({ length: 16 }, (_, i) => (i + 1) * 15).map(mins => (
-                                        <option key={mins} value={mins}>
-                                            {mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60 > 0 ? `${mins % 60}m` : ''}` : `${mins}m`}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="flex-1 flex flex-col gap-1">
-                                <span className="text-[8px] font-bold text-black/30 uppercase tracking-widest px-1 flex items-center gap-1">
-                                    <Car className="w-2.5 h-2.5" /> Travel
-                                </span>
-                                <select
-                                    value={editTravelDuration}
-                                    onChange={(e) => setEditTravelDuration(e.target.value)}
-                                    className="bg-black/[0.03] border border-black/[0.08] rounded-xl px-2 py-1 text-[11px] text-black outline-none focus:border-black/40 transition-colors appearance-none cursor-pointer"
-                                >
-                                    <option value="0">None</option>
-                                    {Array.from({ length: 8 }, (_, i) => (i + 1) * 15).map(mins => (
-                                        <option key={mins} value={mins}>
-                                            {mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60 > 0 ? `${mins % 60}m` : ''}` : `${mins}m`}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="flex-1 flex flex-col gap-1">
-                                <span className="text-[8px] font-bold text-black/30 uppercase tracking-widest px-1 flex items-center gap-1">
-                                    <Zap className="w-2.5 h-2.5" /> Impact ({editImpact})
-                                </span>
-                                <div className="flex items-center gap-2">
-                                    <input
-                                        type="range"
-                                        min="1"
-                                        max="10"
-                                        value={editImpact}
-                                        onChange={(e) => setEditImpact(e.target.value)}
-                                        className="flex-1 accent-black h-1 bg-black/10 rounded-lg appearance-none cursor-pointer mt-1"
-                                    />
-                                    <span className="text-[10px] font-black text-black w-3 text-center">{editImpact}</span>
+                        {category !== 'grocery' && (
+                            <div className="flex gap-4 p-2 bg-black/[0.02] rounded-xl border border-black/5 w-full sm:w-auto mt-2">
+                                <div className="flex-1 flex flex-col gap-1">
+                                    <span className="text-[8px] font-bold text-black/30 uppercase tracking-widest px-1 flex items-center gap-1">
+                                        <Clock className="w-2.5 h-2.5" /> Duration
+                                    </span>
+                                    <select
+                                        value={editDuration}
+                                        onChange={(e) => setEditDuration(e.target.value)}
+                                        className="bg-black/[0.03] border border-black/[0.08] rounded-xl px-2 py-1 text-[11px] text-black outline-none focus:border-black/40 transition-colors appearance-none cursor-pointer"
+                                    >
+                                        {Array.from({ length: 16 }, (_, i) => (i + 1) * 15).map(mins => (
+                                            <option key={mins} value={mins}>
+                                                {mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60 > 0 ? `${mins % 60}m` : ''}` : `${mins}m`}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="flex-1 flex flex-col gap-1">
+                                    <span className="text-[8px] font-bold text-black/30 uppercase tracking-widest px-1 flex items-center gap-1">
+                                        <Car className="w-2.5 h-2.5" /> Travel
+                                    </span>
+                                    <select
+                                        value={editTravelDuration}
+                                        onChange={(e) => setEditTravelDuration(e.target.value)}
+                                        className="bg-black/[0.03] border border-black/[0.08] rounded-xl px-2 py-1 text-[11px] text-black outline-none focus:border-black/40 transition-colors appearance-none cursor-pointer"
+                                    >
+                                        <option value="0">None</option>
+                                        {Array.from({ length: 8 }, (_, i) => (i + 1) * 15).map(mins => (
+                                            <option key={mins} value={mins}>
+                                                {mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60 > 0 ? `${mins % 60}m` : ''}` : `${mins}m`}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="flex-1 flex flex-col gap-1">
+                                    <span className="text-[8px] font-bold text-black/30 uppercase tracking-widest px-1 flex items-center gap-1">
+                                        <Zap className="w-2.5 h-2.5" /> Impact ({editImpact})
+                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="range"
+                                            min="1"
+                                            max="10"
+                                            value={editImpact}
+                                            onChange={(e) => setEditImpact(e.target.value)}
+                                            className="flex-1 accent-black h-1 bg-black/10 rounded-lg appearance-none cursor-pointer mt-1"
+                                        />
+                                        <span className="text-[10px] font-black text-black w-3 text-center">{editImpact}</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-
+                        )}
                     </div>
 
                     {/* Studio Linking in Inline Edit */}
@@ -2269,7 +2384,7 @@ function TaskRow({ task, toggleTask, deleteTask, editTask, category, setSelected
                             {task.priority && !task.is_completed && (
                                 <span className={cn(
                                     "px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-[0.1em] shrink-0",
-                                    (PRIORITY_CONFIG[task.priority as keyof typeof PRIORITY_CONFIG] || PRIORITY_CONFIG.urgent).color
+                                    (PRIORITIES.find(p => p.id === task.priority) || PRIORITIES[3]).color
                                 )}>
                                     {task.priority}
                                 </span>

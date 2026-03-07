@@ -298,37 +298,42 @@ export function TasksCalendar() {
                                             className="w-full bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] font-medium outline-none focus:border-black/20 focus:bg-white transition-all"
                                         />
                                     </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-black text-black/30 uppercase tracking-widest pl-1">Due Date</label>
-                                        <input
-                                            type="date"
-                                            value={editedDate}
-                                            onChange={(e: ChangeEvent<HTMLInputElement>) => setEditedDate(e.target.value)}
-                                            className="block w-full min-w-full appearance-none bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] font-medium outline-none focus:border-black/20 focus:bg-white transition-all min-h-[46px]"
-                                        />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-black text-black/30 uppercase tracking-widest pl-1">Priority</label>
-                                        <div className="flex gap-1.5 p-1 bg-black/[0.03] rounded-xl border border-black/5">
-                                            {(['urgent', 'high', 'mid', 'low'] as const).map(p => {
-                                                const COLORS: Record<string, string> = { urgent: 'bg-purple-100 text-purple-700 border-purple-200', high: 'bg-red-100 text-red-700 border-red-200', mid: 'bg-blue-100 text-blue-700 border-blue-200', low: 'bg-black/5 text-black/50 border-black/10' }
-                                                const LABELS: Record<string, string> = { urgent: 'Urgent', high: 'High', mid: 'Mid', low: 'Low' }
-                                                return (
-                                                    <button
-                                                        key={p}
-                                                        type="button"
-                                                        onClick={() => setEditedPriority(p)}
-                                                        className={cn(
-                                                            'flex-1 py-1.5 text-[10px] font-bold rounded-lg border transition-all uppercase tracking-tight',
-                                                            editedPriority === p ? COLORS[p] + ' shadow-sm' : 'bg-transparent text-black/30 border-transparent hover:text-black/50 hover:bg-black/5'
-                                                        )}
-                                                    >
-                                                        {LABELS[p]}
-                                                    </button>
-                                                )
-                                            })}
+                                    {selectedItem.originalTask?.category !== 'grocery' && selectedItem.originalTask?.category !== 'reminder' && (
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black text-black/30 uppercase tracking-widest pl-1">Due Date</label>
+                                            <input
+                                                type="date"
+                                                value={editedDate}
+                                                onChange={(e: ChangeEvent<HTMLInputElement>) => setEditedDate(e.target.value)}
+                                                className="block w-full min-w-full appearance-none bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] font-medium outline-none focus:border-black/20 focus:bg-white transition-all min-h-[46px]"
+                                            />
                                         </div>
-                                    </div>
+                                    )}
+
+                                    {selectedItem.originalTask?.category !== 'reminder' && (
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black text-black/30 uppercase tracking-widest pl-1">Priority</label>
+                                            <div className="flex gap-1.5 p-1 bg-black/[0.03] rounded-xl border border-black/5">
+                                                {(['urgent', 'high', 'mid', 'low'] as const).map(p => {
+                                                    const COLORS: Record<string, string> = { urgent: 'bg-purple-100 text-purple-700 border-purple-200', high: 'bg-red-100 text-red-700 border-red-200', mid: 'bg-blue-100 text-blue-700 border-blue-200', low: 'bg-black/5 text-black/50 border-black/10' }
+                                                    const LABELS: Record<string, string> = { urgent: 'Urgent', high: 'High', mid: 'Mid', low: 'Low' }
+                                                    return (
+                                                        <button
+                                                            key={p}
+                                                            type="button"
+                                                            onClick={() => setEditedPriority(p)}
+                                                            className={cn(
+                                                                'flex-1 py-1.5 text-[10px] font-bold rounded-lg border transition-all uppercase tracking-tight',
+                                                                editedPriority === p ? COLORS[p] + ' shadow-sm' : 'bg-transparent text-black/30 border-transparent hover:text-black/50 hover:bg-black/5'
+                                                            )}
+                                                        >
+                                                            {LABELS[p]}
+                                                        </button>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
                                     <div className="flex gap-2 pt-1">
                                         <button
                                             onClick={() => setIsEditing(false)}

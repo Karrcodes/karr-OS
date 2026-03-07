@@ -1,10 +1,21 @@
-'use client'
+"use client"
 
-import React from 'react'
+import * as React from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import type { ChangeEvent, KeyboardEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Calendar, Briefcase, User, CheckSquare, Clock, AlertCircle, Zap, Car, MapPin } from 'lucide-react'
+import {
+    X, Calendar, Clock, Star,
+    AlertCircle, ShoppingCart, Bell,
+    Check, Save, Edit2, Trash2,
+    Plus, ChevronRight, ChevronDown,
+    Zap, Target, Beaker, Car, User,
+    ArrowRight, MapPin, Briefcase, CheckSquare,
+    Type, List, ListChecks, Factory, Tv, TrendingUp, Wallet, Heart
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Task } from '../types/tasks.types'
+import { CATEGORIES, PRIORITIES, STRATEGIC_CATEGORIES, PRIORITY_MAP } from '../constants/tasks.constants'
 import type { StudioProject, StudioContent, StudioMilestone } from '../../studio/types/studio.types'
 
 interface TaskDetailModalProps {
@@ -20,12 +31,8 @@ interface TaskDetailModalProps {
     content?: StudioContent[]
 }
 
-const PRIORITY_CONFIG = {
-    urgent: { label: 'Urgent', color: 'bg-purple-50 text-purple-600 border-purple-200 shadow-purple-100/50' },
-    high: { label: 'High', color: 'bg-red-50 text-red-600 border-red-200 shadow-red-100/50' },
-    mid: { label: 'Mid', color: 'bg-yellow-50 text-yellow-600 border-yellow-200 shadow-yellow-100/50' },
-    low: { label: 'Low', color: 'bg-black/5 text-black/60 border-black/10' }
-}
+const PERSONAL_CATEGORIES = STRATEGIC_CATEGORIES.personal
+const BUSINESS_CATEGORIES = STRATEGIC_CATEGORIES.business
 
 export function TaskDetailModal({
     task,
@@ -39,23 +46,26 @@ export function TaskDetailModal({
     projects = [],
     content = []
 }: TaskDetailModalProps) {
-    const [isEditing, setIsEditing] = React.useState(false)
-    const [editTitle, setEditTitle] = React.useState('')
-    const [editPriority, setEditPriority] = React.useState(task?.priority || 'mid')
-    const [editStrategicCategory, setEditStrategicCategory] = React.useState(task?.strategic_category || 'personal')
-    const [editDuration, setEditDuration] = React.useState('')
-    const [editTravelDuration, setEditTravelDuration] = React.useState('')
-    const [editImpact, setEditImpact] = React.useState('')
-    const [editStartTime, setEditStartTime] = React.useState('')
-    const [editLocation, setEditLocation] = React.useState('')
-    const [editOriginLocation, setEditOriginLocation] = React.useState('')
-    const [editProjectId, setEditProjectId] = React.useState<string | null>(task?.project_id || null)
-    const [editContentId, setEditContentId] = React.useState<string | null>(task?.content_id || null)
-    const [linkType, setLinkType] = React.useState<'none' | 'project' | 'content'>(
+    const [isEditing, setIsEditing] = useState(false)
+    const [editTitle, setEditTitle] = useState('')
+    const [editPriority, setEditPriority] = useState(task?.priority || 'mid')
+    const [editStrategicCategory, setEditStrategicCategory] = useState(task?.strategic_category || 'personal')
+    const [editDuration, setEditDuration] = useState('')
+    const [editTravelDuration, setEditTravelDuration] = useState('')
+    const [editImpact, setEditImpact] = useState('')
+    const [editStartTime, setEditStartTime] = useState('')
+    const [editLocation, setEditLocation] = useState('')
+    const [editOriginLocation, setEditOriginLocation] = useState('')
+    const [editProjectId, setEditProjectId] = useState<string | null>(task?.project_id || null)
+    const [editContentId, setEditContentId] = useState<string | null>(task?.content_id || null)
+    const [linkType, setLinkType] = useState<'none' | 'project' | 'content'>(
         task?.content_id ? 'content' : task?.project_id ? 'project' : 'none'
     )
+    const [editNotesType, setEditNotesType] = useState<'text' | 'bullets' | 'checklist'>(task?.notes?.type || 'text')
+    const [editNotesContent, setEditNotesContent] = useState<any>(task?.notes?.content || '')
+    const [newChecklistItem, setNewChecklistItem] = useState('')
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (isOpen) {
             if (milestone) {
                 setEditTitle(milestone.title)
@@ -97,6 +107,8 @@ export function TaskDetailModal({
                 setEditProjectId(task.project_id || null)
                 setEditContentId(task.content_id || null)
                 setLinkType(task.content_id ? 'content' : task.project_id ? 'project' : 'none')
+                setEditNotesType(task.notes?.type || 'text')
+                setEditNotesContent(task.notes?.content || (task.notes?.type === 'checklist' ? [] : ''))
             }
         }
     }, [task, milestone, isOpen])
@@ -107,12 +119,14 @@ export function TaskDetailModal({
     const isMilestone = !!milestone
     const isCompleted = isMilestone ? milestone!.status === 'completed' : task!.is_completed
 
+
     const checklistItems = !isMilestone && task?.notes?.type === 'checklist' ? (task.notes.content as any[]) : []
-    const completedSubtasks = checklistItems.filter(i => i.completed).length
+    const completedSubtasks = checklistItems.filter((i: any) => i.completed).length
     const totalSubtasks = checklistItems.length
     const progress = totalSubtasks > 0 ? (completedSubtasks / totalSubtasks) * 100 : 0
 
-    const STRATEGIC_CATEGORIES = task?.profile === 'business' ? [
+
+    const STRATEGIC_CATEGORIES_LIST = task?.profile === 'business' ? [
         { id: 'rnd', label: 'R&D' },
         { id: 'production', label: 'Production' },
         { id: 'media', label: 'Media' },
@@ -157,45 +171,58 @@ export function TaskDetailModal({
                             <div className="flex items-center gap-2 mb-4">
                                 <span className={cn(
                                     "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border shadow-sm",
-                                    !isMilestone ? (PRIORITY_CONFIG[task!.priority as keyof typeof PRIORITY_CONFIG] || PRIORITY_CONFIG.urgent).color : "bg-blue-50 text-blue-600 border-blue-200"
+                                    isMilestone
+                                        ? "bg-blue-50 text-blue-600 border-blue-200"
+                                        : task?.category === 'reminder'
+                                            ? "bg-amber-50 text-amber-600 border-amber-200 shadow-amber-100/50"
+                                            : (PRIORITY_MAP[task?.priority as keyof typeof PRIORITY_MAP] || PRIORITY_MAP.mid).color
                                 )}>
-                                    {!isMilestone ? (PRIORITY_CONFIG[task!.priority as keyof typeof PRIORITY_CONFIG] || PRIORITY_CONFIG.urgent).label : 'Milestone'}
+                                    {isMilestone
+                                        ? 'Milestone'
+                                        : task?.category === 'reminder'
+                                            ? 'Reminder'
+                                            : (PRIORITY_MAP[task?.priority as keyof typeof PRIORITY_MAP] || PRIORITY_MAP.low).label}
                                 </span>
-                                <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold text-black/40 bg-black/5 uppercase tracking-wider">
-                                    {isMilestone ? <Briefcase className="w-3 h-3" /> : (task?.profile === 'business' ? <Briefcase className="w-3 h-3" /> : <User className="w-3 h-3" />)}
-                                    {isMilestone ? 'business' : task?.profile}
-                                </span>
-                                {(isMilestone ? milestone?.category : task?.strategic_category) && (
+                                {task?.category !== 'grocery' && (
+                                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold text-black/40 bg-black/5 uppercase tracking-wider">
+                                        {isMilestone ? <Briefcase className="w-3 h-3" /> : (task?.profile === 'business' ? <Briefcase className="w-3 h-3" /> : <User className="w-3 h-3" />)}
+                                        {isMilestone ? 'business' : task?.profile}
+                                    </span>
+                                )}
+                                {((isMilestone ? milestone?.category : task?.strategic_category)) && (isMilestone || task?.category !== 'grocery') && (
                                     <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold text-black/40 bg-black/5 uppercase tracking-wider">
                                         {isMilestone ? milestone?.category : task?.strategic_category}
                                     </span>
                                 )}
-                                {!isMilestone && task && task.estimated_duration && (
+
+                                {!isMilestone && task && task.estimated_duration && task.category !== 'reminder' && task.category !== 'grocery' && (
                                     <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 uppercase tracking-wider">
                                         <Clock className="w-3 h-3" />
                                         {task.estimated_duration}m
                                     </span>
                                 )}
-                                {item.impact_score && (
+                                {item.impact_score && (task || milestone)?.category !== 'reminder' && (task || milestone)?.category !== 'grocery' && (
                                     <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-100 uppercase tracking-wider">
                                         <Zap className="w-3 h-3" />
                                         {item.impact_score}/10
                                     </span>
                                 )}
-                                {!isMilestone && task && (task.travel_to_duration || 0) > 0 && (
+                                {!isMilestone && task && (task.travel_to_duration || 0) > 0 && task.category !== 'reminder' && task.category !== 'grocery' && (
                                     <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold text-amber-500 bg-amber-50 border border-amber-100 uppercase tracking-wider">
                                         <Car className="w-3 h-3" />
-                                        {task.travel_to_duration || 0}{task.travel_from_duration !== task.travel_to_duration ? `+${task.travel_from_duration || 0}` : ''}m
+                                        {task.travel_to_duration || 0}{task.travel_from_duration !== task.travel_to_duration ? `+ ${task.travel_from_duration || 0} ` : ''}m
                                     </span>
                                 )}
+
                             </div>
 
                             {isEditing ? (
                                 <input
                                     autoFocus
                                     value={editTitle}
-                                    onChange={(e) => setEditTitle(e.target.value)}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditTitle(e.target.value)}
                                     className="w-full text-2xl font-bold tracking-tight mb-2 bg-black/[0.03] border border-black/5 rounded-xl px-3 py-1 outline-none focus:bg-white transition-all"
+
                                 />
                             ) : (
                                 <h2 className={cn(
@@ -206,19 +233,20 @@ export function TaskDetailModal({
                                 </h2>
                             )}
 
-                            {(isMilestone ? milestone?.target_date : task?.due_date) && (
+                            {(isMilestone ? milestone?.target_date : task?.due_date) && (isMilestone || task?.category !== 'grocery') && (
                                 <div className="flex items-center gap-2 text-[12px] font-bold text-black/40 uppercase tracking-widest mt-2">
                                     <Calendar className="w-4 h-4" />
                                     <span>
                                         {!isMilestone && task?.due_date_mode === 'before' && "On or Before "}
                                         {!isMilestone && task?.due_date_mode === 'range' && "From "}
                                         {new Date((isMilestone ? milestone?.target_date : task?.due_date) as string).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
-                                        {!isMilestone && task?.due_date_mode === 'range' && task?.end_date && ` → ${new Date(task.end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}`}
+                                        {!isMilestone && task?.due_date_mode === 'range' && task?.end_date && ` → ${new Date(task.end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })} `}
                                     </span>
                                 </div>
                             )}
 
-                            {!isMilestone && (task?.start_time || task?.location) && (
+
+                            {!isMilestone && (task?.start_time || task?.location) && task?.category !== 'grocery' && (
                                 <div className="flex flex-wrap gap-4 mt-3">
                                     {task?.start_time && (
                                         <div className="flex items-center gap-2 text-[12px] font-bold text-black/60 bg-black/5 px-3 py-1.5 rounded-xl uppercase tracking-widest">
@@ -234,6 +262,7 @@ export function TaskDetailModal({
                                     )}
                                 </div>
                             )}
+
                         </div>
 
                         {/* Content Area */}
@@ -249,16 +278,17 @@ export function TaskDetailModal({
                                     <div className="h-2 bg-black/[0.03] rounded-full overflow-hidden">
                                         <motion.div
                                             initial={{ width: 0 }}
-                                            animate={{ width: `${progress}%` }}
+                                            animate={{ width: `${progress}% ` }}
                                             className="h-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)] transition-all duration-500"
                                         />
                                     </div>
 
                                     <div className="grid gap-2 mt-6">
-                                        {checklistItems.map((item, idx) => (
+                                        {checklistItems.map((item: any, idx: number) => (
                                             <div
                                                 key={idx}
                                                 onClick={() => onToggleSubtask(task!.id, idx)}
+
                                                 className={cn(
                                                     "group flex items-center gap-3 p-4 rounded-2xl border transition-all cursor-pointer",
                                                     item.completed
@@ -308,36 +338,59 @@ export function TaskDetailModal({
                                     <h3 className="text-[11px] font-bold text-black/30 uppercase tracking-[0.2em]">{isMilestone ? 'Milestone Configuration' : 'Task Configuration'}</h3>
 
                                     <div className="grid grid-cols-2 gap-4">
-                                        {!isMilestone && (
+                                        {!isMilestone && task?.category !== 'reminder' && task?.category !== 'grocery' && (
                                             <div className="space-y-2">
                                                 <label className="text-[9px] font-bold text-black/40 uppercase tracking-widest px-1">Priority</label>
                                                 <select
                                                     value={editPriority}
-                                                    onChange={(e) => setEditPriority(e.target.value as any)}
+                                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setEditPriority(e.target.value as any)}
                                                     className="w-full bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] text-black outline-none focus:border-black/20 focus:bg-white transition-all appearance-none cursor-pointer"
+
                                                 >
-                                                    {Object.entries(PRIORITY_CONFIG).map(([key, config]) => (
-                                                        <option key={key} value={key}>{config.label}</option>
+                                                    {PRIORITIES.map((p) => (
+                                                        <option key={p.id} value={p.id}>{p.label}</option>
                                                     ))}
                                                 </select>
                                             </div>
                                         )}
-                                        <div className="space-y-2">
-                                            <label className="text-[9px] font-bold text-black/40 uppercase tracking-widest px-1">Strategic Category</label>
-                                            <select
-                                                value={editStrategicCategory}
-                                                onChange={(e) => setEditStrategicCategory(e.target.value as any)}
-                                                className="w-full bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] text-black outline-none focus:border-black/20 focus:bg-white transition-all appearance-none cursor-pointer"
-                                            >
-                                                {STRATEGIC_CATEGORIES.map(cat => (
-                                                    <option key={cat.id} value={cat.id}>{cat.label}</option>
-                                                ))}
-                                            </select>
-                                        </div>
+                                        {/* For Groceries, keep priority but in a different layout or same as Todo */}
+                                        {!isMilestone && task?.category === 'grocery' && (
+                                            <div className="space-y-2">
+                                                <label className="text-[9px] font-bold text-black/40 uppercase tracking-widest px-1">Priority</label>
+                                                <select
+                                                    value={editPriority}
+                                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setEditPriority(e.target.value as any)}
+                                                    className="w-full bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] text-black outline-none focus:border-black/20 focus:bg-white transition-all appearance-none cursor-pointer"
+
+                                                >
+                                                    {PRIORITIES.map((p) => (
+                                                        <option key={p.id} value={p.id}>{p.label}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        )}
+
+                                        {/* Strategic Category - Hidden for groceries */}
+                                        {!isMilestone && task?.category !== 'grocery' && (
+                                            <div className="space-y-2">
+                                                <label className="text-[9px] font-bold text-black/40 uppercase tracking-widest px-1">Strategic Category</label>
+                                                <select
+                                                    value={editStrategicCategory}
+                                                    onChange={(e: ChangeEvent<HTMLSelectElement>) => setEditStrategicCategory(e.target.value as any)}
+                                                    className="w-full bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] text-black outline-none focus:border-black/20 focus:bg-white transition-all appearance-none cursor-pointer"
+
+                                                >
+                                                    {STRATEGIC_CATEGORIES_LIST.map(cat => (
+                                                        <option key={cat.id} value={cat.id}>{cat.label}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        )}
                                     </div>
 
+
                                     <div className="grid grid-cols-2 gap-4">
-                                        {!isMilestone && (
+                                        {!isMilestone && task?.category !== 'reminder' && task?.category !== 'grocery' && (
                                             <>
                                                 <div className="space-y-2">
                                                     <label className="text-[9px] font-bold text-black/40 uppercase tracking-widest px-1 flex items-center gap-1">
@@ -345,12 +398,13 @@ export function TaskDetailModal({
                                                     </label>
                                                     <select
                                                         value={editDuration}
-                                                        onChange={(e) => setEditDuration(e.target.value)}
+                                                        onChange={(e: ChangeEvent<HTMLSelectElement>) => setEditDuration(e.target.value)}
                                                         className="w-full bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] text-black outline-none focus:border-black/20 focus:bg-white transition-all appearance-none cursor-pointer"
+
                                                     >
                                                         {Array.from({ length: 16 }, (_, i) => (i + 1) * 15).map(mins => (
                                                             <option key={mins} value={mins}>
-                                                                {mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60 > 0 ? `${mins % 60}m` : ''}` : `${mins}m`}
+                                                                {mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60 > 0 ? `${mins % 60}m` : ''} ` : `${mins} m`}
                                                             </option>
                                                         ))}
                                                     </select>
@@ -361,71 +415,83 @@ export function TaskDetailModal({
                                                     </label>
                                                     <select
                                                         value={editTravelDuration}
-                                                        onChange={(e) => setEditTravelDuration(e.target.value)}
+                                                        onChange={(e: ChangeEvent<HTMLSelectElement>) => setEditTravelDuration(e.target.value)}
                                                         className="w-full bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] text-black outline-none focus:border-black/20 focus:bg-white transition-all appearance-none cursor-pointer"
+
                                                     >
                                                         <option value="0">None</option>
                                                         {Array.from({ length: 8 }, (_, i) => (i + 1) * 15).map(mins => (
                                                             <option key={mins} value={mins}>
-                                                                {mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60 > 0 ? `${mins % 60}m` : ''}` : `${mins}m`}
+                                                                {mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60 > 0 ? `${mins % 60}m` : ''} ` : `${mins} m`}
                                                             </option>
                                                         ))}
                                                     </select>
                                                 </div>
                                             </>
                                         )}
-                                        <div className="space-y-2">
-                                            <label className="text-[9px] font-bold text-black/40 uppercase tracking-widest px-1 flex items-center gap-1">
-                                                <Zap className="w-3.5 h-3.5" /> Impact Score ({editImpact}/10)
-                                            </label>
-                                            <div className="flex items-center gap-3 bg-black/[0.03] border border-black/5 rounded-xl px-4 py-2.5 h-[50px]">
-                                                <input
-                                                    type="range"
-                                                    min="1"
-                                                    max="10"
-                                                    value={editImpact}
-                                                    onChange={(e) => setEditImpact(e.target.value)}
-                                                    className="flex-1 accent-black h-1 bg-black/10 rounded-lg appearance-none cursor-pointer"
-                                                />
+                                        {task?.category !== 'reminder' && task?.category !== 'grocery' && (
+                                            <div className="space-y-2">
+                                                <label className="text-[9px] font-bold text-black/40 uppercase tracking-widest px-1 flex items-center gap-1">
+                                                    <Zap className="w-3.5 h-3.5" /> Impact Score ({editImpact}/10)
+                                                </label>
+                                                <div className="flex items-center gap-3 bg-black/[0.03] border border-black/5 rounded-xl px-4 py-2.5 h-[50px]">
+                                                    <input
+                                                        type="range"
+                                                        min="1"
+                                                        max="10"
+                                                        value={editImpact}
+                                                        onChange={(e: ChangeEvent<HTMLInputElement>) => setEditImpact(e.target.value)}
+
+                                                        className="flex-1 accent-black h-1 bg-black/10 rounded-lg appearance-none cursor-pointer"
+                                                    />
+                                                </div>
                                             </div>
-                                        </div>
+                                        )}
                                     </div>
 
-                                    {!isMilestone && (
+
+                                    {!isMilestone && task?.category !== 'grocery' && (
                                         <div className="space-y-4 pt-2">
                                             <div className="bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 flex items-center justify-between">
                                                 <label className="text-[11px] font-bold text-black/40 uppercase tracking-widest">Appointment Time</label>
                                                 <input
                                                     type="time"
                                                     value={editStartTime}
-                                                    onChange={(e) => setEditStartTime(e.target.value)}
+                                                    onChange={(e: ChangeEvent<HTMLInputElement>) => setEditStartTime(e.target.value)}
+
                                                     className="bg-transparent text-[14px] font-black text-black outline-none"
                                                 />
                                             </div>
 
-                                            <div className="space-y-2">
-                                                <label className="text-[11px] font-bold text-black/40 uppercase tracking-widest px-1">Location Details</label>
-                                                <div className="grid grid-cols-2 gap-3">
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Destination..."
-                                                        value={editLocation}
-                                                        onChange={(e) => setEditLocation(e.target.value)}
-                                                        className="w-full bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] text-black outline-none focus:border-black/20 focus:bg-white transition-all"
-                                                    />
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Origin..."
-                                                        value={editOriginLocation}
-                                                        onChange={(e) => setEditOriginLocation(e.target.value)}
-                                                        className="w-full bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] text-black outline-none focus:border-black/20 focus:bg-white transition-all"
-                                                    />
+                                            {task?.category !== 'reminder' && (
+                                                <div className="space-y-2">
+                                                    <label className="text-[11px] font-bold text-black/40 uppercase tracking-widest px-1">Location Details</label>
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Destination..."
+                                                            value={editLocation}
+                                                            onChange={(e: ChangeEvent<HTMLInputElement>) => setEditLocation(e.target.value)}
+
+                                                            className="w-full bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] text-black outline-none focus:border-black/20 focus:bg-white transition-all"
+                                                        />
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Origin..."
+                                                            value={editOriginLocation}
+                                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditOriginLocation(e.target.value)}
+
+                                                            className="w-full bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] text-black outline-none focus:border-black/20 focus:bg-white transition-all"
+                                                        />
+                                                    </div>
                                                 </div>
-                                            </div>
+                                            )}
                                         </div>
                                     )}
 
-                                    {(isMilestone || task?.profile === 'business' || projects.length > 0) && (
+
+                                    {/* Studio Linking - Hidden for groceries */}
+                                    {(isMilestone || (task?.profile === 'business' && task?.category !== 'grocery') || projects.length > 0) && task?.category !== 'grocery' && (
                                         <div className="space-y-4 pt-4 border-t border-black/[0.04]">
                                             <h3 className="text-[11px] font-bold text-black/30 uppercase tracking-[0.2em]">Studio Linking</h3>
                                             <div className="grid grid-cols-2 gap-4">
@@ -433,9 +499,10 @@ export function TaskDetailModal({
                                                     <label className="text-[9px] font-bold text-black/40 uppercase tracking-widest px-1">Link To</label>
                                                     <select
                                                         value={linkType}
-                                                        onChange={(e) => {
+                                                        onChange={(e: ChangeEvent<HTMLSelectElement>) => {
                                                             const val = e.target.value as any
                                                             setLinkType(val)
+
                                                             if (val === 'none') {
                                                                 setEditProjectId(null)
                                                                 setEditContentId(null)
@@ -459,10 +526,11 @@ export function TaskDetailModal({
                                                     <select
                                                         disabled={linkType === 'none'}
                                                         value={linkType === 'project' ? (editProjectId || '') : (editContentId || '')}
-                                                        onChange={(e) => {
+                                                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                                                             if (linkType === 'project') setEditProjectId(e.target.value)
                                                             else setEditContentId(e.target.value)
                                                         }}
+
                                                         className="w-full bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] text-black outline-none focus:border-black/20 focus:bg-white transition-all appearance-none cursor-pointer disabled:opacity-50"
                                                     >
                                                         <option value="">Select...</option>
@@ -476,6 +544,98 @@ export function TaskDetailModal({
                                             </div>
                                         </div>
                                     )}
+                                    {/* Notes Editor in Modal */}
+                                    <div className="space-y-4 pt-4 border-t border-black/[0.04]">
+                                        <div className="flex items-center justify-between">
+                                            <h3 className="text-[11px] font-bold text-black/30 uppercase tracking-[0.2em]">Notes / Checklist</h3>
+                                            <div className="flex bg-black/[0.03] rounded-lg p-1">
+                                                {([
+                                                    { id: 'text', icon: Type, label: 'Text' },
+                                                    { id: 'bullets', icon: List, label: 'Bullets' },
+                                                    { id: 'checklist', icon: ListChecks, label: 'Checklist' }
+                                                ] as const).map(type => {
+                                                    const IconComponent = type.icon as any
+                                                    return (
+                                                        <button
+                                                            key={type.id}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setEditNotesType(type.id)
+                                                                if (type.id === 'checklist' && !Array.isArray(editNotesContent)) {
+                                                                    setEditNotesContent([])
+                                                                } else if (type.id !== 'checklist' && Array.isArray(editNotesContent)) {
+                                                                    setEditNotesContent('')
+                                                                }
+                                                            }}
+                                                            className={cn(
+                                                                "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[9px] font-black uppercase transition-all",
+                                                                editNotesType === type.id
+                                                                    ? "bg-white text-neutral-900 shadow-sm"
+                                                                    : "text-neutral-400 hover:text-neutral-600"
+                                                            )}
+                                                        >
+                                                            <IconComponent className="w-3 h-3" />
+                                                            {type.label}
+                                                        </button>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-black/[0.02] border border-black/[0.05] rounded-2xl p-4 min-h-[120px]">
+                                            {editNotesType === 'checklist' ? (
+                                                <div className="space-y-2">
+                                                    {(Array.isArray(editNotesContent) ? editNotesContent : []).map((item: any, idx: number) => (
+                                                        <div key={idx} className="flex items-center gap-2 group">
+                                                            <div className="w-4 h-4 rounded border border-black/10" />
+                                                            <input
+                                                                value={item.text}
+                                                                onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                                                                    const newContent = [...(editNotesContent as { text: string; completed: boolean }[])]
+                                                                    newContent[idx] = { ...newContent[idx], text: e.target.value }
+                                                                    setEditNotesContent(newContent)
+                                                                }}
+                                                                className="flex-1 bg-transparent text-[13px] font-medium outline-none"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const nc = [...editNotesContent]
+                                                                    nc.splice(idx, 1)
+                                                                    setEditNotesContent(nc)
+                                                                }}
+                                                                className="opacity-0 group-hover:opacity-100 text-black/20 hover:text-rose-500 transition-all"
+                                                            >
+                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                    <div className="flex items-center gap-2 pt-2">
+                                                        <Plus className="w-4 h-4 text-black/20" />
+                                                        <input
+                                                            placeholder="Add item..."
+                                                            value={newChecklistItem}
+                                                            onChange={(e: ChangeEvent<HTMLInputElement>) => setNewChecklistItem(e.target.value)}
+                                                            onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
+                                                                if (e.key === 'Enter' && newChecklistItem.trim()) {
+                                                                    setEditNotesContent([...(Array.isArray(editNotesContent) ? editNotesContent : []), { text: newChecklistItem.trim(), completed: false }])
+                                                                    setNewChecklistItem('')
+                                                                }
+                                                            }}
+                                                            className="flex-1 bg-transparent text-[13px] font-medium outline-none placeholder:text-black/20"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <textarea
+                                                    value={typeof editNotesContent === 'string' ? editNotesContent : ''}
+                                                    onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setEditNotesContent(e.target.value)}
+                                                    placeholder="Add details..."
+                                                    className="w-full bg-transparent text-[13px] font-medium outline-none min-h-[100px] resize-none"
+                                                />
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -487,13 +647,14 @@ export function TaskDetailModal({
                                     <input
                                         type="checkbox"
                                         checked={isMilestone ? milestone?.status === 'completed' : task?.is_completed}
-                                        onChange={(e) => {
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                             if (isMilestone) {
                                                 onEditMilestone?.(milestone!.id, { status: e.target.checked ? 'completed' : 'pending' })
                                             } else {
                                                 onToggleComplete(task!.id, e.target.checked)
                                             }
                                         }}
+
                                         className="w-5 h-5 rounded-lg border-2 border-black/10 checked:bg-black checked:border-black transition-all accent-black"
                                     />
                                     <span className="text-[12px] font-bold text-black/40 group-hover:text-black transition-colors">
@@ -514,19 +675,24 @@ export function TaskDetailModal({
                                                 content_id: editContentId || undefined
                                             })
                                         } else if (!isMilestone && onEditTask) {
+                                            const isGrocery = task?.category === 'grocery'
                                             await onEditTask(task!.id, {
                                                 title: editTitle,
                                                 priority: editPriority,
-                                                strategic_category: editStrategicCategory,
-                                                estimated_duration: parseInt(editDuration),
-                                                impact_score: parseInt(editImpact),
-                                                travel_to_duration: parseInt(editTravelDuration),
-                                                travel_from_duration: parseInt(editTravelDuration),
-                                                start_time: editStartTime || undefined,
-                                                location: editLocation || undefined,
-                                                origin_location: editOriginLocation || undefined,
-                                                project_id: editProjectId || null,
-                                                content_id: editContentId || null
+                                                strategic_category: isGrocery ? undefined : editStrategicCategory,
+                                                estimated_duration: isGrocery ? undefined : parseInt(editDuration),
+                                                impact_score: isGrocery ? undefined : parseInt(editImpact),
+                                                travel_to_duration: isGrocery ? undefined : parseInt(editTravelDuration),
+                                                travel_from_duration: isGrocery ? undefined : parseInt(editTravelDuration),
+                                                start_time: isGrocery ? undefined : (editStartTime || undefined),
+                                                location: isGrocery ? undefined : (editLocation || undefined),
+                                                origin_location: isGrocery ? undefined : (editOriginLocation || undefined),
+                                                project_id: isGrocery ? null : (editProjectId || null),
+                                                content_id: isGrocery ? null : (editContentId || null),
+                                                notes: {
+                                                    type: editNotesType,
+                                                    content: editNotesContent
+                                                }
                                             })
                                         }
                                         setIsEditing(false)

@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { KarrFooter } from '@/components/KarrFooter'
@@ -148,7 +149,7 @@ export function TasksLayout({ children }: { children: React.ReactNode }) {
             {/* Main content — flexible container */}
             <div className={cn("flex flex-col min-h-0 overflow-y-auto w-full", !isMatrix && "flex-1")}>
                 <div className={cn("flex flex-col w-full", isMatrix ? "p-6 pb-0" : "p-6 flex-1")}>
-                    <div className={cn("mx-auto w-full", isMatrix ? "max-w-6xl" : "max-w-3xl flex-1 flex flex-col")}>
+                    <div className={cn("mx-auto w-full", isSpecialView ? "max-w-7xl" : "max-w-5xl flex-1 flex flex-col")}>
                         {children}
                     </div>
                 </div>

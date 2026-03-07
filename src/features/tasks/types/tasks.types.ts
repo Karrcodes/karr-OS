@@ -1,11 +1,16 @@
+export type Category = 'todo' | 'grocery' | 'reminder'
+export type StrategicCategory = 'finance' | 'career' | 'health' | 'personal' | 'rnd' | 'production' | 'media' | 'growth' | 'general'
+export type Priority = 'urgent' | 'high' | 'mid' | 'low'
+export type RecurrenceMode = 'none' | 'daily' | 'work_days' | 'off_days' | 'custom'
+
 export interface Task {
     id: string
     profile: string
     title: string
     is_completed: boolean
-    category: 'todo' | 'grocery' | 'reminder'
-    strategic_category?: 'finance' | 'career' | 'health' | 'personal' | 'rnd' | 'production' | 'media' | 'growth' | 'general'
-    priority: 'urgent' | 'high' | 'mid' | 'low'
+    category: Category
+    strategic_category?: StrategicCategory
+    priority: Priority
     amount?: string
     due_date?: string
     due_date_mode?: 'on' | 'before' | 'range'

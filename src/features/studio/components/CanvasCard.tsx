@@ -30,6 +30,7 @@ interface Props {
 
 export default function CanvasCard({ entry, connections, onClick, onPin, onDelete, onArchive, onColorChange }: Props) {
     const [showPalette, setShowPalette] = useState(false)
+    const [isExpanded, setIsExpanded] = useState(false)
     const { card, dot } = COLOR_MAP[entry.color] || COLOR_MAP.default
 
     const hasConnections = connections && (connections.notes > 0 || connections.projects.length > 0 || connections.content.length > 0)
@@ -84,11 +85,29 @@ export default function CanvasCard({ entry, connections, onClick, onPin, onDelet
             <div className="flex gap-4">
                 <div className="flex-1 min-w-0">
                     {/* Title */}
-                    <h3 className="text-[13px] font-bold text-black leading-snug line-clamp-2 pr-6">{entry.title}</h3>
+                    <h3 className="text-[13px] font-bold text-black leading-snug pr-6">{entry.title}</h3>
 
                     {/* Body */}
                     {entry.body && (
-                        <p className="text-[12px] text-black/50 leading-relaxed line-clamp-4 whitespace-pre-line mt-1">{entry.body}</p>
+                        <div className="mt-1">
+                            <p className={cn(
+                                "text-[12px] text-black/50 leading-relaxed whitespace-pre-line",
+                                !isExpanded && "line-clamp-2"
+                            )}>
+                                {entry.body}
+                            </p>
+                            {(entry.body.length > 100 || entry.body.split('\n').length > 2) && (
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        setIsExpanded(!isExpanded)
+                                    }}
+                                    className="text-[10px] font-bold text-black/40 hover:text-black transition-colors mt-1.5"
+                                >
+                                    {isExpanded ? "Show less" : "Show more"}
+                                </button>
+                            )}
+                        </div>
                     )}
                 </div>
 
