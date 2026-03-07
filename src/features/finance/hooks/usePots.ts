@@ -21,10 +21,13 @@ export function usePots() {
     const { settings } = useSystemSettings()
 
     const checkMonzoConnection = async () => {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return setIsMonzoConnected(false)
+
         const { data, error } = await supabase
             .from('fin_secrets')
             .select('service')
-            .eq('user_id', 'karr')
+            .eq('user_id', user.id)
             .eq('service', 'monzo')
             .single()
 
