@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import { useState, useMemo, type ChangeEvent } from 'react'
+import React from 'react'
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Video, Instagram, Hash, Globe, Mail, Clock, Zap, ExternalLink } from 'lucide-react'
 import { useStudio } from '../hooks/useStudio'
 import { cn } from '@/lib/utils'
@@ -97,10 +98,10 @@ export default function ContentCalendar() {
     const monthName = currentDate.toLocaleString('default', { month: 'long' })
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="rounded-2xl border border-black/[0.08] bg-white overflow-hidden shadow-sm">
                 {/* Calendar Header */}
-                <div className="p-5 border-b border-black/[0.04] flex items-center justify-between bg-black/[0.01]">
+                <div className="p-5 flex items-center justify-between">
                     <h2 className="text-[16px] font-bold text-black flex items-center gap-2">
                         <CalendarIcon className="w-4 h-4" />
                         Content Timeline
@@ -132,7 +133,7 @@ export default function ContentCalendar() {
                     </div>
                 </div>
 
-                <div className="p-4 sm:p-6">
+                <div className="p-4 sm:p-6 !pt-0">
                     {/* Calendar Grid */}
                     <div className="grid grid-cols-7 mb-2">
                         {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => (
@@ -141,7 +142,7 @@ export default function ContentCalendar() {
                     </div>
 
                     <div className="grid grid-cols-7 gap-px bg-black/[0.05] rounded-xl overflow-hidden border border-black/[0.05]">
-                        {calendarData.map((data, i) => {
+                        {calendarData.map((data: any, i: number) => {
                             const dayItems = getItemsForDay(data.day, data.month, data.year)
                             const isToday = new Date().toDateString() === new Date(data.year, data.month, data.day).toDateString()
                             const isPast = new Date(data.year, data.month, data.day) < new Date(new Date().setHours(0, 0, 0, 0))
@@ -166,7 +167,7 @@ export default function ContentCalendar() {
                                     </div>
 
                                     <div className="flex flex-col gap-1 overflow-y-auto max-h-[80px] custom-scrollbar">
-                                        {dayItems.map(item => {
+                                        {dayItems.map((item: any) => {
                                             const StatusIcon = item.platforms && item.platforms.length > 0 ? PLATFORM_ICONS[item.platforms[0]] : Clock
                                             const config = STATUS_CONFIG[item.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.idea
 
@@ -206,12 +207,22 @@ export default function ContentCalendar() {
                     </div>
 
                     <div className="mt-6 flex flex-wrap items-center gap-6 p-4 bg-black/[0.02] rounded-xl border border-black/[0.04]">
-                        {Object.entries(STATUS_CONFIG).map(([status, config]) => (
-                            <div key={status} className="flex items-center gap-2">
-                                <div className={cn("w-2.5 h-2.5 rounded-full shadow-sm", config.color.split(' ')[0])} />
-                                <span className="text-[10px] font-bold text-black/40 uppercase tracking-widest">{status}</span>
-                            </div>
-                        ))}
+                        {Object.entries(STATUS_CONFIG).map(([status, config]) => {
+                            const DOT_COLOR: Record<string, string> = {
+                                idea: 'bg-black/20',
+                                scripted: 'bg-blue-500',
+                                filmed: 'bg-amber-500',
+                                edited: 'bg-purple-500',
+                                scheduled: 'bg-cyan-500',
+                                published: 'bg-emerald-500'
+                            }
+                            return (
+                                <div key={status} className="flex items-center gap-2">
+                                    <div className={cn("w-2.5 h-2.5 rounded-full shadow-sm", DOT_COLOR[status] || 'bg-black/20')} />
+                                    <span className="text-[10px] font-bold text-black/40 uppercase tracking-widest">{status}</span>
+                                </div>
+                            )
+                        })}
                     </div>
                 </div>
             </div>

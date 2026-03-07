@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState, useMemo, FormEvent, MouseEvent } from 'react'
+import { useState, useMemo, type FormEvent, type MouseEvent, type ChangeEvent } from 'react'
+import React from 'react'
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, CheckCircle, Clock, Briefcase } from 'lucide-react'
 import { useSchedule, ScheduleItem } from '@/hooks/useSchedule'
 import { cn } from '@/lib/utils'
@@ -101,10 +102,10 @@ export function TasksCalendar() {
     const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="rounded-2xl border border-black/[0.08] bg-white overflow-hidden shadow-sm">
                 {/* Calendar Header */}
-                <div className="p-5 border-b border-black/[0.04] flex items-center justify-between bg-black/[0.01]">
+                <div className="p-5 flex items-center justify-between">
                     <h2 className="text-[16px] font-bold text-black flex items-center gap-2">
                         <CalendarIcon className="w-4 h-4" />
                         Focus Schedule
@@ -136,7 +137,7 @@ export function TasksCalendar() {
                     </div>
                 </div>
 
-                <div className="p-4 sm:p-6">
+                <div className="p-4 sm:p-6 !pt-0">
                     {/* Calendar Grid */}
                     <div className="grid grid-cols-7 mb-2">
                         {DAY_LABELS.map(d => (
@@ -241,7 +242,7 @@ export function TasksCalendar() {
                                 autoFocus
                                 type="text"
                                 value={quickAddTitle}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuickAddTitle(e.target.value)}
+                                onChange={(e: ChangeEvent<HTMLInputElement>) => setQuickAddTitle(e.target.value)}
                                 placeholder="Task title..."
                                 className="w-full bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] font-medium outline-none focus:border-black/20 focus:bg-white transition-all transition-colors"
                             />
@@ -294,7 +295,7 @@ export function TasksCalendar() {
                                             autoFocus
                                             type="text"
                                             value={editedTitle}
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditedTitle(e.target.value)}
+                                            onChange={(e: ChangeEvent<HTMLInputElement>) => setEditedTitle(e.target.value)}
                                             className="w-full bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] font-medium outline-none focus:border-black/20 focus:bg-white transition-all"
                                         />
                                     </div>
@@ -303,7 +304,7 @@ export function TasksCalendar() {
                                         <input
                                             type="date"
                                             value={editedDate}
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditedDate(e.target.value)}
+                                            onChange={(e: ChangeEvent<HTMLInputElement>) => setEditedDate(e.target.value)}
                                             className="block w-full min-w-full appearance-none bg-black/[0.03] border border-black/5 rounded-xl px-4 py-3 text-[14px] font-medium outline-none focus:border-black/20 focus:bg-white transition-all min-h-[46px]"
                                         />
                                     </div>
