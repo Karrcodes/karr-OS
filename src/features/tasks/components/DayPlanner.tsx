@@ -212,26 +212,7 @@ export function DayPlanner() {
         )
     }
 
-    if (!initialization && !isWorkDay && !settings?.chill_mode_active && activeTab === 'timeline') {
-        return (
-            <div className="p-8 rounded-[32px] border border-dashed border-black/10 bg-black/[0.01] flex flex-col items-center justify-center text-center space-y-6 min-h-[400px]">
-                <div className="w-16 h-16 rounded-full bg-black/5 flex items-center justify-center">
-                    <Sparkles className="w-8 h-8 text-black/20" />
-                </div>
-                <div className="space-y-2">
-                    <h3 className="text-[20px] font-bold text-black tracking-tight">Day Not Initialized</h3>
-                    <p className="text-[14px] text-black/40 max-w-[260px]">The engine is waiting for your T-Zero. Ready to start your day?</p>
-                </div>
-                <button
-                    onClick={initializeDay}
-                    className="flex items-center gap-3 px-8 py-4 bg-black text-white rounded-2xl font-bold uppercase tracking-widest text-[12px] shadow-xl shadow-black/20 transition-all hover:scale-105 active:scale-95 group"
-                >
-                    <Play className="w-4 h-4 fill-white group-hover:animate-pulse" />
-                    Initialize Day
-                </button>
-            </div>
-        )
-    }
+    // Allow rendering the timeline even without formal initialization so the user sees the anchor skeleton
 
     return (
         <div className="space-y-6">
