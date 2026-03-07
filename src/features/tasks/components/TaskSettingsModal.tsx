@@ -266,7 +266,7 @@ export function TaskSettingsModal({ isOpen, onClose }: TaskSettingsModalProps) {
                                             <div className="space-y-2">
                                                 <label className="text-[10px] font-[900] text-neutral-400 uppercase tracking-[0.2em] ml-1">Strategic Architecture</label>
                                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                                    {((activeProfile === 'business' ? STRATEGIC_CATEGORIES.business : STRATEGIC_CATEGORIES.personal) as any[]).map((s: any) => (
+                                                    {((activeProfile === 'business' ? STRATEGIC_CATEGORIES.business : STRATEGIC_CATEGORIES.personal) as unknown as any[]).map((s: any) => (
                                                         <button
                                                             key={s.id}
                                                             onClick={() => setEditingTemplate({ ...editingTemplate, strategic_category: s.id })}
