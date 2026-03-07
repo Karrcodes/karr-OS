@@ -2,6 +2,7 @@
 
 import { FinanceProfileProvider, useFinanceProfile } from '@/features/finance/contexts/FinanceProfileContext'
 import { SavingsManager } from '@/features/finance/components/SavingsManager'
+import { SavingsPotsSettings } from '@/features/finance/components/SavingsPotsSettings'
 import { KarrFooter } from '@/components/KarrFooter'
 
 function SavingsPage() {
@@ -35,8 +36,11 @@ function SavingsPage() {
             </div>
             {/* Main Content */}
             <div className="flex-1 flex flex-col min-h-0 overflow-y-auto p-4 sm:p-6 lg:p-8">
-                <div className="w-full max-w-7xl mx-auto flex-1">
+                <div className="w-full max-w-7xl mx-auto flex-1 space-y-12">
                     <SavingsManager />
+                    <div className="border-t border-black/[0.06] pt-12">
+                        <SavingsPotsSettings />
+                    </div>
                 </div>
                 <KarrFooter />
             </div>

@@ -20,8 +20,8 @@ export default function SettingsPage() {
                         <Settings className="w-4 h-4 text-black/40" />
                     </div>
                     <div>
-                        <h1 className="text-[20px] font-bold text-black">Settings</h1>
-                        <p className="text-[12px] text-black/35">Configure your {activeProfile === 'personal' ? 'Personal' : 'Studio Karrtesian'} module</p>
+                        <h1 className="text-[20px] font-bold text-black">Pots</h1>
+                        <p className="text-[12px] text-black/35">Manage your liquid allocations and budgets</p>
                     </div>
                 </div>
                 <div className="md:ml-auto flex bg-black/[0.04] p-1 rounded-xl border border-black/[0.06] w-fit">
@@ -163,10 +163,10 @@ function PotsSettings() {
     }
 
     return (
-        <Section title="Pots" desc="Create and manage your spending allocations">
+        <Section title="Spending Pots" desc="Create and manage your spending allocations (General & Buffer)">
             {loading ? <Spinner /> : (
                 <div className="space-y-2">
-                    {pots.map((p, i) => (
+                    {pots.filter(p => p.type !== 'savings').map((p, i) => (
                         <div key={p.id} className="flex items-center gap-3 rounded-xl border border-black/[0.07] bg-white p-3">
                             {editId === p.id ? (
                                 <>

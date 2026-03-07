@@ -11,11 +11,11 @@ import { cn } from '@/lib/utils'
 
 export function SavingsManager() {
     const { goals, loading: gLoading, createGoal, updateGoal, deleteGoal } = useGoals()
-    const { pots, loading: pLoading } = usePots()
+    const { pots, loading: pLoading, updatePot } = usePots()
     const { isPrivacyEnabled } = useFinanceProfile()
     const [adding, setAdding] = useState(false)
     const [editId, setEditId] = useState<string | null>(null)
-    const [form, setForm] = useState<Partial<Goal>>({ current_amount: 0, is_recurring: false })
+    const [form, setForm] = useState<Partial<Goal>>({ name: '', target_amount: 0, current_amount: 0, deadline: '', is_recurring: false })
     const [saving, setSaving] = useState(false)
 
     const loading = gLoading || pLoading
@@ -34,10 +34,13 @@ export function SavingsManager() {
             id: p.id,
             name: `${p.name} 🏡`,
             current_amount: p.balance,
-            target_amount: p.target_amount || p.balance, // Fallback to balance if no target set in Monzo
+            target_amount: p.target_amount > 0 ? p.target_amount : p.balance,
             deadline: null,
             is_recurring: p.name.toLowerCase().includes('rent') || p.name.toLowerCase().includes('bills'),
-            type: 'monzo' as const
+            type: 'monzo' as const,
+            monzo_id: p.id,
+            profile: p.profile,
+            created_at: p.created_at
         }))
     ]
 
@@ -56,14 +59,31 @@ export function SavingsManager() {
         setSaving(false)
     }
 
-    const handleUpdate = async (id: string) => {
+    const handleUpdate = async (id: string, type: 'manual' | 'monzo') => {
+        if (!form.name) return
         setSaving(true)
-        await updateGoal(id, { name: form.name, target_amount: form.target_amount, current_amount: form.current_amount, deadline: form.deadline, is_recurring: form.is_recurring })
-        setEditId(null)
-        setSaving(false)
+        try {
+            if (type === 'manual') {
+                await updateGoal(id, {
+                    name: form.name,
+                    target_amount: form.target_amount,
+                    deadline: form.deadline
+                })
+            } else {
+                // For Monzo goals, we update the underlying Pocket (Pot)
+                await updatePot(id, {
+                    target_amount: form.target_amount
+                })
+            }
+            setEditId(null)
+        } catch (err) {
+            console.error('Failed to update goal:', err)
+        } finally {
+            setSaving(false)
+        }
     }
 
-    const startEdit = (g: Goal) => {
+    const startEdit = (g: Goal & { type: 'manual' | 'monzo' }) => {
         setEditId(g.id)
         setForm({ name: g.name, target_amount: g.target_amount, current_amount: g.current_amount, deadline: g.deadline, is_recurring: g.is_recurring })
     }
@@ -81,18 +101,50 @@ export function SavingsManager() {
                                 "flex flex-col gap-4 rounded-xl border p-4 shadow-sm transition-all",
                                 isMonzo ? "bg-emerald-50/30 border-emerald-500/10 hover:border-emerald-500/30" : "bg-white border-black/[0.07] hover:shadow-md"
                             )}>
-                                {editId === g.id && !isMonzo ? (
-                                    <div className="flex flex-wrap items-center gap-3">
-                                        <input className="input-field flex-1 min-w-[120px]" value={form.name ?? ''} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-                                        <input className="input-field w-full sm:w-28" type="number" placeholder="Total target £" value={form.target_amount ?? 0} onChange={(e) => setForm({ ...form, target_amount: parseFloat(e.target.value) })} />
-                                        <input className="input-field w-full sm:w-28" type="number" placeholder="Already saved £" value={form.current_amount ?? 0} onChange={(e) => setForm({ ...form, current_amount: parseFloat(e.target.value) })} />
-                                        <input className="input-field w-full sm:w-32" type="date" value={form.deadline ?? ''} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
-                                        <label className="flex items-center gap-2 cursor-pointer flex-shrink-0 bg-black/[0.03] p-1.5 rounded-lg border border-black/[0.05]">
-                                            <input type="checkbox" checked={form.is_recurring || false} onChange={e => setForm({ ...form, is_recurring: e.target.checked })} className="accent-black w-3 h-3 cursor-pointer" />
-                                            <span className="text-[10px] font-bold text-black/60 uppercase tracking-widest">Recurring</span>
-                                        </label>
-                                        <button onClick={() => handleUpdate(g.id)} disabled={saving} className="icon-btn text-emerald-600"><Check className="w-4 h-4" /></button>
-                                        <button onClick={() => setEditId(null)} className="icon-btn text-black/30"><X className="w-4 h-4" /></button>
+                                {editId === g.id ? (
+                                    <div className="flex items-start gap-3">
+                                        <div className="flex-1 space-y-3">
+                                            <input
+                                                className="w-full bg-black/[0.03] border border-black/[0.08] rounded-lg px-3 py-2 text-[14px] font-medium outline-none"
+                                                value={form.name}
+                                                onChange={e => setForm({ ...form, name: e.target.value })}
+                                                disabled={isMonzo}
+                                            />
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="text-[10px] text-black/40 font-bold uppercase mb-1 block">Goal Target (£)</label>
+                                                    <input
+                                                        type="number"
+                                                        className="w-full bg-black/[0.03] border border-black/[0.08] rounded-lg px-3 py-2 text-[14px] outline-none"
+                                                        value={form.target_amount}
+                                                        onChange={e => setForm({ ...form, target_amount: parseFloat(e.target.value) })}
+                                                    />
+                                                </div>
+                                                {!isMonzo && (
+                                                    <div>
+                                                        <label className="text-[10px] text-black/40 font-bold uppercase mb-1 block">Deadline</label>
+                                                        <input
+                                                            type="date"
+                                                            className="w-full bg-black/[0.03] border border-black/[0.08] rounded-lg px-3 py-2 text-[14px] outline-none"
+                                                            value={form.deadline || ''}
+                                                            onChange={e => setForm({ ...form, deadline: e.target.value })}
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                            <button
+                                                onClick={() => handleUpdate(g.id, g.type)}
+                                                disabled={saving}
+                                                className="bg-black text-white p-2 rounded-lg hover:bg-black/80 transition-colors"
+                                            >
+                                                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                                            </button>
+                                            <button onClick={() => setEditId(null)} className="bg-black/5 text-black/40 p-2 rounded-lg hover:bg-black/10 transition-colors">
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     </div>
                                 ) : (
                                     <>
@@ -106,12 +158,12 @@ export function SavingsManager() {
                                                 {g.deadline && <span className="text-[12px] text-black/40 mt-0.5">Deadline: {new Date(g.deadline).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>}
                                                 {isMonzo && <span className="text-[11px] text-emerald-600/60 font-medium mt-0.5 italic">Synced from bank pot</span>}
                                             </div>
-                                            {!isMonzo && (
-                                                <div className="flex items-center gap-1">
-                                                    <button onClick={() => startEdit(g as any)} className="w-8 h-8 rounded-lg flex items-center justify-center text-black/20 hover:text-black/60 hover:bg-black/5 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                                            <div className="flex items-center gap-1">
+                                                <button onClick={() => startEdit(g)} className="w-8 h-8 rounded-lg flex items-center justify-center text-black/20 hover:text-black/60 hover:bg-black/5 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                                                {!isMonzo && (
                                                     <button onClick={() => deleteGoal(g.id)} className="w-8 h-8 rounded-lg flex items-center justify-center text-black/20 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
-                                                </div>
-                                            )}
+                                                )}
+                                            </div>
                                         </div>
 
                                         <div>
