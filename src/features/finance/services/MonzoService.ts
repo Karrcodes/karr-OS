@@ -237,7 +237,9 @@ export class MonzoService {
                         balance: pot.balance / 100,
                         current_balance: pot.balance / 100,
                         target_budget: existing?.target_budget || 0, // Preserve manual weekly allocation
-                        target_amount: (pot.goal_amount || 0) / 100, // Actual savings goal from Monzo
+                        target_amount: (pot.goal_amount && pot.goal_amount > 0)
+                            ? (pot.goal_amount / 100)
+                            : (existing?.target_amount || 0), // Use Monzo goal if set, otherwise preserve manual override
                         last_synced_at: new Date().toISOString(),
                         type: (
                             pot.type?.toLowerCase().includes('savings') ||
