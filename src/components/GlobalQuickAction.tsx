@@ -164,7 +164,7 @@ export function GlobalQuickAction() {
                     <motion.div
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         onClick={() => { setIsOpen(false); setActiveAction(null); resetForm() }}
-                        className="fixed inset-0 bg-black/10 backdrop-blur-[4px] z-[295] pointer-events-auto"
+                        className="fixed inset-0 bg-black/10 backdrop-blur-[4px] z-10 pointer-events-auto"
                     />
                 )}
             </AnimatePresence>
@@ -174,11 +174,11 @@ export function GlobalQuickAction() {
                 {activeAction && (
                     <div className="fixed inset-0 z-[400] flex items-center justify-center p-4 md:p-6 pointer-events-none">
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.92, y: 24, filter: 'blur(8px)' }}
-                            animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
-                            exit={{ opacity: 0, scale: 0.92, y: 24, filter: 'blur(8px)' }}
+                            initial={{ opacity: 0, scale: 0.92, y: 24 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.92, y: 24 }}
                             transition={{ type: 'spring', damping: 22, stiffness: 300 }}
-                            className="bg-white/95 backdrop-blur-3xl rounded-[32px] shadow-[0_32px_128px_-32px_rgba(0,0,0,0.4)] border border-black/5 overflow-hidden flex flex-col w-full max-w-[400px] pointer-events-auto"
+                            className="bg-white/95 backdrop-blur-xl rounded-[32px] shadow-[0_32px_128px_-32px_rgba(0,0,0,0.4)] border border-black/5 overflow-hidden flex flex-col w-full max-w-[400px] pointer-events-auto"
                         >
                             {/* Header */}
                             <div className="px-6 py-5 border-b border-black/5 flex items-center justify-between bg-white/40">
@@ -458,7 +458,7 @@ export function GlobalQuickAction() {
             </AnimatePresence>
 
             {/* Vertical stack + toggle button */}
-            <div className="flex flex-col items-end gap-3 pointer-events-none">
+            <div className="flex flex-col items-end gap-3 pointer-events-none relative z-20">
                 <AnimatePresence>
                     {isOpen && !activeAction && (
                         <motion.div
@@ -511,7 +511,7 @@ export function GlobalQuickAction() {
                     whileHover={{ scale: 1.06 }}
                     whileTap={{ scale: 0.9 }}
                     className={cn(
-                        'w-14 h-14 rounded-[20px] shadow-2xl flex items-center justify-center z-[320] relative overflow-hidden pointer-events-auto flex-shrink-0 transition-colors',
+                        'w-14 h-14 rounded-[20px] shadow-2xl flex items-center justify-center z-30 relative overflow-hidden pointer-events-auto flex-shrink-0 transition-colors',
                         isOpen ? 'bg-white text-black ring-1 ring-black/10' : 'bg-black text-white'
                     )}
                 >
