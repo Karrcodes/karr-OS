@@ -23,7 +23,20 @@ export default function LoginPage() {
         const redirectTo = searchParams.get('redirectTo') ?? '/system/control-centre'
 
         const currentOrigin = typeof window !== 'undefined' ? window.location.origin : ''
-        const finalRedirectTo = `${currentOrigin}/api/auth/callback?next=${encodeURIComponent(redirectTo)}`
+
+        // Detect if we are on a local network IP (e.g. 192.168.x.x)
+        // Supabase blocks http redirects to IPs, so we bridge through production.
+        const isLocalIP = /^(https?:\/\/)?(192\.168|10\.|172\.(1[6-9]|2[0-9]|3[0-1]))/.test(currentOrigin)
+
+        let finalRedirectTo = `${currentOrigin}/api/auth/callback`
+
+        if (isLocalIP && !currentOrigin.includes('localhost')) {
+            const host = currentOrigin.replace(/^https?:\/\//, '')
+            // We use production schro.app as a trusted bridge to bypass HTTP IP restriction
+            finalRedirectTo = `https://schro.app/api/auth/callback?bridge_target=${encodeURIComponent(host)}&next=${encodeURIComponent(redirectTo)}`
+        } else {
+            finalRedirectTo = `${currentOrigin}/api/auth/callback?next=${encodeURIComponent(redirectTo)}`
+        }
 
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',

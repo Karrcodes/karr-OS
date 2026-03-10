@@ -6,6 +6,7 @@ export async function GET(request: Request) {
     const { searchParams, origin: requestOrigin } = new URL(request.url)
     const code = searchParams.get('code')
     const next = searchParams.get('next') ?? '/system/control-centre'
+    const bridgeTarget = searchParams.get('bridge_target')
 
     // Determine the actual origin from headers to support local network IPs
     const host = request.headers.get('host')
@@ -15,6 +16,19 @@ export async function GET(request: Request) {
     console.log('[Auth Callback] Request received')
     console.log('[Auth Callback] Origin (Detected):', origin)
     console.log('[Auth Callback] Next:', next)
+    if (bridgeTarget) console.log('[Auth Callback] Bridge Target Detected:', bridgeTarget)
+
+    // HANDLE BRIDGE REDIRECT:
+    // If we have a bridge_target and we are currently on the production domain (schro.app),
+    // we bounce the browser back to the local IP with the same code.
+    // This bypasses Supabase's restriction on non-localhost HTTP redirects.
+    if (bridgeTarget && code && (origin.includes('schro.app') || origin.includes('vercel.app'))) {
+        console.log('[Auth Callback] BRIDGE ACTIVE: Bouncing to local target http://' + bridgeTarget)
+        const localUrl = new URL(`http://${bridgeTarget}/api/auth/callback`)
+        localUrl.searchParams.set('code', code)
+        localUrl.searchParams.set('next', next)
+        return NextResponse.redirect(localUrl.toString())
+    }
 
     if (code) {
         // Use anon client to exchange code for session (sets cookies)
