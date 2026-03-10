@@ -83,7 +83,7 @@ export const navItems: NavItem[] = [
         ]
     },
     { label: 'Manifest', href: '/goals', icon: Target, color: 'amber' },
-    { label: 'Wellbeing', href: '/health', icon: Heart, disabled: true, color: 'rose' },
+    { label: 'Wellbeing', href: '/health', icon: Heart, color: 'rose' },
 ]
 
 /**
