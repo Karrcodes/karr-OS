@@ -16,6 +16,7 @@ const STEPS = [
 
 export function ProfileSetup() {
     const { updateProfile } = useWellbeing()
+    const [isSubmitting, setIsSubmitting] = useState(false)
     const [step, setStep] = useState(0)
     const [form, setForm] = useState<Partial<WellbeingProfile>>({
         gender: 'male',
@@ -23,15 +24,22 @@ export function ProfileSetup() {
         goal: 'maintenance'
     })
 
-    const handleNext = () => {
+    const handleNext = async () => {
         if (step < STEPS.length - 1) {
             setStep(step + 1)
         } else {
-            const finalProfile: WellbeingProfile = {
-                ...(form as any),
-                updatedAt: new Date().toISOString()
+            setIsSubmitting(true)
+            try {
+                const finalProfile: WellbeingProfile = {
+                    ...(form as any),
+                    updatedAt: new Date().toISOString()
+                }
+                await updateProfile(finalProfile)
+            } catch (e) {
+                console.error('Failed to update profile:', e)
+            } finally {
+                setIsSubmitting(false)
             }
-            updateProfile(finalProfile)
         }
     }
 
@@ -204,14 +212,20 @@ export function ProfileSetup() {
                     )}
                     <button
                         onClick={handleNext}
-                        disabled={!isStepValid()}
+                        disabled={!isStepValid() || isSubmitting}
                         className={cn(
                             "flex-1 py-5 rounded-2xl text-[14px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3",
                             isStepValid() ? "bg-black text-white shadow-2xl shadow-black/20" : "bg-black/5 text-black/20 cursor-not-allowed"
                         )}
                     >
-                        {step === STEPS.length - 1 ? 'Activate Protocol' : 'Continue'}
-                        <ArrowRight className="w-5 h-5" />
+                        {isSubmitting ? (
+                            <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                        ) : (
+                            <>
+                                {step === STEPS.length - 1 ? 'Activate Protocol' : 'Continue'}
+                                <ArrowRight className="w-5 h-5" />
+                            </>
+                        )}
                     </button>
                 </div>
             </div>

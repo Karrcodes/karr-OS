@@ -16,6 +16,8 @@ import { useGoals } from '@/features/goals/hooks/useGoals'
 import { usePlannerEngine, PlannerItem } from '@/features/tasks/hooks/usePlannerEngine'
 import { usePots } from '@/features/finance/hooks/usePots'
 import { useStudio } from '@/features/studio/hooks/useStudio'
+import { WeatherWidget } from '@/features/system/components/WeatherWidget'
+import { AnimatePresence } from 'framer-motion'
 
 const MOTIVATION_QUOTES = [
     { text: "The mind is the battlefield. Control what you can, let the rest burn.", tag: "Stoic" },
@@ -159,29 +161,31 @@ export default function ControlCentrePage() {
 
     return (
         <div className="min-h-screen bg-[#fafafa] flex flex-col">
-            {/* Page Header */}
-            <div className="flex items-center justify-between px-6 py-5 h-[96px] border-b border-black/[0.06] bg-[#fafafa] flex-shrink-0 shadow-sm z-10">
-                <div>
-                    <h1 className="text-[22px] font-bold text-black tracking-tight">Control Centre</h1>
-                    <p className="text-[12px] text-black/35 mt-0.5">System Hub</p>
-                </div>
-                <div className="flex items-center gap-6">
-                    {loading && (
-                        <div className="flex items-center gap-1.5 text-black/30">
-                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                            <span className="text-[11px]">Scanning</span>
+            <div className="flex-1 overflow-y-auto bg-[#fafafa] flex flex-col p-6 md:p-10">
+                <div className="max-w-5xl mx-auto w-full space-y-12 pb-12">
+                    {/* Page Header */}
+                    <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                        <div className="space-y-1">
+                            <h2 className="text-[11px] font-black text-blue-500 uppercase tracking-[0.3em]">System Core</h2>
+                            <h1 className="text-4xl font-black text-black tracking-tighter uppercase grayscale">Control Centre</h1>
                         </div>
-                    )}
+                        <div className="flex items-center gap-6">
+                            <WeatherWidget />
+
+                            {loading && (
+                                <div className="flex items-center gap-1.5 text-black/30">
+                                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                    <span className="text-[11px]">Scanning</span>
+                                </div>
+                            )}
 
 
-                    <div className="text-[11px] text-black/25 uppercase tracking-wider font-medium">
-                        {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
-                    </div>
-                </div>
-            </div>
+                            <div className="text-[11px] text-black/25 uppercase tracking-wider font-medium pb-1">
+                                {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+                            </div>
+                        </div>
+                    </header>
 
-            <div className="flex-1 overflow-y-auto bg-[#fafafa] flex flex-col p-6">
-                <div className="max-w-5xl mx-auto w-full space-y-8 pb-12">
                     {/* Quick Actions */}
                     <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                         {isMounted && (orderedModules as any[]).map((item: any) => (

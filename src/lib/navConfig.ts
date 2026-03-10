@@ -8,7 +8,7 @@ import {
     BarChart3, Activity, Shield, Brain, Target, Heart,
     LayoutDashboard, SlidersHorizontal, Calendar, CreditCard,
     PiggyBank, Receipt, Sparkles, Rocket, Video, PenLine,
-    Users, Award, ClipboardIcon, Key, TrendingUp
+    Users, Award, ClipboardIcon, Key, TrendingUp, Utensils
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -83,7 +83,18 @@ export const navItems: NavItem[] = [
         ]
     },
     { label: 'Manifest', href: '/goals', icon: Target, color: 'amber' },
-    { label: 'Wellbeing', href: '/health', icon: Heart, color: 'rose' },
+    {
+        label: 'Wellbeing',
+        href: '/health',
+        icon: Heart,
+        color: 'rose',
+        sub: [
+            { label: 'Fitness', href: '/health/fitness', icon: Activity },
+            { label: 'Nutrition', href: '/health/nutrition', icon: Utensils },
+            { label: 'Mind', href: '/health/mind', icon: Heart },
+            { label: 'Settings', href: '/health/settings', icon: SlidersHorizontal }
+        ]
+    },
 ]
 
 /**

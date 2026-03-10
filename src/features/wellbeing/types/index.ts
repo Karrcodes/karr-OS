@@ -143,6 +143,27 @@ export interface Reflection {
     content: string
 }
 
+export interface WaterLog {
+    id: string
+    date: string
+    amount: number // in ml
+}
+
+export type DashboardComponentId =
+    | 'macros'
+    | 'weight_trends'
+    | 'active_protocol'
+    | 'meal_planner'
+    | 'mood_reflection'
+    | 'nutritional_trends'
+    | 'workout_consistency'
+    | 'gym_activity'
+
+export interface DashboardLayout {
+    main: { id: DashboardComponentId; isVisible: boolean }[]
+    sidebar: { id: DashboardComponentId; isVisible: boolean }[]
+}
+
 export interface WellbeingState {
     profile: WellbeingProfile | null
     weightHistory: MetricEntry[]
@@ -154,4 +175,7 @@ export interface WellbeingState {
     savedRecipes: string[] // Array of recipe IDs
     moodLogs: MoodEntry[]
     reflections: Reflection[]
+    waterLogs: WaterLog[]
+    dashboardLayout: DashboardLayout
+    loading: boolean
 }

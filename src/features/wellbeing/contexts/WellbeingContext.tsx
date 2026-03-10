@@ -1,24 +1,25 @@
-'use client'
-
 import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react'
-import type { WellbeingProfile, MetricEntry, MacroTargets, WellbeingState, WellbeingGoal, ActivityLevel, WorkoutRoutine, WorkoutLog, TheGymGroupStats, MealLog, MoodValue, MoodEntry, Reflection, GymBusyness, GymVisit } from '../types'
+import type { WellbeingProfile, MetricEntry, MacroTargets, WellbeingState, WellbeingGoal, ActivityLevel, WorkoutRoutine, WorkoutLog, TheGymGroupStats, MealLog, MoodValue, MoodEntry, Reflection, GymBusyness, GymVisit, WaterLog, DashboardLayout } from '../types'
 import { GymService } from '../services/gymService'
+import { supabase } from '@/lib/supabase'
 
 interface WellbeingContextType extends WellbeingState {
-    updateProfile: (profile: WellbeingProfile) => void
-    logWeight: (weight: number) => void
+    updateProfile: (profile: WellbeingProfile) => Promise<void>
+    logWeight: (weight: number) => Promise<void>
     calculateTDEE: (profile: WellbeingProfile) => number
-    logWorkout: (log: WorkoutLog) => void
+    logWorkout: (log: WorkoutLog) => Promise<void>
     connectGym: (username: string, pin: string, locationId: string) => Promise<void>
     syncGymData: () => Promise<void>
-    addRoutine: (routine: WorkoutRoutine) => void
-    updateGymStats: (stats: Partial<TheGymGroupStats>) => void
-    logMeal: (meal: Omit<MealLog, 'id'>) => void
-    saveRecipe: (recipeId: string) => void
-    logMood: (value: MoodValue, note?: string) => void
-    saveReflection: (content: string) => void
+    addRoutine: (routine: WorkoutRoutine) => Promise<void>
+    updateGymStats: (stats: Partial<TheGymGroupStats>) => Promise<void>
+    logMeal: (meal: Omit<MealLog, 'id'>) => Promise<void>
+    saveRecipe: (recipeId: string) => Promise<void>
+    logMood: (value: MoodValue, note?: string) => Promise<void>
+    saveReflection: (content: string) => Promise<void>
+    updateLayout: (layout: DashboardLayout) => Promise<void>
     macros: MacroTargets
     dailyNutrition: MacroTargets
+    dailyWater: number
 }
 
 export const WellbeingContext = createContext<WellbeingContextType | undefined>(undefined)
@@ -39,7 +40,23 @@ const INITIAL_STATE: WellbeingState = {
     mealLogs: [],
     savedRecipes: [],
     moodLogs: [],
-    reflections: []
+    reflections: [],
+    waterLogs: [],
+    dashboardLayout: {
+        main: [
+            { id: 'macros', isVisible: true },
+            { id: 'weight_trends', isVisible: true },
+            { id: 'active_protocol', isVisible: true },
+            { id: 'meal_planner', isVisible: true },
+            { id: 'mood_reflection', isVisible: true },
+        ],
+        sidebar: [
+            { id: 'nutritional_trends', isVisible: true },
+            { id: 'workout_consistency', isVisible: true },
+            { id: 'gym_activity', isVisible: true },
+        ]
+    },
+    loading: true
 }
 
 const MULTIPLIERS: Record<ActivityLevel, number> = {
@@ -51,32 +68,146 @@ const MULTIPLIERS: Record<ActivityLevel, number> = {
 }
 
 export function WellbeingProvider({ children }: { children: ReactNode }) {
-    const [state, setState] = useState<WellbeingState>(() => {
-        if (typeof window !== 'undefined') {
-            const saved = localStorage.getItem('wellbeing_state')
-            if (saved) {
-                try {
-                    return JSON.parse(saved)
-                } catch (e) {
-                    console.error('Failed to parse wellbeing state:', e)
+    const [state, setState] = useState<WellbeingState>(INITIAL_STATE)
+
+    // Load Initial Data
+    useEffect(() => {
+        const loadInitialData = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+
+            // Try loading from LocalStorage first for instant UI
+            if (typeof window !== 'undefined') {
+                const saved = localStorage.getItem('wellbeing_state')
+                if (saved) {
+                    try {
+                        const parsed = JSON.parse(saved)
+                        setState(prev => ({ ...prev, ...parsed, loading: user ? prev.loading : false }))
+                    } catch (e) {
+                        console.error('Failed to parse local wellbeing state:', e)
+                    }
                 }
             }
-        }
-        return INITIAL_STATE
-    })
 
+            if (user) {
+                try {
+                    const [profileRes, dataRes] = await Promise.all([
+                        supabase.from('wellbeing_profiles').select('*').eq('user_id', user.id).single(),
+                        supabase.from('wellbeing_data').select('*').eq('user_id', user.id).single()
+                    ])
+
+                    const newState: Partial<WellbeingState> = {}
+
+                    if (profileRes.data) {
+                        newState.profile = {
+                            age: profileRes.data.age,
+                            weight: profileRes.data.weight,
+                            height: profileRes.data.height,
+                            gender: profileRes.data.gender,
+                            activityLevel: profileRes.data.activity_level,
+                            goal: profileRes.data.goal,
+                            updatedAt: profileRes.data.updated_at
+                        }
+                    }
+
+                    if (dataRes.data) {
+                        newState.weightHistory = dataRes.data.weight_history || []
+                        newState.routines = dataRes.data.routines || []
+                        newState.activeRoutineId = dataRes.data.active_routine_id || null
+                        newState.workoutLogs = dataRes.data.workout_logs || []
+                        newState.gymStats = dataRes.data.gym_stats || INITIAL_STATE.gymStats
+                        newState.mealLogs = dataRes.data.meal_logs || []
+                        newState.savedRecipes = dataRes.data.saved_recipes || []
+                        newState.moodLogs = dataRes.data.mood_logs || []
+                        newState.reflections = dataRes.data.reflections || []
+                        newState.waterLogs = dataRes.data.water_logs || []
+                        newState.dashboardLayout = dataRes.data.dashboard_layout || INITIAL_STATE.dashboardLayout
+                    }
+
+                    setState(prev => ({
+                        ...prev,
+                        ...newState,
+                        loading: false
+                    }))
+                } catch (e) {
+                    console.error('Failed to sync with Supabase:', e)
+                    setState(prev => ({ ...prev, loading: false }))
+                }
+            } else {
+                setState(prev => ({ ...prev, loading: false }))
+            }
+        }
+
+        loadInitialData()
+    }, [])
+
+    // Sync to LocalStorage (as cache)
     useEffect(() => {
-        localStorage.setItem('wellbeing_state', JSON.stringify(state))
+        if (!state.loading) {
+            localStorage.setItem('wellbeing_state', JSON.stringify(state))
+        }
     }, [state])
 
-    // Periodic sync
+    // Periodic sync for Gym Data
     useEffect(() => {
-        if (state.gymStats.isIntegrated) {
+        if (state.gymStats.isIntegrated && !state.loading) {
             syncGymData()
             const interval = setInterval(syncGymData, 1000 * 60 * 30)
             return () => clearInterval(interval)
         }
-    }, [state.gymStats.isIntegrated])
+    }, [state.gymStats.isIntegrated, state.loading])
+
+    // Helper to persist to Supabase
+    const persistData = async (data: Partial<{
+        profile: WellbeingProfile,
+        weightHistory: MetricEntry[],
+        routines: WorkoutRoutine[],
+        activeRoutineId: string | null,
+        workoutLogs: WorkoutLog[],
+        gymStats: TheGymGroupStats,
+        mealLogs: MealLog[],
+        savedRecipes: string[],
+        moodLogs: MoodEntry[],
+        reflections: Reflection[],
+        waterLogs: WaterLog[],
+        dashboardLayout: DashboardLayout
+    }>) => {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        try {
+            if (data.profile) {
+                await supabase.from('wellbeing_profiles').upsert({
+                    user_id: user.id,
+                    age: data.profile.age,
+                    weight: data.profile.weight,
+                    height: data.profile.height,
+                    gender: data.profile.gender,
+                    activity_level: data.profile.activityLevel,
+                    goal: data.profile.goal,
+                    updated_at: new Date().toISOString()
+                })
+            }
+
+            if (data.weightHistory || data.routines || data.activeRoutineId !== undefined || data.workoutLogs || data.gymStats || data.mealLogs || data.savedRecipes || data.moodLogs || data.reflections || data.waterLogs || data.dashboardLayout) {
+                const update: any = { user_id: user.id, updated_at: new Date().toISOString() }
+                if (data.weightHistory) update.weight_history = data.weightHistory
+                if (data.routines) update.routines = data.routines
+                if (data.activeRoutineId !== undefined) update.active_routine_id = data.activeRoutineId
+                if (data.workoutLogs) update.workout_logs = data.workoutLogs
+                if (data.gymStats) update.gym_stats = data.gymStats
+                if (data.mealLogs) update.meal_logs = data.mealLogs
+                if (data.savedRecipes) update.saved_recipes = data.savedRecipes
+                if (data.moodLogs) update.mood_logs = data.moodLogs
+                if (data.reflections) update.reflections = data.reflections
+                if (data.waterLogs) update.water_logs = data.waterLogs
+                if (data.dashboardLayout) update.dashboard_layout = data.dashboardLayout
+
+                await supabase.from('wellbeing_data').upsert(update)
+            }
+        } catch (e) {
+            console.error('Persistence error:', e)
+        }
+    }
 
     const calculateBMR = (p: WellbeingProfile) => {
         if (p.gender === 'male') {
@@ -115,63 +246,90 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
         }), { calories: 0, protein: 0, fat: 0, carbs: 0 })
     }, [state.mealLogs])
 
-    const updateProfile = (profile: WellbeingProfile) => {
+    const dailyWater = useMemo(() => {
+        const today = new Date().toISOString().split('T')[0]
+        return state.waterLogs
+            .filter((w: WaterLog) => w.date === today)
+            .reduce((acc: number, w: WaterLog) => acc + w.amount, 0)
+    }, [state.waterLogs])
+
+    const updateProfile = async (profile: WellbeingProfile) => {
         setState((prev: WellbeingState) => ({ ...prev, profile }))
+        await persistData({ profile })
     }
 
-    const logWeight = (weight: number) => {
+    const logWeight = async (weight: number) => {
         const date = new Date().toISOString().split('T')[0]
+        const weightHistory = [...state.weightHistory.filter((w: MetricEntry) => w.date !== date), { date, weight }]
+        const profile = state.profile ? { ...state.profile, weight } : null
+
         setState((prev: WellbeingState) => ({
             ...prev,
-            weightHistory: [...prev.weightHistory.filter((w: MetricEntry) => w.date !== date), { date, weight }],
-            profile: prev.profile ? { ...prev.profile, weight } : null
+            weightHistory,
+            profile
         }))
+
+        await Promise.all([
+            persistData({ weightHistory }),
+            profile ? persistData({ profile }) : Promise.resolve()
+        ])
     }
 
-    const logWorkout = (log: WorkoutLog) => {
+    const logWorkout = async (log: WorkoutLog) => {
+        const workoutLogs = [...state.workoutLogs, log]
         setState((prev: WellbeingState) => ({
             ...prev,
-            workoutLogs: [...prev.workoutLogs, log]
+            workoutLogs
         }))
+        await persistData({ workoutLogs })
     }
 
-    const addRoutine = (routine: WorkoutRoutine) => {
+    const addRoutine = async (routine: WorkoutRoutine) => {
+        const routines = [...state.routines, routine]
+        const activeRoutineId = state.activeRoutineId || routine.id
         setState((prev: WellbeingState) => ({
             ...prev,
-            routines: [...prev.routines, routine],
-            activeRoutineId: prev.activeRoutineId || routine.id
+            routines,
+            activeRoutineId
         }))
+        await persistData({ routines, activeRoutineId })
     }
 
-    const updateGymStats = (stats: Partial<TheGymGroupStats>) => {
+    const updateGymStats = async (stats: Partial<TheGymGroupStats>) => {
+        const gymStats = { ...state.gymStats, ...stats }
         setState((prev: WellbeingState) => ({
             ...prev,
-            gymStats: { ...prev.gymStats, ...stats }
+            gymStats
         }))
+        await persistData({ gymStats })
     }
 
-    const logMeal = (meal: Omit<MealLog, 'id'>) => {
+    const logMeal = async (meal: Omit<MealLog, 'id'>) => {
         const newMeal: MealLog = {
             ...meal,
             id: Math.random().toString(36).substring(2, 9),
             date: new Date().toISOString().split('T')[0]
         }
+        const mealLogs = [...state.mealLogs, newMeal]
         setState((prev: WellbeingState) => ({
             ...prev,
-            mealLogs: [...prev.mealLogs, newMeal]
+            mealLogs
         }))
+        await persistData({ mealLogs })
     }
 
-    const saveRecipe = (recipeId: string) => {
+    const saveRecipe = async (recipeId: string) => {
+        const savedRecipes = state.savedRecipes.includes(recipeId)
+            ? state.savedRecipes
+            : [...state.savedRecipes, recipeId]
         setState((prev: WellbeingState) => ({
             ...prev,
-            savedRecipes: prev.savedRecipes.includes(recipeId)
-                ? prev.savedRecipes
-                : [...prev.savedRecipes, recipeId]
+            savedRecipes
         }))
+        await persistData({ savedRecipes })
     }
 
-    const logMood = (value: MoodValue, note?: string) => {
+    const logMood = async (value: MoodValue, note?: string) => {
         const newEntry: MoodEntry = {
             id: Math.random().toString(36).substring(2, 9),
             date: new Date().toISOString().split('T')[0],
@@ -179,22 +337,48 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
             value,
             note
         }
+        const moodLogs = [newEntry, ...state.moodLogs].slice(0, 100)
         setState((prev: WellbeingState) => ({
             ...prev,
-            moodLogs: [newEntry, ...prev.moodLogs].slice(0, 100)
+            moodLogs
         }))
+        await persistData({ moodLogs })
     }
 
-    const saveReflection = (content: string) => {
+    const saveReflection = async (content: string) => {
         const newReflection: Reflection = {
             id: Math.random().toString(36).substring(2, 9),
             date: new Date().toISOString().split('T')[0],
             content
         }
+        const reflections = [newReflection, ...state.reflections].slice(0, 50)
         setState((prev: WellbeingState) => ({
             ...prev,
-            reflections: [newReflection, ...prev.reflections].slice(0, 50)
+            reflections
         }))
+        await persistData({ reflections })
+    }
+
+    const logWater = async (amount: number) => {
+        const newEntry: WaterLog = {
+            id: Math.random().toString(36).substring(2, 9),
+            date: new Date().toISOString().split('T')[0],
+            amount
+        }
+        const waterLogs = [...state.waterLogs, newEntry]
+        setState((prev: WellbeingState) => ({
+            ...prev,
+            waterLogs
+        }))
+        await persistData({ waterLogs })
+    }
+
+    const updateLayout = async (dashboardLayout: DashboardLayout) => {
+        setState((prev: WellbeingState) => ({
+            ...prev,
+            dashboardLayout
+        }))
+        await persistData({ dashboardLayout })
     }
 
     const syncGymData = async () => {
@@ -206,8 +390,6 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
             const locationId = state.gymStats.gymLocationId
             const weekAgo = new Date()
             weekAgo.setDate(weekAgo.getDate() - 7)
-
-            console.log('Syncing Gym - UUID:', uuid, 'MemberID:', memberId, 'Location:', locationId)
 
             const [busynessRes, historyRes] = await Promise.allSettled([
                 GymService.getBusyness(uuid, locationId || '', cookie, memberId, accessToken),
@@ -223,28 +405,31 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
                 return !isNaN(date.getTime()) && date > weekAgo
             }).length
 
+            const newGymStats = {
+                ...state.gymStats,
+                isIntegrated: true,
+                busyness: (busyness as any).error ? null : busyness,
+                weeklyVisits,
+                totalVisits: historyArray.length,
+                lastVisit: historyArray[0]?.startTime || historyArray[0]?.checkInDate || null,
+                visitHistory: historyArray.map((v: any) => {
+                    const dateStr = v.startTime || v.checkInDate || ''
+                    return {
+                        id: v.id || Math.random().toString(36).substring(2, 9),
+                        date: dateStr.split('T')[0],
+                        time: dateStr.split('T')[1]?.substring(0, 5) || '--:--',
+                        locationName: v.gymLocationName || v.gymName || 'Unknown Location'
+                    }
+                }),
+                debug_raw_history: history,
+                debug_raw_busyness: busyness
+            }
+
             setState((prev: WellbeingState) => ({
                 ...prev,
-                gymStats: {
-                    ...prev.gymStats,
-                    isIntegrated: true,
-                    busyness: (busyness as any).error ? null : busyness,
-                    weeklyVisits,
-                    totalVisits: historyArray.length,
-                    lastVisit: historyArray[0]?.startTime || historyArray[0]?.checkInDate || null,
-                    visitHistory: historyArray.map((v: any) => {
-                        const dateStr = v.startTime || v.checkInDate || ''
-                        return {
-                            id: v.id || Math.random().toString(36).substring(2, 9),
-                            date: dateStr.split('T')[0],
-                            time: dateStr.split('T')[1]?.substring(0, 5) || '--:--',
-                            locationName: v.gymLocationName || v.gymName || 'Unknown Location'
-                        }
-                    }),
-                    debug_raw_history: history,
-                    debug_raw_busyness: busyness
-                }
+                gymStats: newGymStats
             }))
+            await persistData({ gymStats: newGymStats })
         } catch (e) {
             console.error('Gym sync failed:', e)
         }
@@ -259,17 +444,20 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
 
             const newLocationId = homeGymId || locationId
 
+            const newGymStats = {
+                ...state.gymStats,
+                isIntegrated: true,
+                gymLocationId: newLocationId,
+                userUuid: uuid,
+                memberId: memberId,
+                debug_raw_user: rawUser
+            }
+
             setState((prev: WellbeingState) => ({
                 ...prev,
-                gymStats: {
-                    ...prev.gymStats,
-                    isIntegrated: true,
-                    gymLocationId: newLocationId,
-                    userUuid: uuid,
-                    memberId: memberId,
-                    debug_raw_user: rawUser
-                }
+                gymStats: newGymStats
             }))
+            await persistData({ gymStats: newGymStats })
         } catch (e) {
             throw e
         }
@@ -289,9 +477,12 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
         saveRecipe,
         logMood,
         saveReflection,
+        logWater,
+        updateLayout,
         macros,
-        dailyNutrition
-    }), [state, macros, dailyNutrition])
+        dailyNutrition,
+        dailyWater
+    }), [state, macros, dailyNutrition, dailyWater])
 
     return (
         <WellbeingContext.Provider value={value}>
