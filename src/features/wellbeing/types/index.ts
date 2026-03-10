@@ -143,12 +143,6 @@ export interface Reflection {
     content: string
 }
 
-export interface WaterLog {
-    id: string
-    date: string
-    amount: number // in ml
-}
-
 export type DashboardComponentId =
     | 'macros'
     | 'weight_trends'
@@ -175,7 +169,6 @@ export interface WellbeingState {
     savedRecipes: string[] // Array of recipe IDs
     moodLogs: MoodEntry[]
     reflections: Reflection[]
-    waterLogs: WaterLog[]
     dashboardLayout: DashboardLayout
     loading: boolean
 }

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react'
-import type { WellbeingProfile, MetricEntry, MacroTargets, WellbeingState, WellbeingGoal, ActivityLevel, WorkoutRoutine, WorkoutLog, TheGymGroupStats, MealLog, MoodValue, MoodEntry, Reflection, GymBusyness, GymVisit, WaterLog, DashboardLayout } from '../types'
+import type { WellbeingProfile, MetricEntry, MacroTargets, WellbeingState, WellbeingGoal, ActivityLevel, WorkoutRoutine, WorkoutLog, TheGymGroupStats, MealLog, MoodValue, MoodEntry, Reflection, GymBusyness, GymVisit, DashboardLayout } from '../types'
 import { GymService } from '../services/gymService'
 import { supabase } from '@/lib/supabase'
 
@@ -19,7 +19,6 @@ interface WellbeingContextType extends WellbeingState {
     updateLayout: (layout: DashboardLayout) => Promise<void>
     macros: MacroTargets
     dailyNutrition: MacroTargets
-    dailyWater: number
 }
 
 export const WellbeingContext = createContext<WellbeingContextType | undefined>(undefined)
@@ -41,7 +40,6 @@ const INITIAL_STATE: WellbeingState = {
     savedRecipes: [],
     moodLogs: [],
     reflections: [],
-    waterLogs: [],
     dashboardLayout: {
         main: [
             { id: 'macros', isVisible: true },
@@ -119,7 +117,6 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
                         newState.savedRecipes = dataRes.data.saved_recipes || []
                         newState.moodLogs = dataRes.data.mood_logs || []
                         newState.reflections = dataRes.data.reflections || []
-                        newState.waterLogs = dataRes.data.water_logs || []
                         newState.dashboardLayout = dataRes.data.dashboard_layout || INITIAL_STATE.dashboardLayout
                     }
 
@@ -168,7 +165,6 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
         savedRecipes: string[],
         moodLogs: MoodEntry[],
         reflections: Reflection[],
-        waterLogs: WaterLog[],
         dashboardLayout: DashboardLayout
     }>) => {
         const { data: { user } } = await supabase.auth.getUser()
@@ -188,7 +184,7 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
                 })
             }
 
-            if (data.weightHistory || data.routines || data.activeRoutineId !== undefined || data.workoutLogs || data.gymStats || data.mealLogs || data.savedRecipes || data.moodLogs || data.reflections || data.waterLogs || data.dashboardLayout) {
+            if (data.weightHistory || data.routines || data.activeRoutineId !== undefined || data.workoutLogs || data.gymStats || data.mealLogs || data.savedRecipes || data.moodLogs || data.reflections || data.dashboardLayout) {
                 const update: any = { user_id: user.id, updated_at: new Date().toISOString() }
                 if (data.weightHistory) update.weight_history = data.weightHistory
                 if (data.routines) update.routines = data.routines
@@ -199,7 +195,6 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
                 if (data.savedRecipes) update.saved_recipes = data.savedRecipes
                 if (data.moodLogs) update.mood_logs = data.moodLogs
                 if (data.reflections) update.reflections = data.reflections
-                if (data.waterLogs) update.water_logs = data.waterLogs
                 if (data.dashboardLayout) update.dashboard_layout = data.dashboardLayout
 
                 await supabase.from('wellbeing_data').upsert(update)
@@ -245,13 +240,6 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
             carbs: acc.carbs + meal.carbs
         }), { calories: 0, protein: 0, fat: 0, carbs: 0 })
     }, [state.mealLogs])
-
-    const dailyWater = useMemo(() => {
-        const today = new Date().toISOString().split('T')[0]
-        return state.waterLogs
-            .filter((w: WaterLog) => w.date === today)
-            .reduce((acc: number, w: WaterLog) => acc + w.amount, 0)
-    }, [state.waterLogs])
 
     const updateProfile = async (profile: WellbeingProfile) => {
         setState((prev: WellbeingState) => ({ ...prev, profile }))
@@ -359,20 +347,6 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
         await persistData({ reflections })
     }
 
-    const logWater = async (amount: number) => {
-        const newEntry: WaterLog = {
-            id: Math.random().toString(36).substring(2, 9),
-            date: new Date().toISOString().split('T')[0],
-            amount
-        }
-        const waterLogs = [...state.waterLogs, newEntry]
-        setState((prev: WellbeingState) => ({
-            ...prev,
-            waterLogs
-        }))
-        await persistData({ waterLogs })
-    }
-
     const updateLayout = async (dashboardLayout: DashboardLayout) => {
         setState((prev: WellbeingState) => ({
             ...prev,
@@ -477,12 +451,10 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
         saveRecipe,
         logMood,
         saveReflection,
-        logWater,
         updateLayout,
         macros,
-        dailyNutrition,
-        dailyWater
-    }), [state, macros, dailyNutrition, dailyWater])
+        dailyNutrition
+    }), [state, macros, dailyNutrition])
 
     return (
         <WellbeingContext.Provider value={value}>
