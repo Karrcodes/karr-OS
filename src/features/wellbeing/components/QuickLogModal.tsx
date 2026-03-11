@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Search, Sparkles, Check, Database } from 'lucide-react'
 import { useWellbeing } from '../contexts/WellbeingContext'
+import { ComboEmojiStack } from './ComboEmojiStack'
 import { cn } from '@/lib/utils'
 import type { LibraryMeal } from '../types'
 
@@ -29,8 +30,10 @@ export function QuickLogModal({ isOpen, onClose }: QuickLogModalProps) {
     const [mealCals, setMealCals] = useState('')
     const [mealMacros, setMealMacros] = useState({ protein: 0, carbs: 0, fat: 0 })
     const [saveToLibrary, setSaveToLibrary] = useState(true)
-    const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('snack')
+    const [mealType, setMealType] = useState<('dewbit' | 'breakfast' | 'lunch' | 'dinner' | 'snack')[]>(['snack'])
     const [isEstimating, setIsEstimating] = useState(false)
+    const [isCombo, setIsCombo] = useState(false)
+    const [comboContents, setComboContents] = useState<any[]>([])
     const [estimatedIngredients, setEstimatedIngredients] = useState<any[]>([])
 
     // Library Autocomplete State
@@ -73,7 +76,7 @@ export function QuickLogModal({ isOpen, onClose }: QuickLogModalProps) {
                 fat: data.fat || 0
             })
             setEstimatedIngredients(data.ingredients || [])
-            setMealType(data.type || 'snack')
+            setMealType(data.type ? [data.type] : ['snack'])
             setSaveToLibrary(true) // AI meals should usually be saved
         } catch (error) {
             console.error(error)
@@ -93,7 +96,9 @@ export function QuickLogModal({ isOpen, onClose }: QuickLogModalProps) {
             fat: meal.fat
         })
         setEstimatedIngredients(meal.ingredients || [])
-        setMealType(meal.type || 'snack')
+        setMealType(meal.type || ['snack'])
+        setIsCombo(!!meal.isCombo)
+        setComboContents(meal.contents || [])
         setSaveToLibrary(false) // already in library
     }
 
@@ -127,9 +132,11 @@ export function QuickLogModal({ isOpen, onClose }: QuickLogModalProps) {
                     protein: mealMacros.protein,
                     fat: mealMacros.fat,
                     carbs: mealMacros.carbs,
-                    type: mealType,
+                    type: mealType.length > 0 ? mealType[0] : 'snack', // logMeal expects singular type, use first tag or default
                     time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                    date: new Date().toISOString().split('T')[0]
+                    date: new Date().toISOString().split('T')[0],
+                    isCombo,
+                    contents: comboContents
                 })
             }
             handleSuccess()
@@ -207,14 +214,20 @@ export function QuickLogModal({ isOpen, onClose }: QuickLogModalProps) {
                                         <div className="space-y-2 col-span-2">
                                             <label className="text-[10px] font-black text-black/30 uppercase tracking-widest px-1">Meal Type</label>
                                             <div className="flex bg-black/[0.02] rounded-2xl p-1 gap-1 border border-black/5">
-                                                {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map(type => (
+                                                {(['dewbit', 'breakfast', 'lunch', 'dinner', 'snack'] as const).map(type => (
                                                     <button
                                                         key={type}
                                                         type="button"
-                                                        onClick={() => setMealType(type)}
+                                                        onClick={() => {
+                                                            setMealType(prev => 
+                                                                prev.includes(type) 
+                                                                    ? prev.filter(t => t !== type) 
+                                                                    : [...prev, type]
+                                                            )
+                                                        }}
                                                         className={cn(
                                                             "flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                                                            mealType === type
+                                                            mealType.includes(type)
                                                                 ? "bg-white text-black shadow-sm"
                                                                 : "text-black/30 hover:bg-black/[0.04]"
                                                         )}
@@ -227,13 +240,23 @@ export function QuickLogModal({ isOpen, onClose }: QuickLogModalProps) {
                                         <div className="space-y-2 col-span-2 relative">
                                             <label className="text-[10px] font-black text-black/30 uppercase tracking-widest px-1">Meal Name / AI Prompt</label>
                                             <div className="flex bg-black/[0.02] border border-black/5 rounded-2xl overflow-hidden focus-within:border-emerald-500/50 transition-colors">
-                                                <input
-                                                    type="text"
-                                                    value={mealEmoji}
-                                                    onChange={e => setMealEmoji(e.target.value)}
-                                                    className="w-16 bg-black/[0.02] text-center border-r border-black/5 text-xl outline-none"
-                                                    maxLength={2}
-                                                />
+                                                {isCombo ? (
+                                                    <div className="w-16 flex items-center justify-center border-r border-black/5 bg-black/[0.02]">
+                                                        <ComboEmojiStack 
+                                                            isCombo={true}
+                                                            contents={comboContents}
+                                                            size="md"
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <input
+                                                        type="text"
+                                                        value={mealEmoji}
+                                                        onChange={e => setMealEmoji(e.target.value)}
+                                                        className="w-16 bg-black/[0.02] text-center border-r border-black/5 text-xl outline-none"
+                                                        maxLength={2}
+                                                    />
+                                                )}
                                                 <input
                                                     type="text"
                                                     value={mealName}
@@ -281,7 +304,12 @@ export function QuickLogModal({ isOpen, onClose }: QuickLogModalProps) {
                                                             className="w-full text-left p-2 rounded-xl border border-transparent hover:border-black/5 bg-transparent hover:bg-black/[0.02] transition-colors flex justify-between items-center group"
                                                         >
                                                             <div className="flex items-center gap-3">
-                                                                <div className="w-8 h-8 rounded-lg bg-black/[0.02] flex items-center justify-center text-lg">{libItem.emoji || '🍽️'}</div>
+                                                                <ComboEmojiStack 
+                                                                    isCombo={libItem.isCombo}
+                                                                    contents={libItem.contents}
+                                                                    fallbackEmoji={libItem.emoji}
+                                                                    size="sm"
+                                                                />
                                                                 <div>
                                                                     <div className="text-[12px] font-bold text-black">{libItem.name}</div>
                                                                     <div className="text-[10px] font-bold text-black/40 mt-0.5">

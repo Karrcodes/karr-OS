@@ -2,8 +2,9 @@
 
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { X, Database, Utensils, Trash2, ChefHat } from 'lucide-react'
+import { X, Database, Utensils, Trash2, ChefHat, Coffee, UtensilsCrossed, Moon, Apple, Zap } from 'lucide-react'
 import { useWellbeing } from '../contexts/WellbeingContext'
+import { ComboEmojiStack } from './ComboEmojiStack'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 import ConfirmationModal from '@/components/ConfirmationModal'
@@ -14,8 +15,10 @@ interface NutritionFridgeModalProps {
 }
 
 export function NutritionFridgeModal({ isOpen, onClose }: NutritionFridgeModalProps) {
-    const { fridge, library, consumeFromFridge, removeFromFridge } = useWellbeing()
+    const { fridge, library, consumeFromFridge, removeFromFridge, updateFridgePortions } = useWellbeing()
     const [itemToDelete, setItemToDelete] = useState<{ id: string, name: string } | null>(null)
+    const [itemToConsume, setItemToConsume] = useState<{ id: string, name: string, meal: any } | null>(null)
+    const [selectedConsumeType, setSelectedConsumeType] = useState<'dewbit' | 'breakfast' | 'lunch' | 'dinner' | 'snack'>('snack')
 
     if (!isOpen) return null
 
@@ -33,7 +36,7 @@ export function NutritionFridgeModal({ isOpen, onClose }: NutritionFridgeModalPr
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="bg-white rounded-[40px] w-full max-w-2xl overflow-hidden relative shadow-2xl flex flex-col max-h-[90vh]"
+                className="bg-[#fafafa] rounded-[48px] w-full max-w-4xl overflow-hidden relative shadow-2xl flex flex-col max-h-[90vh]"
             >
                 {/* Header */}
                 <div className="p-8 pb-6 flex items-center justify-between shrink-0 border-b border-black/5">
@@ -77,59 +80,79 @@ export function NutritionFridgeModal({ isOpen, onClose }: NutritionFridgeModalPr
                                 return (
                                     <div
                                         key={item.id}
-                                        className="bg-white border border-black/5 rounded-[32px] p-6 flex items-center justify-between group hover:border-black/10 transition-all shadow-sm hover:shadow-md"
+                                        className="bg-white border border-black/5 rounded-[32px] p-8 flex items-center justify-between group hover:border-black/10 transition-all shadow-sm hover:shadow-md"
                                     >
                                         <div className="flex items-center gap-5">
-                                            <div className="text-4xl bg-black/[0.02] w-20 h-20 rounded-3xl flex items-center justify-center border border-black/5">
-                                                {meal.emoji || '🍽️'}
-                                            </div>
-                                            <div>
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <span className={cn(
-                                                        "px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest",
-                                                        meal.type === 'breakfast' ? "bg-amber-50 text-amber-600" :
-                                                            meal.type === 'lunch' ? "bg-emerald-50 text-emerald-600" :
-                                                                meal.type === 'dinner' ? "bg-blue-50 text-blue-600" :
-                                                                    "bg-rose-50 text-rose-600"
-                                                    )}>
-                                                        {meal.type || 'snack'}
-                                                    </span>
-                                                    <span className="text-[10px] font-bold text-black/30 uppercase">
+                                            <ComboEmojiStack
+                                                isCombo={meal.isCombo}
+                                                contents={meal.contents}
+                                                fallbackEmoji={meal.emoji}
+                                                size="md"
+                                                className="border border-black/5 rounded-2xl"
+                                            />
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[10px] font-bold text-black/20 uppercase tracking-tighter">
                                                         Prepped {format(new Date(item.prepDate), 'MMM do')}
                                                     </span>
                                                 </div>
-                                                <h4 className="font-bold text-xl leading-none mb-3 uppercase tracking-tight">{meal.name}</h4>
-                                                <div className="flex items-center gap-4 text-xs font-bold text-black/40">
-                                                    <span className="text-black">{meal.calories} kcal</span>
-                                                    <span className="text-rose-500">{meal.protein}g P</span>
-                                                    <span className="text-emerald-500">{meal.carbs}g C</span>
-                                                    <span className="text-amber-500">{meal.fat}g F</span>
+                                                <h4 className="font-extrabold text-lg leading-none uppercase tracking-tight text-black">{meal.name}</h4>
+                                                <div className="flex items-center gap-4 text-[10px] font-bold text-black/20">
+                                                    <span className="text-black/60 capitalize">{meal.calories} kcal</span>
+                                                    <div className="flex gap-3">
+                                                        <span className="text-rose-500/60">{meal.protein}g P</span>
+                                                        <span className="text-emerald-500/60">{meal.carbs}g C</span>
+                                                        <span className="text-amber-500/60">{meal.fat}g F</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex flex-col items-center gap-1 mr-2">
-                                                <div className="bg-black/5 px-3 py-1.5 rounded-xl text-sm font-black text-black tabular-nums">
-                                                    x{item.portions}
+                                        <div className="flex items-center gap-6">
+                                            {/* Manual Portion Adjuster */}
+                                            <div className="flex flex-col items-center gap-2 bg-black/[0.03] p-1.5 rounded-2xl border border-black/5">
+                                                <div className="flex items-center gap-3">
+                                                    <button 
+                                                        onClick={() => updateFridgePortions(item.id, item.portions - 1)}
+                                                        className="w-8 h-8 rounded-xl bg-white border border-black/5 flex items-center justify-center text-lg font-black hover:bg-black/5 active:scale-90 transition-all shadow-sm"
+                                                    >
+                                                        -
+                                                    </button>
+                                                    <div className="flex flex-col items-center min-w-[32px]">
+                                                        <span className="text-xl font-black text-black tabular-nums">{item.portions}</span>
+                                                    </div>
+                                                    <button 
+                                                        onClick={() => updateFridgePortions(item.id, item.portions + 1)}
+                                                        className="w-8 h-8 rounded-xl bg-white border border-black/5 flex items-center justify-center text-lg font-black hover:bg-black/5 active:scale-90 transition-all shadow-sm"
+                                                    >
+                                                        +
+                                                    </button>
                                                 </div>
-                                                <span className="text-[9px] font-black text-black/20 uppercase tracking-widest">Left</span>
+                                                <span className="text-[8px] font-black text-black/20 uppercase tracking-[0.2em]">Inventory</span>
                                             </div>
 
-                                            <button
-                                                onClick={() => consumeFromFridge(item.id)}
-                                                className="h-14 px-6 rounded-2xl bg-black text-white text-[11px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-2 shadow-lg shadow-black/10"
-                                            >
-                                                <Utensils className="w-4 h-4" /> Consume
-                                            </button>
+                                            <div className="h-16 w-px bg-black/5" />
 
-                                            <button
-                                                onClick={() => setItemToDelete({ id: item.id, name: meal.name })}
-                                                className="h-14 w-14 rounded-2xl bg-black/5 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all shadow-sm"
-                                                title="Throw Away"
-                                            >
-                                                <Trash2 className="w-5 h-5" />
-                                            </button>
+                                            <div className="flex items-center gap-3">
+                                                <button
+                                                    onClick={() => {
+                                                        const currentTypes = Array.isArray(meal.type) ? meal.type : [meal.type || 'snack']
+                                                        setSelectedConsumeType(currentTypes[0] as any || 'snack')
+                                                        setItemToConsume({ id: item.id, name: meal.name, meal })
+                                                    }}
+                                                    className="h-14 px-6 rounded-2xl bg-black text-white text-[11px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-3 shadow-xl shadow-black/10"
+                                                >
+                                                    <Utensils className="w-4 h-4" /> Consume
+                                                </button>
+
+                                                <button
+                                                    onClick={() => setItemToDelete({ id: item.id, name: meal.name })}
+                                                    className="h-14 w-14 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all border border-rose-500/10"
+                                                    title="Throw Away"
+                                                >
+                                                    <Trash2 className="w-5 h-5" />
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 )
@@ -138,6 +161,50 @@ export function NutritionFridgeModal({ isOpen, onClose }: NutritionFridgeModalPr
                     )}
                 </div>
             </motion.div>
+
+            <ConfirmationModal
+                isOpen={!!itemToConsume}
+                onClose={() => setItemToConsume(null)}
+                onConfirm={async () => {
+                    if (itemToConsume) {
+                        await consumeFromFridge(itemToConsume.id, selectedConsumeType)
+                        setItemToConsume(null)
+                    }
+                }}
+                title="Consume Meal"
+                message={`Log "${itemToConsume?.name}" to Today's Meals?`}
+                confirmText="Log & Consume"
+                type="info"
+                maxWidth="max-w-xl"
+            >
+                <div className="mt-4 pt-6 border-t border-black/5">
+                    <div className="grid grid-cols-5 gap-3 mb-8">
+                        {(['dewbit', 'breakfast', 'lunch', 'dinner', 'snack'] as const).map(type => {
+                            const Icon = 
+                                type === 'breakfast' ? Coffee :
+                                type === 'lunch' ? UtensilsCrossed :
+                                type === 'dinner' ? Moon :
+                                type === 'snack' ? Apple : Zap
+                            
+                            return (
+                                <button
+                                    key={type}
+                                    onClick={() => setSelectedConsumeType(type)}
+                                    className={cn(
+                                        "flex flex-col items-center justify-center p-4 rounded-[24px] gap-3 transition-all",
+                                        selectedConsumeType === type 
+                                            ? "bg-black text-white shadow-2xl" 
+                                            : "bg-black/5 text-black/40 hover:bg-black/10"
+                                    )}
+                                >
+                                    <Icon className={cn("w-4 h-4", selectedConsumeType === type ? "text-white" : "text-black/20")} />
+                                    <span className="text-[10px] font-black uppercase tracking-[0.1em]">{type}</span>
+                                </button>
+                            )
+                        })}
+                    </div>
+                </div>
+            </ConfirmationModal>
 
             <ConfirmationModal
                 isOpen={!!itemToDelete}

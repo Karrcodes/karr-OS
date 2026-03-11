@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Trash2, AlertCircle, Info } from 'lucide-react'
+import { Trash2, AlertCircle, Info, Refrigerator } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface ConfirmationModalProps {
@@ -12,8 +12,10 @@ interface ConfirmationModalProps {
     message: string
     confirmText?: string
     cancelText?: string
-    type?: 'danger' | 'warning' | 'info'
+    type?: 'danger' | 'warning' | 'info' | 'success'
     loading?: boolean
+    children?: React.ReactNode
+    maxWidth?: string
 }
 
 export default function ConfirmationModal({
@@ -25,11 +27,13 @@ export default function ConfirmationModal({
     confirmText = 'Confirm',
     cancelText = 'Back',
     type = 'danger',
-    loading = false
+    loading = false,
+    children,
+    maxWidth = 'max-w-sm'
 }: ConfirmationModalProps) {
     if (!isOpen) return null
 
-    const Icon = type === 'danger' ? Trash2 : type === 'warning' ? AlertCircle : Info
+    const Icon = type === 'danger' ? Trash2 : type === 'warning' ? AlertCircle : type === 'success' ? Refrigerator : Info
 
     return (
         <div className="fixed inset-0 z-[500] flex items-center justify-center p-4">
@@ -37,12 +41,16 @@ export default function ConfirmationModal({
                 className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
                 onClick={onClose}
             />
-            <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col p-6 text-center animate-in zoom-in-95 duration-200">
+            <div className={cn(
+                "relative w-full bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col p-6 text-center animate-in zoom-in-95 duration-200",
+                maxWidth
+            )}>
                 <div className={cn(
                     "w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4",
                     type === 'danger' ? "bg-red-100 text-red-600" :
                         type === 'warning' ? "bg-amber-100 text-amber-600" :
-                            "bg-emerald-100 text-emerald-600"
+                        type === 'success' ? "bg-emerald-100 text-emerald-600" :
+                            "bg-blue-100 text-blue-600"
                 )}>
                     <Icon className="w-8 h-8" />
                 </div>
@@ -51,6 +59,8 @@ export default function ConfirmationModal({
                 <p className="text-[14px] text-black/60 mb-6 leading-relaxed">
                     {message}
                 </p>
+
+                {children}
 
                 <div className="flex gap-3">
                     <button

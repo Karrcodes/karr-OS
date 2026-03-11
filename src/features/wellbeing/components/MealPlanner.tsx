@@ -9,6 +9,7 @@ import { NutritionLibraryModal } from './NutritionLibraryModal'
 import ConfirmationModal from '@/components/ConfirmationModal'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
+import { ComboEmojiStack } from './ComboEmojiStack'
 import type { MealLog, MacroTargets } from '../types'
 
 export function MealPlanner() {
@@ -17,6 +18,7 @@ export function MealPlanner() {
     const [showLibrary, setShowLibrary] = useState(false)
     const [mealToDelete, setMealToDelete] = useState<MealLog | null>(null)
     const [libraryActionMeal, setLibraryActionMeal] = useState<{ meal: MealLog, isSaved: boolean, libraryMealId?: string } | null>(null)
+    const [openCategoryMealId, setOpenCategoryMealId] = useState<string | null>(null)
 
     const today = new Date().toISOString().split('T')[0]
     const todayMeals = mealLogs.filter((m: MealLog) => m.date === today)
@@ -90,105 +92,199 @@ export function MealPlanner() {
                             <p className="text-black/20 text-sm">Start your day by logging breakfast</p>
                         </div>
                     ) : (
-                        ['breakfast', 'lunch', 'dinner', 'snack'].map(type => {
-                            const mealsOfType = todayMeals.filter((m: MealLog) => m.type === type)
-                            if (mealsOfType.length === 0) return null
+                        (() => {
+                            const standardTypes = ['breakfast', 'lunch', 'dinner', 'snack', 'dewbit']
+                            const otherMeals = todayMeals.filter(m => !m.type || !standardTypes.includes(m.type.toLowerCase()))
+                            
                             return (
-                                <div key={type} className="mb-6 last:mb-0">
-                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-black/30 mb-3 ml-2">{type}</h4>
-                                    <div className="space-y-2">
-                                        {mealsOfType.map(meal => (
-                                            <div key={meal.id} className="flex items-center justify-between p-6 bg-black/[0.02] border border-black/5 rounded-[24px] hover:bg-black/[0.04] transition-all group">
-                                                <div className="flex items-center gap-6">
-                                                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-rose-500 shadow-sm text-2xl">
-                                                        {meal.emoji || <Clock className="h-6 w-6" />}
-                                                    </div>
-                                                    <div>
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <div className="relative group/category z-10">
-                                                                <button
-                                                                    className={cn(
-                                                                        "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1 transition-all",
-                                                                        meal.type === 'breakfast' ? "bg-amber-50 text-amber-600 hover:bg-amber-100" :
-                                                                            meal.type === 'lunch' ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100" :
-                                                                                meal.type === 'dinner' ? "bg-blue-50 text-blue-600 hover:bg-blue-100" :
-                                                                                    "bg-rose-50 text-rose-600 hover:bg-rose-100"
-                                                                    )}
-                                                                >
-                                                                    {meal.type}
-                                                                </button>
-                                                                <div className="absolute left-0 top-full mt-1 w-28 bg-white border border-black/5 rounded-xl shadow-lg opacity-0 invisible group-hover/category:opacity-100 group-hover/category:visible transition-all overflow-hidden origin-top-left scale-95 group-hover/category:scale-100">
-                                                                    {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map(t => (
-                                                                        <button
-                                                                            key={t}
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation()
-                                                                                updateMealLog(meal.id, { type: t })
-                                                                            }}
-                                                                            className="w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-black/5 transition-colors"
-                                                                        >
-                                                                            {t}
-                                                                        </button>
-                                                                    ))}
+                                <>
+                                    {standardTypes.map(type => {
+                                        const mealsOfType = todayMeals.filter((m: MealLog) => m.type?.toLowerCase() === type)
+                                        if (mealsOfType.length === 0) return null
+                                        return (
+                                            <div key={type} className="mb-6 last:mb-0">
+                                                <h4 className="text-[10px] font-black uppercase tracking-widest text-black/30 mb-3 ml-2">{type}</h4>
+                                                <div className="space-y-2">
+                                                    {mealsOfType.map(meal => (
+                                                        <div key={meal.id} className="flex items-center justify-between p-6 bg-black/[0.02] border border-black/5 rounded-[24px] hover:bg-black/[0.04] transition-all group">
+                                                            <div className="flex items-center gap-6">
+                                                                <ComboEmojiStack 
+                                                                    isCombo={meal.isCombo}
+                                                                    contents={meal.contents}
+                                                                    fallbackEmoji={meal.emoji}
+                                                                    size="md"
+                                                                />
+                                                                <div>
+                                                                    <div className="flex items-center gap-2 mb-1">
+                                                                        <div className={cn("relative transition-all", openCategoryMealId === meal.id ? "z-50" : "z-10")}>
+                                                                            <button
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation()
+                                                                                    setOpenCategoryMealId(openCategoryMealId === meal.id ? null : meal.id)
+                                                                                }}
+                                                                                className={cn(
+                                                                                    "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1 transition-all",
+                                                                                    meal.type?.toLowerCase() === 'breakfast' ? "bg-amber-50 text-amber-600 hover:bg-amber-100" :
+                                                                                        meal.type?.toLowerCase() === 'lunch' ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100" :
+                                                                                            meal.type?.toLowerCase() === 'dinner' ? "bg-blue-50 text-blue-600 hover:bg-blue-100" :
+                                                                                                meal.type?.toLowerCase() === 'dewbit' ? "bg-purple-50 text-purple-600 hover:bg-purple-100" :
+                                                                                                    "bg-rose-50 text-rose-600 hover:bg-rose-100"
+                                                                                )}
+                                                                            >
+                                                                                {meal.type}
+                                                                            </button>
+                                                                            
+                                                                            <AnimatePresence>
+                                                                                {openCategoryMealId === meal.id && (
+                                                                                    <motion.div 
+                                                                                        initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                                                                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                                                        exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                                                                                        transition={{ duration: 0.15 }}
+                                                                                        className="absolute left-0 top-full mt-1 w-28 bg-white border border-black/5 rounded-xl shadow-xl overflow-hidden origin-top-left z-50"
+                                                                                    >
+                                                                                        {(['dewbit', 'breakfast', 'lunch', 'dinner', 'snack'] as const).map(t => (
+                                                                                            <button
+                                                                                                key={t}
+                                                                                                onClick={(e) => {
+                                                                                                    e.stopPropagation()
+                                                                                                    updateMealLog(meal.id, { type: t })
+                                                                                                    setOpenCategoryMealId(null)
+                                                                                                }}
+                                                                                                className="w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-black/5 transition-colors"
+                                                                                            >
+                                                                                                {t}
+                                                                                            </button>
+                                                                                        ))}
+                                                                                    </motion.div>
+                                                                                )}
+                                                                            </AnimatePresence>
+                                                                        </div>
+                                                                        <span className="text-[9px] font-black uppercase tracking-widest text-black/20">•</span>
+                                                                        <span className="px-2 py-0.5 bg-black/5 rounded-full text-[9px] font-black uppercase tracking-widest text-black/40">
+                                                                            {meal.time}
+                                                                        </span>
+                                                                    </div>
+                                                                    <h4 className="font-bold tracking-tight text-sm sm:text-base line-clamp-2">{meal.name}</h4>
                                                                 </div>
                                                             </div>
-                                                            <span className="text-[9px] font-black uppercase tracking-widest text-black/20">•</span>
-                                                            <span className="px-2 py-0.5 bg-black/5 rounded-full text-[9px] font-black uppercase tracking-widest text-black/40">
-                                                                {meal.time}
-                                                            </span>
+                                                            <div className="flex items-center gap-4 sm:gap-6 shrink-0 ml-4">
+                                                                <div className="text-right hidden sm:block">
+                                                                    <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Protein</p>
+                                                                    <p className="font-bold">{meal.protein}g</p>
+                                                                </div>
+                                                                <div className="text-right">
+                                                                    <p className="text-[10px] font-black text-black/40 uppercase tracking-widest leading-tight">Calories</p>
+                                                                    <p className="text-lg font-bold">{meal.calories}</p>
+                                                                </div>
+                                                                <div className="flex items-center gap-1">
+                                                                    {(() => {
+                                                                        const libraryMatch = library.find(m => m.name.toLowerCase() === meal.name.toLowerCase())
+                                                                        const isSaved = !!libraryMatch
+                                                                        return (
+                                                                            <button
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation()
+                                                                                    setLibraryActionMeal({ meal, isSaved, libraryMealId: libraryMatch?.id })
+                                                                                }}
+                                                                                className={cn(
+                                                                                    "p-2.5 rounded-xl transition-all flex items-center justify-center",
+                                                                                    isSaved
+                                                                                        ? "bg-emerald-500 text-white hover:bg-emerald-600 shadow-sm"
+                                                                                        : "bg-black/5 text-black/40 hover:bg-emerald-500 hover:text-white"
+                                                                                )}
+                                                                                title={isSaved ? "Remove from Library" : "Save to Library"}
+                                                                            >
+                                                                                {isSaved ? <CheckCircle2 className="h-4 w-4" /> : <Database className="h-4 w-4" />}
+                                                                            </button>
+                                                                        )
+                                                                    })()}
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation()
+                                                                            setMealToDelete(meal)
+                                                                        }}
+                                                                        className="p-2.5 rounded-xl bg-black/5 text-rose-500 hover:bg-rose-500 hover:text-white transition-all"
+                                                                        title="Delete Meal"
+                                                                    >
+                                                                        <Trash2 className="h-4 w-4" />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                        <h4 className="font-bold tracking-tight text-sm sm:text-base line-clamp-2">{meal.name}</h4>
-                                                    </div>
+                                                    ))}
                                                 </div>
-                                                <div className="flex items-center gap-4 sm:gap-6 shrink-0 ml-4">
-                                                    <div className="text-right hidden sm:block">
-                                                        <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Protein</p>
-                                                        <p className="font-bold">{meal.protein}g</p>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className="text-[10px] font-black text-black/40 uppercase tracking-widest leading-tight">Calories</p>
-                                                        <p className="text-lg font-bold">{meal.calories}</p>
-                                                    </div>
-                                                    <div className="flex items-center gap-1">
-                                                        {(() => {
-                                                            const libraryMatch = library.find(m => m.name.toLowerCase() === meal.name.toLowerCase())
-                                                            const isSaved = !!libraryMatch
-                                                            return (
+                                            </div>
+                                        )
+                                    })}
+
+                                    {otherMeals.length > 0 && (
+                                        <div className="mb-6 last:mb-0">
+                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-black/30 mb-3 ml-2">Other</h4>
+                                            <div className="space-y-2">
+                                                {otherMeals.map(meal => (
+                                                    <div key={meal.id} className="flex items-center justify-between p-6 bg-black/[0.02] border border-black/5 rounded-[24px] hover:bg-black/[0.04] transition-all group">
+                                                        <div className="flex items-center gap-6">
+                                                            <ComboEmojiStack 
+                                                                isCombo={meal.isCombo}
+                                                                contents={meal.contents}
+                                                                fallbackEmoji={meal.emoji}
+                                                                size="md"
+                                                            />
+                                                            <div>
+                                                                <div className="flex items-center gap-2 mb-1">
+                                                                    <div className={cn("relative transition-all", openCategoryMealId === meal.id ? "z-50" : "z-10")}>
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation()
+                                                                                setOpenCategoryMealId(openCategoryMealId === meal.id ? null : meal.id)
+                                                                            }}
+                                                                            className={cn(
+                                                                                "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1 transition-all",
+                                                                                "bg-rose-50 text-rose-600 hover:bg-rose-100"
+                                                                            )}
+                                                                        >
+                                                                            {meal.type || 'other'}
+                                                                        </button>
+                                                                    </div>
+                                                                    <span className="text-[9px] font-black uppercase tracking-widest text-black/20">•</span>
+                                                                    <span className="px-2 py-0.5 bg-black/5 rounded-full text-[9px] font-black uppercase tracking-widest text-black/40">
+                                                                        {meal.time}
+                                                                    </span>
+                                                                </div>
+                                                                <h4 className="font-bold tracking-tight text-sm sm:text-base line-clamp-2">{meal.name}</h4>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-4 sm:gap-6 shrink-0 ml-4">
+                                                            <div className="text-right hidden sm:block">
+                                                                <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Protein</p>
+                                                                <p className="font-bold">{meal.protein}g</p>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <p className="text-[10px] font-black text-black/40 uppercase tracking-widest leading-tight">Calories</p>
+                                                                <p className="text-lg font-bold">{meal.calories}</p>
+                                                            </div>
+                                                            <div className="flex items-center gap-1">
                                                                 <button
                                                                     onClick={(e) => {
                                                                         e.stopPropagation()
-                                                                        setLibraryActionMeal({ meal, isSaved, libraryMealId: libraryMatch?.id })
+                                                                        setMealToDelete(meal)
                                                                     }}
-                                                                    className={cn(
-                                                                        "p-2.5 rounded-xl transition-all flex items-center justify-center",
-                                                                        isSaved
-                                                                            ? "bg-emerald-500 text-white hover:bg-emerald-600 shadow-sm"
-                                                                            : "bg-black/5 text-black/40 hover:bg-emerald-500 hover:text-white"
-                                                                    )}
-                                                                    title={isSaved ? "Remove from Library" : "Save to Library"}
+                                                                    className="p-2.5 rounded-xl bg-black/5 text-rose-500 hover:bg-rose-500 hover:text-white transition-all"
+                                                                    title="Delete Meal"
                                                                 >
-                                                                    {isSaved ? <CheckCircle2 className="h-4 w-4" /> : <Database className="h-4 w-4" />}
+                                                                    <Trash2 className="h-4 w-4" />
                                                                 </button>
-                                                            )
-                                                        })()}
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation()
-                                                                setMealToDelete(meal)
-                                                            }}
-                                                            className="p-2.5 rounded-xl bg-black/5 text-rose-500 hover:bg-rose-500 hover:text-white transition-all"
-                                                            title="Delete Meal"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </button>
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                </div>
+                                                ))}
                                             </div>
-                                        ))}
-                                    </div>
-                                </div>
+                                        </div>
+                                    )}
+                                </>
                             )
-                        })
+                        })()
                     )}
                 </div>
             </div>
@@ -225,7 +321,7 @@ export function MealPlanner() {
                         } else {
                             await addMealToLibrary({
                                 name: libraryActionMeal.meal.name,
-                                type: libraryActionMeal.meal.type || 'snack',
+                                type: libraryActionMeal.meal.type ? [libraryActionMeal.meal.type] : ['snack'],
                                 calories: libraryActionMeal.meal.calories,
                                 protein: libraryActionMeal.meal.protein,
                                 carbs: libraryActionMeal.meal.carbs,

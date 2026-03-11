@@ -58,6 +58,14 @@ export interface WorkoutLog {
     routineId: string
     exercises: ExerciseLog[]
     gymVisitId?: string
+    duration?: number // in minutes
+}
+
+export interface WorkoutSession extends WorkoutLog {
+    startTime: string
+    isPaused: boolean
+    completedExerciseIds: string[]
+    skippedExerciseIds: string[]
 }
 
 export interface GymBusyness {
@@ -105,7 +113,7 @@ export interface Ingredient {
 export interface Recipe {
     id: string
     name: string
-    type: 'breakfast' | 'lunch' | 'dinner' | 'snack'
+    type: 'dewbit' | 'breakfast' | 'lunch' | 'dinner' | 'snack'
     prepTime: string
     calories: number
     protein: number
@@ -117,16 +125,27 @@ export interface Recipe {
     image?: string
 }
 
+export interface ComboContent {
+    id: string
+    comboId: string
+    itemId: string
+    quantity: number
+    // Denormalized for easier UI
+    meal?: LibraryMeal 
+}
+
 export interface LibraryMeal {
     id: string
     name: string
-    type: 'breakfast' | 'lunch' | 'dinner' | 'snack'
+    type: ('dewbit' | 'breakfast' | 'lunch' | 'dinner' | 'snack')[]
     emoji?: string
     calories: number
     protein: number
     carbs: number
     fat: number
     ingredients: any[]
+    isCombo?: boolean
+    contents?: ComboContent[]
 }
 
 export interface FridgeItem {
@@ -140,7 +159,7 @@ export interface MealLog {
     id: string
     date: string // ISO string for the day
     time: string // HH:mm
-    type: 'breakfast' | 'lunch' | 'dinner' | 'snack'
+    type: 'dewbit' | 'breakfast' | 'lunch' | 'dinner' | 'snack'
     name: string
     emoji?: string
     calories: number
@@ -149,6 +168,8 @@ export interface MealLog {
     carbs: number
     isRecipe?: boolean
     recipeId?: string
+    isCombo?: boolean
+    contents?: ComboContent[]
 }
 
 export type MoodValue = 'excellent' | 'good' | 'neutral' | 'low' | 'bad'
@@ -209,6 +230,7 @@ export interface WellbeingState {
     reflections: Reflection[]
     milestones: Milestone[]
     dashboardLayout: DashboardLayout
+    activeSession: WorkoutSession | null
     isSyncingGym: boolean
     loading: boolean
 }

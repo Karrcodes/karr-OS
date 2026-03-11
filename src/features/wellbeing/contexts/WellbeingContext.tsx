@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react'
-import type { WellbeingProfile, MetricEntry, MacroTargets, WellbeingState, WellbeingGoal, ActivityLevel, WorkoutRoutine, WorkoutLog, TheGymGroupStats, MealLog, MoodValue, MoodEntry, Reflection, GymBusyness, GymVisit, DashboardLayout, LibraryMeal, FridgeItem, Milestone } from '../types'
+import type { WellbeingProfile, MetricEntry, MacroTargets, WellbeingState, WellbeingGoal, ActivityLevel, WorkoutRoutine, WorkoutLog, WorkoutSession, WorkoutSet, TheGymGroupStats, MealLog, MoodValue, MoodEntry, Reflection, GymBusyness, GymVisit, DashboardLayout, LibraryMeal, FridgeItem, Milestone } from '../types'
 import { GymService } from '../services/gymService'
 import { supabase } from '@/lib/supabase'
 import { getGymRecommendation } from '../utils/fitness-utils'
@@ -25,8 +25,10 @@ interface WellbeingContextType extends WellbeingState {
     addMealToLibrary: (meal: Omit<LibraryMeal, 'id'>) => Promise<void>
     removeMealFromLibrary: (id: string) => Promise<void>
     updateLibraryMeal: (id: string, updates: Partial<LibraryMeal>) => Promise<void>
+    createCombo: (name: string, itemIds: { id: string, quantity: number }[], type: ('dewbit' | 'breakfast' | 'lunch' | 'dinner' | 'snack')[]) => Promise<void>
     addPrepToFridge: (mealId: string, portions: number) => Promise<void>
-    consumeFromFridge: (fridgeId: string) => Promise<void>
+    updateFridgePortions: (fridgeId: string, portions: number) => Promise<void>
+    consumeFromFridge: (fridgeId: string, mealType?: 'dewbit' | 'breakfast' | 'lunch' | 'dinner' | 'snack') => Promise<void>
     removeFromFridge: (fridgeId: string) => Promise<void>
     addMilestone: (milestone: Omit<Milestone, 'id' | 'completed'>) => Promise<void>
     updateMilestone: (id: string, updates: Partial<Milestone>) => Promise<void>
@@ -35,6 +37,11 @@ interface WellbeingContextType extends WellbeingState {
     dailyNutrition: MacroTargets
     gymRecommendation: { status: string; reason: string }
     isSyncingGym: boolean
+    activeSession: WorkoutSession | null
+    startSession: (routineId: string) => void
+    updateSessionSet: (exerciseId: string, setIndex: number, updates: Partial<WorkoutSet>) => void
+    finishSession: () => Promise<void>
+    cancelSession: () => void
 }
 
 export const WellbeingContext = createContext<WellbeingContextType | undefined>(undefined)
@@ -74,6 +81,7 @@ const INITIAL_STATE: WellbeingState = {
             { id: 'gym_activity', isVisible: true },
         ]
     },
+    activeSession: null,
     isSyncingGym: false,
     loading: true
 }
@@ -109,26 +117,55 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
 
             if (user) {
                 try {
-                    const [profileRes, dataRes, libraryRes, fridgeRes, rotaRes] = await Promise.all([
+                    const [profileRes, dataRes, libraryRes, comboContentsRes, fridgeRes, rotaRes] = await Promise.all([
                         supabase.from('wellbeing_profiles').select('*').eq('user_id', user.id).single(),
                         supabase.from('wellbeing_data').select('*').eq('user_id', user.id).single(),
                         supabase.from('nutrition_library').select('*').eq('user_id', user.id),
+                        supabase.from('nutrition_combo_contents').select('*'),
                         supabase.from('nutrition_fridge').select('*').eq('user_id', user.id),
                         supabase.from('fin_rota_overrides').select('*').eq('profile', 'Personal')
                     ])
 
+                    const comboMap = (comboContentsRes.data || []).reduce((acc: any, curr) => {
+                        if (!acc[curr.combo_id]) acc[curr.combo_id] = []
+                        acc[curr.combo_id].push({
+                            id: curr.id,
+                            comboId: curr.combo_id,
+                            itemId: curr.item_id,
+                            quantity: curr.quantity
+                        })
+                        return acc
+                    }, {})
+
+                    const baseLibrary = libraryRes.data?.map(m => ({
+                        id: m.id,
+                        name: m.name,
+                        type: m.type || 'snack',
+                        emoji: m.emoji,
+                        calories: m.calories,
+                        protein: m.protein,
+                        carbs: m.carbs,
+                        fat: m.fat,
+                        ingredients: m.ingredients,
+                        isCombo: m.is_combo,
+                        contents: comboMap[m.id] || []
+                    })) || []
+
+                    const library = baseLibrary.map(m => {
+                        if (m.isCombo && m.contents) {
+                            return {
+                                ...m,
+                                contents: m.contents.map((c: any) => ({
+                                    ...c,
+                                    meal: baseLibrary.find(l => l.id === c.itemId)
+                                }))
+                            }
+                        }
+                        return m
+                    })
+
                     const newState: Partial<WellbeingState> = {
-                        library: libraryRes.data?.map(m => ({
-                            id: m.id,
-                            name: m.name,
-                            type: m.type || 'snack',
-                            emoji: m.emoji,
-                            calories: m.calories,
-                            protein: m.protein,
-                            carbs: m.carbs,
-                            fat: m.fat,
-                            ingredients: m.ingredients
-                        })) || [],
+                        library,
                         fridge: fridgeRes.data?.map(f => ({
                             id: f.id,
                             mealId: f.meal_id,
@@ -156,13 +193,30 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
                         newState.activeRoutineId = dataRes.data.active_routine_id || null
                         newState.workoutLogs = dataRes.data.workout_logs || []
                         newState.gymStats = dataRes.data.gym_stats || INITIAL_STATE.gymStats
-                        newState.mealLogs = dataRes.data.meal_logs || []
+                        
+                        // Resolve emojis for meals from the library
+                        newState.mealLogs = (dataRes.data.meal_logs || []).map((meal: any) => {
+                            if (meal.isCombo && meal.contents) {
+                                return {
+                                    ...meal,
+                                    contents: meal.contents.map((c: any) => ({
+                                        ...c,
+                                        meal: library.find(l => l.id === c.itemId) || c.meal
+                                    }))
+                                }
+                            }
+                            return meal
+                        })
+
                         newState.savedRecipes = dataRes.data.saved_recipes || []
                         newState.moodLogs = dataRes.data.mood_logs || []
                         newState.reflections = dataRes.data.reflections || []
                         newState.milestones = dataRes.data.milestones || []
                         if (dataRes.data.dashboard_layout) {
                             newState.dashboardLayout = dataRes.data.dashboard_layout
+                        }
+                        if (dataRes.data.active_session) {
+                            newState.activeSession = dataRes.data.active_session
                         }
                     }
 
@@ -225,6 +279,7 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
                 if (data.reflections) update.reflections = data.reflections
                 if (data.milestones) update.milestones = data.milestones
                 if (data.dashboardLayout) update.dashboard_layout = data.dashboardLayout
+                if (data.activeSession !== undefined) update.active_session = data.activeSession
                 await supabase.from('wellbeing_data').upsert(update)
             }
         } catch (e) { console.error('Persistence error:', e) }
@@ -415,6 +470,87 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
         setState(prev => ({ ...prev, library: prev.library.map(m => m.id === id ? { ...m, ...updates } : m) }))
     }
 
+    const createCombo = async (name: string, items: { id: string, quantity: number }[], type: ('dewbit' | 'breakfast' | 'lunch' | 'dinner' | 'snack')[]) => {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        try {
+            // Calculate total macros
+            let totalCalories = 0, totalProtein = 0, totalCarbs = 0, totalFat = 0
+            items.forEach(item => {
+                const libraryItem = state.library.find(l => l.id === item.id)
+                if (libraryItem) {
+                    totalCalories += libraryItem.calories * item.quantity
+                    totalProtein += libraryItem.protein * item.quantity
+                    totalCarbs += libraryItem.carbs * item.quantity
+                    totalFat += libraryItem.fat * item.quantity
+                }
+            })
+
+            // Create the library entry for the combo
+            const { data: comboData, error: comboError } = await supabase.from('nutrition_library').insert({
+                user_id: user.id,
+                name,
+                type,
+                calories: Math.round(totalCalories),
+                protein: Math.round(totalProtein),
+                carbs: Math.round(totalCarbs),
+                fat: Math.round(totalFat),
+                is_combo: true,
+                emoji: '📦'
+            }).select().single()
+
+            if (comboError || !comboData) {
+                console.error('Error creating combo header:', comboError)
+                throw comboError || new Error('Failed to create combo header')
+            }
+
+            // Create combo contents
+            const contentsToInsert = items.map(item => ({
+                combo_id: comboData.id,
+                item_id: item.id,
+                quantity: item.quantity
+            }))
+
+            const { data: contentsData, error: contentsError } = await supabase.from('nutrition_combo_contents').insert(contentsToInsert).select()
+
+            if (contentsError) {
+                console.error('Error creating combo contents:', contentsError)
+                // Cleanup header if contents fail
+                await supabase.from('nutrition_library').delete().eq('id', comboData.id)
+                throw contentsError
+            }
+
+            // Update local state
+            const newCombo: LibraryMeal = {
+                id: comboData.id,
+                name: comboData.name,
+                type: comboData.type,
+                emoji: comboData.emoji,
+                calories: comboData.calories,
+                protein: comboData.protein,
+                carbs: comboData.carbs,
+                fat: comboData.fat,
+                ingredients: comboData.ingredients || [],
+                isCombo: true,
+                contents: (contentsData || []).map(c => ({
+                    id: c.id,
+                    comboId: c.combo_id,
+                    itemId: c.item_id,
+                    quantity: c.quantity,
+                    meal: state.library.find(l => l.id === c.item_id)
+                }))
+            }
+
+            setState(prev => ({ ...prev, library: [...prev.library, newCombo] }))
+            console.log('Combo created successfully:', newCombo)
+        } catch (e) {
+            console.error('createCombo failed:', e)
+            alert('Failed to save combo. Please ensure database migrations were applied.')
+            throw e
+        }
+    }
+
     const addPrepToFridge = async (mealId: string, portions: number) => {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
@@ -424,7 +560,18 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
         }
     }
 
-    const consumeFromFridge = async (fridgeId: string) => {
+    const updateFridgePortions = async (fridgeId: string, portions: number) => {
+        if (portions <= 0) {
+            await removeFromFridge(fridgeId)
+            return
+        }
+        const { error } = await supabase.from('nutrition_fridge').update({ portions }).eq('id', fridgeId)
+        if (!error) {
+            setState(prev => ({ ...prev, fridge: prev.fridge.map(f => f.id === fridgeId ? { ...f, portions } : f) }))
+        }
+    }
+
+    const consumeFromFridge = async (fridgeId: string, mealType?: 'dewbit' | 'breakfast' | 'lunch' | 'dinner' | 'snack') => {
         const item = state.fridge.find(f => f.id === fridgeId)
         if (!item || item.portions <= 0) return
         const meal = state.library.find(m => m.id === item.mealId)
@@ -439,13 +586,15 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
         await logMeal({
             date: new Date().toISOString().split('T')[0],
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            type: meal.type,
+            type: mealType || (Array.isArray(meal.type) ? (meal.type[0] || 'snack') : (meal.type as any)),
             name: meal.name,
             emoji: meal.emoji || '🍽️',
             calories: meal.calories,
             protein: meal.protein,
             fat: meal.fat,
-            carbs: meal.carbs
+            carbs: meal.carbs,
+            isCombo: meal.isCombo,
+            contents: meal.contents
         })
     }
 
@@ -527,6 +676,70 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
         await persistData({ gymStats })
     }
 
+    const startSession = (routineId: string) => {
+        const routine = state.routines.find(r => r.id === routineId)
+        if (!routine) return
+
+        const session: WorkoutSession = {
+            id: Math.random().toString(36).substring(2, 9),
+            date: new Date().toISOString().split('T')[0],
+            routineId: routine.id,
+            startTime: new Date().toISOString(),
+            isPaused: false,
+            completedExerciseIds: [],
+            skippedExerciseIds: [],
+            exercises: routine.exercises.map(ex => ({
+                exerciseId: ex.id,
+                sets: Array(ex.suggestedSets).fill(null).map(() => ({
+                    reps: ex.suggestedReps,
+                    weight: 0
+                }))
+            }))
+        }
+
+        setState(prev => ({ ...prev, activeSession: session }))
+        persistData({ activeSession: session })
+    }
+
+    const updateSessionSet = (exerciseId: string, setIndex: number, updates: Partial<WorkoutSet>) => {
+        if (!state.activeSession) return
+        
+        const activeSession: WorkoutSession = { 
+            ...state.activeSession,
+            exercises: state.activeSession.exercises.map(ex => 
+                ex.exerciseId === exerciseId 
+                    ? { ...ex, sets: ex.sets.map((s, i) => i === setIndex ? { ...s, ...updates } : s) }
+                    : ex
+            )
+        }
+        
+        setState(prev => ({ ...prev, activeSession }))
+    }
+
+    const finishSession = async () => {
+        if (!state.activeSession) return
+
+        const duration = Math.round((new Date().getTime() - new Date(state.activeSession.startTime).getTime()) / 60000)
+        
+        // Finalize the log
+        const log: WorkoutLog = {
+            id: state.activeSession.id,
+            date: state.activeSession.date,
+            routineId: state.activeSession.routineId,
+            exercises: state.activeSession.exercises,
+            duration
+        }
+
+        await logWorkout(log)
+        setState(prev => ({ ...prev, activeSession: null }))
+        persistData({ activeSession: null })
+    }
+
+    const cancelSession = () => {
+        setState(prev => ({ ...prev, activeSession: null }))
+        persistData({ activeSession: null })
+    }
+
     const value = useMemo(() => ({
         ...state,
         updateProfile,
@@ -547,12 +760,18 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
         addMealToLibrary,
         removeMealFromLibrary,
         updateLibraryMeal,
+        createCombo,
         addPrepToFridge,
+        updateFridgePortions,
         consumeFromFridge,
         removeFromFridge,
         addMilestone,
         updateMilestone,
         deleteMilestone,
+        startSession,
+        updateSessionSet,
+        finishSession,
+        cancelSession,
         macros,
         dailyNutrition,
         gymRecommendation,

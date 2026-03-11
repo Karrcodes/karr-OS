@@ -1,8 +1,9 @@
 'use client'
 
 import React, { useState, useRef } from 'react'
-import { motion } from 'framer-motion'
-import { X, Flame, Database, Plus, Trash2, GripVertical } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { ComboEmojiStack } from './ComboEmojiStack'
+import { X, Flame, Database, Plus, Trash2, GripVertical, Coffee, UtensilsCrossed, Moon, Apple, Zap } from 'lucide-react'
 import { useWellbeing } from '../contexts/WellbeingContext'
 import { cn } from '@/lib/utils'
 import type { LibraryMeal } from '../types'
@@ -14,31 +15,53 @@ interface NutritionLibraryModalProps {
 }
 
 export function NutritionLibraryModal({ isOpen, onClose }: NutritionLibraryModalProps) {
-    const { library, logMeal, updateLibraryMeal, removeMealFromLibrary, addPrepToFridge } = useWellbeing()
-    const [selectedType, setSelectedType] = useState<'all' | 'breakfast' | 'lunch' | 'dinner' | 'snack'>('all')
+    const [activeTab, setActiveTab] = useState<'library' | 'combos'>('library')
+    const [selectedType, setSelectedType] = useState<'dewbit' | 'breakfast' | 'lunch' | 'dinner' | 'snack'>('dewbit')
     const [draggingId, setDraggingId] = useState<string | null>(null)
     const [dragOverType, setDragOverType] = useState<string | null>(null)
     const [mealToDelete, setMealToDelete] = useState<LibraryMeal | null>(null)
     const [mealToPrep, setMealToPrep] = useState<LibraryMeal | null>(null)
+    const [tagToRemove, setTagToRemove] = useState<{ meal: LibraryMeal, tag: string } | null>(null)
+    const [mealToLog, setMealToLog] = useState<LibraryMeal | null>(null)
+    const [selectedLogType, setSelectedLogType] = useState<'dewbit' | 'breakfast' | 'lunch' | 'dinner' | 'snack'>('snack')
+    const [isComboMode, setIsComboMode] = useState(false)
+    const [selectedComboItems, setSelectedComboItems] = useState<Record<string, number>>({})
+    const [comboName, setComboName] = useState('')
+    const [isSavingCombo, setIsSavingCombo] = useState(false)
+    const [showSaveSuccess, setShowSaveSuccess] = useState(false)
+    const [prepPortions, setPrepPortions] = useState(4)
+    const { library, logMeal, updateLibraryMeal, removeMealFromLibrary, addPrepToFridge, createCombo } = useWellbeing()
 
     if (!isOpen) return null
 
-    const filteredLibrary = selectedType === 'all'
-        ? library
-        : library.filter((m: LibraryMeal) => m.type === selectedType)
+    const filteredLibrary = library.filter((m: LibraryMeal) => {
+            if (activeTab === 'combos') return m.isCombo;
+            if (m.isCombo) return false; // Hide combos in category views
+            const types = Array.isArray(m.type) ? m.type : (typeof m.type === 'string' ? [m.type] : []);
+            return types.includes(selectedType);
+        })
 
-    const handleQuickLog = async (meal: LibraryMeal) => {
+    const handleQuickLog = (meal: LibraryMeal) => {
+        setMealToLog(meal)
+        // Default to first tag of the meal if available
+        const currentTypes = Array.isArray(meal.type) ? meal.type : (typeof meal.type === 'string' ? [meal.type] : [])
+        if (currentTypes.length > 0) {
+            setSelectedLogType(currentTypes[0] as any)
+        } else {
+            setSelectedLogType('snack')
+        }
+    }
+
+    const confirmLogMeal = async () => {
+        if (!mealToLog) return
         await logMeal({
-            name: meal.name,
-            calories: meal.calories,
-            protein: meal.protein,
-            fat: meal.fat,
-            carbs: meal.carbs,
-            type: meal.type || 'snack',
+            ...mealToLog,
+            type: selectedLogType, 
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             date: new Date().toISOString().split('T')[0]
         })
-        onClose()
+        setMealToLog(null)
+        onClose() // Close the library modal
     }
 
     const handlePointerDrop = async (mealId: string, x: number, y: number) => {
@@ -52,15 +75,23 @@ export function NutritionLibraryModal({ isOpen, onClose }: NutritionLibraryModal
         }
         setDraggingId(null)
         setDragOverType(null)
-        if (targetType && targetType !== 'all') {
-            await updateLibraryMeal(mealId, { type: targetType as any })
+        if (targetType) {
+            // Find the meal
+            const meal = library.find(m => m.id === mealId)
+            if (meal) {
+                // If the user holds 'Shift' during drag, they want to APPEND the category. We unfortunately can't accurately read the Shift key state natively during the `onPointerUp` event easily without managing global state or doing a hack.
+                // An elegant alternative is to assume if they dragged it to a new category, they meant to *move* it, and maybe we can add a context menu/toggle later to append.
+                // Based on user prompt "I want a smart way to accomodate multi tagging" + "drag a meal... goes to that category" -> drag to move, toggle/click to append.
+                
+                // For now, let's keep the core move logic:
+                await updateLibraryMeal(mealId, { type: [targetType as any] })
+            }
         }
     }
 
     const handlePrepMeal = async (meal: LibraryMeal) => {
-        // Defaulting to 4 portions for a typical meal prep batch
-        await addPrepToFridge(meal.id, 4)
-        // We could add a toast here, but the main UI will update automatically
+        await addPrepToFridge(meal.id, prepPortions)
+        setPrepPortions(4) // Reset for next time
     }
 
     const handlePointerDragOver = (x: number, y: number) => {
@@ -103,24 +134,54 @@ export function NutritionLibraryModal({ isOpen, onClose }: NutritionLibraryModal
                             </p>
                         </div>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="w-10 h-10 rounded-full bg-black/5 flex items-center justify-center hover:bg-black/10 transition-colors"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <div className="flex bg-black/[0.03] p-1 rounded-2xl border border-black/5 mr-2">
+                             {(['library', 'combos'] as const).map(tab => (
+                                 <button
+                                     key={tab}
+                                     onClick={() => setActiveTab(tab)}
+                                     className={cn(
+                                         "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                         activeTab === tab ? "bg-white text-black shadow-sm" : "text-black/30 hover:text-black/50"
+                                     )}
+                                 >
+                                     {tab}
+                                 </button>
+                             ))}
+                        </div>
+                        <button
+                            onClick={() => setIsComboMode(!isComboMode)}
+                            className={cn(
+                                "w-10 h-10 rounded-2xl transition-all flex items-center justify-center",
+                                isComboMode 
+                                    ? "bg-emerald-600 text-white shadow-lg shadow-emerald-200" 
+                                    : "bg-black/[0.03] text-black/40 hover:bg-black/10"
+                            )}
+                            title={isComboMode ? "Cancel" : "Create Combo"}
+                        >
+                            <Zap className={cn("w-5 h-5", isComboMode ? "fill-white" : "")} />
+                        </button>
+                        <button
+                            onClick={onClose}
+                            className="w-10 h-10 rounded-full bg-black/5 flex items-center justify-center hover:bg-black/10 transition-colors"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Filters / Drop Zones */}
-                <div className="px-8 py-4 border-b border-black/5 flex items-center overflow-x-auto no-scrollbar shrink-0">
-                    <div className="flex items-center gap-2 bg-black/[0.03] p-1.5 rounded-[24px] w-fit border border-black/5">
-                        {(['all', 'breakfast', 'lunch', 'dinner', 'snack'] as const).map(type => {
-                            const isOver = dragOverType === type && type !== 'all'
+                {activeTab === 'library' && (
+                    <div className="px-8 py-4 border-b border-black/5 flex items-center overflow-x-auto no-scrollbar shrink-0">
+                        <div className="flex items-center gap-2 bg-black/[0.03] p-1.5 rounded-[24px] w-fit border border-black/5">
+                            {(['dewbit', 'breakfast', 'lunch', 'dinner', 'snack'] as const).map(type => {
+                            const isOver = dragOverType === type
                             // Use consistent color coding
                             const typeStyle = type === 'breakfast' ? "bg-amber-50 text-amber-600 border-amber-200" :
                                 type === 'lunch' ? "bg-emerald-50 text-emerald-600 border-emerald-200" :
                                     type === 'dinner' ? "bg-blue-50 text-blue-600 border-blue-200" :
-                                        type === 'snack' ? "bg-rose-50 text-rose-600 border-rose-200" : ""
+                                        type === 'dewbit' ? "bg-purple-50 text-purple-600 border-purple-200" :
+                                            type === 'snack' ? "bg-rose-50 text-rose-600 border-rose-200" : ""
 
                             return (
                                 <button
@@ -140,8 +201,9 @@ export function NutritionLibraryModal({ isOpen, onClose }: NutritionLibraryModal
                                 </button>
                             )
                         })}
+                        </div>
                     </div>
-                </div>
+                )}
 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-4 sm:p-8 custom-scrollbar bg-black/[0.01]">
@@ -152,15 +214,28 @@ export function NutritionLibraryModal({ isOpen, onClose }: NutritionLibraryModal
                             <p className="text-xs font-bold text-black/40 uppercase tracking-wider">No meals found in this category</p>
                         </div>
                     ) : (
-                        <div className="grid gap-3">
+                        <div className="grid gap-3 pb-24">
                             {filteredLibrary.map((meal: LibraryMeal) => (
                                 <LibraryMealCard
                                     key={meal.id}
                                     meal={meal}
                                     isDragging={draggingId === meal.id}
+                                    isSelected={!!selectedComboItems[meal.id]}
+                                    isComboMode={isComboMode}
+                                    onSelect={() => {
+                                        setSelectedComboItems(prev => {
+                                            const newItems = { ...prev }
+                                            if (newItems[meal.id]) delete newItems[meal.id]
+                                            else newItems[meal.id] = 1
+                                            return newItems
+                                        })
+                                    }}
                                     onLog={() => handleQuickLog(meal)}
                                     onPrep={() => setMealToPrep(meal)}
+                                    // ... rest of props
                                     onDelete={() => setMealToDelete(meal)}
+                                    onUpdateTags={(newTypes) => updateLibraryMeal(meal.id, { type: newTypes })}
+                                    onRemoveTagRequest={(tag) => setTagToRemove({ meal, tag })}
                                     onPointerDragStart={() => setDraggingId(meal.id)}
                                     onPointerDragOver={handlePointerDragOver}
                                     onPointerDrop={handlePointerDrop}
@@ -170,6 +245,64 @@ export function NutritionLibraryModal({ isOpen, onClose }: NutritionLibraryModal
                         </div>
                     )}
                 </div>
+
+                {/* Combo Builder Bar */}
+                <AnimatePresence>
+                    {isComboMode && Object.keys(selectedComboItems).length > 0 && (
+                        <motion.div
+                            initial={{ y: 100 }}
+                            animate={{ y: 0 }}
+                            exit={{ y: 200 }}
+                            className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full max-w-xl px-4 z-20"
+                        >
+                            <div className="bg-black text-white rounded-[32px] p-4 flex items-center gap-4 shadow-2xl ring-1 ring-white/10">
+                                <div className="flex-1 min-w-0">
+                                    <input 
+                                        type="text"
+                                        placeholder="Meal Combo Name..."
+                                        value={comboName}
+                                        onChange={(e) => setComboName(e.target.value)}
+                                        className="bg-transparent border-none focus:ring-0 text-sm font-black uppercase tracking-widest w-full placeholder:text-white/20"
+                                    />
+                                    <div className="flex gap-2 mt-1">
+                                        <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
+                                            {Object.keys(selectedComboItems).length} Items Selected
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={async (e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        if (!comboName || isSavingCombo) return
+                                        
+                                        setIsSavingCombo(true)
+                                        try {
+                                            const items = Object.entries(selectedComboItems).map(([id, quantity]) => ({ id, quantity }))
+                                            // Combos are now category-agnostic, save as empty array
+                                            await createCombo(comboName, items, [])
+                                            setIsComboMode(false)
+                                            setSelectedComboItems({})
+                                            setComboName('')
+                                            setShowSaveSuccess(true)
+                                        } catch (e) {
+                                            console.error('Failed to save combo:', e)
+                                        } finally {
+                                            setIsSavingCombo(false)
+                                        }
+                                    }}
+                                    className="px-6 py-3 bg-white text-black rounded-2xl font-black text-[11px] uppercase tracking-widest hover:scale-105 transition-transform active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                                    disabled={!comboName || isSavingCombo}
+                                >
+                                    {isSavingCombo ? (
+                                        <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                                    ) : null}
+                                    Save Combo
+                                </button>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </motion.div>
 
             <ConfirmationModal
@@ -196,21 +329,130 @@ export function NutritionLibraryModal({ isOpen, onClose }: NutritionLibraryModal
                         setMealToPrep(null)
                     }
                 }}
-                title="Prep Meal"
-                message={`Add 4 portions of "${mealToPrep?.name}" to your Fridge inventory?`}
-                confirmText="Prep Meal"
-                type="danger" // Currently using danger since it's the primary button style in this modal, could customize later
+                title="Add to Fridge"
+                message={`How many portions of "${mealToPrep?.name}" are you adding to your Fridge?`}
+                confirmText="Add to Fridge"
+                type="success"
+            >
+                <div className="mt-8 pt-8 border-t border-black/5 flex flex-col items-center mb-8">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-black/30 mb-6 px-1">Portions to Add</span>
+                    <div className="flex items-center gap-10">
+                        <button 
+                            onClick={() => setPrepPortions(Math.max(1, prepPortions - 1))}
+                            className="w-14 h-14 rounded-2xl bg-black/5 flex items-center justify-center text-2xl font-black hover:bg-black/10 transition-all active:scale-95"
+                        >
+                            -
+                        </button>
+                        <div className="flex flex-col items-center min-w-[80px]">
+                            <span className="text-5xl font-black tabular-nums tracking-tighter">{prepPortions}</span>
+                            <span className="text-[10px] font-black text-black/20 uppercase tracking-widest mt-1">Portions</span>
+                        </div>
+                        <button 
+                            onClick={() => setPrepPortions(prepPortions + 1)}
+                            className="w-14 h-14 rounded-2xl bg-black/5 flex items-center justify-center text-2xl font-black hover:bg-black/10 transition-all active:scale-95"
+                        >
+                            +
+                        </button>
+                    </div>
+                </div>
+            </ConfirmationModal>
+
+            <ConfirmationModal
+                isOpen={!!tagToRemove}
+                onClose={() => setTagToRemove(null)}
+                onConfirm={async () => {
+                    if (tagToRemove) {
+                        const { meal, tag } = tagToRemove
+                        const currentTypes = Array.isArray(meal.type) ? meal.type : (typeof meal.type === 'string' ? [meal.type] : [])
+                        const newTypes = currentTypes.filter(t => t !== tag)
+                        await updateLibraryMeal(meal.id, { type: newTypes.length > 0 ? newTypes : ['snack'] })
+                        setTagToRemove(null)
+                    }
+                }}
+                title="Remove Category"
+                message={`Are you sure you want to remove "${tagToRemove?.tag}" from "${tagToRemove?.meal.name}"?`}
+                confirmText="Remove"
+                type="danger"
+            />
+
+            <ConfirmationModal
+                isOpen={!!mealToLog}
+                onClose={() => setMealToLog(null)}
+                onConfirm={confirmLogMeal}
+                title="Log Meal"
+                message={`Log "${mealToLog?.name}" to Today's Meals?`}
+                confirmText="Log Meal"
+                type="info"
+                maxWidth="max-w-xl"
+            >
+                <div className="mt-4 pt-6 border-t border-black/5">
+                    <div className="grid grid-cols-5 gap-3 mb-8">
+                        {(['dewbit', 'breakfast', 'lunch', 'dinner', 'snack'] as const).map(type => {
+                            const Icon = 
+                                type === 'breakfast' ? Coffee :
+                                type === 'lunch' ? UtensilsCrossed :
+                                type === 'dinner' ? Moon :
+                                type === 'snack' ? Apple : Zap
+                            
+                            return (
+                                <button
+                                    key={type}
+                                    onClick={() => setSelectedLogType(type)}
+                                    className={cn(
+                                        "flex flex-col items-center justify-center p-4 rounded-[24px] gap-3 transition-all",
+                                        selectedLogType === type 
+                                            ? "bg-black text-white shadow-2xl" 
+                                            : "bg-black/5 text-black/40 hover:bg-black/10"
+                                    )}
+                                >
+                                    <Icon className={cn("w-4 h-4", selectedLogType === type ? "text-white" : "text-black/20")} />
+                                    <span className="text-[10px] font-black uppercase tracking-[0.1em]">{type}</span>
+                                </button>
+                            )
+                        })}
+                    </div>
+                </div>
+            </ConfirmationModal>
+
+            <ConfirmationModal
+                isOpen={showSaveSuccess}
+                onClose={() => setShowSaveSuccess(false)}
+                onConfirm={() => setShowSaveSuccess(false)}
+                title="Combo Saved!"
+                message="Your new meal combo has been successfully created and added to your library."
+                confirmText="Great!"
+                type="success"
             />
         </div>
     )
 }
 
-function LibraryMealCard({ meal, isDragging, onLog, onPrep, onDelete, onPointerDragStart, onPointerDragOver, onPointerDrop, onPointerDragEnd }: {
+function LibraryMealCard({ 
+    meal, 
+    isDragging, 
+    isSelected,
+    isComboMode,
+    onSelect,
+    onLog, 
+    onPrep, 
+    onDelete, 
+    onUpdateTags, 
+    onRemoveTagRequest, 
+    onPointerDragStart, 
+    onPointerDragOver, 
+    onPointerDrop, 
+    onPointerDragEnd 
+}: {
     meal: LibraryMeal;
     isDragging: boolean;
+    isSelected: boolean;
+    isComboMode: boolean;
+    onSelect: () => void;
     onLog: () => void;
     onPrep: () => void;
     onDelete: () => void;
+    onUpdateTags: (newTypes: LibraryMeal['type']) => void;
+    onRemoveTagRequest: (tag: string) => void;
     onPointerDragStart: () => void;
     onPointerDragOver: (x: number, y: number) => void;
     onPointerDrop: (mealId: string, x: number, y: number) => void;
@@ -218,6 +460,7 @@ function LibraryMealCard({ meal, isDragging, onLog, onPrep, onDelete, onPointerD
 }) {
     const isDraggingRef = useRef(false)
     const startPos = useRef({ x: 0, y: 0 })
+    const [isEditingTags, setIsEditingTags] = useState(false)
 
     const handlePointerDown = (e: React.PointerEvent) => {
         // Only allow dragging from the main card area, not buttons
@@ -236,9 +479,11 @@ function LibraryMealCard({ meal, isDragging, onLog, onPrep, onDelete, onPointerD
                 isDraggingRef.current = true
                 onPointerDragStart()
 
-                const typeColor = meal.type === 'breakfast' ? "#d97706" :
-                    meal.type === 'lunch' ? "#059669" :
-                        meal.type === 'dinner' ? "#2563eb" : "#e11d48"
+                const primaryType = Array.isArray(meal.type) && meal.type.length > 0 ? meal.type[0] : (typeof meal.type === 'string' ? meal.type : 'snack')
+                const typeColor = primaryType === 'breakfast' ? "#d97706" :
+                    primaryType === 'lunch' ? "#059669" :
+                        primaryType === 'dinner' ? "#2563eb" : 
+                            primaryType === 'dewbit' ? "#9333ea" : "#e11d48"
 
                 ghost = document.createElement('div')
                 ghost.style.cssText = [
@@ -253,13 +498,28 @@ function LibraryMealCard({ meal, isDragging, onLog, onPrep, onDelete, onPointerD
                     'transform:rotate(-2deg) scale(0.95)',
                     'opacity:0.96',
                 ].join(';')
+                const emojiContent = meal.isCombo && meal.contents 
+                    ? `<div style="display:flex;align-items:center;margin-right:12px;margin-left:-4px;">
+                        ${meal.contents.slice(0, 3).map((c, i) => `
+                            <div style="width:28px;height:28px;border-radius:10px;background:#fff;border:2px solid #fff;box-shadow:0 2px 4px rgba(0,0,0,0.1);display:flex;align-items:center;justify-center:center;font-size:16px;margin-left:${i === 0 ? '0' : '-12px'};z-index:${3 - i};">
+                                ${c.meal?.emoji || '🍽️'}
+                            </div>
+                        `).join('')}
+                    </div>`
+                    : `<span style="font-size:20px;margin-right:8px;">${meal.emoji || '🍽️'}</span>`
+
                 ghost.innerHTML = `
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                        <span style="padding:2px 8px;border-radius:6px;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:1px;background:rgba(0,0,0,0.05);color:${typeColor};">
-                            ${meal.type || 'SNACK'}
-                        </span>
+                        ${(Array.isArray(meal.type) ? meal.type : (typeof meal.type === 'string' ? [meal.type] : ['SNACK'])).map(t => 
+                            `<span style="padding:2px 8px;border-radius:6px;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:1px;background:rgba(0,0,0,0.05);color:${typeColor};">
+                                ${typeof t === 'string' ? t.toUpperCase() : 'SNACK'}
+                            </span>`
+                        ).join('')}
                     </div>
-                    <div style="font-size:16px;font-weight:700;line-height:1;margin-bottom:8px;color:#000;">${meal.emoji || '🍽️'} ${meal.name}</div>
+                    <div style="font-size:16px;font-weight:700;line-height:1;margin-bottom:10px;color:#000;display:flex;align-items:center;">
+                        ${emojiContent}
+                        ${meal.name}
+                    </div>
                     <div style="font-size:12px;font-weight:700;color:rgba(0,0,0,0.4); display:flex; gap: 8px;">
                         <span>${meal.calories} kcal</span>
                     </div>
@@ -293,9 +553,12 @@ function LibraryMealCard({ meal, isDragging, onLog, onPrep, onDelete, onPointerD
     return (
         <div
             onPointerDown={handlePointerDown}
+            onClick={() => isComboMode && onSelect()}
             className={cn(
-                "bg-white border border-black/5 rounded-[24px] p-5 flex items-center justify-between group hover:border-black/10 transition-colors cursor-grab active:cursor-grabbing",
-                isDragging && "opacity-30 scale-95 shadow-none pointer-events-none"
+                "bg-white border rounded-[24px] p-5 flex items-center justify-between group transition-all cursor-grab active:cursor-grabbing",
+                isDragging ? "opacity-30 scale-95 shadow-none pointer-events-none" : "hover:border-black/10",
+                isSelected && "border-emerald-500 bg-emerald-50/30 ring-4 ring-emerald-500/10 scale-[0.98]",
+                isComboMode && !isSelected && "hover:border-emerald-200 hover:bg-emerald-50/10"
             )}
         >
             <div className="flex items-center gap-4">
@@ -303,26 +566,125 @@ function LibraryMealCard({ meal, isDragging, onLog, onPrep, onDelete, onPointerD
                     <GripVertical className="w-5 h-5" />
                 </div>
                 <div>
-                    <div className="flex items-center gap-2 mb-2">
-                        <span className={cn(
-                            "px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest",
-                            meal.type === 'breakfast' ? "bg-amber-50 text-amber-600" :
-                                meal.type === 'lunch' ? "bg-emerald-50 text-emerald-600" :
-                                    meal.type === 'dinner' ? "bg-blue-50 text-blue-600" :
-                                        "bg-rose-50 text-rose-600"
-                        )}>
-                            {meal.type || 'snack'}
-                        </span>
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        {(() => {
+                            if (meal.isCombo) return null;
+                            const types = Array.isArray(meal.type) ? meal.type : (typeof meal.type === 'string' ? [meal.type] : []);
+                            return types.map((t) => (
+                                <span key={t} className={cn(
+                                    "pl-2 pr-1 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest flex items-center gap-1 group/tag",
+                                    t === 'breakfast' ? "bg-amber-50 text-amber-600" :
+                                        t === 'lunch' ? "bg-emerald-50 text-emerald-600" :
+                                            t === 'dinner' ? "bg-blue-50 text-blue-600" :
+                                                t === 'dewbit' ? "bg-purple-50 text-purple-600" :
+                                                    "bg-rose-50 text-rose-600"
+                                )}>
+                                    {t}
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); onRemoveTagRequest(t); }} 
+                                        className="hover:bg-black/10 rounded-full p-0.5 opacity-50 hover:opacity-100 transition-opacity"
+                                    >
+                                        <X className="w-2.5 h-2.5" />
+                                    </button>
+                                </span>
+                            ));
+                        })()}
+                        {(!meal.type || (Array.isArray(meal.type) && meal.type.length === 0)) && (
+                            <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest bg-rose-50 text-rose-600">
+                                SNACK
+                            </span>
+                        )}
+
+                        {meal.isCombo && (
+                            <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest bg-black text-white flex items-center gap-1">
+                                <Zap className="w-2.5 h-2.5 fill-current" />
+                                COMBO
+                            </span>
+                        )}
+
+                        {meal.isCombo && meal.contents && (
+                            <span className="text-[10px] font-extrabold text-black/20 uppercase tracking-widest ml-1">
+                                {meal.contents.length} Items
+                            </span>
+                        )}
+
+                        {/* Interactive Edit Tags Button */}
+                        <div className="relative ml-1">
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    setIsEditingTags(!isEditingTags)
+                                }}
+                                className="w-5 h-5 rounded-full bg-black/5 flex items-center justify-center hover:bg-black/10 transition-colors"
+                            >
+                                <Plus className="w-3 h-3 text-black/40" />
+                            </button>
+
+                            {/* Dropdown menu */}
+                            <AnimatePresence>
+                                {isEditingTags && (
+                                    <>
+                                        <div 
+                                            className="fixed inset-0 z-[40]" 
+                                            onClick={(e) => { e.stopPropagation(); setIsEditingTags(false) }} 
+                                        />
+                                        <motion.div
+                                            initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                                            exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                                            transition={{ duration: 0.15 }}
+                                            className="absolute left-0 top-full mt-2 w-32 bg-white border border-black/5 rounded-xl shadow-xl overflow-hidden origin-top-left z-[50] p-1"
+                                        >
+                                            {(['dewbit', 'breakfast', 'lunch', 'dinner', 'snack'] as const).map(t => {
+                                                const currentTypes = Array.isArray(meal.type) ? meal.type : (typeof meal.type === 'string' ? [meal.type] : [])
+                                                const isSelected = currentTypes.includes(t)
+                                                return (
+                                                    <button
+                                                        key={t}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            if (isSelected) {
+                                                                setIsEditingTags(false)
+                                                                onRemoveTagRequest(t)
+                                                            } else {
+                                                                const newTypes = [...currentTypes, t]
+                                                                onUpdateTags(newTypes)
+                                                            }
+                                                        }}
+                                                        className={cn(
+                                                            "w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest transition-colors rounded-lg flex items-center justify-between",
+                                                            isSelected ? "bg-black/5 text-black" : "text-black/40 hover:bg-black/5"
+                                                        )}
+                                                    >
+                                                        {t}
+                                                        {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-black" />}
+                                                    </button>
+                                                )
+                                            })}
+                                        </motion.div>
+                                    </>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                        
                         {meal.ingredients?.length > 0 && (
-                            <span className="text-[10px] font-bold text-black/30">
+                            <span className="text-[10px] font-bold text-black/30 ml-2">
                                 {meal.ingredients.length} Ingredients
                             </span>
                         )}
                     </div>
-                    <h4 className="font-bold text-lg leading-none mb-3">
-                        <span className="text-xl mr-2">{meal.emoji || '🍽️'}</span>
-                        {meal.name}
-                    </h4>
+                    <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-bold text-lg leading-none flex items-center">
+                            <ComboEmojiStack 
+                                isCombo={meal.isCombo}
+                                contents={meal.contents}
+                                fallbackEmoji={meal.emoji}
+                                size="md"
+                                className="mr-3"
+                            />
+                            {meal.name}
+                        </h4>
+                    </div>
                     <div className="flex items-center gap-4 text-xs font-bold text-black/40">
                         <span className="text-black flex items-center gap-1">
                             <Flame className="w-3 h-3" /> {meal.calories} kcal
@@ -333,25 +695,27 @@ function LibraryMealCard({ meal, isDragging, onLog, onPrep, onDelete, onPointerD
                     </div>
                 </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className={cn("flex items-center gap-2", isComboMode && "opacity-0 scale-90 pointer-events-none transition-all")}>
                 <button
                     onClick={(e) => {
                         e.stopPropagation()
                         onPrep()
                     }}
-                    className="h-10 px-4 rounded-xl bg-black/[0.03] text-black border border-black/5 text-[10px] font-black uppercase tracking-widest hover:bg-black/5 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 shrink-0"
+                    className="w-10 h-10 rounded-xl bg-black/[0.03] text-black border border-black/5 hover:bg-black/5 hover:scale-105 active:scale-95 transition-all flex items-center justify-center shrink-0"
                     title="Prep 4 portions into Fridge"
                 >
-                    <Database className="w-3.5 h-3.5" /> Prep
+                    <Database className="w-4 h-4" />
                 </button>
                 <button
+                    type="button"
                     onClick={(e) => {
                         e.stopPropagation()
                         onLog()
                     }}
-                    className="h-10 px-4 rounded-xl bg-black text-white text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-2 shrink-0"
+                    className="w-10 h-10 rounded-xl bg-black text-white hover:scale-105 active:scale-95 transition-all flex items-center justify-center shrink-0"
+                    title="Log Meal"
                 >
-                    <Plus className="w-3.5 h-3.5" /> Log
+                    <Plus className="w-5 h-5" />
                 </button>
                 <button
                     onClick={(e) => {
