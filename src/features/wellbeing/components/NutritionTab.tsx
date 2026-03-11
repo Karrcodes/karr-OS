@@ -60,14 +60,14 @@ export function NutritionTab() {
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="md:col-span-2 space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 space-y-8">
                     <MealPlanner />
                 </div>
 
                 <div className="space-y-6">
                     {/* Nutrition Trends */}
-                    <div className="bg-white border border-black/5 rounded-[32px] p-8 space-y-6">
+                    <div className="bg-white border border-black/5 rounded-[32px] p-8 space-y-6 max-w-[400px] mx-auto lg:max-w-none lg:mx-0 w-full">
                         <div className="flex items-center justify-between">
                             <h3 className="text-[11px] font-black text-black/30 uppercase tracking-[0.3em]">Monthly Adherence</h3>
                             <ActivitySquare className="w-4 h-4 text-black/20" />

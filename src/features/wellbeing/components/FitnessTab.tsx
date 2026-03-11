@@ -69,7 +69,7 @@ export function FitnessTab() {
             </motion.div>
             {/* Active Protocol & Gym Stats */}
             {/* Main Content Grid: Protocol (Wide) and Operational Flow (Narrow) side-by-side */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
                 {routines.length === 0 ? (
                     <div className="lg:col-span-3">
                         <RoutineBuilder />
@@ -77,7 +77,7 @@ export function FitnessTab() {
                 ) : (
                     <>
                         {/* Operational Flow (Weekly Split) */}
-                        <div className="bg-white border border-black/5 rounded-[32px] p-8 shadow-sm flex flex-col space-y-6 md:col-span-1 h-auto md:h-[320px]">
+                        <div className="bg-white border border-black/5 rounded-[32px] p-8 shadow-sm flex flex-col space-y-6 lg:col-span-1 h-auto md:h-[320px] lg:h-auto max-w-[400px] mx-auto lg:max-w-none lg:mx-0 w-full">
                             <div className="flex items-center justify-between">
                                 <h3 className="text-[11px] font-black text-black/30 uppercase tracking-[0.3em]">Operational Flow</h3>
                                 <Activity className="w-4 h-4 text-black/20" />
@@ -87,7 +87,7 @@ export function FitnessTab() {
                         </div>
 
                         {/* Active Protocol (Minimalist Launchpad) */}
-                        <section className="bg-black text-white rounded-[32px] p-8 relative overflow-hidden flex flex-col group shadow-2xl md:col-span-1 h-auto md:h-[320px]">
+                        <section className="bg-black text-white rounded-[32px] p-8 relative overflow-hidden flex flex-col group shadow-2xl h-auto md:h-[320px] lg:h-0 lg:min-h-full min-h-0 lg:col-span-1 max-w-[400px] mx-auto lg:max-w-none lg:mx-0 w-full">
                             <div className="absolute top-0 right-0 p-6">
                                 <div className="w-10 h-10 rounded-[14px] bg-white/10 backdrop-blur-md flex items-center justify-center">
                                     <Dumbbell className="w-5 h-5 text-white" />
@@ -155,7 +155,7 @@ export function FitnessTab() {
                         </section>
 
                         {/* Milestones (1/3 width) */}
-                        <div className="md:col-span-1 h-auto md:h-[320px] relative">
+                        <div className="lg:col-span-1 h-auto md:h-[320px] lg:h-0 lg:min-h-full min-h-0 relative max-w-[400px] mx-auto lg:max-w-none lg:mx-0 w-full">
                             <MilestoneTracker />
                         </div>
                     </>
