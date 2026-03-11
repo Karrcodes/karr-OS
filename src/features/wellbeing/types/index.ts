@@ -209,6 +209,7 @@ export interface DashboardLayout {
 export interface Milestone {
     id: string
     title: string
+    exerciseId?: string
     description?: string
     targetValue: number
     currentValue: number

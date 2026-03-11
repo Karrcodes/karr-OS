@@ -4,6 +4,7 @@ import { GymService } from '../services/gymService'
 import { supabase } from '@/lib/supabase'
 import { getGymRecommendation } from '../utils/fitness-utils'
 import { getMonthlyRoutine } from '../utils/routine-generator'
+import { getOverloadTarget } from '../utils/progressiveOverload'
 import type { RotaOverride } from '@/features/finance/types/finance.types'
 
 interface WellbeingContextType extends WellbeingState {
@@ -32,6 +33,7 @@ interface WellbeingContextType extends WellbeingState {
     consumeFromFridge: (fridgeId: string, mealType?: 'dewbit' | 'breakfast' | 'lunch' | 'dinner' | 'snack') => Promise<void>
     removeFromFridge: (fridgeId: string) => Promise<void>
     addMilestone: (milestone: Omit<Milestone, 'id' | 'completed'>) => Promise<void>
+    bulkAddMilestones: (milestones: Milestone[]) => Promise<void>
     updateMilestone: (id: string, updates: Partial<Milestone>) => Promise<void>
     deleteMilestone: (id: string) => Promise<void>
     macros: MacroTargets
@@ -94,6 +96,8 @@ const MULTIPLIERS: Record<ActivityLevel, number> = {
     active: 1.725,
     very_active: 1.9,
 }
+
+import { getNextProgressiveMilestone } from '../utils/milestoneGenerator'
 
 export function WellbeingProvider({ children }: { children: ReactNode }) {
     const [state, setState] = useState<WellbeingState>(INITIAL_STATE)
@@ -346,9 +350,51 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
             gymVisitId: todayVisit?.id || log.gymVisitId
         }
         
+        let updatedMilestones = [...state.milestones]
+        let milestonesChanged = false
+
+        // Progression Engine: Check if any logged sets hit active milestone targets
+        finalLog.exercises.forEach(exLog => {
+            const bestSetWeight = Math.max(...exLog.sets.map(s => s.weight || 0))
+            
+            updatedMilestones = updatedMilestones.map(m => {
+                // If it's a lift milestone for this exercise (fuzzy name matching for now)
+                if (m.type === 'lift' && !m.completed && m.title.toLowerCase().includes(exLog.exerciseId.toLowerCase())) {
+                    if (bestSetWeight > m.currentValue) {
+                        m.currentValue = bestSetWeight
+                        milestonesChanged = true
+                    }
+                    
+                    if (m.currentValue >= m.targetValue) {
+                        m.completed = true
+                        m.dateCompleted = new Date().toISOString()
+                        milestonesChanged = true
+                        
+                        // Push next logical milestone immediately
+                        const nextM = getNextProgressiveMilestone(m)
+                        updatedMilestones.push(nextM)
+                    }
+                }
+                return m
+            })
+        })
+        
         const workoutLogs = [...state.workoutLogs, finalLog]
-        setState(prev => ({ ...prev, workoutLogs }))
-        await persistData({ workoutLogs })
+        setState(prev => ({ 
+            ...prev, 
+            workoutLogs, 
+            milestones: milestonesChanged ? updatedMilestones : prev.milestones 
+        }))
+        
+        const persistenceData: any = { workoutLogs }
+        if (milestonesChanged) persistenceData.milestones = updatedMilestones
+        await persistData(persistenceData)
+    }
+
+    const bulkAddMilestones = async (newMilestones: Milestone[]) => {
+        const milestones = [...state.milestones, ...newMilestones]
+        setState(prev => ({ ...prev, milestones }))
+        await persistData({ milestones })
     }
 
     const addRoutine = async (routine: WorkoutRoutine) => {
@@ -656,12 +702,16 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
             if (historyRes.status === 'fulfilled') {
                 const rawData = historyRes.value
                 const checks = Array.isArray(rawData) ? rawData : (rawData.checkIns || [])
-                visitHistory = checks.map((v: any) => ({
-                    id: v.id,
-                    date: v.date,
-                    time: v.time,
-                    locationName: v.locationName
-                }))
+                visitHistory = checks.map((v: any) => {
+                    const dateStr = v.checkInDate || ''
+                    const [datePart, timePart] = dateStr.split('T')
+                    return {
+                        id: dateStr, // checkinId is null, use timestamp as ID
+                        date: datePart,
+                        time: timePart || '',
+                        locationName: v.gymLocationName
+                    }
+                })
             }
 
             const weekAgo = new Date()
@@ -745,13 +795,16 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
             isPaused: false,
             completedExerciseIds: [],
             skippedExerciseIds: [],
-            exercises: routine.exercises.map(ex => ({
-                exerciseId: ex.id,
-                sets: Array(ex.suggestedSets).fill(null).map(() => ({
-                    reps: ex.suggestedReps,
-                    weight: 0
-                }))
-            }))
+            exercises: routine.exercises.map(ex => {
+                const target = getOverloadTarget(ex, state.profile, state.workoutLogs)
+                return {
+                    exerciseId: ex.id,
+                    sets: Array(target.suggestedSets).fill(null).map(() => ({
+                        reps: target.suggestedReps,
+                        weight: target.suggestedWeight
+                    }))
+                }
+            })
         }
 
         setState(prev => ({ ...prev, activeSession: session }))
@@ -814,6 +867,10 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
         saveRecipe,
         logMood,
         saveReflection,
+        addMilestone,
+        bulkAddMilestones,
+        updateMilestone,
+        deleteMilestone,
         updateLayout,
         addMealToLibrary,
         removeMealFromLibrary,
@@ -823,9 +880,6 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
         updateFridgePortions,
         consumeFromFridge,
         removeFromFridge,
-        addMilestone,
-        updateMilestone,
-        deleteMilestone,
         startSession,
         updateSessionSet,
         finishSession,

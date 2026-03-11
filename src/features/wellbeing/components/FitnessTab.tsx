@@ -5,26 +5,43 @@ import { useWellbeing } from '@/features/wellbeing/contexts/WellbeingContext'
 import { RoutineBuilder } from './RoutineBuilder'
 import { GymConnectionModal } from './GymConnectionModal'
 import { MilestoneTracker } from './MilestoneTracker'
+import { FitnessHeatmap } from './FitnessHeatmap'
 import { useRouter } from 'next/navigation'
 import { Dumbbell, Activity, CheckCircle2, Info, Plus, Calendar, Trophy, ChevronRight, Play, ArrowRight } from 'lucide-react'
+import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
 
 export function FitnessTab() {
-    const { routines, activeRoutineId, activeSession, startSession, gymStats, syncGymData, gymRecommendation, logWorkout, workoutLogs } = useWellbeing()
+    const { routines, activeRoutineId, activeSession, startSession, gymStats, syncGymData, gymRecommendation, logWorkout, workoutLogs, profile } = useWellbeing()
     const [isGymModalOpen, setIsGymModalOpen] = useState(false)
     const router = useRouter()
 
     const activeRoutine = routines.find((r: any) => r.id === activeRoutineId) || routines[0]
+    const todayStr = format(new Date(), 'yyyy-MM-dd')
+    const hasVisitedGymToday = gymStats.visitHistory?.some((v: any) => v.date?.split('T')[0] === todayStr)
+
+    const cleanRoutineName = activeRoutine?.name?.replace(/\s*\(.*?\)/g, '').trim() || 'Workout'
+    const matchStr1 = cleanRoutineName.toLowerCase()
+    const matchStr2 = (activeRoutine?.day || '').toLowerCase().replace(/\s*day/g, '').trim()
+
+    const displayTitle = (activeRoutine?.day && (matchStr1.includes(matchStr2) || matchStr2.includes(matchStr1)))
+        ? activeRoutine.day
+        : cleanRoutineName;
+
+    const uniqueMuscles = Array.from(new Set(activeRoutine?.exercises?.flatMap((ex: any) => ex.muscleGroups || [ex.muscleGroup] || []) || [])).filter(Boolean).map((m: any) => m.toLowerCase());
+    const displayMuscles = uniqueMuscles.length > 0 
+        ? (uniqueMuscles.length === 1 ? uniqueMuscles[0] : uniqueMuscles.length === 2 ? `${uniqueMuscles[0]} and ${uniqueMuscles[1]}` : `${uniqueMuscles.slice(0, -1).join(', ')} and ${uniqueMuscles[uniqueMuscles.length - 1]}`)
+        : 'Full Body';
 
     return (
-        <div className="space-y-10">
+        <div className="space-y-6">
             {/* Recommendation Banner */}
             <motion.div 
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className={cn(
-                    "p-6 rounded-[32px] border flex items-center justify-between",
+                    "p-4 rounded-[32px] border flex items-center justify-between",
                     gymRecommendation.status === 'can_go' ? "bg-emerald-500/10 border-emerald-500/20" : "bg-rose-500/10 border-rose-500/20"
                 )}
             >
@@ -52,136 +69,97 @@ export function FitnessTab() {
             </motion.div>
             {/* Active Protocol & Gym Stats */}
             {/* Main Content Grid: Protocol (Wide) and Operational Flow (Narrow) side-by-side */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
                 {routines.length === 0 ? (
                     <div className="lg:col-span-3">
                         <RoutineBuilder />
                     </div>
                 ) : (
                     <>
-                        {/* Active Protocol (2/3 width) */}
-                        <section className="lg:col-span-2 bg-black text-white rounded-[40px] p-8 relative overflow-hidden flex flex-col justify-start group shadow-2xl h-full min-h-[450px]">
-                            <div className="absolute top-0 right-0 p-8">
-                                <div className="w-16 h-16 rounded-3xl bg-white/10 backdrop-blur-md flex items-center justify-center">
-                                    <Dumbbell className="w-8 h-8 text-white" />
+                        {/* Operational Flow (Weekly Split) */}
+                        <div className="bg-white border border-black/5 rounded-[32px] p-8 shadow-sm flex flex-col space-y-6 md:col-span-1 h-auto md:h-[320px]">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-[11px] font-black text-black/30 uppercase tracking-[0.3em]">Operational Flow</h3>
+                                <Activity className="w-4 h-4 text-black/20" />
+                            </div>
+
+                            <FitnessHeatmap />
+                        </div>
+
+                        {/* Active Protocol (Minimalist Launchpad) */}
+                        <section className="bg-black text-white rounded-[32px] p-8 relative overflow-hidden flex flex-col group shadow-2xl md:col-span-1 h-auto md:h-[320px]">
+                            <div className="absolute top-0 right-0 p-6">
+                                <div className="w-10 h-10 rounded-[14px] bg-white/10 backdrop-blur-md flex items-center justify-center">
+                                    <Dumbbell className="w-5 h-5 text-white" />
                                 </div>
                             </div>
-                            <div className="space-y-4 relative z-10 w-full">
-                                <h3 className="text-[11px] font-black text-white/50 uppercase tracking-[0.4em]">Active Protocol</h3>
-                                <div className="space-y-1">
-                                    <h2 className="text-4xl font-black uppercase tracking-tighter leading-none">{activeRoutine?.name}</h2>
-                                    <p className="text-rose-500 text-[11px] font-black uppercase tracking-widest">{activeRoutine?.day || 'No Day Assigned'}</p>
+                            <div className="space-y-1 relative z-10 w-full mt-6">
+                                <h3 className="text-[10px] font-black text-white/50 uppercase tracking-[0.4em]">Active Protocol</h3>
+                                <div className="space-y-0.5">
+                                    <h2 className="text-3xl font-black uppercase tracking-tighter leading-none">{displayTitle}</h2>
+                                    <p className="text-rose-500 text-[10px] font-black uppercase tracking-widest leading-snug pr-4">{displayMuscles}</p>
                                 </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
-                                    {activeRoutine?.exercises.slice(0, 4).map((ex: any) => (
-                                        <div key={ex.id} className="bg-white/5 border border-white/10 rounded-2xl p-3 space-y-2">
-                                            <div>
-                                                <p className="text-[11px] font-bold uppercase truncate">{ex.name}</p>
-                                                <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">{ex.suggestedSets}x{ex.suggestedReps}</p>
-                                            </div>
-                                            <div className="flex flex-wrap gap-1">
-                                                {(ex.muscleGroups || [ex.muscleGroup]).map((mg: string) => (
-                                                    <span key={mg} className="text-[7px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30">
-                                                        {mg}
-                                                    </span>
-                                                ))}
-                                            </div>
+                                
+                                {/* TEMPORARILY DISABLED FOR DESIGN WORK */}
+                                {false && hasVisitedGymToday ? (
+                                    <div className="flex flex-col items-center justify-center pt-12 pb-4 space-y-4 text-center">
+                                        <div className="w-20 h-20 rounded-full bg-emerald-500/20 border-4 border-emerald-500/30 flex items-center justify-center mb-4 relative">
+                                            <div className="absolute inset-0 rounded-full animate-ping bg-emerald-500/20" style={{ animationDuration: '3s' }} />
+                                            <CheckCircle2 className="w-10 h-10 text-emerald-400 relative z-10" />
                                         </div>
-                                    ))}
-                                    {activeRoutine?.exercises.length > 4 && (
-                                        <div className="bg-white/5 border border-white/10 rounded-2xl p-3 flex items-center justify-center italic text-[9px] text-white/40 uppercase font-black">
-                                            +{activeRoutine.exercises.length - 4} more exercises
+                                        <h3 className="text-2xl font-black uppercase tracking-tight text-white">Session Complete</h3>
+                                        <p className="text-[12px] font-bold text-white/40 uppercase tracking-widest max-w-[250px]">
+                                            You've already crushed your workout today. Enjoy your recovery!
+                                        </p>
+                                        
+                                        <div className="pt-8 w-full">
+                                            <button 
+                                                onClick={() => {
+                                                    if (!activeSession) {
+                                                        startSession(activeRoutine.id)
+                                                    }
+                                                    router.push('/health/fitness/session')
+                                                }}
+                                                className="w-full py-3 bg-white/5 text-white/60 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all flex items-center justify-center gap-2 group border border-white/5"
+                                            >
+                                                Log Extra Session <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                                            </button>
                                         </div>
-                                    )}
-                                </div>
-                                <div className="flex items-center gap-4 pt-4">
-                                    <button 
-                                        onClick={() => {
-                                            if (!activeSession) {
-                                                startSession(activeRoutine.id)
-                                            }
-                                            router.push('/health/fitness/session')
-                                        }}
-                                        className="flex-1 px-8 py-4 bg-white text-black rounded-2xl text-[12px] font-black uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"
-                                    >
-                                        {activeSession ? (
-                                            <>
-                                                Resume Session <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                                            </>
-                                        ) : (
-                                            <>
-                                                Start Session <Play className="w-3 h-3 fill-black text-black" />
-                                            </>
-                                        )}
-                                    </button>
-                                </div>
+                                    </div>
+                                ) : (
+                                    <>
+                                        {/* Minimalist Play Button Layout */}
+                                        <div className="w-full flex flex-col items-center relative z-10 pt-8 pb-4">
+                                            <button 
+                                                onClick={() => {
+                                                    if (!activeSession) {
+                                                        startSession(activeRoutine.id)
+                                                    }
+                                                    router.push('/health/fitness/session')
+                                                }}
+                                                className="w-32 h-32 rounded-full bg-white text-black flex flex-col items-center justify-center hover:scale-[1.05] active:scale-[0.95] transition-all shadow-[0_0_50px_rgba(255,255,255,0.2)] group"
+                                            >
+                                                {activeSession ? (
+                                                    <ArrowRight className="w-12 h-12 text-black group-hover:translate-x-2 transition-transform" />
+                                                ) : (
+                                                    <Play className="w-12 h-12 text-black fill-black ml-2" />
+                                                )}
+                                            </button>
+                                            <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mt-6">
+                                                {activeSession ? 'Resume Session' : 'Start Session'}
+                                            </p>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </section>
 
-                        {/* Operational Flow (Weekly Split) */}
-                        <div className="bg-white border border-black/5 rounded-[40px] p-8 space-y-8 shadow-sm flex flex-col h-full">
-                            <div className="flex items-center justify-between">
-                                <div className="space-y-1">
-                                    <h3 className="text-[11px] font-black text-black/30 uppercase tracking-[0.3em]">Operational Flow</h3>
-                                    <h2 className="text-xl font-black uppercase tracking-tighter">Weekly Split & Logs</h2>
-                                </div>
-                                <button className="text-[10px] font-black text-rose-500 uppercase tracking-widest flex items-center gap-1 group">
-                                    Full History <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-                                </button>
-                            </div>
-
-                            <div className="flex-grow flex flex-col justify-center gap-4">
-                                {Array.from({ length: 7 }).map((_, i) => {
-                                    const d = new Date()
-                                    d.setDate(d.getDate() - (6 - i))
-                                    const dateStr = d.toISOString().split('T')[0]
-                                    const isToday = i === 6
-                                    const hasVisit = gymStats.visitHistory?.some((v: any) => v.date === dateStr)
-                                    const hasLog = workoutLogs?.some((l: any) => l.date === dateStr)
-                                    const dayName = d.toLocaleDateString('en-GB', { weekday: 'long' }).toUpperCase()
-
-                                    return (
-                                        <div key={dateStr} className={cn(
-                                            "flex items-center justify-between p-4 rounded-2xl border transition-all",
-                                            isToday ? "bg-black text-white border-black ring-4 ring-black/5" : "bg-black/[0.02] border-black/5"
-                                        )}>
-                                            <div className="flex items-center gap-4">
-                                                <span className="text-[10px] font-black uppercase tracking-widest w-24">{dayName}</span>
-                                                <div className="flex gap-2">
-                                                    <div className={cn(
-                                                        "w-2.5 h-2.5 rounded-full",
-                                                        hasVisit ? "bg-emerald-500 shadow-sm shadow-emerald-500/20" : "bg-black/10"
-                                                    )} />
-                                                    <div className={cn(
-                                                        "w-2.5 h-2.5 rounded-full",
-                                                        hasLog ? "bg-rose-500 shadow-sm shadow-rose-500/20" : "bg-black/10"
-                                                    )} />
-                                                </div>
-                                            </div>
-                                            {isToday && <span className="text-[8px] font-black uppercase text-rose-500">Active</span>}
-                                        </div>
-                                    )
-                                })}
-                            </div>
-
-                            <div className="flex items-center gap-10 pt-6 border-t border-black/5">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                                    <span className="text-[9px] font-black text-black/40 uppercase tracking-widest">Gym Session</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                                    <span className="text-[9px] font-black text-black/40 uppercase tracking-widest">Routine Logic</span>
-                                </div>
-                            </div>
+                        {/* Milestones (1/3 width) */}
+                        <div className="md:col-span-1 h-auto md:h-[320px] relative">
+                            <MilestoneTracker />
                         </div>
                     </>
                 )}
-            </div>
-
-            {/* Milestones: Full Width at the bottom */}
-            <div className="w-full">
-                <MilestoneTracker />
             </div>
 
             <GymConnectionModal

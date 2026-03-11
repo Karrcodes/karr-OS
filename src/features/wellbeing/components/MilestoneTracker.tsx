@@ -2,12 +2,13 @@
 
 import React, { useState } from 'react'
 import { useWellbeing } from '../contexts/WellbeingContext'
-import { Trophy, Plus, Target, CheckCircle2, Trash2, Milestone as MilestoneIcon } from 'lucide-react'
+import { Trophy, Plus, Target, CheckCircle2, Trash2, Milestone as MilestoneIcon, Sparkles } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { generateInitialMilestones } from '../utils/milestoneGenerator'
 
 export function MilestoneTracker() {
-    const { milestones, addMilestone, deleteMilestone, updateMilestone } = useWellbeing()
+    const { profile, workoutLogs, milestones, addMilestone, bulkAddMilestones, deleteMilestone, updateMilestone } = useWellbeing()
     const [isAdding, setIsAdding] = useState(false)
     const [newTitle, setNewTitle] = useState('')
     const [newTarget, setNewTarget] = useState('')
@@ -28,18 +29,36 @@ export function MilestoneTracker() {
     }
 
     return (
-        <div className="bg-white border border-black/5 rounded-[32px] p-8 space-y-6 shadow-sm">
+        <div className="bg-white border border-black/5 rounded-[32px] p-8 space-y-6 shadow-sm h-full w-full relative overflow-y-auto">
             <header className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <Trophy className="w-5 h-5 text-amber-500" />
                     <h3 className="text-[14px] font-black text-black uppercase tracking-widest">Milestones</h3>
                 </div>
-                <button 
-                    onClick={() => setIsAdding(!isAdding)}
-                    className="w-8 h-8 rounded-full bg-black/5 flex items-center justify-center hover:bg-black/10 transition-colors"
-                >
-                    <Plus className={cn("w-4 h-4 transition-transform", isAdding && "rotate-45")} />
-                </button>
+                <div className="flex items-center gap-2">
+                    {profile && (
+                        <button 
+                            onClick={async () => {
+                                const generated = generateInitialMilestones(profile, workoutLogs)
+                                // Only add if they don't already exist (simple title matching)
+                                const toAdd = generated.filter(gm => !milestones.some(m => m.title === gm.title))
+                                if (toAdd.length > 0) {
+                                    await bulkAddMilestones(toAdd)
+                                }
+                            }}
+                            className="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center hover:bg-emerald-500/20 transition-colors"
+                            title="Auto-Generate Goals"
+                        >
+                            <Sparkles className="w-4 h-4" />
+                        </button>
+                    )}
+                    <button 
+                        onClick={() => setIsAdding(!isAdding)}
+                        className="w-8 h-8 rounded-full bg-black/5 flex items-center justify-center hover:bg-black/10 transition-colors"
+                    >
+                        <Plus className={cn("w-4 h-4 transition-transform", isAdding && "rotate-45")} />
+                    </button>
+                </div>
             </header>
 
             <AnimatePresence>
@@ -88,15 +107,29 @@ export function MilestoneTracker() {
 
             <div className="space-y-3">
                 {milestones.length === 0 ? (
-                    <div className="py-10 text-center space-y-2 opacity-20">
-                        <MilestoneIcon className="w-8 h-8 mx-auto" />
-                        <p className="text-[10px] font-black uppercase tracking-widest">No Milestones Set</p>
+                    <div className="py-10 text-center space-y-4">
+                        <div className="opacity-20 space-y-2">
+                            <MilestoneIcon className="w-8 h-8 mx-auto" />
+                            <p className="text-[10px] font-black uppercase tracking-widest">No Milestones Set</p>
+                        </div>
+                        {profile && (
+                            <button 
+                                onClick={async () => {
+                                    const generated = generateInitialMilestones(profile, workoutLogs)
+                                    await bulkAddMilestones(generated)
+                                }}
+                                className="px-6 py-3 bg-black text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 mx-auto hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-black/10"
+                            >
+                                <Sparkles className="w-3 h-3 text-emerald-400" />
+                                Generate Intermediate Goals
+                            </button>
+                        )}
                     </div>
                 ) : (
                     milestones.map(m => {
                         const progress = Math.min(100, (m.currentValue / m.targetValue) * 100)
                         return (
-                            <div key={m.id} className="p-4 bg-black/[0.02] border border-black/5 rounded-2xl space-y-3 group">
+                            <div key={m.id} className="p-3 bg-black/[0.02] border border-black/5 rounded-2xl space-y-2 group">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <div className={cn(
@@ -108,7 +141,7 @@ export function MilestoneTracker() {
                                     <div className="flex items-center gap-2">
                                         <button 
                                             onClick={() => deleteMilestone(m.id)}
-                                            className="opacity-0 group-hover:opacity-100 p-1 text-black/20 hover:text-rose-500 transition-all"
+                                            className="p-1 text-black/20 hover:text-rose-500 transition-all"
                                         >
                                             <Trash2 className="w-3 h-3" />
                                         </button>
