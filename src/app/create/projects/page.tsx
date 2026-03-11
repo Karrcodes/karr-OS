@@ -21,8 +21,8 @@ export default function ProjectsPage() {
     const [showArchived, setShowArchived] = useState(false)
 
     return (
-        <main className={cn("pb-12 pt-4 px-4 md:px-8 flex flex-col", view !== 'matrix' && "flex-1")}>
-            <div className={cn("mx-auto space-y-6 w-full", view === 'matrix' ? 'max-w-7xl' : 'max-w-7xl flex-1')}>
+        <main className={cn("pb-20 pt-8 md:pt-10 px-6 md:px-10 flex flex-col", view !== 'matrix' && "flex-1")}>
+            <div className={cn("mx-auto space-y-10 w-full", view === 'matrix' ? 'max-w-7xl' : 'max-w-7xl flex-1')}>
                 {error && error.includes('relation') && (
                     <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex flex-col gap-2">
                         <p className="text-[13px] font-bold text-red-900">Database Tables Missing</p>
@@ -30,13 +30,13 @@ export default function ProjectsPage() {
                     </div>
                 )}
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                    <div>
-                        <h1 className="text-[22px] font-bold text-black tracking-tight">Project Pipeline</h1>
-                        <p className="text-[12px] text-black/35 mt-0.5">Studio Module · Strategic Development</p>
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                    <div className="space-y-1">
+                        <h2 className="text-[11px] font-black text-orange-500 uppercase tracking-[0.3em]">Studio Protocol</h2>
+                        <h1 className="text-4xl font-black text-black tracking-tighter uppercase grayscale">Project Pipeline</h1>
                     </div>
 
-                    <div className="flex bg-black/[0.03] p-1 rounded-xl border border-black/[0.04] items-center gap-0.5">
+                    <div className="flex bg-black/[0.03] p-1.5 rounded-2xl border border-black/[0.05] items-center gap-0.5 h-fit mb-1">
                         {[
                             { label: 'Board', value: 'board' as const, icon: LayoutGrid },
                             { label: 'Matrix', value: 'matrix' as const, icon: Network },

@@ -97,18 +97,16 @@ export default function IntelligencePage() {
     return (
         <div className="h-[calc(100vh-3.5rem)] md:h-screen lg:h-screen bg-[#fafafa] flex flex-col overflow-hidden relative">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-5 h-[96px] border-b border-black/[0.06] bg-[#fafafa] z-20 shadow-sm shrink-0">
-                <div className="flex items-center gap-3">
-                    <div>
-                        <h1 className="text-[22px] font-bold text-black tracking-tight flex items-center gap-2">
-                            Karr Intelligence
-                            <span className="bg-emerald-500/10 text-emerald-600 text-[9px] px-1.5 py-0.5 rounded font-mono uppercase tracking-widest border border-emerald-500/20">Active</span>
-                        </h1>
-                        <p className="text-[12px] text-black/35 mt-0.5">System Hub</p>
-                    </div>
+            <div className="flex flex-col md:flex-row md:items-end justify-between px-6 py-8 md:px-10 md:py-10 bg-[#fafafa] z-20 shrink-0 gap-6">
+                <div className="space-y-1">
+                    <h2 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.3em]">Intelligence Protocol</h2>
+                    <h1 className="text-4xl font-black text-black tracking-tighter uppercase flex items-center gap-3">
+                        Karr Intelligence
+                        <span className="bg-emerald-500/10 text-emerald-600 text-[9px] px-2 py-0.5 rounded font-mono uppercase tracking-widest border border-emerald-500/20 h-fit mb-1">Active</span>
+                    </h1>
                 </div>
 
-                <div className="flex items-center gap-2 sm:gap-4 text-[10px] font-mono uppercase tracking-widest">
+                <div className="flex items-center gap-4 text-[10px] font-mono uppercase tracking-widest h-fit mb-1">
                     <div className="flex items-center gap-1.5 text-emerald-600">
                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                         <span className="hidden xs:inline">System Sync: 100%</span>
@@ -121,7 +119,7 @@ export default function IntelligencePage() {
                         ) : (
                             <button
                                 onClick={() => window.location.href = '/api/auth/google'}
-                                className="flex items-center gap-1.5 hover:text-black transition-colors"
+                                className="flex items-center gap-1.5 hover:text-black transition-colors underline underline-offset-4 decoration-black/10 transition-all hover:decoration-black"
                             >
                                 <Database className="w-3 h-3" /> <span className="hidden sm:inline">Sync Drive</span>
                             </button>

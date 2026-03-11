@@ -59,18 +59,18 @@ export default function GoalsDashboard() {
     return (
         <div className="flex flex-col h-full bg-white">
             {/* Standard Module Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 md:px-6 py-4 md:py-5 border-b border-black/[0.06] bg-white flex-shrink-0 shadow-sm z-10 gap-4 sm:gap-0">
-                <div className="space-y-0.5">
-                    <h1 className="text-[18px] md:text-[22px] font-bold text-black tracking-tight">Strategic Objectives</h1>
-                    <p className="text-[10px] md:text-[12px] text-black/35 font-medium uppercase tracking-wider">Strategic Module · Tactical Layer</p>
+            <div className="flex flex-col md:flex-row md:items-end justify-between px-6 py-8 md:px-10 md:py-10 bg-white flex-shrink-0 z-10 gap-6">
+                <div className="space-y-1">
+                    <h2 className="text-[11px] font-black text-amber-500 uppercase tracking-[0.3em]">Strategy Protocol</h2>
+                    <h1 className="text-4xl font-black text-black tracking-tighter uppercase grayscale">Manifest</h1>
                 </div>
 
-                <div className="flex items-center gap-2 md:gap-3">
+                <div className="flex items-center gap-3 h-fit mb-1">
                     <GoalsViewSwitcher currentView={view} onViewChange={setView} />
 
                     <button
                         onClick={() => setIsCreateModalOpen(true)}
-                        className="flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 bg-black text-white rounded-xl font-bold text-[11px] md:text-[12px] uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-black/10 group whitespace-nowrap"
+                        className="flex items-center justify-center gap-2 px-6 py-2.5 bg-black text-white rounded-xl font-bold text-[12px] uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-black/10 group whitespace-nowrap"
                     >
                         <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform" />
                         <span className="hidden xs:block">Initiate Mission</span>

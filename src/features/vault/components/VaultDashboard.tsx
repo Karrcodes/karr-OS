@@ -17,12 +17,12 @@ export function VaultDashboard({ defaultTab }: { defaultTab?: VaultTab }) {
     return (
         <div className="min-h-screen bg-[#FDFDFD] flex flex-col w-full overflow-x-hidden">
             {/* Page Header */}
-            <div className="flex items-center justify-between px-6 py-5 h-[96px] border-b border-black/[0.06] bg-[#fafafa] flex-shrink-0 shadow-sm z-10">
-                <div>
-                    <h1 className="text-[22px] font-bold text-black tracking-tight">Vault</h1>
-                    <p className="text-[12px] text-black/35 mt-0.5">Secure Cross-Device Storage</p>
+            <div className="flex flex-col md:flex-row md:items-end justify-between px-6 py-8 md:px-10 md:py-10 bg-[#fafafa] flex-shrink-0 z-10 gap-6">
+                <div className="space-y-1">
+                    <h2 className="text-[11px] font-black text-purple-500 uppercase tracking-[0.3em]">Security Protocol</h2>
+                    <h1 className="text-4xl font-black text-black tracking-tighter uppercase grayscale">Schrö Vault</h1>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 h-fit mb-1">
                     <div className="text-[11px] text-black/25 uppercase tracking-wider font-medium">
                         {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
                     </div>

@@ -1,16 +1,40 @@
 'use client'
 
-import React, { useState } from 'react'
-import { useWellbeing } from '@/features/wellbeing/contexts/WellbeingContext'
-import { Settings, Save, User, Target, Activity, Ruler, Weight, Baby, Info, Layout, Eye, EyeOff, ChevronUp, ChevronDown } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import React, { useState, useRef } from 'react'
+import {
+    Layout,
+    Settings,
+    Baby,
+    Ruler,
+    Weight,
+    CheckCircle2,
+    Eye,
+    EyeOff,
+    Activity,
+    Save,
+    User,
+    Target,
+    Info,
+    Dumbbell,
+    Utensils,
+    RotateCcw,
+    Flame,
+    Scale,
+    Calendar,
+    Smile,
+    ArrowUpRight
+} from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useWellbeing } from '../contexts/WellbeingContext'
 import type { WellbeingGoal, ActivityLevel, Gender, DashboardComponentId } from '../types'
+import { cn } from '@/lib/utils'
 
 export function WellbeingSettings() {
     const { profile, updateProfile, dashboardLayout, updateLayout } = useWellbeing()
     const [isSaving, setIsSaving] = useState(false)
     const [success, setSuccess] = useState(false)
+    const [draggingId, setDraggingId] = useState<DashboardComponentId | null>(null)
+    const [dragOverColumn, setDragOverColumn] = useState<'main' | 'sidebar' | null>(null)
 
     const [formData, setFormData] = useState({
         age: profile?.age || 25,
@@ -18,42 +42,24 @@ export function WellbeingSettings() {
         height: profile?.height || 175,
         gender: profile?.gender || 'male' as Gender,
         activityLevel: profile?.activityLevel || 'moderate' as ActivityLevel,
-        goal: profile?.goal || 'maintenance' as WellbeingGoal
+        goal: profile?.goal || 'maintenance' as WellbeingGoal,
+        goalWeight: profile?.goalWeight || profile?.weight || 75
     })
 
     const COMPONENT_LABELS: Record<DashboardComponentId, string> = {
-        'macros': 'Macro Summary',
-        'weight_trends': 'Weight Progress Chart',
-        'active_protocol': 'Main Routine Card',
-        'meal_planner': 'Meal Planner',
-        'mood_reflection': 'Mood & Reflections',
+        'macros': 'Nutrition Status',
+        'weight_trends': 'Weight Progress',
+        'active_protocol': 'Fitness Protocol',
+        'meal_planner': 'Nutritional Matrix',
         'nutritional_trends': '7-Day Calorie Trend',
         'workout_consistency': 'Workout Heatmap',
-        'gym_activity': 'Gym Interaction'
-    }
-
-    const moveComponent = (column: 'main' | 'sidebar', index: number, direction: 'up' | 'down') => {
-        const layout = { ...dashboardLayout }
-        const items = [...layout[column]]
-        const newIndex = direction === 'up' ? index - 1 : index + 1
-
-        if (newIndex >= 0 && newIndex < items.length) {
-            [items[index], items[newIndex]] = [items[newIndex], items[index]]
-            updateLayout({ ...layout, [column]: items })
-        }
-    }
-
-    const toggleComponent = (column: 'main' | 'sidebar', index: number) => {
-        const layout = { ...dashboardLayout }
-        const items = [...layout[column]]
-        items[index] = { ...items[index], isVisible: !items[index].isVisible }
-        updateLayout({ ...layout, [column]: items })
+        'gym_activity': 'Gym Interaction',
+        'mood_reflection': 'Daily Reflection'
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setIsSaving(true)
-        setSuccess(false)
 
         try {
             await updateProfile({
@@ -73,289 +79,242 @@ export function WellbeingSettings() {
         setFormData(prev => ({ ...prev, [field]: value }))
     }
 
+    const toggleVisibility = (id: DashboardComponentId) => {
+        const layout = { ...dashboardLayout }
+        const mainIdx = layout.main.findIndex(c => c.id === id)
+        if (mainIdx !== -1) {
+            layout.main[mainIdx] = { ...layout.main[mainIdx], isVisible: !layout.main[mainIdx].isVisible }
+        } else {
+            const sideIdx = layout.sidebar.findIndex(c => c.id === id)
+            if (sideIdx !== -1) {
+                layout.sidebar[sideIdx] = { ...layout.sidebar[sideIdx], isVisible: !layout.sidebar[sideIdx].isVisible }
+            }
+        }
+        updateLayout(layout)
+    }
+
+    const handlePointerDragOver = (x: number, y: number) => {
+        const elements = document.elementsFromPoint(x, y)
+        let foundColumn: 'main' | 'sidebar' | null = null
+        for (const el of elements) {
+            if (el instanceof HTMLElement && el.dataset.column) {
+                foundColumn = el.dataset.column as 'main' | 'sidebar'
+                break
+            }
+        }
+        setDragOverColumn(foundColumn)
+    }
+
+    const handlePointerDrop = async (componentId: DashboardComponentId, x: number, y: number) => {
+        const elements = document.elementsFromPoint(x, y)
+        let targetColumn: 'main' | 'sidebar' | null = null
+        for (const el of elements) {
+            if (el instanceof HTMLElement && el.dataset.column) {
+                targetColumn = el.dataset.column as 'main' | 'sidebar'
+                break
+            }
+        }
+
+        setDraggingId(null)
+        setDragOverColumn(null)
+
+        if (targetColumn) {
+            const layout = { ...dashboardLayout }
+            const inMain = layout.main.findIndex(c => c.id === componentId)
+            const inSidebar = layout.sidebar.findIndex(c => c.id === componentId)
+            const currentColumn = inMain !== -1 ? 'main' : 'sidebar'
+            const currentIndex = currentColumn === 'main' ? inMain : inSidebar
+
+            if (currentIndex === -1) return
+
+            const sourceItems = [...layout[currentColumn]]
+            const [moved] = sourceItems.splice(currentIndex, 1)
+
+            const columnEl = document.querySelector(`[data-column="${targetColumn}"]`)
+            let targetIndex = 0
+            if (columnEl) {
+                const itemElements = Array.from(columnEl.querySelectorAll('[data-drag-id]'))
+                for (let i = 0; i < itemElements.length; i++) {
+                    const rect = itemElements[i].getBoundingClientRect()
+                    if (y > rect.top + rect.height / 2) {
+                        targetIndex = i + 1
+                    }
+                }
+            }
+
+            if (currentColumn === targetColumn) {
+                if (targetIndex > currentIndex) targetIndex--
+                const targetItems = [...sourceItems]
+                targetItems.splice(targetIndex, 0, moved)
+                layout[targetColumn] = targetItems
+            } else {
+                const targetItems = [...layout[targetColumn]]
+                targetItems.splice(targetIndex, 0, moved)
+                layout[currentColumn] = sourceItems
+                layout[targetColumn] = targetItems
+            }
+
+            updateLayout(layout)
+        }
+    }
+
     return (
-        <div className="max-w-4xl mx-auto space-y-8 pb-20">
-            {/* Dashboard Layout Control */}
-            <div className="bg-white border border-black/5 rounded-[40px] p-8 md:p-12 shadow-sm space-y-8">
-                <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                        <Layout className="w-4 h-4 text-rose-500" />
-                        <h2 className="text-[11px] font-black text-black/30 uppercase tracking-[0.3em]">Dashboard Interface</h2>
-                    </div>
-                    <h1 className="text-3xl font-black text-black uppercase tracking-tighter">Layout Management</h1>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                    {/* Main Column */}
-                    <div className="space-y-6">
-                        <h3 className="text-[11px] font-black text-rose-500 uppercase tracking-widest pl-1">Main Content</h3>
-                        <div className="space-y-2">
-                            {dashboardLayout.main.map((comp, idx) => (
-                                <div key={comp.id} className="flex items-center justify-between p-4 bg-black/[0.02] border border-black/5 rounded-2xl group hover:border-black/10 transition-colors">
-                                    <div className="flex items-center gap-3">
-                                        <button
-                                            onClick={() => toggleComponent('main', idx)}
-                                            className={cn(
-                                                "p-2 rounded-xl transition-colors",
-                                                comp.isVisible ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-400"
-                                            )}
-                                        >
-                                            {comp.isVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                                        </button>
-                                        <span className={cn(
-                                            "text-[12px] font-black uppercase tracking-tight",
-                                            !comp.isVisible && "opacity-30"
-                                        )}>
-                                            {COMPONENT_LABELS[comp.id]}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button
-                                            disabled={idx === 0}
-                                            onClick={() => moveComponent('main', idx, 'up')}
-                                            className="p-1.5 hover:bg-black/5 rounded-lg disabled:opacity-30"
-                                        >
-                                            <ChevronUp className="w-4 h-4 text-black/40" />
-                                        </button>
-                                        <button
-                                            disabled={idx === dashboardLayout.main.length - 1}
-                                            onClick={() => moveComponent('main', idx, 'down')}
-                                            className="p-1.5 hover:bg-black/5 rounded-lg disabled:opacity-30"
-                                        >
-                                            <ChevronDown className="w-4 h-4 text-black/40" />
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Sidebar Column */}
-                    <div className="space-y-6">
-                        <h3 className="text-[11px] font-black text-rose-500 uppercase tracking-widest pl-1">Sidebar Widgets</h3>
-                        <div className="space-y-2">
-                            {dashboardLayout.sidebar.map((comp, idx) => (
-                                <div key={comp.id} className="flex items-center justify-between p-4 bg-black/[0.02] border border-black/5 rounded-2xl group hover:border-black/10 transition-colors">
-                                    <div className="flex items-center gap-3">
-                                        <button
-                                            onClick={() => toggleComponent('sidebar', idx)}
-                                            className={cn(
-                                                "p-2 rounded-xl transition-colors",
-                                                comp.isVisible ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-400"
-                                            )}
-                                        >
-                                            {comp.isVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                                        </button>
-                                        <span className={cn(
-                                            "text-[12px] font-black uppercase tracking-tight",
-                                            !comp.isVisible && "opacity-30"
-                                        )}>
-                                            {COMPONENT_LABELS[comp.id]}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button
-                                            disabled={idx === 0}
-                                            onClick={() => moveComponent('sidebar', idx, 'up')}
-                                            className="p-1.5 hover:bg-black/5 rounded-lg disabled:opacity-30"
-                                        >
-                                            <ChevronUp className="w-4 h-4 text-black/40" />
-                                        </button>
-                                        <button
-                                            disabled={idx === dashboardLayout.sidebar.length - 1}
-                                            onClick={() => moveComponent('sidebar', idx, 'down')}
-                                            className="p-1.5 hover:bg-black/5 rounded-lg disabled:opacity-30"
-                                        >
-                                            <ChevronDown className="w-4 h-4 text-black/40" />
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="bg-white border border-black/5 rounded-[40px] p-8 md:p-12 shadow-sm space-y-10">
-                <header className="flex items-center justify-between">
+        <div className="max-w-6xl mx-auto space-y-8 pb-16">
+            {/* Profile Section - Maintains standard size for accessibility */}
+            <div className="bg-white border border-black/5 rounded-[32px] p-6 md:p-8 shadow-sm space-y-8">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                            <Settings className="w-4 h-4 text-rose-500" />
-                            <h2 className="text-[11px] font-black text-black/30 uppercase tracking-[0.3em]">Protocol Configuration</h2>
+                            <User className="w-3.5 h-3.5 text-rose-500" />
+                            <h2 className="text-[10px] font-black text-black/30 uppercase tracking-[0.25em]">Personal Metrics</h2>
                         </div>
-                        <h1 className="text-3xl font-black text-black uppercase tracking-tighter">Profile Settings</h1>
+                        <h1 className="text-2xl font-black text-black uppercase tracking-tighter">Biometric Data</h1>
                     </div>
-                </header>
+                </div>
 
-                <form onSubmit={handleSubmit} className="space-y-12">
-                    {/* Physical Metrics */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="space-y-6">
-                            <h3 className="text-[11px] font-black text-rose-500 uppercase tracking-widest pl-1">Biometrics</h3>
-
-                            <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-black/40 uppercase tracking-widest pl-1">Age</label>
-                                    <div className="relative">
-                                        <Baby className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
-                                        <input
-                                            type="number"
-                                            value={formData.age}
-                                            onChange={(e) => handleChange('age', parseInt(e.target.value))}
-                                            className="w-full bg-black/[0.02] border border-black/5 rounded-2xl py-4 pl-12 pr-4 text-[13px] font-black focus:outline-none focus:ring-2 focus:ring-rose-500/20"
-                                        />
-                                    </div>
+                <form onSubmit={handleSubmit} className="space-y-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="space-y-4">
+                            <h3 className="text-[10px] font-black text-rose-500 uppercase tracking-widest ml-1">Core Metrics</h3>
+                            <div className="space-y-3">
+                                <div className="space-y-1.5">
+                                    <label className="text-[9px] font-black text-black/40 uppercase tracking-wider ml-2 flex items-center gap-2">
+                                        <Baby className="w-2.5 h-2.5" /> Age
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={formData.age}
+                                        onChange={(e) => handleChange('age', parseInt(e.target.value))}
+                                        className="w-full bg-[#fafafa] border border-black/5 rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                                    />
                                 </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-black/40 uppercase tracking-widest pl-1">Height (cm)</label>
-                                    <div className="relative">
-                                        <Ruler className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
-                                        <input
-                                            type="number"
-                                            value={formData.height}
-                                            onChange={(e) => handleChange('height', parseInt(e.target.value))}
-                                            className="w-full bg-black/[0.02] border border-black/5 rounded-2xl py-4 pl-12 pr-4 text-[13px] font-black focus:outline-none focus:ring-2 focus:ring-rose-500/20"
-                                        />
-                                    </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-[9px] font-black text-black/40 uppercase tracking-wider ml-2 flex items-center gap-2">
+                                        <Ruler className="w-2.5 h-2.5" /> Height (cm)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={formData.height}
+                                        onChange={(e) => handleChange('height', parseInt(e.target.value))}
+                                        className="w-full bg-[#fafafa] border border-black/5 rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                                    />
                                 </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-black/40 uppercase tracking-widest pl-1">Weight (kg)</label>
-                                    <div className="relative">
-                                        <Weight className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
-                                        <input
-                                            type="number"
-                                            step="0.1"
-                                            value={formData.weight}
-                                            onChange={(e) => handleChange('weight', parseFloat(e.target.value))}
-                                            className="w-full bg-black/[0.02] border border-black/5 rounded-2xl py-4 pl-12 pr-4 text-[13px] font-black focus:outline-none focus:ring-2 focus:ring-rose-500/20"
-                                        />
-                                    </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-[9px] font-black text-black/40 uppercase tracking-wider ml-2 flex items-center gap-2">
+                                        <Weight className="w-2.5 h-2.5" /> Current Weight (kg)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.1"
+                                        value={formData.weight}
+                                        onChange={(e) => handleChange('weight', parseFloat(e.target.value))}
+                                        className="w-full bg-[#fafafa] border border-black/5 rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-[9px] font-black text-black/40 uppercase tracking-wider ml-2 flex items-center gap-2">
+                                        <Scale className="w-2.5 h-2.5" /> Goal Weight (kg)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.1"
+                                        value={formData.goalWeight}
+                                        onChange={(e) => handleChange('goalWeight', parseFloat(e.target.value))}
+                                        className="w-full bg-[#fafafa] border border-black/5 rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                                    />
                                 </div>
                             </div>
                         </div>
 
-                        <div className="space-y-6">
-                            <h3 className="text-[11px] font-black text-rose-500 uppercase tracking-widest pl-1">Biological Identity</h3>
+                        <div className="space-y-4">
+                            <h3 className="text-[10px] font-black text-rose-500 uppercase tracking-widest ml-1">Identity</h3>
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black text-black/40 uppercase tracking-wider ml-2">Gender</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {(['male', 'female'] as Gender[]).map((g) => (
+                                        <button
+                                            key={g}
+                                            type="button"
+                                            onClick={() => handleChange('gender', g)}
+                                            className={cn(
+                                                "py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all",
+                                                formData.gender === g
+                                                    ? "bg-black text-white border-black"
+                                                    : "bg-[#fafafa] border-black/5 text-black/40 hover:bg-black/5"
+                                            )}
+                                        >
+                                            {g}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="space-y-1.5 pt-1">
+                                <label className="text-[9px] font-black text-black/40 uppercase tracking-wider ml-2">Activity Level</label>
+                                <div className="grid grid-cols-1 gap-1.5">
+                                    {(['sedentary', 'light', 'moderate', 'active', 'very_active'] as ActivityLevel[]).map((level) => (
+                                        <button
+                                            key={level}
+                                            type="button"
+                                            onClick={() => handleChange('activityLevel', level)}
+                                            className={cn(
+                                                "px-3 py-2 rounded-lg text-[8px] font-black uppercase text-left border transition-all",
+                                                formData.activityLevel === level
+                                                    ? "bg-black text-white border-black"
+                                                    : "bg-[#fafafa] border-black/5 text-black/30 hover:bg-black/5"
+                                            )}
+                                        >
+                                            {level.replace('_', ' ')}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
 
-                            <div className="grid grid-cols-2 gap-3">
-                                {['male', 'female', 'other'].map((g) => (
+                        <div className="space-y-4">
+                            <h3 className="text-[10px] font-black text-rose-500 uppercase tracking-widest ml-1">Objective</h3>
+                            <div className="grid grid-cols-1 gap-2">
+                                {(['cut', 'maintenance', 'bulk'] as WellbeingGoal[]).map((g) => (
                                     <button
                                         key={g}
                                         type="button"
-                                        onClick={() => handleChange('gender', g)}
+                                        onClick={() => handleChange('goal', g)}
                                         className={cn(
-                                            "py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest border transition-all",
-                                            formData.gender === g
-                                                ? "bg-black text-white border-black shadow-lg"
-                                                : "bg-black/[0.02] border-black/5 text-black/40 hover:bg-black/[0.04]"
+                                            "p-3 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all flex items-center justify-between group",
+                                            formData.goal === g
+                                                ? "bg-rose-500 text-white border-rose-500 shadow-lg shadow-rose-200"
+                                                : "bg-[#fafafa] border-black/5 text-black/40 hover:bg-rose-50"
                                         )}
                                     >
-                                        {g}
+                                        {g === 'cut' ? 'Reduction' : g === 'maintenance' ? 'Stasis' : 'Augmentation'}
+                                        <Target className={cn(
+                                            "w-3.5 h-3.5 transition-transform group-hover:scale-125",
+                                            formData.goal === g ? "text-white" : "text-black/10"
+                                        )} />
                                     </button>
                                 ))}
                             </div>
                         </div>
                     </div>
 
-                    <hr className="border-black/5" />
-
-                    {/* Goals & Activity */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="space-y-6">
-                            <h3 className="text-[11px] font-black text-rose-500 uppercase tracking-widest pl-1">Current Goal</h3>
-                            <div className="grid grid-cols-1 gap-3">
-                                {[
-                                    { id: 'cut', label: 'Fat Loss (Cut)', icon: Target },
-                                    { id: 'maintenance', label: 'Maintain', icon: User },
-                                    { id: 'bulk', label: 'Muscle Gain (Bulk)', icon: Activity }
-                                ].map((g) => (
-                                    <button
-                                        key={g.id}
-                                        type="button"
-                                        onClick={() => handleChange('goal', g.id)}
-                                        className={cn(
-                                            "flex items-center gap-4 px-6 py-5 rounded-2xl text-[12px] font-black uppercase tracking-widest border transition-all",
-                                            formData.goal === g.id
-                                                ? "bg-rose-500 text-white border-rose-500 shadow-xl shadow-rose-500/20"
-                                                : "bg-black/[0.02] border-black/5 text-black/40 hover:bg-black/[0.04]"
-                                        )}
-                                    >
-                                        <g.icon className={cn("w-5 h-5", formData.goal === g.id ? "text-white" : "text-black/20")} />
-                                        {g.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="space-y-6">
-                            <h3 className="text-[11px] font-black text-rose-500 uppercase tracking-widest pl-1">Activity Coefficient</h3>
-                            <div className="grid grid-cols-1 gap-3">
-                                {[
-                                    { id: 'sedentary', label: 'Sedentary', desc: 'Desk job, little exercise' },
-                                    { id: 'light', label: 'Light', desc: 'Active 1-3 days/week' },
-                                    { id: 'moderate', label: 'Moderate', desc: 'Active 3-5 days/week' },
-                                    { id: 'active', label: 'Very Active', desc: 'Daily intense training' }
-                                ].map((a) => (
-                                    <button
-                                        key={a.id}
-                                        type="button"
-                                        onClick={() => handleChange('activityLevel', a.id)}
-                                        className={cn(
-                                            "flex flex-col items-start px-6 py-4 rounded-2xl border transition-all text-left",
-                                            formData.activityLevel === a.id
-                                                ? "bg-black text-white border-black shadow-xl"
-                                                : "bg-black/[0.02] border-black/5 text-black/40 hover:bg-black/[0.04]"
-                                        )}
-                                    >
-                                        <span className="text-[12px] font-black uppercase tracking-widest">{a.label}</span>
-                                        <span className={cn("text-[9px] font-bold uppercase", formData.activityLevel === a.id ? "text-white/40" : "text-black/20")}>{a.desc}</span>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="pt-4 flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-black/30">
-                            <Info className="w-4 h-4" />
-                            <p className="text-[10px] font-bold uppercase">Changes will automatically update your macro targets.</p>
+                    <div className="flex items-center justify-between pt-6 border-t border-black/[0.03]">
+                        <div className="flex items-center gap-3 text-black/30">
+                            <Info className="w-3.5 h-3.5" />
+                            <p className="text-[9px] font-bold uppercase tracking-tight">Recalculating macro targets upon commit.</p>
                         </div>
                         <button
                             type="submit"
                             disabled={isSaving}
-                            className={cn(
-                                "flex items-center gap-3 px-10 py-5 rounded-[24px] text-[13px] font-black uppercase tracking-[0.2em] transition-all",
-                                success && !isSaving
-                                    ? "bg-emerald-500 text-white shadow-xl shadow-emerald-500/10"
-                                    : "bg-black text-white hover:scale-105 active:scale-95 shadow-xl shadow-black/10 disabled:opacity-50"
-                            )}
+                            className="bg-black text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-black/10 flex items-center gap-2 disabled:opacity-50"
                         >
-                            {isSaving ? (
-                                <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                            ) : success ? (
-                                'Sync Successful'
-                            ) : (
+                            {isSaving ? 'Processing...' : (
                                 <>
-                                    <Save className="w-5 h-5" />
-                                    Synchronize Stats
+                                    <Save className="w-3.5 h-3.5" />
+                                    Commit Sync
                                 </>
                             )}
                         </button>
                     </div>
                 </form>
-            </div>
-
-            {/* Danger Zone / Factory Reset */}
-            <div className="bg-rose-50 border border-rose-100 rounded-[32px] p-8 flex items-center justify-between group">
-                <div className="space-y-1">
-                    <h3 className="text-[11px] font-black text-rose-600 uppercase tracking-widest">Protocol Reset</h3>
-                    <p className="text-[12px] font-medium text-rose-500/60 uppercase">Erase all local and cloud data associated with this module.</p>
-                </div>
-                <button className="px-6 py-3 bg-white border border-rose-200 text-rose-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all">
-                    Reset Module
-                </button>
             </div>
         </div>
     )

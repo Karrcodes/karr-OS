@@ -3,40 +3,23 @@
 import * as React from 'react'
 import { useState } from 'react'
 import { useWellbeing } from '../contexts/WellbeingContext'
-import { RecipeFinder } from './RecipeFinder'
-import { Plus, Utensils, X, Clock, Flame, ChevronRight } from 'lucide-react'
+import { Plus, Utensils, X, Clock, Flame, ChevronRight, Trash2, Database, CheckCircle2 } from 'lucide-react'
+import { QuickLogModal } from './QuickLogModal'
+import { NutritionLibraryModal } from './NutritionLibraryModal'
+import ConfirmationModal from '@/components/ConfirmationModal'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { MealLog, MacroTargets } from '../types'
 
 export function MealPlanner() {
-    const { mealLogs, macros, dailyNutrition, logMeal } = useWellbeing()
-    const [showRecipeFinder, setShowRecipeFinder] = useState(false)
+    const { library, mealLogs, macros, dailyNutrition, deleteMealLog, updateMealLog, addMealToLibrary, removeMealFromLibrary } = useWellbeing()
     const [showQuickAdd, setShowQuickAdd] = useState(false)
-
-    // Quick Add Form State
-    const [manualMeal, setManualMeal] = useState({
-        name: '',
-        type: 'snack' as const,
-        calories: 0,
-        protein: 0,
-        fat: 0,
-        carbs: 0
-    })
+    const [showLibrary, setShowLibrary] = useState(false)
+    const [mealToDelete, setMealToDelete] = useState<MealLog | null>(null)
+    const [libraryActionMeal, setLibraryActionMeal] = useState<{ meal: MealLog, isSaved: boolean, libraryMealId?: string } | null>(null)
 
     const today = new Date().toISOString().split('T')[0]
     const todayMeals = mealLogs.filter((m: MealLog) => m.date === today)
-
-    const handleQuickAdd = (e: React.FormEvent) => {
-        e.preventDefault()
-        logMeal({
-            ...manualMeal,
-            date: today,
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        })
-        setShowQuickAdd(false)
-        setManualMeal({ name: '', type: 'snack', calories: 0, protein: 0, fat: 0, carbs: 0 })
-    }
 
     const macroProgress = (current: number, target: number) => {
         if (target === 0) return 0
@@ -82,18 +65,20 @@ export function MealPlanner() {
                         <h3 className="text-2xl font-bold tracking-tight">Today's Meals</h3>
                         <p className="text-black/40 text-sm font-medium">Logged {todayMeals.length} items</p>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex gap-2 xl:gap-3">
                         <button
                             onClick={() => setShowQuickAdd(true)}
-                            className="px-6 py-3 bg-white border border-black/5 rounded-2xl text-xs font-black uppercase tracking-widest hover:border-black/20 transition-all flex items-center gap-2"
+                            className="p-3 xl:px-6 xl:py-3 bg-white border border-black/5 rounded-2xl text-xs font-black uppercase tracking-widest hover:border-black/20 transition-all flex items-center justify-center gap-2"
+                            title="Quick Log"
                         >
-                            <Plus className="h-4 w-4" /> Quick Log
+                            <Plus className="h-4 w-4" /> <span className="hidden xl:inline">Quick Log</span>
                         </button>
                         <button
-                            onClick={() => setShowRecipeFinder(true)}
-                            className="px-6 py-3 bg-black text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+                            onClick={() => setShowLibrary(true)}
+                            className="p-3 xl:px-6 xl:py-3 bg-black/5 text-black rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-black/10 transition-all flex items-center justify-center gap-2"
+                            title="Library"
                         >
-                            <Utensils className="h-4 w-4" /> Find Recipe
+                            <Database className="h-4 w-4" /> <span className="hidden xl:inline">Library</span>
                         </button>
                     </div>
                 </div>
@@ -105,136 +90,159 @@ export function MealPlanner() {
                             <p className="text-black/20 text-sm">Start your day by logging breakfast</p>
                         </div>
                     ) : (
-                        todayMeals.map((meal) => (
-                            <div key={meal.id} className="flex items-center justify-between p-6 bg-black/[0.02] border border-black/5 rounded-[24px] hover:bg-black/[0.04] transition-all group">
-                                <div className="flex items-center gap-6">
-                                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-rose-500 shadow-sm">
-                                        <Clock className="h-6 w-6" />
-                                    </div>
-                                    <div>
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="px-2 py-0.5 bg-black/5 rounded-full text-[9px] font-black uppercase tracking-widest text-black/40">
-                                                {meal.type} • {meal.time}
-                                            </span>
-                                        </div>
-                                        <h4 className="font-bold tracking-tight">{meal.name}</h4>
+                        ['breakfast', 'lunch', 'dinner', 'snack'].map(type => {
+                            const mealsOfType = todayMeals.filter((m: MealLog) => m.type === type)
+                            if (mealsOfType.length === 0) return null
+                            return (
+                                <div key={type} className="mb-6 last:mb-0">
+                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-black/30 mb-3 ml-2">{type}</h4>
+                                    <div className="space-y-2">
+                                        {mealsOfType.map(meal => (
+                                            <div key={meal.id} className="flex items-center justify-between p-6 bg-black/[0.02] border border-black/5 rounded-[24px] hover:bg-black/[0.04] transition-all group">
+                                                <div className="flex items-center gap-6">
+                                                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-rose-500 shadow-sm text-2xl">
+                                                        {meal.emoji || <Clock className="h-6 w-6" />}
+                                                    </div>
+                                                    <div>
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <div className="relative group/category z-10">
+                                                                <button
+                                                                    className={cn(
+                                                                        "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1 transition-all",
+                                                                        meal.type === 'breakfast' ? "bg-amber-50 text-amber-600 hover:bg-amber-100" :
+                                                                            meal.type === 'lunch' ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100" :
+                                                                                meal.type === 'dinner' ? "bg-blue-50 text-blue-600 hover:bg-blue-100" :
+                                                                                    "bg-rose-50 text-rose-600 hover:bg-rose-100"
+                                                                    )}
+                                                                >
+                                                                    {meal.type}
+                                                                </button>
+                                                                <div className="absolute left-0 top-full mt-1 w-28 bg-white border border-black/5 rounded-xl shadow-lg opacity-0 invisible group-hover/category:opacity-100 group-hover/category:visible transition-all overflow-hidden origin-top-left scale-95 group-hover/category:scale-100">
+                                                                    {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map(t => (
+                                                                        <button
+                                                                            key={t}
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation()
+                                                                                updateMealLog(meal.id, { type: t })
+                                                                            }}
+                                                                            className="w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-black/5 transition-colors"
+                                                                        >
+                                                                            {t}
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                            <span className="text-[9px] font-black uppercase tracking-widest text-black/20">•</span>
+                                                            <span className="px-2 py-0.5 bg-black/5 rounded-full text-[9px] font-black uppercase tracking-widest text-black/40">
+                                                                {meal.time}
+                                                            </span>
+                                                        </div>
+                                                        <h4 className="font-bold tracking-tight text-sm sm:text-base line-clamp-2">{meal.name}</h4>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-4 sm:gap-6 shrink-0 ml-4">
+                                                    <div className="text-right hidden sm:block">
+                                                        <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Protein</p>
+                                                        <p className="font-bold">{meal.protein}g</p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-[10px] font-black text-black/40 uppercase tracking-widest leading-tight">Calories</p>
+                                                        <p className="text-lg font-bold">{meal.calories}</p>
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                        {(() => {
+                                                            const libraryMatch = library.find(m => m.name.toLowerCase() === meal.name.toLowerCase())
+                                                            const isSaved = !!libraryMatch
+                                                            return (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation()
+                                                                        setLibraryActionMeal({ meal, isSaved, libraryMealId: libraryMatch?.id })
+                                                                    }}
+                                                                    className={cn(
+                                                                        "p-2.5 rounded-xl transition-all flex items-center justify-center",
+                                                                        isSaved
+                                                                            ? "bg-emerald-500 text-white hover:bg-emerald-600 shadow-sm"
+                                                                            : "bg-black/5 text-black/40 hover:bg-emerald-500 hover:text-white"
+                                                                    )}
+                                                                    title={isSaved ? "Remove from Library" : "Save to Library"}
+                                                                >
+                                                                    {isSaved ? <CheckCircle2 className="h-4 w-4" /> : <Database className="h-4 w-4" />}
+                                                                </button>
+                                                            )
+                                                        })()}
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                setMealToDelete(meal)
+                                                            }}
+                                                            className="p-2.5 rounded-xl bg-black/5 text-rose-500 hover:bg-rose-500 hover:text-white transition-all"
+                                                            title="Delete Meal"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-8">
-                                    <div className="text-right hidden sm:block">
-                                        <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Protein</p>
-                                        <p className="font-bold">{meal.protein}g</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-[10px] font-black text-black/40 uppercase tracking-widest leading-tight">Calories</p>
-                                        <p className="text-lg font-bold">{meal.calories}</p>
-                                    </div>
-                                    <ChevronRight className="h-5 w-5 text-black/20 group-hover:text-black/40 transition-colors" />
-                                </div>
-                            </div>
-                        ))
+                            )
+                        })
                     )}
                 </div>
             </div>
 
             {/* Modals */}
             <AnimatePresence>
-                {showRecipeFinder && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-12"
-                    >
-                        <div className="absolute inset-0 bg-white/80 backdrop-blur-xl" onClick={() => setShowRecipeFinder(false)} />
-                        <motion.div
-                            initial={{ y: 50, scale: 0.95 }}
-                            animate={{ y: 0, scale: 1 }}
-                            exit={{ y: 50, scale: 0.95 }}
-                            className="relative w-full max-w-4xl bg-[#FAFAFA] border border-black/5 rounded-[48px] shadow-2xl overflow-hidden flex flex-col max-h-full"
-                        >
-                            <div className="p-8 border-b border-black/5 flex justify-between items-center">
-                                <div>
-                                    <h3 className="text-3xl font-black tracking-tight">Recipe Finder</h3>
-                                    <p className="text-black/40 font-bold uppercase text-[11px] tracking-widest">Curated for your goals</p>
-                                </div>
-                                <button onClick={() => setShowRecipeFinder(false)} className="p-4 bg-black/5 hover:bg-black/10 rounded-full transition-all">
-                                    <X className="h-6 w-6" />
-                                </button>
-                            </div>
-                            <div className="p-8 overflow-y-auto">
-                                <RecipeFinder />
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-
-                {showQuickAdd && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4"
-                    >
-                        <div className="absolute inset-0 bg-white/80 backdrop-blur-xl" onClick={() => setShowQuickAdd(false)} />
-                        <motion.div
-                            initial={{ y: 20, scale: 0.95 }}
-                            animate={{ y: 0, scale: 1 }}
-                            exit={{ y: 20, scale: 0.95 }}
-                            className="relative w-full max-w-lg bg-white border border-black/5 rounded-[40px] shadow-2xl p-8"
-                        >
-                            <div className="flex justify-between items-start mb-8">
-                                <div>
-                                    <h3 className="text-2xl font-bold tracking-tight">Quick Log</h3>
-                                    <p className="text-black/40 text-sm">Manually enter a meal</p>
-                                </div>
-                                <button onClick={() => setShowQuickAdd(false)} className="p-2 hover:bg-black/5 rounded-full transition-all">
-                                    <X className="h-5 w-5" />
-                                </button>
-                            </div>
-                            <form onSubmit={handleQuickAdd} className="space-y-6">
-                                <div className="space-y-2">
-                                    <label className="text-[11px] font-black uppercase tracking-widest text-black/40 ml-1">Meal Name</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        className="w-full bg-black/5 border-none rounded-2xl p-4 text-sm focus:ring-2 focus:ring-black/5 transition-all"
-                                        placeholder="e.g. Scrambled Eggs"
-                                        value={manualMeal.name}
-                                        onChange={e => setManualMeal({ ...manualMeal, name: e.target.value })}
-                                    />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <label className="text-[11px] font-black uppercase tracking-widest text-black/40 ml-1 text-rose-500">Calories</label>
-                                        <input
-                                            type="number"
-                                            className="w-full bg-black/5 border-none rounded-2xl p-4 text-sm"
-                                            value={manualMeal.calories}
-                                            onChange={e => setManualMeal({ ...manualMeal, calories: parseInt(e.target.value) || 0 })}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[11px] font-black uppercase tracking-widest text-black/40 ml-1 text-emerald-500">Protein (g)</label>
-                                        <input
-                                            type="number"
-                                            className="w-full bg-black/5 border-none rounded-2xl p-4 text-sm"
-                                            value={manualMeal.protein}
-                                            onChange={e => setManualMeal({ ...manualMeal, protein: parseInt(e.target.value) || 0 })}
-                                        />
-                                    </div>
-                                </div>
-                                <button
-                                    type="submit"
-                                    className="w-full py-4 bg-black text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg"
-                                >
-                                    Log Meal
-                                </button>
-                            </form>
-                        </motion.div>
-                    </motion.div>
-                )}
+                {/* Advanced Quick Log (with AI & Library) */}
+                <QuickLogModal key="quick-log" isOpen={showQuickAdd} onClose={() => setShowQuickAdd(false)} />
+                <NutritionLibraryModal key="nutrition-library" isOpen={showLibrary} onClose={() => setShowLibrary(false)} />
             </AnimatePresence>
+
+            <ConfirmationModal
+                isOpen={!!mealToDelete}
+                onClose={() => setMealToDelete(null)}
+                onConfirm={async () => {
+                    if (mealToDelete) {
+                        await deleteMealLog(mealToDelete.id)
+                        setMealToDelete(null)
+                    }
+                }}
+                title="Delete Meal Log"
+                message={`Are you sure you want to delete "${mealToDelete?.name}"? This action cannot be undone and your macros will be updated.`}
+                confirmText="Delete"
+                type="danger"
+            />
+
+            <ConfirmationModal
+                isOpen={!!libraryActionMeal}
+                onClose={() => setLibraryActionMeal(null)}
+                onConfirm={async () => {
+                    if (libraryActionMeal) {
+                        if (libraryActionMeal.isSaved && libraryActionMeal.libraryMealId) {
+                            await removeMealFromLibrary(libraryActionMeal.libraryMealId)
+                        } else {
+                            await addMealToLibrary({
+                                name: libraryActionMeal.meal.name,
+                                type: libraryActionMeal.meal.type || 'snack',
+                                calories: libraryActionMeal.meal.calories,
+                                protein: libraryActionMeal.meal.protein,
+                                carbs: libraryActionMeal.meal.carbs,
+                                fat: libraryActionMeal.meal.fat,
+                                ingredients: []
+                            })
+                        }
+                        setLibraryActionMeal(null)
+                    }
+                }}
+                title={libraryActionMeal?.isSaved ? "Remove from Library" : "Save to Library"}
+                message={libraryActionMeal?.isSaved
+                    ? `Are you sure you want to remove "${libraryActionMeal.meal.name}" from your saved meals library?`
+                    : `Are you sure you want to save "${libraryActionMeal?.meal.name}" to your library?`}
+                confirmText={libraryActionMeal?.isSaved ? "Remove" : "Save"}
+                type={libraryActionMeal?.isSaved ? "danger" : "info"}
+            />
         </div>
     )
 }

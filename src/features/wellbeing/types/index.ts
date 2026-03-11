@@ -9,6 +9,7 @@ export interface WellbeingProfile {
     gender: Gender
     activityLevel: ActivityLevel
     goal: WellbeingGoal
+    goalWeight?: number
     updatedAt: string
 }
 
@@ -28,6 +29,7 @@ export interface Exercise {
     id: string
     name: string
     muscleGroup: string
+    muscleGroups?: string[] // Detailed mapping for visuals
     suggestedReps: number
     suggestedSets: number
     icon?: string
@@ -55,6 +57,7 @@ export interface WorkoutLog {
     date: string
     routineId: string
     exercises: ExerciseLog[]
+    gymVisitId?: string
 }
 
 export interface GymBusyness {
@@ -75,7 +78,7 @@ export interface GymVisit {
 
 export interface TheGymGroupStats {
     totalVisits: number
-    lastVisit: string | null
+    lastVisit: GymVisit | null
     isIntegrated: boolean
     busyness?: GymBusyness
     weeklyVisits: number
@@ -87,6 +90,7 @@ export interface TheGymGroupStats {
     debug_raw_history?: any
     debug_raw_busyness?: any
     debug_raw_user?: any
+    lastSyncTime?: string | null
 }
 
 export interface Ingredient {
@@ -113,12 +117,32 @@ export interface Recipe {
     image?: string
 }
 
+export interface LibraryMeal {
+    id: string
+    name: string
+    type: 'breakfast' | 'lunch' | 'dinner' | 'snack'
+    emoji?: string
+    calories: number
+    protein: number
+    carbs: number
+    fat: number
+    ingredients: any[]
+}
+
+export interface FridgeItem {
+    id: string
+    mealId: string
+    portions: number
+    prepDate: string
+}
+
 export interface MealLog {
     id: string
     date: string // ISO string for the day
     time: string // HH:mm
     type: 'breakfast' | 'lunch' | 'dinner' | 'snack'
     name: string
+    emoji?: string
     calories: number
     protein: number
     fat: number
@@ -158,6 +182,18 @@ export interface DashboardLayout {
     sidebar: { id: DashboardComponentId; isVisible: boolean }[]
 }
 
+export interface Milestone {
+    id: string
+    title: string
+    description?: string
+    targetValue: number
+    currentValue: number
+    unit: string
+    type: 'weight' | 'lift' | 'consistency'
+    completed: boolean
+    dateCompleted?: string
+}
+
 export interface WellbeingState {
     profile: WellbeingProfile | null
     weightHistory: MetricEntry[]
@@ -166,9 +202,13 @@ export interface WellbeingState {
     workoutLogs: WorkoutLog[]
     gymStats: TheGymGroupStats
     mealLogs: MealLog[]
+    library: LibraryMeal[]
+    fridge: FridgeItem[]
     savedRecipes: string[] // Array of recipe IDs
     moodLogs: MoodEntry[]
     reflections: Reflection[]
+    milestones: Milestone[]
     dashboardLayout: DashboardLayout
+    isSyncingGym: boolean
     loading: boolean
 }

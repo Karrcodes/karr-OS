@@ -12,18 +12,18 @@ export default function ContentPage() {
     const [searchQuery, setSearchQuery] = useState('')
 
     return (
-        <main className={cn("pb-12 pt-4 px-4 md:px-8 flex flex-col", view !== 'matrix' && "flex-1")}>
-            <div className={cn("mx-auto space-y-6 w-full", view === 'matrix' ? 'max-w-7xl' : 'max-w-7xl flex-1')}>
+        <main className={cn("pb-20 pt-8 md:pt-10 px-6 md:px-10 flex flex-col", view !== 'matrix' && "flex-1")}>
+            <div className={cn("mx-auto space-y-10 w-full", view === 'matrix' ? 'max-w-7xl' : 'max-w-7xl flex-1')}>
 
                 {/* Unified Header Row — matches projects page layout */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                    <div>
-                        <h1 className="text-[22px] font-bold text-black tracking-tight">Content Pipeline</h1>
-                        <p className="text-[12px] text-black/35 mt-0.5">Studio Module · Creative Production</p>
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                    <div className="space-y-1">
+                        <h2 className="text-[11px] font-black text-orange-500 uppercase tracking-[0.3em]">Studio Protocol</h2>
+                        <h1 className="text-4xl font-black text-black tracking-tighter uppercase grayscale">Content Pipeline</h1>
                     </div>
 
                     {/* View toggle */}
-                    <div className="flex bg-black/[0.03] p-1 rounded-xl border border-black/[0.04] items-center gap-0.5 self-start sm:self-auto">
+                    <div className="flex bg-black/[0.03] p-1.5 rounded-2xl border border-black/[0.05] items-center gap-0.5 h-fit mb-1 self-start sm:self-auto">
                         {([
                             { label: 'Board', value: 'board' as const, icon: LayoutGrid },
                             { label: 'Planner', value: 'planner' as const, icon: Calendar },

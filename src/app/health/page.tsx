@@ -1,5 +1,5 @@
-import { OverviewTab } from '@/features/wellbeing/components/OverviewTab'
+import { redirect } from 'next/navigation'
 
-export default function HealthOverviewPage() {
-    return <OverviewTab />
+export default function HealthPage() {
+    redirect('/health/fitness')
 }

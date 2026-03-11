@@ -419,7 +419,7 @@ export function Sidebar() {
                             )}
                         </Link>
 
-                        {'sub' in item && item.sub && expandedFolders[item.href] && (label === 'Finances' || label === 'Studio' || label === 'Wellbeing') && (
+                        {'sub' in item && item.sub && expandedFolders[item.href] && (label === 'Finances' || label === 'Studio' || label === 'Wellbeing' || label === 'Operations') && (
                             <div className="ml-5 mt-0.5 space-y-0.5 border-l border-black/[0.07] pl-3">
                                 {isReorderable ? (
                                     <Reorder.Group
@@ -504,8 +504,8 @@ export function Sidebar() {
                             </div>
                         )}
 
-                        {/* Fallback for other potential sub-tabs that aren't 'Finances' */}
-                        {'sub' in item && item.sub && expandedFolders[item.href] && label !== 'Finances' && label !== 'Studio' && (
+                        {/* Fallback for other potential sub-tabs that aren't specialized */}
+                        {'sub' in item && item.sub && expandedFolders[item.href] && label !== 'Finances' && label !== 'Studio' && label !== 'Wellbeing' && label !== 'Operations' && (
                             <div className="ml-5 mt-0.5 space-y-0.5 border-l border-black/[0.07] pl-3">
                                 {item.sub.map((subItem) => {
                                     const SubIcon = subItem.icon

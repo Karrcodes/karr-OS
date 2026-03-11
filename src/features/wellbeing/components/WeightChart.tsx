@@ -34,6 +34,9 @@ export function WeightChart() {
         }))
 
     const weights = data.map(d => d.weight)
+    if (profile?.goalWeight) {
+        weights.push(profile.goalWeight)
+    }
     const minWeight = Math.floor(Math.min(...weights) - 2)
     const maxWeight = Math.ceil(Math.max(...weights) + 2)
 
@@ -71,6 +74,15 @@ export function WeightChart() {
                         itemStyle={{ color: 'white', fontSize: '12px', fontWeight: 900, textTransform: 'uppercase' }}
                         labelStyle={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', fontWeight: 700, marginBottom: '4px' }}
                     />
+                    {profile?.goalWeight && (
+                        <ReferenceLine 
+                            y={profile.goalWeight} 
+                            stroke="#000" 
+                            strokeDasharray="3 3" 
+                            strokeOpacity={0.2}
+                            label={{ position: 'insideBottomLeft', value: 'GOAL', fill: 'rgba(0,0,0,0.3)', fontSize: 10, fontWeight: 900, dx: 10, dy: -5 }} 
+                        />
+                    )}
                     <Line
                         type="monotone"
                         dataKey="weight"

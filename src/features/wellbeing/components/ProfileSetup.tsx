@@ -49,7 +49,7 @@ export function ProfileSetup() {
 
     const isStepValid = () => {
         if (step === 0) return !!form.age && !!form.gender
-        if (step === 1) return !!form.weight && !!form.height
+        if (step === 1) return !!form.weight && !!form.height && !!form.goalWeight
         return true
     }
 
@@ -125,7 +125,7 @@ export function ProfileSetup() {
                                     </div>
                                     <div className="grid grid-cols-2 gap-6">
                                         <div className="space-y-3">
-                                            <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Weight (kg)</label>
+                                            <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Current Weight (kg)</label>
                                             <input
                                                 autoFocus
                                                 type="number"
@@ -136,6 +136,16 @@ export function ProfileSetup() {
                                             />
                                         </div>
                                         <div className="space-y-3">
+                                            <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Goal Weight (kg)</label>
+                                            <input
+                                                type="number"
+                                                value={form.goalWeight || ''}
+                                                onChange={e => setForm({ ...form, goalWeight: parseFloat(e.target.value) })}
+                                                placeholder="70.0"
+                                                className="w-full bg-black/[0.03] border border-black/5 rounded-2xl px-6 py-4 text-xl font-black outline-none focus:ring-4 focus:ring-black/5 focus:border-black/10 transition-all"
+                                            />
+                                        </div>
+                                        <div className="space-y-3 col-span-2">
                                             <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Height (cm)</label>
                                             <input
                                                 type="number"

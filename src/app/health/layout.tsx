@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { useState, useEffect } from 'react'
 import { WellbeingProvider, useWellbeing } from '@/features/wellbeing/contexts/WellbeingContext'
-import { Plus, Layout, Dumbbell, Utensils, Heart, Settings } from 'lucide-react'
+import { Plus, Layout, Dumbbell, Utensils, Heart, Settings, RefreshCw, Loader2, CheckCircle2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
 import { KarrFooter } from '@/components/KarrFooter'
@@ -14,23 +14,36 @@ import { usePathname } from 'next/navigation'
 import { QuickLogModal } from '@/features/wellbeing/components/QuickLogModal'
 
 const TABS = [
-    { id: 'overview', label: 'Overview', icon: Layout, href: '/health' },
     { id: 'fitness', label: 'Fitness', icon: Dumbbell, href: '/health/fitness' },
     { id: 'nutrition', label: 'Nutrition', icon: Utensils, href: '/health/nutrition' },
     { id: 'mind', label: 'Mind', icon: Heart, href: '/health/mind' },
 ]
 
 function HealthLayoutContent({ children }: { children: React.ReactNode }) {
-    const { profile, syncGymData, gymStats, weightHistory, loading } = useWellbeing()
+    const { profile, syncGymData, gymStats, weightHistory, loading, isSyncingGym } = useWellbeing()
     const [isGymModalOpen, setIsGymModalOpen] = useState(false)
     const [isQuickLogOpen, setIsQuickLogOpen] = useState(false)
     const pathname = usePathname()
+
+    const [justSynced, setJustSynced] = useState(false)
 
     useEffect(() => {
         if (gymStats.isIntegrated && !loading) {
             syncGymData()
         }
     }, [gymStats.isIntegrated, loading])
+
+    useEffect(() => {
+        if (!isSyncingGym && gymStats.lastSyncTime) {
+            const syncTime = new Date(gymStats.lastSyncTime).getTime()
+            const now = new Date().getTime()
+            if (now - syncTime < 2000) { // If synced in last 2 seconds
+                setJustSynced(true)
+                const timer = setTimeout(() => setJustSynced(false), 5000)
+                return () => clearTimeout(timer)
+            }
+        }
+    }, [isSyncingGym, gymStats.lastSyncTime])
 
     if (loading) {
         return (
@@ -68,9 +81,18 @@ function HealthLayoutContent({ children }: { children: React.ReactNode }) {
                             </div>
                             <div className="w-px h-8 bg-black/10" />
                             <div className="space-y-0.5">
-                                <p className="text-[9px] font-black text-black/30 uppercase tracking-wider">Weight</p>
+                                <p className="text-[9px] font-black text-black/30 uppercase tracking-wider">Current</p>
                                 <p className="text-[13px] font-black text-black uppercase">{latestWeight}kg</p>
                             </div>
+                            {profile.goalWeight && (
+                                <>
+                                    <div className="w-px h-8 bg-black/10" />
+                                    <div className="space-y-0.5">
+                                        <p className="text-[9px] font-black text-black/30 uppercase tracking-wider">Goal</p>
+                                        <p className="text-[13px] font-black text-black uppercase">{profile.goalWeight}kg</p>
+                                    </div>
+                                </>
+                            )}
                         </div>
                         <button
                             onClick={() => setIsQuickLogOpen(true)}
@@ -79,7 +101,7 @@ function HealthLayoutContent({ children }: { children: React.ReactNode }) {
                             <Plus className="w-5 h-5" />
                         </button>
                         <Link
-                            href="/health/settings"
+                            href={pathname === '/health/settings' ? '/health' : '/health/settings'}
                             className={cn(
                                 "w-12 h-12 rounded-2xl flex items-center justify-center transition-all border",
                                 pathname === '/health/settings'
@@ -92,29 +114,70 @@ function HealthLayoutContent({ children }: { children: React.ReactNode }) {
                     </div>
                 </header>
 
-                {/* Tabs Navigation */}
-                <div className="flex items-center gap-2 bg-black/[0.03] p-1.5 rounded-[24px] w-fit border border-black/5">
-                    {TABS.map((tab) => {
-                        const isTabActive = tab.id === 'overview'
-                            ? pathname === '/health'
-                            : pathname.startsWith(tab.href)
+                {/* Tabs Navigation & Gym Info */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-2 bg-black/[0.03] p-1.5 rounded-[24px] w-fit border border-black/5">
+                        {TABS.map((tab) => {
+                            const isTabActive = pathname.startsWith(tab.href)
 
-                        return (
-                            <Link
-                                key={tab.id}
-                                href={tab.href}
+                            return (
+                                <Link
+                                    key={tab.id}
+                                    href={tab.href}
+                                    className={cn(
+                                        "flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all",
+                                        isTabActive
+                                            ? "bg-white text-black shadow-sm border border-black/5"
+                                            : "text-black/40 hover:text-black hover:bg-white/50"
+                                    )}
+                                >
+                                    <tab.icon className={cn("w-4 h-4", isTabActive ? "text-rose-500" : "text-black/20")} />
+                                    {tab.label}
+                                </Link>
+                            )
+                        })}
+                    </div>
+
+                    {gymStats.isIntegrated && (
+                        <div className="flex items-center gap-3">
+                            {gymStats.busyness && (
+                                <div className="flex items-center gap-2 px-5 py-3 bg-white border border-black/5 rounded-2xl shadow-sm">
+                                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-black text-black uppercase tracking-tight leading-none">
+                                            {gymStats.busyness.currentPercentage}% Full
+                                        </span>
+                                        <span className="text-[8px] font-bold text-black/30 uppercase tracking-widest">Gym Capacity</span>
+                                    </div>
+                                </div>
+                            )}
+                            <button
+                                onClick={() => syncGymData()}
+                                disabled={isSyncingGym || justSynced}
                                 className={cn(
-                                    "flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all",
-                                    isTabActive
-                                        ? "bg-white text-black shadow-sm border border-black/5"
-                                        : "text-black/40 hover:text-black hover:bg-white/50"
+                                    "flex items-center gap-2 px-5 py-3 rounded-2xl shadow-sm transition-all duration-300 border",
+                                    isSyncingGym ? "bg-white border-black/5 cursor-not-allowed opacity-50" : 
+                                    justSynced ? "bg-emerald-500 border-emerald-600 text-white" :
+                                    "bg-white border-black/5 hover:bg-black/[0.02] group"
                                 )}
                             >
-                                <tab.icon className={cn("w-4 h-4", isTabActive ? "text-rose-500" : "text-black/20")} />
-                                {tab.label}
-                            </Link>
-                        )
-                    })}
+                                {justSynced ? (
+                                    <CheckCircle2 className="w-4 h-4 text-white animate-in zoom-in duration-300" />
+                                ) : (
+                                    <RefreshCw className={cn(
+                                        "w-4 h-4 transition-transform duration-500",
+                                        isSyncingGym ? "animate-spin text-black/40" : "text-black/40 group-hover:rotate-180"
+                                    )} />
+                                )}
+                                <span className={cn(
+                                    "text-[10px] font-black uppercase tracking-widest whitespace-nowrap",
+                                    justSynced ? "text-white" : "text-black"
+                                )}>
+                                    {isSyncingGym ? 'Syncing...' : justSynced ? 'Synced' : 'Sync'}
+                                </span>
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Tab Content */}

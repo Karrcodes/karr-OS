@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS public.wellbeing_profiles (
     gender TEXT,
     activity_level TEXT,
     goal TEXT,
+    goal_weight FLOAT,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -22,6 +23,7 @@ CREATE TABLE IF NOT EXISTS public.wellbeing_data (
     saved_recipes JSONB DEFAULT '[]'::jsonb,
     mood_logs JSONB DEFAULT '[]'::jsonb,
     reflections JSONB DEFAULT '[]'::jsonb,
+    dashboard_layout JSONB DEFAULT '{"main": [{"id": "macros", "isVisible": true}, {"id": "weight_trends", "isVisible": true}, {"id": "active_protocol", "isVisible": true}, {"id": "meal_planner", "isVisible": true}, {"id": "mood_reflection", "isVisible": true}], "sidebar": [{"id": "nutritional_trends", "isVisible": true}, {"id": "workout_consistency", "isVisible": true}, {"id": "gym_activity", "isVisible": true}]}'::jsonb,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

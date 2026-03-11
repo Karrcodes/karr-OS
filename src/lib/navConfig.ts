@@ -8,7 +8,7 @@ import {
     BarChart3, Activity, Shield, Brain, Target, Heart,
     LayoutDashboard, SlidersHorizontal, Calendar, CreditCard,
     PiggyBank, Receipt, Sparkles, Rocket, Video, PenLine,
-    Users, Award, ClipboardIcon, Key, TrendingUp, Utensils
+    Users, Award, ClipboardIcon, Key, TrendingUp, Utensils, Dumbbell
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -89,7 +89,7 @@ export const navItems: NavItem[] = [
         icon: Heart,
         color: 'rose',
         sub: [
-            { label: 'Fitness', href: '/health/fitness', icon: Activity },
+            { label: 'Fitness', href: '/health/fitness', icon: Dumbbell },
             { label: 'Nutrition', href: '/health/nutrition', icon: Utensils },
             { label: 'Mind', href: '/health/mind', icon: Heart },
             { label: 'Settings', href: '/health/settings', icon: SlidersHorizontal }

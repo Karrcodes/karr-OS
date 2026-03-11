@@ -1,36 +1,100 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Scale, Droplets, Utensils, Check } from 'lucide-react'
+import { X, Search, Sparkles, Check, Database } from 'lucide-react'
 import { useWellbeing } from '../contexts/WellbeingContext'
 import { cn } from '@/lib/utils'
+import type { LibraryMeal } from '../types'
 
 interface QuickLogModalProps {
     isOpen: boolean
     onClose: () => void
 }
 
-type LogType = 'meal' | 'gym' | 'weight'
+type LogType = 'meal' | 'weight'
 
 export function QuickLogModal({ isOpen, onClose }: QuickLogModalProps) {
-    const { logWeight, logMeal, logWorkout, routines, profile } = useWellbeing()
+    const { logWeight, logMeal, addMealToLibrary, profile, library } = useWellbeing()
     const [activeTab, setActiveTab] = useState<LogType>('meal')
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [showSuccess, setShowSuccess] = useState(false)
 
-    // Form States
+    // Weight State
     const [weight, setWeight] = useState(profile?.weight?.toString() || '')
-    const [selectedRoutineId, setSelectedRoutineId] = useState(routines[0]?.id || '')
+
+    // Meal State
     const [mealName, setMealName] = useState('')
+    const [mealEmoji, setMealEmoji] = useState('🍽️')
     const [mealCals, setMealCals] = useState('')
+    const [mealMacros, setMealMacros] = useState({ protein: 0, carbs: 0, fat: 0 })
+    const [saveToLibrary, setSaveToLibrary] = useState(true)
+    const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('snack')
+    const [isEstimating, setIsEstimating] = useState(false)
+    const [estimatedIngredients, setEstimatedIngredients] = useState<any[]>([])
+
+    // Library Autocomplete State
+    const [showLibraryDropdown, setShowLibraryDropdown] = useState(false)
+    const filteredLibrary = useMemo(() => {
+        if (!mealName.trim() || !showLibraryDropdown) return []
+        return library.filter(m => m.name.toLowerCase().includes(mealName.toLowerCase()))
+    }, [mealName, library, showLibraryDropdown])
 
     const handleSuccess = () => {
         setShowSuccess(true)
         setTimeout(() => {
             setShowSuccess(false)
             onClose()
+            // Reset state
+            setMealName('')
+            setMealEmoji('🍽️')
+            setMealCals('')
+            setMealMacros({ protein: 0, carbs: 0, fat: 0 })
         }, 1500)
+    }
+
+    const handleEstimate = async () => {
+        if (!mealName) return
+        setIsEstimating(true)
+        try {
+            const res = await fetch('/api/nutrition/estimate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: mealName })
+            })
+            if (!res.ok) throw new Error('API Error')
+            const data = await res.json()
+            setMealName(data.name || 'AI ESTIMATED MEAL')
+            setMealEmoji(data.emoji || '🍽️')
+            setMealCals(data.calories?.toString() || '0')
+            setMealMacros({
+                protein: data.protein || 0,
+                carbs: data.carbs || 0,
+                fat: data.fat || 0
+            })
+            setEstimatedIngredients(data.ingredients || [])
+            setMealType(data.type || 'snack')
+            setSaveToLibrary(true) // AI meals should usually be saved
+        } catch (error) {
+            console.error(error)
+            alert('Failed to estimate macros. Please try again.')
+        } finally {
+            setIsEstimating(false)
+        }
+    }
+
+    const loadFromLibrary = (meal: LibraryMeal) => {
+        setMealName(meal.name)
+        setMealEmoji(meal.emoji || '🍽️')
+        setMealCals(meal.calories.toString())
+        setMealMacros({
+            protein: meal.protein,
+            carbs: meal.carbs,
+            fat: meal.fat
+        })
+        setEstimatedIngredients(meal.ingredients || [])
+        setMealType(meal.type || 'snack')
+        setSaveToLibrary(false) // already in library
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -41,29 +105,32 @@ export function QuickLogModal({ isOpen, onClose }: QuickLogModalProps) {
             if (activeTab === 'weight') {
                 await logWeight(parseFloat(weight))
             } else if (activeTab === 'meal') {
+                const cals = parseInt(mealCals) || 0
+
+                if (saveToLibrary) {
+                    await addMealToLibrary({
+                        name: mealName || 'Custom Meal',
+                        type: mealType,
+                        emoji: mealEmoji,
+                        calories: cals,
+                        protein: mealMacros.protein,
+                        carbs: mealMacros.carbs,
+                        fat: mealMacros.fat,
+                        ingredients: estimatedIngredients
+                    })
+                }
+
                 await logMeal({
-                    name: mealName,
-                    calories: parseInt(mealCals),
-                    protein: 0,
-                    fat: 0,
-                    carbs: 0,
-                    type: 'snack',
+                    name: mealName || 'Custom Meal',
+                    emoji: mealEmoji,
+                    calories: cals,
+                    protein: mealMacros.protein,
+                    fat: mealMacros.fat,
+                    carbs: mealMacros.carbs,
+                    type: mealType,
                     time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                     date: new Date().toISOString().split('T')[0]
                 })
-            } else if (activeTab === 'gym') {
-                const routine = routines.find(r => r.id === selectedRoutineId)
-                if (routine) {
-                    await logWorkout({
-                        id: Math.random().toString(36).substring(2, 9),
-                        date: new Date().toISOString().split('T')[0],
-                        routineId: routine.id,
-                        exercises: routine.exercises.map(ex => ({
-                            exerciseId: ex.id,
-                            sets: Array(ex.suggestedSets).fill({ reps: ex.suggestedReps, weight: 0 })
-                        }))
-                    })
-                }
             }
             handleSuccess()
         } catch (error) {
@@ -89,10 +156,10 @@ export function QuickLogModal({ isOpen, onClose }: QuickLogModalProps) {
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="bg-white rounded-[40px] w-full max-w-md overflow-hidden relative shadow-2xl"
+                className="bg-white rounded-[40px] w-full max-w-md overflow-hidden relative shadow-2xl flex flex-col max-h-[90vh]"
             >
                 {/* Header */}
-                <div className="p-8 pb-4 flex items-center justify-between">
+                <div className="p-8 pb-4 flex items-center justify-between shrink-0">
                     <div>
                         <h3 className="text-[10px] font-black text-black/30 uppercase tracking-[0.3em] mb-1">Quick Action</h3>
                         <h2 className="text-2xl font-black uppercase tracking-tighter">Log Protocol</h2>
@@ -106,8 +173,8 @@ export function QuickLogModal({ isOpen, onClose }: QuickLogModalProps) {
                 </div>
 
                 {/* Tabs */}
-                <div className="px-8 flex items-center gap-2 mb-8">
-                    {(['meal', 'gym', 'weight'] as const).map((tab) => (
+                <div className="px-8 flex items-center gap-2 mb-6 shrink-0">
+                    {(['meal', 'weight'] as const).map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
@@ -118,122 +185,203 @@ export function QuickLogModal({ isOpen, onClose }: QuickLogModalProps) {
                                     : "bg-black/[0.02] border-black/5 text-black/30 hover:bg-black/[0.04]"
                             )}
                         >
-                            {tab === 'gym' ? 'Gym Session' : tab}
+                            {tab}
                         </button>
                     ))}
                 </div>
 
-                {/* Form Content */}
-                <form onSubmit={handleSubmit} className="p-8 pt-0 space-y-6">
-                    <AnimatePresence mode="wait">
-                        {activeTab === 'meal' && (
-                            <motion.div
-                                key="meal"
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -20 }}
-                                className="space-y-4"
-                            >
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-black/30 uppercase tracking-widest px-1">Meal Name</label>
-                                    <input
-                                        type="text"
-                                        value={mealName}
-                                        onChange={(e) => setMealName(e.target.value)}
-                                        className="w-full bg-black/[0.02] border border-black/5 rounded-2xl px-6 py-4 text-[13px] font-black uppercase tracking-tight focus:outline-none focus:border-emerald-500/50 transition-colors"
-                                        placeholder="E.G. PROTEIN SHAKE"
-                                        autoFocus
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-black/30 uppercase tracking-widest px-1">Calories</label>
-                                    <input
-                                        type="number"
-                                        value={mealCals}
-                                        onChange={(e) => setMealCals(e.target.value)}
-                                        className="w-full bg-black/[0.02] border border-black/5 rounded-2xl px-6 py-4 text-xl font-black focus:outline-none focus:border-emerald-500/50 transition-colors"
-                                        placeholder="0"
-                                    />
-                                </div>
-                            </motion.div>
-                        )}
+                {/* Form Content - Scrollable */}
+                <div className="flex-1 overflow-y-auto px-8 pb-8 custom-scrollbar">
+                    <form id="quick-log-form" onSubmit={handleSubmit} className="space-y-6">
+                        <AnimatePresence mode="wait">
+                            {activeTab === 'meal' && (
+                                <motion.div
+                                    key="meal"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    className="space-y-6"
+                                >
+                                    {/* Manual Fields */}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2 col-span-2">
+                                            <label className="text-[10px] font-black text-black/30 uppercase tracking-widest px-1">Meal Type</label>
+                                            <div className="flex bg-black/[0.02] rounded-2xl p-1 gap-1 border border-black/5">
+                                                {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map(type => (
+                                                    <button
+                                                        key={type}
+                                                        type="button"
+                                                        onClick={() => setMealType(type)}
+                                                        className={cn(
+                                                            "flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                                            mealType === type
+                                                                ? "bg-white text-black shadow-sm"
+                                                                : "text-black/30 hover:bg-black/[0.04]"
+                                                        )}
+                                                    >
+                                                        {type}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2 col-span-2 relative">
+                                            <label className="text-[10px] font-black text-black/30 uppercase tracking-widest px-1">Meal Name / AI Prompt</label>
+                                            <div className="flex bg-black/[0.02] border border-black/5 rounded-2xl overflow-hidden focus-within:border-emerald-500/50 transition-colors">
+                                                <input
+                                                    type="text"
+                                                    value={mealEmoji}
+                                                    onChange={e => setMealEmoji(e.target.value)}
+                                                    className="w-16 bg-black/[0.02] text-center border-r border-black/5 text-xl outline-none"
+                                                    maxLength={2}
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={mealName}
+                                                    onChange={(e) => {
+                                                        setMealName(e.target.value)
+                                                        setShowLibraryDropdown(true)
+                                                    }}
+                                                    onFocus={() => setShowLibraryDropdown(true)}
+                                                    onBlur={() => setTimeout(() => setShowLibraryDropdown(false), 200)}
+                                                    onKeyDown={e => {
+                                                        if (e.key === 'Enter') {
+                                                            e.preventDefault()
+                                                            handleEstimate()
+                                                        }
+                                                    }}
+                                                    className="flex-1 bg-transparent px-5 py-3.5 text-[14px] font-black uppercase tracking-tight focus:outline-none placeholder:text-black/20"
+                                                    placeholder="E.G. PROTEIN SHAKE OR 2 EGGS"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={handleEstimate}
+                                                    disabled={isEstimating || !mealName}
+                                                    className="px-4 flex items-center justify-center text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10 transition-colors border-l border-black/5 disabled:opacity-50"
+                                                    title="Auto-estimate Macros"
+                                                >
+                                                    {isEstimating ? (
+                                                        <div className="w-5 h-5 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
+                                                    ) : (
+                                                        <Sparkles className="w-5 h-5" />
+                                                    )}
+                                                </button>
+                                            </div>
 
-                        {activeTab === 'gym' && (
-                            <motion.div
-                                key="gym"
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -20 }}
-                                className="space-y-4"
-                            >
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-black/30 uppercase tracking-widest px-1">Select Routine</label>
-                                    <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
-                                        {routines.map((routine) => (
-                                            <button
-                                                key={routine.id}
-                                                type="button"
-                                                onClick={() => setSelectedRoutineId(routine.id)}
-                                                className={cn(
-                                                    "w-full p-4 rounded-2xl border text-left transition-all",
-                                                    selectedRoutineId === routine.id
-                                                        ? "bg-rose-500 text-white border-rose-600 shadow-lg shadow-rose-500/20"
-                                                        : "bg-black/[0.02] border-black/5 text-black/60 hover:bg-black/[0.04]"
-                                                )}
-                                            >
-                                                <div className="flex items-center justify-between">
-                                                    <div>
-                                                        <p className="text-[12px] font-black uppercase">{routine.name}</p>
-                                                        <p className={cn(
-                                                            "text-[10px] font-bold uppercase",
-                                                            selectedRoutineId === routine.id ? "text-white/60" : "text-black/30"
-                                                        )}>
-                                                            {routine.exercises.length} Exercises
-                                                        </p>
-                                                    </div>
-                                                    {selectedRoutineId === routine.id && <Check className="w-4 h-4" />}
+                                            {filteredLibrary.length > 0 && (
+                                                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-black/5 rounded-2xl shadow-xl z-50 max-h-[200px] overflow-y-auto custom-scrollbar p-2">
+                                                    {filteredLibrary.map(libItem => (
+                                                        <button
+                                                            key={libItem.id}
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.preventDefault()
+                                                                loadFromLibrary(libItem)
+                                                                setShowLibraryDropdown(false)
+                                                            }}
+                                                            className="w-full text-left p-2 rounded-xl border border-transparent hover:border-black/5 bg-transparent hover:bg-black/[0.02] transition-colors flex justify-between items-center group"
+                                                        >
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-8 h-8 rounded-lg bg-black/[0.02] flex items-center justify-center text-lg">{libItem.emoji || '🍽️'}</div>
+                                                                <div>
+                                                                    <div className="text-[12px] font-bold text-black">{libItem.name}</div>
+                                                                    <div className="text-[10px] font-bold text-black/40 mt-0.5">
+                                                                        {libItem.calories} kcal • {libItem.protein}P • {libItem.carbs}C • {libItem.fat}F
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <Search className="w-4 h-4 text-black/0 group-hover:text-black/20 transition-colors" />
+                                                        </button>
+                                                    ))}
                                                 </div>
-                                            </button>
-                                        ))}
-                                        {routines.length === 0 && (
-                                            <p className="text-[11px] font-medium text-black/40 text-center py-4">
-                                                No routines found. Create one in the Fitness tab.
-                                            </p>
-                                        )}
+                                            )}
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-black/30 uppercase tracking-widest px-1">Calories</label>
+                                            <input
+                                                type="number"
+                                                value={mealCals}
+                                                onChange={(e) => setMealCals(e.target.value)}
+                                                className="w-full bg-black/[0.02] border border-black/5 rounded-2xl px-5 py-3.5 text-lg font-black focus:outline-none focus:border-emerald-500/50 transition-colors"
+                                                placeholder="0"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-black/30 uppercase tracking-widest px-1">Protein (g)</label>
+                                            <input
+                                                type="number"
+                                                value={mealMacros.protein || ''}
+                                                onChange={(e) => setMealMacros({ ...mealMacros, protein: Number(e.target.value) })}
+                                                className="w-full bg-black/[0.02] border border-black/5 rounded-2xl px-5 py-3.5 text-lg font-black text-blue-500 focus:outline-none focus:border-blue-500/50 transition-colors"
+                                                placeholder="0"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-black/30 uppercase tracking-widest px-1">Carbs (g)</label>
+                                            <input
+                                                type="number"
+                                                value={mealMacros.carbs || ''}
+                                                onChange={(e) => setMealMacros({ ...mealMacros, carbs: Number(e.target.value) })}
+                                                className="w-full bg-black/[0.02] border border-black/5 rounded-2xl px-5 py-3.5 text-lg font-black text-emerald-500 focus:outline-none focus:border-emerald-500/50 transition-colors"
+                                                placeholder="0"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-black/30 uppercase tracking-widest px-1">Fat (g)</label>
+                                            <input
+                                                type="number"
+                                                value={mealMacros.fat || ''}
+                                                onChange={(e) => setMealMacros({ ...mealMacros, fat: Number(e.target.value) })}
+                                                className="w-full bg-black/[0.02] border border-black/5 rounded-2xl px-5 py-3.5 text-lg font-black text-amber-500 focus:outline-none focus:border-amber-500/50 transition-colors"
+                                                placeholder="0"
+                                            />
+                                        </div>
                                     </div>
-                                </div>
-                            </motion.div>
-                        )}
 
-                        {activeTab === 'weight' && (
-                            <motion.div
-                                key="weight"
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -20 }}
-                                className="space-y-4"
-                            >
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-black/30 uppercase tracking-widest px-1">Weight (kg)</label>
-                                    <input
-                                        type="number"
-                                        step="0.1"
-                                        value={weight}
-                                        onChange={(e) => setWeight(e.target.value)}
-                                        className="w-full bg-black/[0.02] border border-black/5 rounded-2xl px-6 py-4 text-xl font-black focus:outline-none focus:border-rose-500/50 transition-colors"
-                                        placeholder="0.0"
-                                        autoFocus
-                                    />
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                                    <div className="flex items-center gap-3 px-1 pt-2">
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" checked={saveToLibrary} onChange={e => setSaveToLibrary(e.target.checked)} className="sr-only peer" />
+                                            <div className="w-9 h-5 bg-black/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                                        </label>
+                                        <span className="text-[11px] font-bold text-black/60 uppercase tracking-widest">Save to Library</span>
+                                    </div>
 
+                                </motion.div>
+                            )}
+
+                            {activeTab === 'weight' && (
+                                <motion.div
+                                    key="weight"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    className="space-y-4"
+                                >
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-black/30 uppercase tracking-widest px-1">Weight (kg)</label>
+                                        <input
+                                            type="number"
+                                            step="0.1"
+                                            value={weight}
+                                            onChange={(e) => setWeight(e.target.value)}
+                                            className="w-full bg-black/[0.02] border border-black/5 rounded-2xl px-6 py-4 text-xl font-black focus:outline-none focus:border-rose-500/50 transition-colors"
+                                            placeholder="0.0"
+                                            autoFocus
+                                        />
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </form>
+                </div>
+
+                {/* Footer Pinned Button */}
+                <div className="p-8 pt-4 shrink-0 bg-white border-t border-black/5">
                     <button
                         type="submit"
-                        disabled={isSubmitting || showSuccess}
+                        form="quick-log-form"
+                        disabled={isSubmitting || showSuccess || (activeTab === 'meal' && !mealName)}
                         className={cn(
-                            "w-full py-5 rounded-[24px] text-[12px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2",
+                            "w-full py-5 rounded-[24px] text-[12px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 disabled:opacity-50",
                             showSuccess
                                 ? "bg-emerald-500 text-white"
                                 : "bg-black text-white hover:scale-[1.02] active:scale-95 shadow-xl shadow-black/10"
@@ -250,8 +398,9 @@ export function QuickLogModal({ isOpen, onClose }: QuickLogModalProps) {
                             'Confirm Log'
                         )}
                     </button>
-                </form>
+                </div>
             </motion.div>
         </div>
     )
 }
+

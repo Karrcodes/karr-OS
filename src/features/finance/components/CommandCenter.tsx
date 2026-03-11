@@ -124,25 +124,12 @@ export function CommandCenter() {
     return (
         <div className="flex flex-col h-dvh bg-white">
             {/* Page Header */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between px-6 py-5 border-b border-black/[0.06] bg-white flex-shrink-0 shadow-sm z-10 gap-4 lg:gap-0">
-                <div>
-                    <h1 className="text-[22px] font-bold text-black tracking-tight">Finance Dashboard</h1>
-                    <p className="text-[12px] text-black/35 mt-0.5">Finance Module · {activeProfile === 'personal' ? 'Personal' : 'Studio Karrtesian'}</p>
-                </div>
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                    <div className="flex items-center gap-2 order-1 sm:order-2">
-                        {(loading || isSyncing) && (
-                            <div className="flex items-center gap-1.5 text-black/30">
-                                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                                <span className="text-[11px]">{isSyncing ? 'Syncing Monzo' : 'Loading'}</span>
-                            </div>
-                        )}
-                        <div className="text-[11px] text-black/25 uppercase tracking-wider font-medium">
-                            {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2 order-2 sm:order-1">
-                        <div className="flex bg-black/[0.04] p-1 rounded-xl border border-black/[0.06] items-center w-fit order-1 sm:order-2">
+            <div className="flex flex-col md:flex-row md:items-end justify-between px-6 py-8 md:px-10 md:py-10 bg-white z-10 gap-6">
+                <div className="space-y-1">
+                    <h2 className="text-[11px] font-black text-emerald-500 uppercase tracking-[0.3em]">Financial Matrix</h2>
+                    <h1 className="text-4xl font-black text-black tracking-tighter uppercase grayscale">Finance Dashboard</h1>
+                    <div className="flex items-center gap-3 pt-2">
+                        <div className="flex bg-black/[0.04] p-1 rounded-xl border border-black/[0.06] items-center w-fit">
                             <button
                                 onClick={() => setProfile('personal')}
                                 className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeProfile === 'personal' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
@@ -158,13 +145,25 @@ export function CommandCenter() {
                         </div>
                         <button
                             onClick={togglePrivacy}
-                            className={`p-2 rounded-xl border transition-all ${isPrivacyEnabled ? 'border-[#059669]/30 text-[#059669] bg-[#059669]/10 shadow-[0_2px_10px_rgba(5,150,105,0.1)]' : 'bg-white border-black/[0.06] text-black/40 hover:text-black/60 hover:border-black/[0.15] shadow-sm'} order-2 sm:order-1`}
+                            className={`p-2 rounded-xl border transition-all ${isPrivacyEnabled ? 'border-[#059669]/30 text-[#059669] bg-[#059669]/10 shadow-[0_2px_10px_rgba(5,150,105,0.1)]' : 'bg-white border-black/[0.1] text-black/40 hover:text-black/60 hover:border-black/[0.2] shadow-sm'}`}
                             title={isPrivacyEnabled ? "Disable Privacy Mode" : "Enable Privacy Mode"}
                         >
                             {isPrivacyEnabled ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
-                        <MonzoSyncControls className="order-3" />
                     </div>
+                </div>
+
+                <div className="flex items-center gap-4 h-fit mb-1">
+                    {(loading || isSyncing) && (
+                        <div className="flex items-center gap-1.5 text-black/30">
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                            <span className="text-[11px]">{isSyncing ? 'Syncing Monzo' : 'Loading'}</span>
+                        </div>
+                    )}
+                    <div className="text-[11px] text-black/25 uppercase tracking-wider font-medium">
+                        {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+                    </div>
+                    <MonzoSyncControls />
                 </div>
             </div>
 

@@ -26,12 +26,11 @@ export function OverviewTab() {
         : profile?.weight || 0
 
     const stats = [
-        { label: 'CALORIES', value: Math.max(0, Math.round(macros.calories - dailyNutrition.calories)), unit: 'kcal', icon: Flame, color: 'text-orange-500', bg: 'bg-orange-50' },
-        { label: 'PROTEIN', value: Math.max(0, Math.round(macros.protein - dailyNutrition.protein)), unit: 'g', icon: Activity, color: 'text-blue-500', bg: 'bg-blue-50' },
-        { label: 'CARBS', value: Math.max(0, Math.round(macros.carbs - dailyNutrition.carbs)), unit: 'g', icon: Utensils, color: 'text-emerald-500', bg: 'bg-emerald-50' },
-        { label: 'FAT', value: Math.max(0, Math.round(macros.fat - dailyNutrition.fat)), unit: 'g', icon: Target, color: 'text-amber-500', bg: 'bg-amber-50' },
+        { label: 'CALORIES', value: Math.max(0, Math.round((macros?.calories || 0) - (dailyNutrition?.calories || 0))), unit: 'kcal', icon: Flame, color: 'text-orange-500', bg: 'bg-orange-50' },
+        { label: 'PROTEIN', value: Math.max(0, Math.round((macros?.protein || 0) - (dailyNutrition?.protein || 0))), unit: 'g', icon: Activity, color: 'text-blue-500', bg: 'bg-blue-50' },
+        { label: 'CARBS', value: Math.max(0, Math.round((macros?.carbs || 0) - (dailyNutrition?.carbs || 0))), unit: 'g', icon: Utensils, color: 'text-emerald-500', bg: 'bg-emerald-50' },
+        { label: 'FAT', value: Math.max(0, Math.round((macros?.fat || 0) - (dailyNutrition?.fat || 0))), unit: 'g', icon: Target, color: 'text-amber-500', bg: 'bg-amber-50' },
     ]
-
     const renderComponent = (id: DashboardComponentId, column: 'main' | 'sidebar') => {
         switch (id) {
             case 'macros':
@@ -80,9 +79,17 @@ export function OverviewTab() {
                                 <h3 className="text-[11px] font-black text-black/30 uppercase tracking-[0.3em]">Protocol Progress</h3>
                                 <h2 className="text-2xl font-black uppercase tracking-tighter">Weight Trends</h2>
                             </div>
-                            <div className="text-right">
-                                <p className="text-[10px] font-black text-black/20 uppercase tracking-widest mb-1">Current</p>
-                                <p className="text-2xl font-black">{latestWeight}kg</p>
+                            <div className="flex items-center gap-6">
+                                <div className="text-right">
+                                    <p className="text-[10px] font-black text-black/20 uppercase tracking-widest mb-1">Current</p>
+                                    <p className="text-2xl font-black">{latestWeight}kg</p>
+                                </div>
+                                {profile?.goalWeight && (
+                                    <div className="text-right border-l border-black/5 pl-6">
+                                        <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-1">Goal</p>
+                                        <p className="text-2xl font-black">{profile.goalWeight}kg</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                         <WeightChart />
@@ -153,7 +160,7 @@ export function OverviewTab() {
                     >
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
-                                <Activity className="w-4 h-4 text-emerald-500" />
+                                <Dumbbell className="w-4 h-4 text-emerald-500" />
                                 <h3 className="text-[12px] font-black text-black uppercase tracking-widest">Gym Activity</h3>
                             </div>
                             <ArrowUpRight className="w-4 h-4 text-black/10 group-hover:text-black transition-colors" />
