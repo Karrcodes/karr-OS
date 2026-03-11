@@ -41,5 +41,16 @@ export const GymService = {
             throw new Error(`History Sync Failure: ${res.status} ${res.statusText} - ${text.substring(0, 100)}`)
         }
         return res.json()
+    },
+
+    async getLocations(cookie: string, accessToken?: string, uuid?: string): Promise<any[]> {
+        const params = new URLSearchParams()
+        if (uuid) params.set('uuid', uuid)
+        const headers: Record<string, string> = { 'x-gym-cookie': cookie }
+        if (accessToken) headers['x-gym-token'] = accessToken
+        const res = await fetch(`/api/wellbeing/gym/locations?${params.toString()}`, { headers })
+        if (!res.ok) return []
+        const data = await res.json()
+        return data.gyms || []
     }
 }

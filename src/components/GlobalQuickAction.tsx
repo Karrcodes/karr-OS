@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, X, CheckSquare, Clipboard, Loader2, Sparkles, ListChecks, Calendar, Info, Clock, Heart, Briefcase, User, Beaker, Factory, Tv, Video, TrendingUp, Building2, User2, Lock, PenLine, Youtube, Instagram, Music2, Twitter } from 'lucide-react'
+import { Plus, X, CheckSquare, Clipboard, Loader2, Sparkles, ListChecks, Calendar, Info, Clock, Heart, Briefcase, User, Beaker, Factory, Tv, Video, TrendingUp, Building2, User2, Lock, PenLine, Youtube, Instagram, Music2, Twitter, Utensils, Database, ChefHat } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 
 type ActionType = 'task' | 'clipboard' | 'network' | 'note' | 'content' | 'meal' | 'gym' | null
 
@@ -38,6 +38,7 @@ export function GlobalQuickAction() {
     const [loading, setLoading] = useState(false)
     const [success, setSuccess] = useState(false)
     const [showTaskExtras, setShowTaskExtras] = useState(false)
+    const router = useRouter()
 
     const [form, setForm] = useState({
         taskTitle: '',
@@ -140,7 +141,7 @@ export function GlobalQuickAction() {
 
     const actions = useMemo(() => [
         { id: 'gym', label: 'Workout', icon: TrendingUp, color: 'bg-rose-500', glow: 'shadow-rose-500/40', locked: true },
-        { id: 'meal', label: 'Meal', icon: Heart, color: 'bg-emerald-500', glow: 'shadow-emerald-500/40', locked: true },
+        { id: 'meal', label: 'Meal', icon: Utensils, color: 'bg-emerald-500', glow: 'shadow-emerald-500/40', locked: false },
         { id: 'content', label: 'Content', icon: Video, color: 'bg-red-500', glow: 'shadow-red-500/40', locked: false },
         { id: 'note', label: 'Canvas', icon: PenLine, color: 'bg-indigo-500', glow: 'shadow-indigo-500/40', locked: false },
         { id: 'network', label: 'Connect', icon: User2, color: 'bg-blue-500', glow: 'shadow-blue-500/40', locked: false },
@@ -420,17 +421,35 @@ export function GlobalQuickAction() {
                                     </div>
                                 )}
 
-                                {/* LOCKED FORM (meal/gym) */}
-                                {(activeAction === 'meal' || activeAction === 'gym') && (
-                                    <div className="py-12 flex flex-col items-center text-center space-y-4">
-                                        <div className="w-16 h-16 rounded-[28px] bg-black/5 flex items-center justify-center text-black/20">
-                                            <Lock className="w-8 h-8" />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <h4 className="text-[16px] font-black uppercase tracking-tighter">Feature Restricted</h4>
-                                            <p className="text-[11px] text-black/35 font-bold max-w-[240px] leading-relaxed">The Wellbeing Module is currently under construction. This action will be unlocked soon.</p>
-                                        </div>
-                                        <button onClick={() => setActiveAction(null)} className="px-6 py-2 bg-black text-white rounded-full text-[10px] font-black uppercase tracking-widest">Return</button>
+                                {/* MEAL FORM */}
+                                {activeAction === 'meal' && (
+                                    <div className="space-y-3">
+                                        <p className="text-[10px] font-black text-black/30 uppercase tracking-widest text-center pb-2">Choose an Action</p>
+                                        {[
+                                            { id: 'quicklog', label: 'Quick Log', sublabel: 'Log a new meal manually or with AI', icon: Plus, color: 'bg-emerald-500 text-white', glow: 'shadow-emerald-500/20' },
+                                            { id: 'library', label: 'Log from Library', sublabel: 'Pick a saved meal or combo', icon: Database, color: 'bg-blue-500 text-white', glow: 'shadow-blue-500/20' },
+                                            { id: 'fridge', label: 'Consume from Fridge', sublabel: 'Log a prepped meal from inventory', icon: ChefHat, color: 'bg-amber-500 text-white', glow: 'shadow-amber-500/20' },
+                                        ].map(opt => (
+                                            <button
+                                                key={opt.id}
+                                                onClick={() => {
+                                                    setActiveAction(null)
+                                                    setIsOpen(false)
+                                                    router.push(`/health/nutrition?open=${opt.id}`)
+                                                }}
+                                                className={cn(
+                                                    "w-full flex items-center gap-4 p-4 rounded-[20px] border border-black/5 bg-white hover:shadow-md transition-all text-left group"
+                                                )}
+                                            >
+                                                <div className={cn("w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-lg", opt.color, opt.glow)}>
+                                                    <opt.icon className="w-5 h-5" strokeWidth={2.5} />
+                                                </div>
+                                                <div>
+                                                    <div className="text-[12px] font-black uppercase tracking-tight text-black">{opt.label}</div>
+                                                    <div className="text-[10px] font-bold text-black/30 mt-0.5">{opt.sublabel}</div>
+                                                </div>
+                                            </button>
+                                        ))}
                                     </div>
                                 )}
 

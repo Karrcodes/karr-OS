@@ -131,7 +131,7 @@ export function NutritionTab() {
                         </div>
                     ) : (
                         <div className="flex-1 flex items-center justify-between px-16 bg-black/[0.02] rounded-[32px] border border-black/5 transition-colors group-hover:bg-black/[0.04]">
-                            <div className="flex -space-x-6 overflow-hidden p-2">
+                            <div className="flex -space-x-6 overflow-visible py-3 px-2">
                                 {fridge.slice(0, 5).map((item, i) => {
                                     const meal = library.find(m => m.id === item.mealId)
                                     return (

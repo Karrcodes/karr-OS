@@ -11,8 +11,9 @@ interface WellbeingContextType extends WellbeingState {
     logWeight: (weight: number) => Promise<void>
     calculateTDEE: (profile: WellbeingProfile) => number
     logWorkout: (log: WorkoutLog) => Promise<void>
-    connectGym: (username: string, pin: string, locationId: string) => Promise<void>
+    connectGym: (username: string, pin: string, locationId: string, locationIds?: string[]) => Promise<void>
     syncGymData: () => Promise<void>
+    disconnectGym: () => Promise<void>
     addRoutine: (routine: WorkoutRoutine) => Promise<void>
     updateGymStats: (stats: Partial<TheGymGroupStats>) => Promise<void>
     logMeal: (meal: Omit<MealLog, 'id'>) => Promise<void>
@@ -611,20 +612,49 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
         
         try {
             const { uuid, cookie, memberId, accessToken } = JSON.parse(auth)
-            const [busynessRes, historyRes] = await Promise.allSettled([
-                GymService.getBusyness(uuid, state.gymStats.gymLocationId || '', cookie, memberId, accessToken),
+
+            // Fetch busyness for ALL accessible gym locations in parallel
+            const locationIds = state.gymStats.gymLocationIds?.length
+                ? state.gymStats.gymLocationIds
+                : state.gymStats.gymLocationId
+                    ? [state.gymStats.gymLocationId]
+                    : []
+
+            const [busynessResults, historyRes] = await Promise.allSettled([
+                Promise.allSettled(
+                    locationIds.map(locId =>
+                        GymService.getBusyness(uuid, locId, cookie, memberId, accessToken)
+                            .then(data => ({ locId, data }))
+                            .catch(() => ({ locId, data: null }))
+                    )
+                ),
                 GymService.getHistory(uuid, cookie)
             ])
 
-            let busyness = state.gymStats.busyness
-            if (busynessRes.status === 'fulfilled') {
-                busyness = busynessRes.value
+            // Build allBusyness map
+            let allBusyness: Record<string, GymBusyness> = state.gymStats.allBusyness || {}
+            let primaryBusyness = state.gymStats.busyness
+            const primaryId = state.gymStats.gymLocationId
+
+            if (busynessResults.status === 'fulfilled') {
+                busynessResults.value.forEach(result => {
+                    if (result.status === 'fulfilled' && result.value.data) {
+                        allBusyness = { ...allBusyness, [result.value.locId]: result.value.data }
+                        if (result.value.locId === primaryId) {
+                            primaryBusyness = result.value.data
+                        }
+                    }
+                })
+                // Fallback: use first successful result as primary
+                if (!primaryBusyness) {
+                    const first = Object.values(allBusyness)[0]
+                    if (first) primaryBusyness = first
+                }
             }
 
             let visitHistory = state.gymStats.visitHistory || []
             if (historyRes.status === 'fulfilled') {
                 const rawData = historyRes.value
-                // Robustly handle both array and object-wrapped history
                 const checks = Array.isArray(rawData) ? rawData : (rawData.checkIns || [])
                 visitHistory = checks.map((v: any) => ({
                     id: v.id,
@@ -634,7 +664,6 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
                 }))
             }
 
-            // Calculate weekly visits
             const weekAgo = new Date()
             weekAgo.setDate(weekAgo.getDate() - 7)
             const weekAgoStr = weekAgo.toISOString().split('T')[0]
@@ -642,7 +671,8 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
 
             const gymStats = { 
                 ...state.gymStats, 
-                busyness: busyness || state.gymStats.busyness,
+                busyness: primaryBusyness || state.gymStats.busyness,
+                allBusyness,
                 visitHistory, 
                 weeklyVisits,
                 totalVisits: visitHistory.length,
@@ -668,10 +698,37 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
         }
     }, [state.gymStats.isIntegrated, state.loading])
 
-    const connectGym = async (username: string, pin: string, locationId: string) => {
+    const connectGym = async (username: string, pin: string, locationId: string, locationIds?: string[]) => {
         const data = await GymService.login(username, pin)
         localStorage.setItem('gym_auth', JSON.stringify({ uuid: data.uuid, cookie: data.cookie, member_id: data.memberId, accessToken: data.accessToken }))
-        const gymStats = { ...state.gymStats, isIntegrated: true, gymLocationId: data.homeGymId || locationId, userUuid: data.uuid, memberId: data.memberId }
+        const primaryId = data.homeGymId || locationId
+        const allIds = locationIds?.length ? locationIds : [primaryId]
+        const gymStats = { 
+            ...state.gymStats, 
+            isIntegrated: true, 
+            gymLocationId: primaryId, 
+            gymLocationIds: allIds,
+            userUuid: data.uuid, 
+            memberId: data.memberId 
+        }
+        setState(prev => ({ ...prev, gymStats }))
+        await persistData({ gymStats })
+    }
+
+    const disconnectGym = async () => {
+        localStorage.removeItem('gym_auth')
+        const gymStats = { 
+            ...state.gymStats, 
+            isIntegrated: false, 
+            gymLocationId: undefined, 
+            gymLocationIds: [],
+            gymLocationNames: {},
+            allBusyness: undefined,
+            busyness: undefined,
+            userUuid: undefined, 
+            memberId: undefined,
+            accessToken: undefined
+        }
         setState(prev => ({ ...prev, gymStats }))
         await persistData({ gymStats })
     }
@@ -747,6 +804,7 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
         calculateTDEE,
         logWorkout,
         connectGym,
+        disconnectGym,
         syncGymData,
         addRoutine,
         updateGymStats,

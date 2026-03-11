@@ -3,29 +3,106 @@
 import * as React from 'react'
 import { useState, useEffect } from 'react'
 import { WellbeingProvider, useWellbeing } from '@/features/wellbeing/contexts/WellbeingContext'
-import { Plus, Layout, Dumbbell, Utensils, Heart, Settings, RefreshCw, Loader2, CheckCircle2 } from 'lucide-react'
+import { Plus, Layout, Dumbbell, Utensils, Brain, Settings, RefreshCw, Loader2, CheckCircle2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
 import { KarrFooter } from '@/components/KarrFooter'
 import { ProfileSetup } from '@/features/wellbeing/components/ProfileSetup'
 import { GymConnectionModal } from '@/features/wellbeing/components/GymConnectionModal'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { QuickLogModal } from '@/features/wellbeing/components/QuickLogModal'
+import { NutritionLibraryModal } from '@/features/wellbeing/components/NutritionLibraryModal'
+import { NutritionFridgeModal } from '@/features/wellbeing/components/NutritionFridgeModal'
+
+import { ChevronRight } from 'lucide-react'
+import type { TheGymGroupStats, GymBusyness } from '@/features/wellbeing/types'
 
 const TABS = [
     { id: 'fitness', label: 'Fitness', icon: Dumbbell, href: '/health/fitness' },
     { id: 'nutrition', label: 'Nutrition', icon: Utensils, href: '/health/nutrition' },
-    { id: 'mind', label: 'Mind', icon: Heart, href: '/health/mind' },
+    { id: 'mind', label: 'Mind', icon: Brain, href: '/health/mind' },
 ]
+
+// Gets a short display name from a full gym name
+function shortGymName(name: string) {
+    return name.replace(/the gym group[\s\-–]*/i, '').trim() || name
+}
+
+// Color-codes busyness level
+function busynessColor(pct?: number) {
+    if (!pct) return 'bg-black/10 text-black/30'
+    if (pct < 40) return 'bg-emerald-500'
+    if (pct < 70) return 'bg-amber-500'
+    return 'bg-rose-500'
+}
+
+function GymOccupancySwitcher({ allBusyness, gymLocationId, gymStats }: {
+    allBusyness: Record<string, GymBusyness>
+    gymLocationId?: string
+    gymStats: TheGymGroupStats
+}) {
+    const locationIds = Object.keys(allBusyness)
+
+    // Derive a label: prefer name from visitHistory location names, fallback to index
+    const labelFor = (id: string) => {
+        // Try to find a match from recent visit history
+        const visit = gymStats.visitHistory?.find(v => v.locationName)
+        if (locationIds.length === 1 && visit) return shortGymName(visit.locationName)
+        const idx = locationIds.indexOf(id)
+        return `Gym ${idx + 1}`
+    }
+
+    return (
+        <div className="flex items-center bg-white border border-black/5 rounded-2xl shadow-sm overflow-hidden">
+            {locationIds.map((id, i) => {
+                const b = allBusyness[id]
+                return (
+                    <div key={id} className="flex items-center">
+                        <div className="flex items-center gap-2 px-4 py-3">
+                            <div className={cn("w-2 h-2 rounded-full shrink-0", busynessColor(b?.currentPercentage), "animate-pulse")} />
+                            <div className="flex flex-col leading-none">
+                                <span className="text-[10px] font-black uppercase tracking-tight text-black">
+                                    {b?.currentPercentage ?? '—'}% Full
+                                </span>
+                                <span className="text-[8px] font-bold uppercase tracking-widest mt-0.5 text-black/30">
+                                    {gymStats.gymLocationNames?.[id] || labelFor(id)}
+                                </span>
+                            </div>
+                        </div>
+                        {i < locationIds.length - 1 && (
+                            <div className="w-px h-8 bg-black/5" />
+                        )}
+                    </div>
+                )
+            })}
+        </div>
+    )
+}
 
 function HealthLayoutContent({ children }: { children: React.ReactNode }) {
     const { profile, syncGymData, gymStats, weightHistory, loading, isSyncingGym } = useWellbeing()
     const [isGymModalOpen, setIsGymModalOpen] = useState(false)
     const [isQuickLogOpen, setIsQuickLogOpen] = useState(false)
+    const [isLibraryOpen, setIsLibraryOpen] = useState(false)
+    const [isFridgeOpen, setIsFridgeOpen] = useState(false)
     const pathname = usePathname()
+    const router = useRouter()
+    const searchParams = useSearchParams()
 
     const [justSynced, setJustSynced] = useState(false)
+
+    // Open modal based on ?open= query param (from GlobalQuickAction FAB)
+    useEffect(() => {
+        const openParam = searchParams.get('open')
+        if (openParam === 'quicklog') { setIsQuickLogOpen(true) }
+        else if (openParam === 'library') { setIsLibraryOpen(true) }
+        else if (openParam === 'fridge') { setIsFridgeOpen(true) }
+        if (openParam) {
+            // Clean up the URL without re-navigating
+            router.replace(pathname, { scroll: false })
+        }
+    }, [searchParams])
 
     useEffect(() => {
         if (gymStats.isIntegrated && !loading) {
@@ -70,8 +147,8 @@ function HealthLayoutContent({ children }: { children: React.ReactNode }) {
                 {/* Header */}
                 <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                     <div className="space-y-1">
-                        <h2 className="text-[11px] font-black text-rose-500 uppercase tracking-[0.3em]">Wellbeing Protocol</h2>
-                        <h1 className="text-4xl font-black text-black tracking-tighter uppercase grayscale">Health Dashboard</h1>
+                        <h2 className="text-[11px] font-black text-rose-500 uppercase tracking-[0.3em]">Health Protocol</h2>
+                        <h1 className="text-4xl font-black text-black tracking-tighter uppercase grayscale">Wellbeing Dashboard</h1>
                     </div>
                     <div className="flex items-center gap-3">
                         <div className="bg-black/[0.03] border border-black/5 rounded-2xl px-5 py-3 flex items-center gap-4">
@@ -140,7 +217,16 @@ function HealthLayoutContent({ children }: { children: React.ReactNode }) {
 
                     {gymStats.isIntegrated && (
                         <div className="flex items-center gap-3">
-                            {gymStats.busyness && (
+                            {/* Multi-gym occupancy switcher */}
+                            {gymStats.allBusyness && Object.keys(gymStats.allBusyness).length > 0 && (
+                                <GymOccupancySwitcher
+                                    allBusyness={gymStats.allBusyness}
+                                    gymLocationId={gymStats.gymLocationId}
+                                    gymStats={gymStats}
+                                />
+                            )}
+                            {/* Single-gym fallback */}
+                            {gymStats.busyness && !gymStats.allBusyness && (
                                 <div className="flex items-center gap-2 px-5 py-3 bg-white border border-black/5 rounded-2xl shadow-sm">
                                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                                     <div className="flex flex-col">
@@ -157,24 +243,33 @@ function HealthLayoutContent({ children }: { children: React.ReactNode }) {
                                 className={cn(
                                     "flex items-center gap-2 px-5 py-3 rounded-2xl shadow-sm transition-all duration-300 border",
                                     isSyncingGym ? "bg-white border-black/5 cursor-not-allowed opacity-50" : 
-                                    justSynced ? "bg-emerald-500 border-emerald-600 text-white" :
+                                    (justSynced || gymStats.lastSyncTime) ? "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100 group" :
                                     "bg-white border-black/5 hover:bg-black/[0.02] group"
                                 )}
                             >
                                 {justSynced ? (
-                                    <CheckCircle2 className="w-4 h-4 text-white animate-in zoom-in duration-300" />
+                                    <CheckCircle2 className="w-4 h-4 text-emerald-500 animate-in zoom-in duration-300" />
                                 ) : (
                                     <RefreshCw className={cn(
                                         "w-4 h-4 transition-transform duration-500",
-                                        isSyncingGym ? "animate-spin text-black/40" : "text-black/40 group-hover:rotate-180"
+                                        isSyncingGym ? "animate-spin text-black/40" : 
+                                        gymStats.lastSyncTime ? "text-emerald-500 group-hover:rotate-180" : "text-black/40 group-hover:rotate-180"
                                     )} />
                                 )}
                                 <span className={cn(
                                     "text-[10px] font-black uppercase tracking-widest whitespace-nowrap",
-                                    justSynced ? "text-white" : "text-black"
+                                    (justSynced || gymStats.lastSyncTime) ? "text-emerald-700" : "text-black"
                                 )}>
-                                    {isSyncingGym ? 'Syncing...' : justSynced ? 'Synced' : 'Sync'}
+                                    {isSyncingGym ? 'Syncing...' : (justSynced || gymStats.lastSyncTime) ? 'Synced' : 'Sync'}
                                 </span>
+                            </button>
+                            {/* Re-link gym button */}
+                            <button
+                                onClick={() => setIsGymModalOpen(true)}
+                                title="Manage gym connection"
+                                className="w-11 h-11 rounded-2xl bg-white border border-black/5 shadow-sm flex items-center justify-center hover:bg-black/[0.02] transition-all text-black/30 hover:text-black/60"
+                            >
+                                <Settings className="w-4 h-4" />
                             </button>
                         </div>
                     )}
@@ -193,6 +288,14 @@ function HealthLayoutContent({ children }: { children: React.ReactNode }) {
             <QuickLogModal
                 isOpen={isQuickLogOpen}
                 onClose={() => setIsQuickLogOpen(false)}
+            />
+            <NutritionLibraryModal
+                isOpen={isLibraryOpen}
+                onClose={() => setIsLibraryOpen(false)}
+            />
+            <NutritionFridgeModal
+                isOpen={isFridgeOpen}
+                onClose={() => setIsFridgeOpen(false)}
             />
             <KarrFooter />
         </div>

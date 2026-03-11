@@ -214,27 +214,39 @@ export function QuickLogModal({ isOpen, onClose }: QuickLogModalProps) {
                                         <div className="space-y-2 col-span-2">
                                             <label className="text-[10px] font-black text-black/30 uppercase tracking-widest px-1">Meal Type</label>
                                             <div className="flex bg-black/[0.02] rounded-2xl p-1 gap-1 border border-black/5">
-                                                {(['dewbit', 'breakfast', 'lunch', 'dinner', 'snack'] as const).map(type => (
-                                                    <button
-                                                        key={type}
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setMealType(prev => 
-                                                                prev.includes(type) 
-                                                                    ? prev.filter(t => t !== type) 
-                                                                    : [...prev, type]
-                                                            )
-                                                        }}
-                                                        className={cn(
-                                                            "flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                                                            mealType.includes(type)
-                                                                ? "bg-white text-black shadow-sm"
-                                                                : "text-black/30 hover:bg-black/[0.04]"
-                                                        )}
-                                                    >
-                                                        {type}
-                                                    </button>
-                                                ))}
+                                                {(['dewbit', 'breakfast', 'lunch', 'dinner', 'snack'] as const).map(type => {
+                                                    const isSelected = mealType.includes(type)
+                                                    const colorClass = isSelected
+                                                        ? type === 'breakfast' ? 'bg-amber-400 text-white shadow-sm'
+                                                            : type === 'lunch' ? 'bg-emerald-400 text-white shadow-sm'
+                                                            : type === 'dinner' ? 'bg-blue-400 text-white shadow-sm'
+                                                            : type === 'snack' ? 'bg-rose-400 text-white shadow-sm'
+                                                            : 'bg-violet-400 text-white shadow-sm'
+                                                        : 'text-black/30 hover:bg-black/[0.04]'
+                                                    return (
+                                                        <button
+                                                            key={type}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                if (saveToLibrary) {
+                                                                    setMealType(prev => 
+                                                                        prev.includes(type) 
+                                                                            ? prev.filter(t => t !== type) 
+                                                                            : [...prev, type]
+                                                                    )
+                                                                } else {
+                                                                    setMealType([type])
+                                                                }
+                                                            }}
+                                                            className={cn(
+                                                                "flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                                                colorClass
+                                                            )}
+                                                        >
+                                                            {type}
+                                                        </button>
+                                                    )
+                                                })}
                                             </div>
                                         </div>
                                         <div className="space-y-2 col-span-2 relative">
@@ -367,7 +379,18 @@ export function QuickLogModal({ isOpen, onClose }: QuickLogModalProps) {
 
                                     <div className="flex items-center gap-3 px-1 pt-2">
                                         <label className="relative inline-flex items-center cursor-pointer">
-                                            <input type="checkbox" checked={saveToLibrary} onChange={e => setSaveToLibrary(e.target.checked)} className="sr-only peer" />
+                                            <input 
+                                                type="checkbox" 
+                                                checked={saveToLibrary} 
+                                                onChange={e => {
+                                                    const checked = e.target.checked
+                                                    setSaveToLibrary(checked)
+                                                    if (!checked && mealType.length > 1) {
+                                                        setMealType([mealType[0]])
+                                                    }
+                                                }} 
+                                                className="sr-only peer" 
+                                            />
                                             <div className="w-9 h-5 bg-black/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
                                         </label>
                                         <span className="text-[11px] font-bold text-black/60 uppercase tracking-widest">Save to Library</span>

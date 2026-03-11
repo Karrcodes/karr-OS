@@ -91,7 +91,7 @@ export const navItems: NavItem[] = [
         sub: [
             { label: 'Fitness', href: '/health/fitness', icon: Dumbbell },
             { label: 'Nutrition', href: '/health/nutrition', icon: Utensils },
-            { label: 'Mind', href: '/health/mind', icon: Heart },
+            { label: 'Mind', href: '/health/mind', icon: Brain },
             { label: 'Settings', href: '/health/settings', icon: SlidersHorizontal }
         ]
     },

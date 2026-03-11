@@ -89,9 +89,12 @@ export interface TheGymGroupStats {
     lastVisit: GymVisit | null
     isIntegrated: boolean
     busyness?: GymBusyness
+    allBusyness?: Record<string, GymBusyness>  // keyed by locationId
     weeklyVisits: number
     visitHistory: GymVisit[]
     gymLocationId?: string
+    gymLocationIds?: string[]   // all accessible locations
+    gymLocationNames?: Record<string, string> // optional custom labels user sets for locations
     userUuid?: string
     memberId?: string
     accessToken?: string
