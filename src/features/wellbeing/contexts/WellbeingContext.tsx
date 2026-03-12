@@ -1,3 +1,5 @@
+'use client'
+
 import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react'
 import type { WellbeingProfile, MetricEntry, MacroTargets, WellbeingState, WellbeingGoal, ActivityLevel, WorkoutRoutine, WorkoutLog, WorkoutSession, WorkoutSet, ExerciseLog, TheGymGroupStats, MealLog, MoodValue, MoodEntry, Reflection, GymBusyness, GymVisit, DashboardLayout, LibraryMeal, FridgeItem, Milestone } from '../types'
 import { GymService } from '../services/gymService'
@@ -21,8 +23,9 @@ interface WellbeingContextType extends WellbeingState {
     updateMealLog: (id: string, updates: Partial<MealLog>) => Promise<void>
     deleteMealLog: (id: string) => Promise<void>
     saveRecipe: (recipeId: string) => Promise<void>
-    logMood: (value: MoodValue, note?: string) => Promise<void>
-    saveReflection: (content: string) => Promise<void>
+    logMood: (value: MoodValue, note?: string, activities?: string[]) => Promise<void>
+    saveReflection: (content: string, id?: string) => Promise<void>
+    deleteReflection: (id: string) => Promise<void>
     updateLayout: (layout: DashboardLayout) => Promise<void>
     addMealToLibrary: (meal: Omit<LibraryMeal, 'id'>) => Promise<void>
     removeMealFromLibrary: (id: string) => Promise<void>
@@ -513,26 +516,44 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
         await persistData({ savedRecipes })
     }
 
-    const logMood = async (value: MoodValue, note?: string) => {
+    const logMood = async (value: MoodValue, note?: string, activities?: string[]) => {
         const newEntry: MoodEntry = {
             id: Math.random().toString(36).substring(2, 9),
             date: new Date().toISOString().split('T')[0],
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             value,
-            note
+            note,
+            activities
         }
         const moodLogs = [newEntry, ...state.moodLogs].slice(0, 100)
         setState(prev => ({ ...prev, moodLogs }))
         await persistData({ moodLogs })
     }
 
-    const saveReflection = async (content: string) => {
-        const newReflection: Reflection = {
-            id: Math.random().toString(36).substring(2, 9),
-            date: new Date().toISOString().split('T')[0],
-            content
+    const saveReflection = async (content: string, id?: string) => {
+        let reflections = [...state.reflections]
+        const existingIndex = id ? reflections.findIndex(r => r.id === id) : -1
+
+        if (existingIndex > -1) {
+            reflections[existingIndex] = {
+                ...reflections[existingIndex],
+                content
+            }
+        } else {
+            const newReflection: Reflection = {
+                id: Math.random().toString(36).substring(2, 9),
+                date: new Date().toISOString().split('T')[0],
+                content
+            }
+            reflections = [newReflection, ...reflections].slice(0, 50)
         }
-        const reflections = [newReflection, ...state.reflections].slice(0, 50)
+
+        setState(prev => ({ ...prev, reflections }))
+        await persistData({ reflections })
+    }
+
+    const deleteReflection = async (id: string) => {
+        const reflections = state.reflections.filter(r => r.id !== id)
         setState(prev => ({ ...prev, reflections }))
         await persistData({ reflections })
     }
@@ -1142,6 +1163,7 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
         saveRecipe,
         logMood,
         saveReflection,
+        deleteReflection,
         addMilestone,
         bulkAddMilestones,
         updateMilestone,

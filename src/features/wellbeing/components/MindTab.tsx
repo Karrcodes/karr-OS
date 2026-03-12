@@ -1,88 +1,145 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useWellbeing } from '@/features/wellbeing/contexts/WellbeingContext'
+import { MoodHeatmap } from './MoodHeatmap'
+import { ReflectionPage } from './ReflectionPage'
 import { MoodTracker } from './MoodTracker'
-import { DailyReflection } from './DailyReflection'
-import { Heart, Brain, Moon, Sun, Wind, Sparkles } from 'lucide-react'
+import { Heart, Moon, Wind, Zap, Lock, Brain, Activity } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { motion } from 'framer-motion'
+
+type Tab = 'mood' | 'reflect'
+
+function ComingSoonCard({ icon: Icon, title, description, color, bg }: {
+    icon: React.ElementType
+    title: string
+    description: string
+    color: string
+    bg: string
+}) {
+    return (
+        <div className={cn('relative rounded-[28px] p-6 overflow-hidden border border-black/5', bg)}>
+            {/* Lock badge */}
+            <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-black/[0.06] backdrop-blur-sm rounded-full px-3 py-1.5">
+                <Lock className="w-2.5 h-2.5 text-black/40" />
+                <span className="text-[8px] font-black uppercase tracking-[0.2em] text-black/40">Coming Soon</span>
+            </div>
+
+            <div className={cn('w-10 h-10 rounded-2xl flex items-center justify-center mb-4', bg, 'border border-black/10')}>
+                <Icon className={cn('w-5 h-5', color)} />
+            </div>
+            <h4 className="text-[13px] font-black text-black uppercase tracking-tight">{title}</h4>
+            <p className="text-[11px] font-medium text-black/40 mt-1 leading-relaxed">{description}</p>
+            <div className="mt-4 flex items-center gap-1.5">
+                <div className="w-1 h-1 rounded-full bg-black/20" />
+                <span className="text-[9px] font-black text-black/30 uppercase tracking-widest">Requires Apple Health</span>
+            </div>
+        </div>
+    )
+}
+
+const TABS = [
+    { id: 'mood' as Tab, label: 'Mood', icon: Heart },
+    { id: 'reflect' as Tab, label: 'Reflect', icon: Brain },
+]
 
 export function MindTab() {
+    const [activeTab, setActiveTab] = useState<Tab>('mood')
+
     return (
-        <div className="space-y-10">
-            {/* Mind Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-rose-500 rounded-[32px] p-8 text-white space-y-4 relative overflow-hidden group">
-                    <div className="absolute -right-4 -bottom-4 w-32 h-32 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-colors" />
-                    <Heart className="w-8 h-8 text-rose-200" />
-                    <div className="space-y-1">
-                        <h3 className="text-xl font-black uppercase tracking-tighter">Emotional Baseline</h3>
-                        <p className="text-rose-100/60 text-[12px] font-medium leading-relaxed uppercase tracking-tight">Status: Balanced</p>
-                    </div>
-                    <div className="flex items-baseline gap-1">
-                        <span className="text-3xl font-black">7.8</span>
-                        <span className="text-[13px] font-bold text-rose-100/40 uppercase">Avg Mood</span>
-                    </div>
-                </div>
-
-                <div className="bg-black rounded-[32px] p-8 text-white space-y-4 relative overflow-hidden group">
-                    <div className="absolute -right-4 -bottom-4 w-32 h-32 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-colors" />
-                    <Moon className="w-8 h-8 text-indigo-400" />
-                    <div className="space-y-1">
-                        <h3 className="text-xl font-black uppercase tracking-tighter">Sleep Quality</h3>
-                        <p className="text-white/40 text-[12px] font-medium leading-relaxed uppercase tracking-tight">Last Night: Deep</p>
-                    </div>
-                    <div className="flex items-baseline gap-1">
-                        <span className="text-3xl font-black">8.2</span>
-                        <span className="text-[13px] font-bold text-white/20 uppercase">Hours</span>
-                    </div>
-                </div>
-
-                <div className="bg-emerald-600 rounded-[32px] p-8 text-white space-y-4 relative overflow-hidden group">
-                    <div className="absolute -right-4 -bottom-4 w-32 h-32 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-colors" />
-                    <Wind className="w-8 h-8 text-emerald-200" />
-                    <div className="space-y-1">
-                        <h3 className="text-xl font-black uppercase tracking-tighter">Mindfulness</h3>
-                        <p className="text-emerald-100/60 text-[12px] font-medium leading-relaxed uppercase tracking-tight">Daily Streak: 5 Days</p>
-                    </div>
-                    <div className="flex items-baseline gap-1">
-                        <span className="text-3xl font-black">15</span>
-                        <span className="text-[13px] font-bold text-emerald-100/40 uppercase">Mins Total</span>
-                    </div>
-                </div>
+        <div className="space-y-8">
+            {/* Tab Navigation */}
+            <div className="flex items-center gap-2 bg-black/[0.03] p-1.5 rounded-[24px] w-fit border border-black/5">
+                {TABS.map(tab => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={cn(
+                            'flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all',
+                            activeTab === tab.id
+                                ? 'bg-white text-black shadow-sm border border-black/5'
+                                : 'text-black/40 hover:text-black hover:bg-white/50'
+                        )}
+                    >
+                        <tab.icon className={cn('w-4 h-4', activeTab === tab.id ? 'text-indigo-500' : 'text-black/20')} />
+                        {tab.label}
+                    </button>
+                ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <MoodTracker />
-                <DailyReflection />
-            </div>
+            <AnimatePresence mode="wait">
+                {activeTab === 'mood' && (
+                    <motion.div
+                        key="mood"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.2 }}
+                        className="space-y-8"
+                    >
+                        {/* Daily Mood Logger */}
+                        <MoodTracker />
 
-            {/* Mindfulness Toolkit */}
-            <div className="bg-white border border-black/5 rounded-[40px] p-10 space-y-8">
-                <div className="flex items-center gap-3">
-                    <Sparkles className="w-5 h-5 text-rose-500" />
-                    <h3 className="text-[13px] font-black text-black/30 uppercase tracking-[0.4em]">Mindfulness Toolkit</h3>
-                </div>
+                        {/* Full-year Mood Heatmap */}
+                        <MoodHeatmap />
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {[
-                        { title: 'Box Breathing', icon: Wind, color: 'text-blue-500', bg: 'bg-blue-50', time: '4 Mins' },
-                        { title: 'Inner Reflection', icon: Brain, color: 'text-indigo-500', bg: 'bg-indigo-50', time: '10 Mins' },
-                        { title: 'Sun Gaze', icon: Sun, color: 'text-amber-500', bg: 'bg-amber-50', time: '5 Mins' },
-                    ].map((tool, i) => (
-                        <button key={tool.title} className="flex flex-col items-center gap-6 p-8 rounded-[32px] bg-black/[0.02] border border-black/5 hover:bg-black uppercase group transition-all">
-                            <div className={cn("p-6 rounded-3xl transition-transform group-hover:scale-110", tool.bg)}>
-                                <tool.icon className={cn("w-8 h-8", tool.color)} />
+                        {/* Coming Soon — Apple Health Features */}
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-3">
+                                <Activity className="w-4 h-4 text-black/20" />
+                                <h3 className="text-[11px] font-black text-black/30 uppercase tracking-[0.4em]">Apple Health · Coming Soon</h3>
                             </div>
-                            <div className="text-center space-y-1">
-                                <p className="text-[14px] font-black group-hover:text-white">{tool.title}</p>
-                                <p className="text-[10px] font-black text-black/30 tracking-widest group-hover:text-white/40">{tool.time}</p>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <ComingSoonCard
+                                    icon={Moon}
+                                    title="Sleep Quality"
+                                    description="Track sleep duration, deep sleep, and REM cycles from Apple Health."
+                                    color="text-indigo-500"
+                                    bg="bg-indigo-50"
+                                />
+                                <ComingSoonCard
+                                    icon={Zap}
+                                    title="HRV & Heart Rate"
+                                    description="Monitor heart rate variability as a stress and recovery indicator."
+                                    color="text-rose-500"
+                                    bg="bg-rose-50"
+                                />
+                                <ComingSoonCard
+                                    icon={Wind}
+                                    title="Mindfulness Minutes"
+                                    description="Sync mindfulness and breathing sessions from your Apple Watch."
+                                    color="text-emerald-500"
+                                    bg="bg-emerald-50"
+                                />
                             </div>
-                        </button>
-                    ))}
-                </div>
-            </div>
+                        </div>
+                    </motion.div>
+                )}
+
+                {activeTab === 'reflect' && (
+                    <motion.div
+                        key="reflect"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.2 }}
+                        className="bg-white border border-black/5 rounded-[40px] p-8 md:p-12"
+                    >
+                        {/* Section header */}
+                        <div className="flex items-center gap-3 mb-10">
+                            <div className="w-10 h-10 rounded-2xl bg-indigo-50 flex items-center justify-center">
+                                <Brain className="w-5 h-5 text-indigo-500" />
+                            </div>
+                            <div>
+                                <h2 className="text-[11px] font-black text-black/30 uppercase tracking-[0.4em]">Inner Protocol</h2>
+                                <h3 className="text-[20px] font-black text-black uppercase tracking-tighter">Reflection Journal</h3>
+                            </div>
+                        </div>
+                        <ReflectionPage />
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     )
 }

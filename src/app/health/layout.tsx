@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { useState, useEffect } from 'react'
-import { WellbeingProvider, useWellbeing } from '@/features/wellbeing/contexts/WellbeingContext'
+import { useWellbeing } from '@/features/wellbeing/contexts/WellbeingContext'
 import { Plus, Layout, Dumbbell, Utensils, Brain, Settings, RefreshCw, Loader2, CheckCircle2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
@@ -360,10 +360,8 @@ function HealthLayoutContent({ children }: { children: React.ReactNode }) {
 
 export default function HealthLayout({ children }: { children: React.ReactNode }) {
     return (
-        <WellbeingProvider>
-            <HealthLayoutContent>
-                {children}
-            </HealthLayoutContent>
-        </WellbeingProvider>
+        <HealthLayoutContent>
+            {children}
+        </HealthLayoutContent>
     )
 }

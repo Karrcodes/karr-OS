@@ -2,7 +2,7 @@ import * as React from 'react'
 import { useState } from 'react'
 import { useWellbeing } from '../contexts/WellbeingContext'
 import { MoodEntry, MoodValue } from '../types'
-import { Smile, Meh, Frown, Sun, CloudRain, Heart, MessageSquare, ChevronRight, History } from 'lucide-react'
+import { Smile, Meh, Frown, Sun, CloudRain, Heart, MessageSquare, History, Briefcase, Dumbbell, Apple, Code, Map, MessageCircle, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -14,9 +14,19 @@ const MOODS: { value: MoodValue; label: string; icon: any; color: string; bg: st
     { value: 'bad', label: 'Bad', icon: Frown, color: 'text-rose-500', bg: 'bg-rose-50' },
 ]
 
+const ACTIVITIES = [
+    { id: 'work', label: 'Work', icon: Briefcase },
+    { id: 'workout', label: 'Workout', icon: Dumbbell },
+    { id: 'macros', label: 'Macros', icon: Apple },
+    { id: 'project', label: 'Project', icon: Code },
+    { id: 'walk', label: 'Walk', icon: Map },
+    { id: 'conversation', label: 'Talk', icon: MessageCircle },
+]
+
 export function MoodTracker() {
     const { moodLogs, logMood } = useWellbeing()
     const [selectedMood, setSelectedMood] = useState<MoodValue | null>(null)
+    const [selectedActivities, setSelectedActivities] = useState<string[]>([])
     const [note, setNote] = useState('')
     const [isExpanded, setIsExpanded] = useState(false)
 
@@ -25,11 +35,18 @@ export function MoodTracker() {
 
     const handleLog = () => {
         if (selectedMood) {
-            logMood(selectedMood, note)
+            logMood(selectedMood, note, selectedActivities)
             setSelectedMood(null)
+            setSelectedActivities([])
             setNote('')
             setIsExpanded(false)
         }
+    }
+
+    const toggleActivity = (id: string) => {
+        setSelectedActivities(prev => 
+            prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]
+        )
     }
 
     return (
@@ -40,7 +57,7 @@ export function MoodTracker() {
                         <Heart className="w-5 h-5 text-rose-500" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-black text-black uppercase tracking-tighter tracking-tight leading-none">Mood Tracker</h3>
+                        <h3 className="text-xl font-black text-black uppercase tracking-tighter leading-none">Mood Tracker</h3>
                         <p className="text-[10px] font-black text-black/30 uppercase tracking-widest mt-0.5">Emotional Protocol</p>
                     </div>
                 </div>
@@ -78,6 +95,27 @@ export function MoodTracker() {
                         exit={{ opacity: 0, height: 0 }}
                         className="space-y-4 overflow-hidden"
                     >
+                        <div className="space-y-3">
+                            <p className="text-[10px] font-black text-black/20 uppercase tracking-widest px-1">What did you do today?</p>
+                            <div className="grid grid-cols-3 gap-2">
+                                {ACTIVITIES.map(activity => (
+                                    <button
+                                        key={activity.id}
+                                        onClick={() => toggleActivity(activity.id)}
+                                        className={cn(
+                                            "flex items-center justify-center gap-2 p-3 rounded-2xl border transition-all",
+                                            selectedActivities.includes(activity.id)
+                                                ? "bg-indigo-50 border-indigo-200 text-indigo-600 shadow-sm"
+                                                : "bg-black/[0.02] border-transparent text-black/40 hover:border-black/10"
+                                        )}
+                                    >
+                                        <activity.icon className="w-4 h-4" />
+                                        <span className="text-[10px] font-black uppercase tracking-wider">{activity.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
                         <div className="relative">
                             <textarea
                                 placeholder="Any specific thoughts? (Optional)"
@@ -137,7 +175,18 @@ export function MoodTracker() {
                                                 {m && <m.icon className={cn("w-4 h-4", m.color)} />}
                                                 <div>
                                                     <p className="text-[11px] font-black uppercase text-black">{m?.label}</p>
-                                                    <p className="text-[9px] font-bold text-black/30 uppercase">{log.date} • {log.time}</p>
+                                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                                        <p className="text-[9px] font-bold text-black/30 uppercase">{log.date} • {log.time}</p>
+                                                        {log.activities && log.activities.length > 0 && (
+                                                            <div className="flex items-center gap-1">
+                                                                <span className="w-1 h-1 rounded-full bg-black/10" />
+                                                                {log.activities.map(actId => {
+                                                                    const act = ACTIVITIES.find(a => a.id === actId)
+                                                                    return act && <act.icon key={actId} className="w-2.5 h-2.5 text-indigo-500/50" />
+                                                                })}
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                             {log.note && (

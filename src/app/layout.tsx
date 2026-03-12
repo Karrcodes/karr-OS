@@ -37,6 +37,7 @@ import { StudioProvider } from '@/features/studio/context/StudioContext'
 import { SecurityLock } from '@/components/SecurityLock'
 import { GlobalQuickAction } from '@/components/GlobalQuickAction'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { WellbeingProvider } from '@/features/wellbeing/contexts/WellbeingContext'
 import { headers } from 'next/headers'
 
 export default async function RootLayout({
@@ -63,18 +64,20 @@ export default async function RootLayout({
               <TasksProfileProvider>
                 <StudioProvider>
                   <VaultProvider>
-                    {isShellFreePage ? (
-                      <>{children}</>
-                    ) : (
-                      <SecurityLock>
-                        <Sidebar />
-                        {/* main margin tracks --sidebar-w CSS var set by Sidebar component */}
-                        <main className="md:main-sidebar-offset min-h-screen bg-white transition-[margin] duration-300">
-                          {children}
-                        </main>
-                        <GlobalQuickAction />
-                      </SecurityLock>
-                    )}
+                    <WellbeingProvider>
+                      {isShellFreePage ? (
+                        <>{children}</>
+                      ) : (
+                        <SecurityLock>
+                          <Sidebar />
+                          {/* main margin tracks --sidebar-w CSS var set by Sidebar component */}
+                          <main className="md:main-sidebar-offset min-h-screen bg-white transition-[margin] duration-300">
+                            {children}
+                          </main>
+                          <GlobalQuickAction />
+                        </SecurityLock>
+                      )}
+                    </WellbeingProvider>
                   </VaultProvider>
                 </StudioProvider>
               </TasksProfileProvider>

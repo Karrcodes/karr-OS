@@ -2,12 +2,14 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, X, CheckSquare, Clipboard, Loader2, Sparkles, ListChecks, Calendar, Info, Clock, Heart, Briefcase, User, Beaker, Factory, Tv, Video, TrendingUp, Building2, User2, Lock, PenLine, Youtube, Instagram, Music2, Twitter, Utensils, Database, ChefHat } from 'lucide-react'
+import { Plus, X, CheckSquare, Clipboard, Loader2, Sparkles, ListChecks, Calendar, Info, Clock, Heart, Briefcase, User, Beaker, Factory, Tv, Video, TrendingUp, Building2, User2, Lock, PenLine, Youtube, Instagram, Music2, Twitter, Utensils, Database, ChefHat, Smile, Meh, Frown, Sun, CloudRain, Dumbbell, Apple, Code, Map, MessageCircle, MessageSquare } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 import { usePathname, useRouter } from 'next/navigation'
+import { useWellbeing } from '@/features/wellbeing/contexts/WellbeingContext'
+import { MoodValue } from '@/features/wellbeing/types'
 
-type ActionType = 'task' | 'clipboard' | 'network' | 'note' | 'content' | 'meal' | 'gym' | null
+type ActionType = 'task' | 'clipboard' | 'mood' | 'note' | 'content' | 'meal' | 'gym' | null
 
 const PERSONAL_STRATEGIC = [
     { id: 'finance', label: 'Finance', icon: Heart, color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' },
@@ -30,6 +32,23 @@ const PRIORITY_OPTS = [
     { id: 'low', label: 'Low', color: 'bg-zinc-500' },
 ] as const
 
+const MOODS: { value: MoodValue; label: string; icon: any; color: string; bg: string }[] = [
+    { value: 'excellent', label: 'Excellent', icon: Sun, color: 'text-yellow-500', bg: 'bg-yellow-50' },
+    { value: 'good', label: 'Good', icon: Smile, color: 'text-emerald-500', bg: 'bg-emerald-50' },
+    { value: 'neutral', label: 'Neutral', icon: Meh, color: 'text-blue-500', bg: 'bg-blue-50' },
+    { value: 'low', label: 'Low', icon: CloudRain, color: 'text-amber-500', bg: 'bg-amber-50' },
+    { value: 'bad', label: 'Bad', icon: Frown, color: 'text-rose-500', bg: 'bg-rose-50' },
+]
+
+const ACTIVITIES = [
+    { id: 'work', label: 'Work', icon: Briefcase },
+    { id: 'workout', label: 'Workout', icon: Dumbbell },
+    { id: 'macros', label: 'Macros', icon: Apple },
+    { id: 'project', label: 'Project', icon: Code },
+    { id: 'walk', label: 'Walk', icon: Map },
+    { id: 'conversation', label: 'Talk', icon: MessageCircle },
+]
+
 export function GlobalQuickAction() {
     const pathname = usePathname()
     const [mounted, setMounted] = useState(false)
@@ -38,6 +57,7 @@ export function GlobalQuickAction() {
     const [loading, setLoading] = useState(false)
     const [success, setSuccess] = useState(false)
     const [showTaskExtras, setShowTaskExtras] = useState(false)
+    const { logMood } = useWellbeing()
     const router = useRouter()
 
     const [form, setForm] = useState({
@@ -62,7 +82,10 @@ export function GlobalQuickAction() {
         contentTitle: '',
         contentStatus: 'idea' as any,
         contentCategory: 'Other' as any,
-        contentPlatform: 'web' as any
+        contentPlatform: 'web' as any,
+        moodValue: null as MoodValue | null,
+        moodActivities: [] as string[],
+        moodNote: ''
     })
 
     useEffect(() => { setMounted(true) }, [])
@@ -74,7 +97,8 @@ export function GlobalQuickAction() {
             taskDuration: '30', taskImpact: '5', clipboardText: '', networkName: '',
             networkUrl: '', networkNotes: '', networkStatus: 'interested', noteTitle: '',
             noteBody: '', noteMode: 'note', contentTitle: '', contentStatus: 'idea',
-            contentCategory: 'Other', contentPlatform: 'web'
+            contentCategory: 'Other', contentPlatform: 'web',
+            moodValue: null, moodActivities: [], moodNote: ''
         })
         setShowTaskExtras(false)
         setSuccess(false)
@@ -106,13 +130,6 @@ export function GlobalQuickAction() {
                 if (!form.clipboardText.trim()) throw new Error('Content required')
                 const { error } = await supabase.from('sys_clipboard').insert({ content: form.clipboardText.trim(), profile: 'personal' })
                 if (error) throw error
-            } else if (activeAction === 'network') {
-                if (!form.networkName.trim()) throw new Error('Name required')
-                const { error } = await supabase.from('studio_networks').insert({
-                    name: form.networkName.trim(), url: form.networkUrl.trim() || null,
-                    notes: form.networkNotes.trim() || null, status: form.networkStatus, type: 'person'
-                })
-                if (error) throw error
             } else if (activeAction === 'note') {
                 if (!form.noteTitle.trim()) throw new Error('Title required')
                 const { error } = await supabase.from('studio_drafts').insert({
@@ -121,13 +138,9 @@ export function GlobalQuickAction() {
                     is_archived: false, last_snapshot_at: new Date().toISOString(), node_references: []
                 })
                 if (error) throw error
-            } else if (activeAction === 'content') {
-                if (!form.contentTitle.trim()) throw new Error('Title required')
-                const { error } = await supabase.from('studio_content').insert({
-                    title: form.contentTitle.trim(), status: form.contentStatus, category: form.contentCategory,
-                    platforms: [form.contentPlatform], is_archived: false
-                })
-                if (error) throw error
+            } else if (activeAction === 'mood') {
+                if (!form.moodValue) throw new Error('Mood required')
+                await logMood(form.moodValue, form.moodNote, form.moodActivities)
             }
             setSuccess(true)
             setTimeout(() => { setActiveAction(null); setIsOpen(false); resetForm() }, 1200)
@@ -144,7 +157,7 @@ export function GlobalQuickAction() {
         { id: 'meal', label: 'Meal', icon: Utensils, color: 'bg-emerald-500', glow: 'shadow-emerald-500/40', locked: false },
         { id: 'content', label: 'Content', icon: Video, color: 'bg-red-500', glow: 'shadow-red-500/40', locked: false },
         { id: 'note', label: 'Canvas', icon: PenLine, color: 'bg-indigo-500', glow: 'shadow-indigo-500/40', locked: false },
-        { id: 'network', label: 'Connect', icon: User2, color: 'bg-blue-500', glow: 'shadow-blue-500/40', locked: false },
+        { id: 'mood', label: 'Mood', icon: Heart, color: 'bg-rose-400', glow: 'shadow-rose-400/40', locked: false },
         { id: 'clipboard', label: 'Vault', icon: Clipboard, color: 'bg-amber-500', glow: 'shadow-amber-500/40', locked: false },
         { id: 'task', label: 'Task', icon: CheckSquare, color: 'bg-violet-600', glow: 'shadow-violet-600/40', locked: false },
     ], [])
@@ -332,31 +345,78 @@ export function GlobalQuickAction() {
                                     </div>
                                 )}
 
-                                {/* NETWORK FORM */}
-                                {activeAction === 'network' && (
-                                    <div className="space-y-5">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Connection Name</label>
-                                            <input autoFocus value={form.networkName} onChange={e => setForm({ ...form, networkName: e.target.value })} placeholder="Who are we connecting with?" className={cn(inputBase, 'text-[15px] font-black')} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Link / Portfolio (optional)</label>
-                                            <input value={form.networkUrl} onChange={e => setForm({ ...form, networkUrl: e.target.value })} placeholder="https://..." className={cn(inputBase, 'text-[12px]')} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Status</label>
-                                            <div className="grid grid-cols-3 gap-2">
-                                                {['interested', 'contacted', 'connected'].map(status => (
-                                                    <button key={status} type="button" onClick={() => setForm({ ...form, networkStatus: status as any })}
-                                                        className={cn('py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border', form.networkStatus === status ? 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/20' : 'bg-black/[0.03] text-black/40 border-black/5 hover:bg-black/[0.06]')}
-                                                    >{status}</button>
+                                { activeAction === 'mood' && (
+                                    <div className="space-y-6">
+                                        <div className="space-y-3">
+                                            <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Current State</label>
+                                            <div className="grid grid-cols-5 gap-2">
+                                                {MOODS.map((m) => (
+                                                    <button
+                                                        key={m.value}
+                                                        type="button"
+                                                        onClick={() => setForm({ ...form, moodValue: m.value })}
+                                                        className={cn(
+                                                            "flex flex-col items-center gap-2 p-3 rounded-2xl transition-all border",
+                                                            form.moodValue === m.value
+                                                                ? "bg-black text-white border-black"
+                                                                : "bg-black/[0.02] border-transparent hover:border-black/10"
+                                                        )}
+                                                    >
+                                                        <m.icon className={cn("w-5 h-5", form.moodValue === m.value ? "text-white" : m.color)} />
+                                                        <span className="text-[8px] font-black uppercase tracking-wider">{m.label}</span>
+                                                    </button>
                                                 ))}
                                             </div>
                                         </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Internal Notes</label>
-                                            <textarea value={form.networkNotes} onChange={e => setForm({ ...form, networkNotes: e.target.value })} placeholder="Context about this person..." className="w-full h-24 bg-black/[0.03] border border-black/5 rounded-2xl px-4 py-3 text-[13px] font-medium outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500/20 transition-all resize-none no-scrollbar" />
-                                        </div>
+
+                                        <AnimatePresence>
+                                            {form.moodValue && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, height: 0 }}
+                                                    animate={{ opacity: 1, height: 'auto' }}
+                                                    exit={{ opacity: 0, height: 0 }}
+                                                    className="space-y-6 overflow-hidden"
+                                                >
+                                                    <div className="space-y-3">
+                                                        <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Protocol Activities</label>
+                                                        <div className="grid grid-cols-3 gap-2">
+                                                            {ACTIVITIES.map(activity => (
+                                                                <button
+                                                                    key={activity.id}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        const current = form.moodActivities
+                                                                        const next = current.includes(activity.id) 
+                                                                            ? current.filter(a => a !== activity.id) 
+                                                                            : [...current, activity.id]
+                                                                        setForm({ ...form, moodActivities: next })
+                                                                    }}
+                                                                    className={cn(
+                                                                        "flex items-center justify-center gap-2 p-3 rounded-2xl border transition-all",
+                                                                        form.moodActivities.includes(activity.id)
+                                                                            ? "bg-indigo-50 border-indigo-200 text-indigo-600 shadow-sm"
+                                                                            : "bg-black/[0.02] border-transparent text-black/40 hover:border-black/10"
+                                                                    )}
+                                                                >
+                                                                    <activity.icon className="w-4 h-4" />
+                                                                    <span className="text-[9px] font-black uppercase tracking-wider">{activity.label}</span>
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-2">
+                                                        <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] ml-1">Emotional Notes</label>
+                                                        <textarea 
+                                                            value={form.moodNote} 
+                                                            onChange={e => setForm({ ...form, moodNote: e.target.value })} 
+                                                            placeholder="Loose thoughts or context..." 
+                                                            className="w-full h-24 bg-black/[0.03] border border-black/5 rounded-2xl px-4 py-3 text-[13px] font-medium outline-none focus:ring-4 focus:ring-rose-400/10 focus:border-rose-400/20 transition-all resize-none no-scrollbar" 
+                                                        />
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
                                     </div>
                                 )}
 

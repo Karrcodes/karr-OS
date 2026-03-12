@@ -186,6 +186,7 @@ export interface MoodEntry {
     time: string
     value: MoodValue
     note?: string
+    activities?: string[]
 }
 
 export interface Reflection {
