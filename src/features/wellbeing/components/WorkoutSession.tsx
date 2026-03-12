@@ -132,14 +132,14 @@ export function WorkoutSession() {
     return (
         <div className="max-w-xl mx-auto flex flex-col p-2 sm:p-4">
             {/* Transparent Header - Pins further up */}
-            <header className="flex flex-col items-center text-center space-y-3 shrink-0 pt-0 pb-3">
+            <header className="flex flex-col items-center text-center space-y-1.5 shrink-0 pt-1 pb-2">
                 <div className="space-y-0.5">
                     <div className="flex items-center justify-center gap-1.5">
                         <span className={cn("w-1 h-1 rounded-full", activeSession.isPaused ? "bg-amber-500" : "bg-rose-500 animate-pulse")} />
                         <h3 className="text-[8px] font-black text-black/15 uppercase tracking-[0.5em]">Active Session</h3>
                     </div>
-                    <h2 className="text-3xl font-black uppercase tracking-tighter leading-tight text-black">{routine.name}</h2>
-                    <div className="flex items-center justify-center gap-3 text-black/25 text-[9px] font-black uppercase tracking-[0.2em]">
+                    <h2 className="text-2xl font-black uppercase tracking-tighter leading-tight text-black">{routine.name}</h2>
+                    <div className="flex items-center justify-center gap-3 text-black/25 text-[8px] font-black uppercase tracking-[0.2em]">
                         <span>{new Date(activeSession.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                         <span className="text-black/5">•</span>
                         <span className="text-black font-black tabular-nums">{formatTime(elapsed)}</span>

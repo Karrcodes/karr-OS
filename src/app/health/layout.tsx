@@ -147,10 +147,16 @@ function HealthLayoutContent({ children }: { children: React.ReactNode }) {
 
     return (
         <div className="bg-[#FAFAFA] flex flex-col min-h-screen">
-            <div className={cn(
-                "max-w-7xl mx-auto w-full flex-grow",
-                isSessionRoute ? "h-[100dvh] fixed inset-0 overflow-hidden flex flex-col p-0 bg-white" : "p-6 md:p-10 space-y-8"
-            )}>
+            <div 
+                className={cn(
+                    "max-w-7xl mx-auto w-full flex-grow",
+                    isSessionRoute ? "h-[100dvh] fixed inset-0 overflow-hidden flex flex-col p-0 bg-white" : "p-6 md:p-10 space-y-8"
+                )}
+                style={isSessionRoute ? { 
+                    paddingTop: 'env(safe-area-inset-top)', 
+                    paddingBottom: 'env(safe-area-inset-bottom)' 
+                } : {}}
+            >
                 {/* Header */}
                 {!isSessionRoute && (
                     <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
