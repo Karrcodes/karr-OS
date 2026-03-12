@@ -188,7 +188,7 @@ export function WorkoutSession() {
             </header>
 
             {/* Paged Exercise Content */}
-            <div className="relative flex-grow">
+            <div className="relative flex-grow min-h-[500px]">
                 <AnimatePresence mode="wait">
                     {sessionMode === 'setup' ? (
                         <motion.div
@@ -196,7 +196,7 @@ export function WorkoutSession() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -20 }}
-                            className="flex-1 bg-black text-white rounded-[40px] p-8 flex flex-col items-center justify-center text-center space-y-8 shadow-2xl"
+                            className="h-full bg-black text-white rounded-[40px] p-8 flex flex-col items-center justify-center text-center space-y-8 shadow-2xl"
                         >
                             <div className="space-y-3">
                                 <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.4em]">Prepare Next Protocol</p>
@@ -226,7 +226,7 @@ export function WorkoutSession() {
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 1.05 }}
-                            className="flex-1 bg-emerald-500 text-white rounded-[40px] p-8 flex flex-col items-center justify-center text-center space-y-8 shadow-2xl"
+                            className="h-full bg-emerald-500 text-white rounded-[40px] p-8 flex flex-col items-center justify-center text-center space-y-8 shadow-2xl"
                         >
                             <div className="space-y-3">
                                 <p className="text-[9px] font-black text-white/50 uppercase tracking-[0.4em]">Rest Protocol</p>
@@ -242,7 +242,7 @@ export function WorkoutSession() {
 
                             <button
                                 onClick={handleSkipBreak}
-                                className="px-10 py-5 bg-white/20 hover:bg-white/30 text-white rounded-3xl text-[11px] font-black uppercase tracking-widest transition-all"
+                                className="px-14 py-5 bg-white/20 hover:bg-white/30 text-white rounded-3xl text-[11px] font-black uppercase tracking-widest transition-all min-w-[200px]"
                             >
                                 Skip Break
                             </button>
@@ -253,7 +253,7 @@ export function WorkoutSession() {
                             initial={{ opacity: 0, x: 50 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -50 }}
-                            className="flex-1 bg-white border border-black/5 rounded-[40px] shadow-sm p-6 flex flex-col"
+                            className="h-full bg-white border border-black/5 rounded-[40px] shadow-sm p-8 flex flex-col"
                         >
                             <div className="space-y-1 mb-8 shrink-0 text-center">
                                 <p className="text-[9px] font-black text-rose-500 uppercase tracking-[0.2em]">{currentExercise?.name}</p>
