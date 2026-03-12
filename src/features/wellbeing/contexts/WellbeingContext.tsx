@@ -43,6 +43,7 @@ interface WellbeingContextType extends WellbeingState {
     activeSession: WorkoutSession | null
     startSession: (routineId: string) => void
     updateSessionSet: (exerciseId: string, setIndex: number, updates: Partial<WorkoutSet>) => void
+    togglePauseSession: () => void
     finishSession: () => Promise<void>
     cancelSession: () => void
     setActiveRoutineId: (id: string) => Promise<void>
@@ -853,6 +854,13 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
         setState(prev => ({ ...prev, activeSession }))
     }
 
+    const togglePauseSession = () => {
+        if (!state.activeSession) return
+        const activeSession = { ...state.activeSession, isPaused: !state.activeSession.isPaused }
+        setState(prev => ({ ...prev, activeSession }))
+        persistData({ activeSession })
+    }
+
     const finishSession = async () => {
         if (!state.activeSession) return
 
@@ -909,6 +917,7 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
         removeFromFridge,
         startSession,
         updateSessionSet,
+        togglePauseSession,
         finishSession,
         cancelSession,
         setActiveRoutineId,

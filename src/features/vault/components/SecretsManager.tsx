@@ -191,10 +191,23 @@ export function SecretsManager() {
         setVisiblePasswords(prev => ({ ...prev, [id]: !prev[id] }))
     }
 
-    const copyToClipboard = (text: string, id: string, type: 'user' | 'pass') => {
-        navigator.clipboard.writeText(text)
-        setCopiedId(`${id}-${type}`)
-        setTimeout(() => setCopiedId(null), 2000)
+    const copyToClipboard = async (text: string, id: string, type: 'user' | 'pass') => {
+        try {
+            if (navigator?.clipboard?.writeText) {
+                await navigator.clipboard.writeText(text)
+            } else {
+                const textArea = document.createElement("textarea")
+                textArea.value = text
+                document.body.appendChild(textArea)
+                textArea.select()
+                document.execCommand("copy")
+                document.body.removeChild(textArea)
+            }
+            setCopiedId(`${id}-${type}`)
+            setTimeout(() => setCopiedId(null), 2000)
+        } catch (err) {
+            console.error('Failed to copy secret!', err)
+        }
     }
 
     return (

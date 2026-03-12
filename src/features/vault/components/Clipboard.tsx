@@ -220,10 +220,23 @@ export function Clipboard() {
         setConfirmModal(prev => ({ ...prev, open: false }))
     }
 
-    const handleCopy = (id: string, content: string) => {
-        navigator.clipboard.writeText(content)
-        setCopiedId(id)
-        setTimeout(() => setCopiedId(null), 2000)
+    const handleCopy = async (id: string, content: string) => {
+        try {
+            if (navigator?.clipboard?.writeText) {
+                await navigator.clipboard.writeText(content)
+            } else {
+                const textArea = document.createElement("textarea")
+                textArea.value = content
+                document.body.appendChild(textArea)
+                textArea.select()
+                document.execCommand("copy")
+                document.body.removeChild(textArea)
+            }
+            setCopiedId(id)
+            setTimeout(() => setCopiedId(null), 2000)
+        } catch (err) {
+            console.error('Failed to copy!', err)
+        }
     }
 
     const handleCancel = () => {

@@ -14,6 +14,7 @@ interface RoutineSwitcherModalProps {
 
 export function RoutineSwitcherModal({ isOpen, onClose }: RoutineSwitcherModalProps) {
     const { routines, activeRoutineId, setActiveRoutineId, deleteRoutine } = useWellbeing()
+    const [deletingId, setDeletingId] = React.useState<string | null>(null)
 
     const handleSelect = (id: string) => {
         setActiveRoutineId(id)
@@ -22,8 +23,13 @@ export function RoutineSwitcherModal({ isOpen, onClose }: RoutineSwitcherModalPr
 
     const handleDelete = (e: React.MouseEvent, id: string) => {
         e.stopPropagation()
-        if (confirm('Are you sure you want to delete this routine?')) {
-            deleteRoutine(id)
+        setDeletingId(id)
+    }
+
+    const confirmDelete = () => {
+        if (deletingId) {
+            deleteRoutine(deletingId)
+            setDeletingId(null)
         }
     }
 
@@ -103,7 +109,7 @@ export function RoutineSwitcherModal({ isOpen, onClose }: RoutineSwitcherModalPr
                                                 {!isActive && (
                                                     <button 
                                                         onClick={(e) => handleDelete(e, routine.id)}
-                                                        className="p-2 text-black/20 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"
+                                                        className="p-2 text-rose-500/30 hover:text-rose-500 transition-all"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
                                                     </button>
@@ -123,6 +129,49 @@ export function RoutineSwitcherModal({ isOpen, onClose }: RoutineSwitcherModalPr
                     </motion.div>
                 </>
             )}
+
+            {/* Confirmation Modal */}
+            <AnimatePresence>
+                {deletingId && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/80 backdrop-blur-md z-[1100] flex items-center justify-center p-6"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white rounded-[32px] p-8 w-full max-w-sm shadow-2xl space-y-6"
+                        >
+                            <div className="w-14 h-14 rounded-2xl bg-rose-500/10 flex items-center justify-center">
+                                <Trash2 className="w-7 h-7 text-rose-500" />
+                            </div>
+                            <div className="space-y-2">
+                                <h3 className="text-xl font-black uppercase tracking-tight">Delete Routine?</h3>
+                                <p className="text-[13px] font-medium text-black/40 leading-relaxed uppercase tracking-tight">
+                                    This action cannot be undone. Are you sure you want to remove this protocol?
+                                </p>
+                            </div>
+                            <div className="flex flex-col gap-3">
+                                <button 
+                                    onClick={confirmDelete}
+                                    className="w-full py-4 bg-rose-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-rose-500/20"
+                                >
+                                    Confirm Delete
+                                </button>
+                                <button 
+                                    onClick={() => setDeletingId(null)}
+                                    className="w-full py-4 bg-black/5 text-black rounded-2xl text-[10px] font-black uppercase tracking-widest"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </AnimatePresence>
     )
 }

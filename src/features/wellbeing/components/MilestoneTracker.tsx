@@ -13,6 +13,7 @@ export function MilestoneTracker() {
     const [newTitle, setNewTitle] = useState('')
     const [newTarget, setNewTarget] = useState('')
     const [newUnit, setNewUnit] = useState('kg')
+    const [deletingId, setDeletingId] = useState<string | null>(null)
 
     const handleAdd = async () => {
         if (!newTitle || !newTarget) return
@@ -140,7 +141,7 @@ export function MilestoneTracker() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <button 
-                                            onClick={() => deleteMilestone(m.id)}
+                                            onClick={() => setDeletingId(m.id)}
                                             className="p-1 text-black/20 hover:text-rose-500 transition-all"
                                         >
                                             <Trash2 className="w-3 h-3" />
@@ -187,6 +188,52 @@ export function MilestoneTracker() {
                     })
                 )}
             </div>
+
+            {/* Confirmation Modal */}
+            <AnimatePresence>
+                {deletingId && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/80 backdrop-blur-md z-[1100] flex items-center justify-center p-6"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white rounded-[40px] p-10 w-full max-w-sm shadow-2xl space-y-8"
+                        >
+                            <div className="w-16 h-16 rounded-3xl bg-rose-500/10 flex items-center justify-center">
+                                <Trophy className="w-8 h-8 text-rose-500" />
+                            </div>
+                            <div className="space-y-3">
+                                <h3 className="text-2xl font-black uppercase tracking-tight">Delete Milestone?</h3>
+                                <p className="text-[13px] font-medium text-black/40 leading-relaxed uppercase tracking-tight">
+                                    You're about to remove this goal. Your progress data for this lift will be lost.
+                                </p>
+                            </div>
+                            <div className="flex flex-col gap-3">
+                                <button 
+                                    onClick={async () => {
+                                        await deleteMilestone(deletingId)
+                                        setDeletingId(null)
+                                    }}
+                                    className="w-full py-5 bg-rose-500 text-white rounded-[24px] text-[11px] font-black uppercase tracking-widest shadow-2xl shadow-rose-500/20 active:scale-95 transition-all"
+                                >
+                                    Confirm Deletion
+                                </button>
+                                <button 
+                                    onClick={() => setDeletingId(null)}
+                                    className="w-full py-5 bg-black/5 text-black rounded-[24px] text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     )
 }
