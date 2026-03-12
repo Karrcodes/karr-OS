@@ -127,6 +127,18 @@ export function WorkoutSession() {
         }
     }
 
+    const handleSkipExercise = () => {
+        if (confirm('Skip this exercise and move to the next?')) {
+            if (currentExerciseIndex < routine.exercises.length - 1) {
+                setSessionMode('setup')
+                setCurrentExerciseIndex(prev => prev + 1)
+                setCurrentSetIndex(0)
+            } else {
+                handleFinish()
+            }
+        }
+    }
+
     const currentSetData = exSession?.sets[currentSetIndex]
 
     return (
@@ -146,27 +158,38 @@ export function WorkoutSession() {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2 w-full max-w-[280px]">
+                <div className="flex items-center gap-2 w-full max-w-[320px]">
                     <button 
                         onClick={togglePauseSession}
+                        title={activeSession.isPaused ? 'Resume' : 'Pause'}
                         className={cn(
-                            "flex-1 flex items-center justify-center py-2.5 rounded-2xl transition-all gap-2",
+                            "w-12 h-10 flex items-center justify-center rounded-2xl transition-all shrink-0",
                             activeSession.isPaused ? "bg-emerald-500 text-white shadow-lg" : "bg-black/[0.03] text-black hover:bg-black/[0.06]"
                         )}
                     >
-                        {activeSession.isPaused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
-                        <span className="text-[9px] font-black uppercase tracking-widest">{activeSession.isPaused ? 'Resume' : 'Pause'}</span>
+                        {activeSession.isPaused ? <Play className="w-4 h-4 fill-current" /> : <Pause className="w-4 h-4 fill-current" />}
                     </button>
+                    
+                    <button 
+                        onClick={handleSkipExercise}
+                        title="Skip Exercise"
+                        className="w-12 h-10 flex items-center justify-center bg-black/[0.03] text-black hover:bg-black/[0.06] rounded-2xl transition-all shrink-0"
+                    >
+                        <SkipForward className="w-4 h-4 fill-current" />
+                    </button>
+
                     <button 
                         onClick={handleFinish}
-                        className="flex-1 flex items-center justify-center py-2.5 bg-black text-white rounded-2xl transition-all gap-2 shadow-xl shadow-black/10"
+                        className="flex-1 h-10 flex items-center justify-center bg-black text-white rounded-2xl transition-all gap-2 shadow-xl shadow-black/10 px-4"
                     >
                         <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span className="text-[9px] font-black uppercase tracking-widest">Finish</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">Finish</span>
                     </button>
+
                     <button 
                         onClick={handleCancel}
-                        className="w-10 h-10 flex items-center justify-center bg-black/[0.03] text-black/20 hover:text-rose-500 hover:bg-rose-50 rounded-2xl transition-all"
+                        title="Exit Session"
+                        className="w-10 h-10 flex items-center justify-center bg-black/[0.03] text-black/20 hover:text-rose-500 hover:bg-rose-50 rounded-2xl transition-all shrink-0"
                     >
                         <X className="w-3.5 h-3.5" />
                     </button>
