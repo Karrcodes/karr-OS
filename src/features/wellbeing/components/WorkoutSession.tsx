@@ -188,7 +188,7 @@ export function WorkoutSession() {
             </header>
 
             {/* Paged Exercise Content - Fixed Height Container */}
-            <div className="relative h-[460px] w-full min-h-0">
+            <div className="relative h-[400px] w-full min-h-0">
                 <AnimatePresence mode="wait">
                     {sessionMode === 'setup' ? (
                         <motion.div
@@ -230,7 +230,7 @@ export function WorkoutSession() {
                         >
                             <div className="space-y-3">
                                 <p className="text-[9px] font-black text-white/50 uppercase tracking-[0.4em]">Rest Protocol</p>
-                                <h1 className="text-8xl font-black tracking-tighter tabular-nums leading-none">
+                                <h1 className="text-7xl font-black tracking-tighter tabular-nums leading-none">
                                     {breakTimeRemaining}s
                                 </h1>
                             </div>
@@ -257,30 +257,30 @@ export function WorkoutSession() {
                         >
                             <div className="space-y-0.5 mb-2 shrink-0 text-center">
                                 <p className="text-[9px] font-black text-rose-500 uppercase tracking-[0.2em]">{currentExercise?.name}</p>
-                                <h2 className="text-5xl font-black uppercase tracking-tighter leading-none">SET {currentSetIndex + 1}</h2>
-                                <p className="text-[10px] font-bold text-black/40 uppercase tracking-tighter pt-1">
+                                <h2 className="text-4xl font-black uppercase tracking-tighter leading-none">SET {currentSetIndex + 1}</h2>
+                                <p className="text-[9px] font-bold text-black/40 uppercase tracking-tighter pt-1">
                                     Goal: {currentExercise?.suggestedReps} Reps @ {currentExercise?.suggestedSets || 'MAX'} sets
                                 </p>
                             </div>
 
                             <div className="flex-1 flex flex-col justify-center space-y-4">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-black/30 uppercase tracking-widest ml-1">Weight (kg)</label>
+                                <div className="space-y-1.5">
+                                    <label className="text-[9px] font-black text-black/30 uppercase tracking-widest ml-1">Weight (kg)</label>
                                     <input 
                                         type="number" 
                                         value={currentSetData?.weight || ''}
                                         onChange={(e) => updateSessionSet(currentExercise.id, currentSetIndex, { weight: parseFloat(e.target.value) || 0 })}
-                                        className="w-full bg-black/[0.03] border-none rounded-[28px] p-5 text-center text-3xl font-black focus:ring-4 ring-black/5 outline-none transition-all"
+                                        className="w-full bg-black/[0.03] border-none rounded-[28px] p-4 text-center text-2xl font-black focus:ring-4 ring-black/5 outline-none transition-all"
                                         placeholder="0.0"
                                     />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-[9px] font-black text-black/30 uppercase tracking-widest ml-1">Reps Performed</label>
+                                    <label className="text-[8px] font-black text-black/30 uppercase tracking-widest ml-1">Reps Performed</label>
                                     <input 
                                         type="number" 
                                         value={currentSetData?.reps || ''}
                                         onChange={(e) => updateSessionSet(currentExercise.id, currentSetIndex, { reps: parseInt(e.target.value) || 0 })}
-                                        className="w-full bg-black/[0.03] border-none rounded-[28px] p-5 text-center text-3xl font-black focus:ring-4 ring-black/5 outline-none transition-all"
+                                        className="w-full bg-black/[0.03] border-none rounded-[28px] p-4 text-center text-2xl font-black focus:ring-4 ring-black/5 outline-none transition-all"
                                         placeholder="0"
                                     />
                                 </div>
@@ -289,9 +289,9 @@ export function WorkoutSession() {
                             <button
                                 onClick={handleNextSet}
                                 disabled={!currentSetData?.weight || !currentSetData?.reps}
-                                className="mt-4 py-5 bg-black text-white rounded-[28px] text-lg font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-2xl disabled:opacity-30 disabled:grayscale transition-all active:scale-95 shrink-0"
+                                className="mt-2 py-4 bg-black text-white rounded-[28px] text-base font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-2xl disabled:opacity-30 disabled:grayscale transition-all active:scale-95 shrink-0"
                             >
-                                Complete Set <ArrowRight className="w-6 h-6" />
+                                Complete Set <ArrowRight className="w-5 h-5" />
                             </button>
                         </motion.div>
                     )}
