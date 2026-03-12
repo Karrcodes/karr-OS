@@ -27,10 +27,18 @@ export function WorkoutAnalytics({ onClose }: WorkoutAnalyticsProps) {
         bulkAddWorkoutLogs, clearWorkoutLogs, deleteWorkoutLog 
     } = useWellbeing()
     
+    const [deletingLogId, setDeletingLogId] = useState<string | null>(null)
+    
     const handleDeleteLog = async (e: React.MouseEvent, id: string) => {
         e.stopPropagation()
-        if (!confirm('Are you sure you want to delete this session? This cannot be undone.')) return
-        await deleteWorkoutLog(id)
+        setDeletingLogId(id)
+    }
+
+    const confirmDelete = async () => {
+        if (deletingLogId) {
+            await deleteWorkoutLog(deletingLogId)
+            setDeletingLogId(null)
+        }
     }
     const [timeRange, setTimeRange] = useState<'7d' | '30d' | 'all'>('30d')
     const [selectedRoutineType, setSelectedRoutineType] = useState<'pull' | 'push' | 'legs' | null>('push')
@@ -486,6 +494,48 @@ export function WorkoutAnalytics({ onClose }: WorkoutAnalyticsProps) {
                     </div>
                 </div>
             </div>
+            {/* Deletion Confirmation Modal */}
+            <AnimatePresence>
+                {deletingLogId && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/80 backdrop-blur-md z-[1100] flex items-center justify-center p-6"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white rounded-[32px] p-8 w-full max-w-sm shadow-2xl space-y-6"
+                        >
+                            <div className="w-14 h-14 rounded-2xl bg-rose-500/10 flex items-center justify-center">
+                                <Trash2 className="w-7 h-7 text-rose-500" />
+                            </div>
+                            <div className="space-y-2 text-left">
+                                <h3 className="text-xl font-black uppercase tracking-tight text-black">Delete Session?</h3>
+                                <p className="text-[13px] font-medium text-black/40 leading-relaxed uppercase tracking-tight">
+                                    This action cannot be undone. Are you sure you want to remove this record?
+                                </p>
+                            </div>
+                            <div className="flex flex-col gap-3">
+                                <button 
+                                    onClick={confirmDelete}
+                                    className="w-full py-4 bg-rose-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-rose-500/20"
+                                >
+                                    Confirm Delete
+                                </button>
+                                <button 
+                                    onClick={() => setDeletingLogId(null)}
+                                    className="w-full py-4 bg-black/5 text-black rounded-2xl text-[10px] font-black uppercase tracking-widest"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </motion.div>
     )
 }

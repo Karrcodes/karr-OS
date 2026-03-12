@@ -8,12 +8,13 @@ import { isShiftDay } from '@/features/finance/utils/rotaUtils'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 export function FitnessHeatmap() {
-    const { workoutLogs, gymStats } = useWellbeing()
+    const { workoutLogs, gymStats, gymRecommendation } = useWellbeing()
     const [weekOffset, setWeekOffset] = useState(0) // 0 is current 4 weeks
     const [hoveredDate, setHoveredDate] = useState<string | null>(null)
 
     const days = useMemo(() => {
         const baseDate = subDays(new Date(), weekOffset * 28)
+        const todayStr = format(new Date(), 'yyyy-MM-dd')
 
         return Array.from({ length: 28 }, (_, i) => {
             const date = subDays(baseDate, i)
@@ -22,23 +23,26 @@ export function FitnessHeatmap() {
             const hasVisit = gymStats.visitHistory?.some((v: any) => v.date?.split('T')[0] === dateStr)
             const hasLog = workoutLogs?.some((l: any) => l.date === dateStr)
             const isWorkDay = isShiftDay(date)
+            const isToday = dateStr === todayStr
+            const isPending = isToday && gymRecommendation.status === 'pending'
 
             return {
                 date: dateStr,
-                hasVisit,
-                hasLog,
-                isWorkDay
+                hasVisit: hasVisit || hasLog,
+                isWorkDay,
+                isPending
             }
         }).reverse()
-    }, [workoutLogs, gymStats.visitHistory, weekOffset])
+    }, [workoutLogs, gymStats.visitHistory, gymRecommendation, weekOffset])
 
-    const getHeatmapColor = (hasVisit?: boolean, isWorkDay?: boolean) => {
+    const getHeatmapColor = (hasVisit?: boolean, isWorkDay?: boolean, isPending?: boolean) => {
         if (hasVisit) return "bg-emerald-500 shadow-sm shadow-emerald-500/20 border-emerald-500/20 scale-105 z-10"
+        if (isPending) return "bg-emerald-500/20 border-emerald-500/30 animate-pulse"
         if (isWorkDay) return "bg-black/[0.15] scale-95"
         return "bg-black/[0.03] scale-95"
     }
 
-    const activeDays = days.filter(d => d.hasVisit || d.hasLog).length
+    const activeDays = days.filter(d => d.hasVisit || d.isPending).length
 
     return (
         <div className="space-y-4">
@@ -81,15 +85,20 @@ export function FitnessHeatmap() {
                         className={cn(
                             "aspect-square rounded-md border border-black/5 transition-all duration-500 flex items-center justify-center relative",
                             hoveredDate === day.date ? "z-[100]" : "z-10",
-                            getHeatmapColor(day.hasVisit, day.isWorkDay)
+                            getHeatmapColor(day.hasVisit, day.isWorkDay, day.isPending)
                         )}
                     >
                         {/* Tooltip */}
                         {hoveredDate === day.date && (
                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-3 py-2 bg-black text-white text-[10px] font-black uppercase tracking-widest rounded-xl z-[100] shadow-xl pointer-events-none text-center animate-in fade-in zoom-in-95 duration-200">
                                 {format(new Date(day.date), 'MMM do')}
-                                {day.hasVisit && <span className="block text-emerald-400 mt-0.5">Gym Session</span>}
-                                {!day.hasVisit && <span className="block text-white/40 mt-0.5">{day.isWorkDay ? 'Work Day' : 'Rest Day'}</span>}
+                                {day.hasVisit ? (
+                                    <span className="block text-emerald-400 mt-0.5">Gym Session</span>
+                                ) : day.isPending ? (
+                                    <span className="block text-emerald-400/60 mt-0.5 animate-pulse">Session Pending</span>
+                                ) : (
+                                    <span className="block text-white/40 mt-0.5">{day.isWorkDay ? 'Work Day' : 'Rest Day'}</span>
+                                )}
                                 <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-black" />
                             </div>
                         )}
@@ -110,6 +119,10 @@ export function FitnessHeatmap() {
                     <div className="flex items-center gap-1">
                         <div className="w-2 h-2 rounded-sm bg-black/[0.03]" />
                         <span className="text-[7px] font-black text-black/20 uppercase tracking-widest">Rest</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-sm bg-emerald-500/20 border border-emerald-500/30" />
+                        <span className="text-[7px] font-black text-black/20 uppercase tracking-widest">Pending</span>
                     </div>
                     <div className="flex items-center gap-1">
                         <div className="w-2 h-2 rounded-sm bg-emerald-500" />

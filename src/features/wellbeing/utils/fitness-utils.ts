@@ -21,7 +21,7 @@ export function getGymRecommendation(
     // 3. Overtime -> Won't go
     // 4. Working -> Won't go
     
-    let status: 'can_go' | 'work_day' | 'overtime' | 'rest_needed' = 'can_go'
+    let status: 'can_go' | 'work_day' | 'overtime' | 'rest_needed' | 'pending' | 'completed' = 'can_go'
     let reason = 'Day off'
 
     if (override) {
@@ -47,6 +47,16 @@ export function getGymRecommendation(
             status = 'rest_needed'
             reason = 'Rest needed after 3 consecutive gym days'
         }
+    }
+
+    // Check if we've already been today regardless of recommendation
+    const todayWorkout = workoutLogs.find(l => l.date === dateStr)
+    if (todayWorkout) {
+        status = 'completed'
+        reason = 'Session logged for today'
+    } else if (status === 'can_go') {
+        status = 'pending'
+        reason = 'Gym session pending'
     }
 
     return { status, reason }

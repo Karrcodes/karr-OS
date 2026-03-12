@@ -14,6 +14,15 @@ export function getOverloadTarget(
     profile: WellbeingProfile | null,
     workoutLogs: WorkoutLog[]
 ): OverloadTarget {
+    if (exercise.isBodyweight) {
+        return {
+            suggestedWeight: 0,
+            suggestedReps: exercise.suggestedReps,
+            suggestedSets: exercise.suggestedSets,
+            isBaseline: true
+        }
+    }
+
     // 1. Search for historical logs of this exercise
     // Sort logs by newest first
     const sortedLogs = [...workoutLogs].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -21,8 +30,7 @@ export function getOverloadTarget(
     for (const log of sortedLogs) {
         const exerciseLog = log.exercises.find(e => e.exerciseId === exercise.id)
         if (exerciseLog && exerciseLog.sets.length > 0) {
-            // Found a previous session. Find the max weight successfully lifted for the target reps (or close to it)
-            // To simplify, we'll just take the max weight from the previous session's sets that had > 0 reps
+            // Found a previous session. Find the max weight successfully lifted
             let maxWeight = 0
             for (const set of exerciseLog.sets) {
                 if (set.reps > 0 && set.weight > maxWeight) {
@@ -31,19 +39,18 @@ export function getOverloadTarget(
             }
 
             if (maxWeight > 0) {
-                // Determine increment based on goal
+                // Rule: Progressive Overload only applies if the session was VERIFIED by gym data
+                const isVerified = !!log.gymVisitId
+                
+                // Determine increment based on goal AND verification
                 let increment = 0
-                if (profile?.goal === 'bulk') {
+                if (isVerified && profile?.goal === 'bulk') {
                     increment = BULK_INCREMENT
-                } else if (profile?.goal === 'cut') {
-                    increment = 0 // Maintenance mode on a cut
-                } else {
-                    increment = 0 // Maintenance
                 }
 
                 return {
                     suggestedWeight: maxWeight + increment,
-                    suggestedReps: exercise.suggestedReps,
+                    suggestedReps: exercise.suggestedReps, // Keep target reps
                     suggestedSets: exercise.suggestedSets,
                     isBaseline: false
                 }
@@ -52,6 +59,15 @@ export function getOverloadTarget(
     }
 
     // 2. If no history, calculate a biometric baseline based on body weight
+    if (exercise.suggestedWeight !== undefined) {
+        return {
+            suggestedWeight: exercise.suggestedWeight,
+            suggestedReps: exercise.suggestedReps,
+            suggestedSets: exercise.suggestedSets,
+            isBaseline: true
+        }
+    }
+
     const userWeight = profile?.weight || 75 // Default 75kg if no profile
     let multiplier = 0.3 // safe default for isolations (arms/calves)
 

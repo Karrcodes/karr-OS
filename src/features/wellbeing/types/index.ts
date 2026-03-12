@@ -32,6 +32,8 @@ export interface Exercise {
     muscleGroups?: string[] // Detailed mapping for visuals
     suggestedReps: number
     suggestedSets: number
+    suggestedWeight?: number
+    isBodyweight?: boolean
     icon?: string
 }
 

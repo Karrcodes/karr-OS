@@ -49,24 +49,30 @@ export function FitnessTab() {
                 animate={{ opacity: 1, y: 0 }}
                 className={cn(
                     "p-4 rounded-[32px] border flex items-center justify-between",
-                    gymRecommendation.status === 'can_go' ? "bg-emerald-500/10 border-emerald-500/20" : "bg-rose-500/10 border-rose-500/20"
+                    gymRecommendation.status === 'completed' ? "bg-emerald-500/10 border-emerald-500/20" : 
+                    gymRecommendation.status === 'pending' ? "bg-emerald-500/5 border-emerald-500/10" :
+                    gymRecommendation.status === 'can_go' ? "bg-emerald-500/10 border-emerald-500/20" : 
+                    "bg-rose-500/10 border-rose-500/20"
                 )}
             >
                 <div className="flex items-center gap-4">
                     <div className={cn(
                         "w-12 h-12 rounded-2xl flex items-center justify-center",
-                        gymRecommendation.status === 'can_go' ? "bg-emerald-500 text-white" : "bg-rose-500 text-white"
+                        ['can_go', 'pending', 'completed'].includes(gymRecommendation.status) ? "bg-emerald-500 text-white" : "bg-rose-500 text-white"
                     )}>
-                        {gymRecommendation.status === 'can_go' ? <Dumbbell className="w-6 h-6" /> : <Info className="w-6 h-6" />}
+                        {['can_go', 'pending', 'completed'].includes(gymRecommendation.status) ? <Dumbbell className="w-6 h-6" /> : <Info className="w-6 h-6" />}
                     </div>
                     <div>
                         <h4 className="text-[12px] font-black uppercase tracking-widest leading-none mb-1">
-                            {gymRecommendation.status === 'can_go' ? 'Recommended: Hit the Gym' : 'Recommended: Rest Day'}
+                            {gymRecommendation.status === 'completed' ? 'Recommended: Hit the Gym (Goal Met)' : 
+                             gymRecommendation.status === 'pending' ? 'Recommended: Gym Session Pending' :
+                             gymRecommendation.status === 'can_go' ? 'Recommended: Hit the Gym' : 
+                             'Recommended: Rest Day'}
                         </h4>
                         <p className="text-[11px] font-bold text-black/40 uppercase">{gymRecommendation.reason}</p>
                     </div>
                 </div>
-                {gymRecommendation.status === 'can_go' && (
+                {['can_go', 'pending', 'completed'].includes(gymRecommendation.status) && (
                     <div className="hidden md:block">
                          <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20">
                             Rotational Split Active

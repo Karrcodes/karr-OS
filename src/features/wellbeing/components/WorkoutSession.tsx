@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { useWellbeing } from '../contexts/WellbeingContext'
-import { Dumbbell, CheckCircle2, ChevronRight, X, Play, Pause, RotateCcw, Save, Trash2, ArrowRight, SkipForward, ChevronDown, ChevronUp } from 'lucide-react'
+import { Dumbbell, CheckCircle2, ChevronRight, X, Play, Pause, RotateCcw, Save, Trash2, ArrowRight, SkipForward, ChevronDown, ChevronUp, Trophy } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
@@ -23,6 +23,12 @@ export function WorkoutSession() {
         routines.find(r => r.id === activeSession?.routineId),
         [routines, activeSession?.routineId]
     )
+
+    // Modal & Summary State (Moved to top to prevent hook mismatch)
+    const [showCompleteModal, setShowCompleteModal] = useState(false)
+    const [showExitModal, setShowExitModal] = useState(false)
+    const [showSkipModal, setShowSkipModal] = useState(false)
+    const [sessionSummary, setSessionSummary] = useState<{ volume: number, exercises: number } | null>(null)
 
     // Timer logic
     useEffect(() => {
@@ -57,6 +63,71 @@ export function WorkoutSession() {
     }, [sessionMode, breakTimeRemaining, activeSession?.isPaused])
 
     if (!activeSession || !routine) {
+        if (showCompleteModal) return (
+            <div className="min-h-screen bg-black flex items-center justify-center">
+                {/* Just let the modal render at the bottom by returning null here but allowing the main flow? No, better to return the modal wrapper */}
+                <AnimatePresence>
+                    {showCompleteModal && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-black/90 backdrop-blur-2xl z-[1200] flex items-center justify-center p-6"
+                        >
+                            <motion.div
+                                initial={{ scale: 0.8, opacity: 0, y: 40 }}
+                                animate={{ scale: 1, opacity: 1, y: 0 }}
+                                className="bg-white rounded-[48px] p-10 w-full max-w-md shadow-2xl text-center space-y-8 relative overflow-hidden"
+                            >
+                                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-emerald-500/10 blur-[100px] -z-10" />
+                                <div className="space-y-4">
+                                    <motion.div 
+                                        initial={{ scale: 0 }}
+                                        animate={{ scale: 1 }}
+                                        transition={{ type: 'spring', damping: 12, delay: 0.2 }}
+                                        className="w-24 h-24 rounded-[32px] bg-emerald-500 text-white flex items-center justify-center mx-auto shadow-2xl shadow-emerald-500/40"
+                                    >
+                                        <Trophy className="w-12 h-12" />
+                                    </motion.div>
+                                    <div className="space-y-1">
+                                        <h2 className="text-4xl font-black uppercase tracking-tighter text-black">Workout Complete</h2>
+                                        <p className="text-[11px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-500/10 inline-block px-4 py-1.5 rounded-full">
+                                            Optimization Target Achieved
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-black/5 rounded-3xl p-6 border border-black/5">
+                                        <p className="text-[9px] font-black text-black/30 uppercase tracking-[0.2em] mb-2">Total Volume</p>
+                                        <p className="text-2xl font-black uppercase tracking-tighter text-black">
+                                            {sessionSummary?.volume.toLocaleString()}<span className="text-sm ml-1 opacity-20">kg</span>
+                                        </p>
+                                    </div>
+                                    <div className="bg-black/5 rounded-3xl p-6 border border-black/5">
+                                        <p className="text-[9px] font-black text-black/30 uppercase tracking-[0.2em] mb-2">Efforts</p>
+                                        <p className="text-2xl font-black uppercase tracking-tighter text-black">
+                                            {sessionSummary?.exercises}<span className="text-sm ml-1 opacity-20">exec</span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="space-y-4">
+                                    <p className="text-[13px] font-medium text-black/40 leading-relaxed uppercase tracking-tight px-4">
+                                        Protocol successfully asymmetrically logged to your performance matrix.
+                                    </p>
+                                    <button 
+                                        onClick={() => router.push('/health/fitness')}
+                                        className="w-full py-6 bg-black text-white rounded-[32px] text-[12px] font-black uppercase tracking-widest shadow-2xl shadow-black/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3"
+                                    >
+                                        Return to Command <ArrowRight className="w-5 h-5" />
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+        )
+
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
                 <div className="w-20 h-20 rounded-full bg-black/5 flex items-center justify-center">
@@ -74,6 +145,12 @@ export function WorkoutSession() {
                 </button>
             </div>
         )
+    }
+    const formatTime = (seconds: number) => {
+        const h = Math.floor(seconds / 3600)
+        const m = Math.floor((seconds % 3600) / 60)
+        const s = seconds % 60
+        return `${h > 0 ? h + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
     }
 
     const handleNextSet = () => {
@@ -102,42 +179,46 @@ export function WorkoutSession() {
         setSessionMode('training')
     }
 
-    const currentExercise = routine.exercises[currentExerciseIndex]
-    const exSession = activeSession.exercises.find(e => e.exerciseId === currentExercise?.id)
-    const currentSets = exSession?.sets || []
-
-    const formatTime = (seconds: number) => {
-        const h = Math.floor(seconds / 3600)
-        const m = Math.floor((seconds % 3600) / 60)
-        const s = seconds % 60
-        return `${h > 0 ? h + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
-    }
-
     const handleFinish = async () => {
-        if (confirm('Finish this workout session?')) {
-            await finishSession()
-            router.push('/health/fitness')
-        }
+        const volume = activeSession.exercises.reduce((v, ex) => 
+            v + ex.sets.reduce((sv, set) => sv + (set.weight * (set.reps || 0)), 0), 0)
+        
+        setSessionSummary({
+            volume,
+            exercises: activeSession.exercises.length
+        })
+        
+        await finishSession()
+        setShowCompleteModal(true)
     }
 
     const handleCancel = () => {
-        if (confirm('Are you sure you want to cancel? Progress will be lost.')) {
-            cancelSession()
-            router.push('/health/fitness')
-        }
+        setShowExitModal(true)
+    }
+
+    const confirmExit = () => {
+        cancelSession()
+        router.push('/health/fitness')
     }
 
     const handleSkipExercise = () => {
-        if (confirm('Skip this exercise and move to the next?')) {
-            if (currentExerciseIndex < routine.exercises.length - 1) {
-                setSessionMode('setup')
-                setCurrentExerciseIndex(prev => prev + 1)
-                setCurrentSetIndex(0)
-            } else {
-                handleFinish()
-            }
+        setShowSkipModal(true)
+    }
+
+    const confirmSkip = () => {
+        setShowSkipModal(false)
+        if (currentExerciseIndex < routine.exercises.length - 1) {
+            setSessionMode('setup')
+            setCurrentExerciseIndex(prev => prev + 1)
+            setCurrentSetIndex(0)
+        } else {
+            handleFinish()
         }
     }
+
+    const currentExercise = routine.exercises[currentExerciseIndex]
+    const exSession = activeSession.exercises.find(e => e.exerciseId === currentExercise?.id)
+    const currentSets = exSession?.sets || []
 
     const currentSetData = exSession?.sets[currentSetIndex]
 
@@ -287,16 +368,18 @@ export function WorkoutSession() {
                             </div>
 
                             <div className="flex-1 flex flex-col justify-center space-y-4">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-black/30 uppercase tracking-widest ml-1">Weight (kg)</label>
-                                    <input 
-                                        type="number" 
-                                        value={currentSetData?.weight || ''}
-                                        onChange={(e) => updateSessionSet(currentExercise.id, currentSetIndex, { weight: parseFloat(e.target.value) || 0 })}
-                                        className="w-full bg-black/[0.03] border-none rounded-[28px] p-5 text-center text-3xl font-black focus:ring-4 ring-black/5 outline-none transition-all"
-                                        placeholder="0.0"
-                                    />
-                                </div>
+                                {!currentExercise.isBodyweight && (
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-black/30 uppercase tracking-widest ml-1">Weight (kg)</label>
+                                        <input 
+                                            type="number" 
+                                            value={currentSetData?.weight || ''}
+                                            onChange={(e) => updateSessionSet(currentExercise.id, currentSetIndex, { weight: parseFloat(e.target.value) || 0 })}
+                                            className="w-full bg-black/[0.03] border-none rounded-[28px] p-5 text-center text-3xl font-black focus:ring-4 ring-black/5 outline-none transition-all"
+                                            placeholder="0.0"
+                                        />
+                                    </div>
+                                )}
                                 <div className="space-y-1">
                                     <label className="text-[9px] font-black text-black/30 uppercase tracking-widest ml-1">Reps Performed</label>
                                     <input 
@@ -311,7 +394,7 @@ export function WorkoutSession() {
 
                             <button
                                 onClick={handleNextSet}
-                                disabled={!currentSetData?.weight || !currentSetData?.reps}
+                                disabled={(currentExercise.isBodyweight ? !currentSetData?.reps : (!currentSetData?.weight || !currentSetData?.reps))}
                                 className="mt-4 py-5 bg-black text-white rounded-[28px] text-lg font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-2xl disabled:opacity-30 disabled:grayscale transition-all active:scale-95 shrink-0"
                             >
                                 Complete Set <ArrowRight className="w-6 h-6" />
@@ -320,6 +403,157 @@ export function WorkoutSession() {
                     )}
                 </AnimatePresence>
             </div>
+
+            {/* Exit Confirmation Modal */}
+            <AnimatePresence>
+                {showExitModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/80 backdrop-blur-md z-[1100] flex items-center justify-center p-6"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white rounded-[32px] p-8 w-full max-w-sm shadow-2xl space-y-6"
+                        >
+                            <div className="w-14 h-14 rounded-2xl bg-rose-500/10 flex items-center justify-center">
+                                <Trash2 className="w-7 h-7 text-rose-500" />
+                            </div>
+                            <div className="space-y-2 text-left">
+                                <h3 className="text-xl font-black uppercase tracking-tight text-black">Exit Session?</h3>
+                                <p className="text-[13px] font-medium text-black/40 leading-relaxed uppercase tracking-tight">
+                                    Progress on unfinished exercises will be lost. Are you sure you want to exit?
+                                </p>
+                            </div>
+                            <div className="flex flex-col gap-3">
+                                <button 
+                                    onClick={confirmExit}
+                                    className="w-full py-4 bg-rose-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-rose-500/20"
+                                >
+                                    Confirm Exit
+                                </button>
+                                <button 
+                                    onClick={() => setShowExitModal(false)}
+                                    className="w-full py-4 bg-black/5 text-black rounded-2xl text-[10px] font-black uppercase tracking-widest"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Skip Exercise Modal */}
+            <AnimatePresence>
+                {showSkipModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/80 backdrop-blur-md z-[1100] flex items-center justify-center p-6"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white rounded-[32px] p-8 w-full max-w-sm shadow-2xl space-y-6"
+                        >
+                            <div className="w-14 h-14 rounded-2xl bg-amber-500/10 flex items-center justify-center">
+                                <SkipForward className="w-7 h-7 text-amber-600" />
+                            </div>
+                            <div className="space-y-2 text-left">
+                                <h3 className="text-xl font-black uppercase tracking-tight text-black">Skip Exercise?</h3>
+                                <p className="text-[13px] font-medium text-black/40 leading-relaxed uppercase tracking-tight">
+                                    Are you sure you want to move to the next protocol? Current exercise progress will be saved.
+                                </p>
+                            </div>
+                            <div className="flex flex-col gap-3">
+                                <button 
+                                    onClick={confirmSkip}
+                                    className="w-full py-4 bg-black text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-black/20"
+                                >
+                                    Confirm Skip
+                                </button>
+                                <button 
+                                    onClick={() => setShowSkipModal(false)}
+                                    className="w-full py-4 bg-black/5 text-black rounded-2xl text-[10px] font-black uppercase tracking-widest"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Workout Complete Congratulatory Modal */}
+            <AnimatePresence>
+                {showCompleteModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/90 backdrop-blur-2xl z-[1200] flex items-center justify-center p-6"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.8, opacity: 0, y: 40 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            className="bg-white rounded-[48px] p-10 w-full max-w-md shadow-2xl text-center space-y-8 relative overflow-hidden"
+                        >
+                            {/* Decorative background flare */}
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-emerald-500/10 blur-[100px] -z-10" />
+                            
+                            <div className="space-y-4">
+                                <motion.div 
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ type: 'spring', damping: 12, delay: 0.2 }}
+                                    className="w-24 h-24 rounded-[32px] bg-emerald-500 text-white flex items-center justify-center mx-auto shadow-2xl shadow-emerald-500/40"
+                                >
+                                    <Trophy className="w-12 h-12" />
+                                </motion.div>
+                                <div className="space-y-1">
+                                    <h2 className="text-4xl font-black uppercase tracking-tighter text-black">Workout Complete</h2>
+                                    <p className="text-[11px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-500/10 inline-block px-4 py-1.5 rounded-full">
+                                        Optimization Target Achieved
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-black/5 rounded-3xl p-6 border border-black/5">
+                                    <p className="text-[9px] font-black text-black/30 uppercase tracking-[0.2em] mb-2">Total Volume</p>
+                                    <p className="text-2xl font-black uppercase tracking-tighter text-black">
+                                        {sessionSummary?.volume.toLocaleString()}<span className="text-sm ml-1 opacity-20">kg</span>
+                                    </p>
+                                </div>
+                                <div className="bg-black/5 rounded-3xl p-6 border border-black/5">
+                                    <p className="text-[9px] font-black text-black/30 uppercase tracking-[0.2em] mb-2">Efforts</p>
+                                    <p className="text-2xl font-black uppercase tracking-tighter text-black">
+                                        {sessionSummary?.exercises}<span className="text-sm ml-1 opacity-20">exec</span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <p className="text-[13px] font-medium text-black/40 leading-relaxed uppercase tracking-tight px-4">
+                                    Protocol successfully asymmetrically logged to your performance matrix.
+                                </p>
+                                <button 
+                                    onClick={() => router.push('/health/fitness')}
+                                    className="w-full py-6 bg-black text-white rounded-[32px] text-[12px] font-black uppercase tracking-widest shadow-2xl shadow-black/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3"
+                                >
+                                    Return to Command <ArrowRight className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     )
 }

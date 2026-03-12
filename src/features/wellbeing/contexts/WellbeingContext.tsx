@@ -238,6 +238,17 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
 
                     setState(prev => {
                         const updatedState = { ...prev, ...newState, loading: false }
+                        
+                        // Patch existing routines to ensure isBodyweight flag is set for known exercises
+                        const bodyweightKeywords = ['pullups', 'pushups', 'dips', 'plank', 'squats (bodyweight)']
+                        updatedState.routines = updatedState.routines.map(routine => ({
+                            ...routine,
+                            exercises: routine.exercises.map(ex => ({
+                                ...ex,
+                                isBodyweight: ex.isBodyweight || bodyweightKeywords.some(kw => ex.name.toLowerCase().includes(kw))
+                            }))
+                        }))
+
                         if (updatedState.routines.length === 0) {
                             updatedState.routines = getMonthlyRoutine(new Date())
                             updatedState.activeRoutineId = updatedState.routines[0].id
@@ -305,6 +316,12 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
         return Math.round(bmr * (MULTIPLIERS[p.activityLevel] || MULTIPLIERS.sedentary))
     }
 
+    const isLogEmpty = (log: WorkoutLog | WorkoutSession) => {
+        const volume = log.exercises.reduce((acc: number, ex) => 
+            acc + ex.sets.reduce((sacc: number, set) => sacc + (set.weight * (set.reps || 0)), 0), 0)
+        return volume === 0
+    }
+
     const macros = useMemo(() => {
         if (!state.profile) return { calories: 0, protein: 0, fat: 0, carbs: 0 }
         const tdee = calculateTDEE(state.profile)
@@ -348,51 +365,62 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
     }
 
     const logWorkout = async (log: WorkoutLog) => {
-        // Ascribe to gym visit if possible
         const today = new Date().toISOString().split('T')[0]
-        const todayVisit = state.gymStats.visitHistory?.find(v => v.date === today)
         
+        // Calculate all updates outside setState for reliable persistence
+        const todayVisit = state.gymStats.visitHistory?.find(v => v.date === today)
         const finalLog = {
             ...log,
             gymVisitId: todayVisit?.id || log.gymVisitId
         }
-        
-        let updatedMilestones = [...state.milestones]
-        let milestonesChanged = false
 
-        // Progression Engine: Check if any logged sets hit active milestone targets
-        finalLog.exercises.forEach(exLog => {
-            const bestSetWeight = Math.max(...exLog.sets.map(s => s.weight || 0))
-            
-            updatedMilestones = updatedMilestones.map(m => {
-                // If it's a lift milestone for this exercise (fuzzy name matching for now)
-                if (m.type === 'lift' && !m.completed && m.title.toLowerCase().includes(exLog.exerciseId.toLowerCase())) {
-                    if (bestSetWeight > m.currentValue) {
-                        m.currentValue = bestSetWeight
-                        milestonesChanged = true
-                    }
-                    
-                    if (m.currentValue >= m.targetValue) {
-                        m.completed = true
-                        m.dateCompleted = new Date().toISOString()
-                        milestonesChanged = true
-                        
-                        // Push next logical milestone immediately
-                        const nextM = getNextProgressiveMilestone(m)
-                        updatedMilestones.push(nextM)
-                    }
+        let milestonesChanged = false
+        const updatedMilestones = state.milestones.map(m => {
+            const exLog = finalLog.exercises.find(e => m.type === 'lift' && m.title.toLowerCase().includes(e.exerciseId.toLowerCase()))
+            if (exLog && !m.completed) {
+                const bestSetWeight = Math.max(...exLog.sets.map(s => s.weight || 0))
+                if (bestSetWeight > m.currentValue) {
+                    m.currentValue = bestSetWeight
+                    milestonesChanged = true
                 }
-                return m
-            })
+                if (m.currentValue >= m.targetValue) {
+                    m.completed = true
+                    m.dateCompleted = new Date().toISOString()
+                    milestonesChanged = true
+                }
+            }
+            return m
         })
+
+        // Progressive milestone generation
+        if (milestonesChanged) {
+            const newMilestonesToAdd: Milestone[] = []
+            updatedMilestones.forEach(m => {
+                if (m.completed && !state.milestones.find(sm => sm.parentId === m.id)) {
+                    newMilestonesToAdd.push(getNextProgressiveMilestone(m))
+                }
+            })
+            updatedMilestones.push(...newMilestonesToAdd)
+        }
+
+        // Refined Deduplication: Allow multiple manual sessions, but prune baselines
+        let workoutLogs = state.workoutLogs.filter(l => l.id !== finalLog.id) // Remove self if update
+        const logIsBaseline = finalLog.note?.includes('baseline')
         
-        const workoutLogs = [...state.workoutLogs, finalLog]
+        if (!logIsBaseline) {
+            // If adding a manual log, remove any baseline or empty logs for this date
+            workoutLogs = workoutLogs.filter(l => !(l.date === finalLog.date && (l.note?.includes('baseline') || isLogEmpty(l))))
+        }
+        workoutLogs.push(finalLog)
+        workoutLogs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
         setState(prev => ({ 
             ...prev, 
             workoutLogs, 
-            milestones: milestonesChanged ? updatedMilestones : prev.milestones 
+            milestones: updatedMilestones 
         }))
-        
+
+        // Persistence happens outside setState for atomicity
         const persistenceData: any = { workoutLogs }
         if (milestonesChanged) persistenceData.milestones = updatedMilestones
         await persistData(persistenceData)
@@ -812,7 +840,7 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
                                 exerciseId: ex.id,
                                 sets: prevEx ? prevEx.sets : Array(ex.suggestedSets).fill(null).map(() => ({
                                     reps: ex.suggestedReps,
-                                    weight: (ex.muscleGroup?.toLowerCase().includes('legs') ? 60 : 40)
+                                    weight: ex.isBodyweight ? 0 : (ex.muscleGroup?.toLowerCase().includes('legs') ? 60 : 40)
                                 }))
                             }
                         })
@@ -822,33 +850,41 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
 
                 const combinedLogs = [...prev.workoutLogs, ...newLogs]
                 
-                // Deduplicate: Keep one log per date
-                // Priority: 1. Manual/Synced (non-empty), 2. Baseline (non-empty), 3. Empty
-                const logsByDate: Record<string, WorkoutLog> = {}
+                // Group by date to handle deduplication per-day
+                const logsByDate: Record<string, WorkoutLog[]> = {}
                 combinedLogs.forEach(log => {
-                    const existing = logsByDate[log.date]
-                    const logEmpty = isLogEmpty(log)
-                    const logIsBaseline = log.note?.includes('baseline')
+                    if (!logsByDate[log.date]) logsByDate[log.date] = []
+                    logsByDate[log.date].push(log)
+                })
+
+                const deduplicated: WorkoutLog[] = []
+                Object.values(logsByDate).forEach(dayLogs => {
+                    // 1. Capture all manual (non-baseline) non-empty sessions
+                    const manualSessions = dayLogs.filter(l => !l.note?.includes('baseline') && !isLogEmpty(l))
                     
-                    if (!existing) {
-                        logsByDate[log.date] = log
-                        return
-                    }
-
-                    const existingEmpty = isLogEmpty(existing)
-                    const existingIsBaseline = existing.note?.includes('baseline')
-
-                    // Replace existing if:
-                    // 1. Existing is empty and new is not
-                    // 2. Existing is baseline and new is manual (non-empty)
-                    if (existingEmpty && !logEmpty) {
-                        logsByDate[log.date] = log
-                    } else if (existingIsBaseline && !logIsBaseline && !logEmpty) {
-                        logsByDate[log.date] = log
+                    // 2. Identify if we have any manual sessions for this day
+                    if (manualSessions.length > 0) {
+                        // Preserve all unique manual sessions
+                        const seenIds = new Set()
+                        manualSessions.forEach(m => {
+                            if (!seenIds.has(m.id)) {
+                                deduplicated.push(m)
+                                seenIds.add(m.id)
+                            }
+                        })
+                    } else {
+                        // 3. Fallback: Keep one baseline session or the first empty manual session
+                        const baseline = dayLogs.find(l => l.note?.includes('baseline') && !isLogEmpty(l))
+                        if (baseline) {
+                            deduplicated.push(baseline)
+                        } else if (dayLogs.length > 0) {
+                            // If only empty sessions exist, keep the first one
+                            deduplicated.push(dayLogs[0])
+                        }
                     }
                 })
 
-                const workoutLogs = Object.values(logsByDate).sort((a, b) => 
+                const workoutLogs = deduplicated.sort((a, b) => 
                     new Date(b.date).getTime() - new Date(a.date).getTime()
                 )
 
@@ -970,59 +1006,97 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
 
         const duration = Math.round((new Date().getTime() - new Date(session.startTime).getTime()) / 60000)
         
-        // Find if there's a gym visit today to link
+        setState(prev => {
+            const today = session.date
+            const todayVisit = prev.gymStats.visitHistory?.find(v => v.date === today)
+            const routine = prev.routines.find(r => r.id === session.routineId)
+
+            const isLogEmpty = (log: WorkoutLog | WorkoutSession) => {
+                const volume = log.exercises.reduce((acc: number, ex) => 
+                    acc + ex.sets.reduce((sacc: number, set) => sacc + (set.weight * (set.reps || 0)), 0), 0)
+                return volume === 0
+            }
+
+            const prevSessionForBaseline = [...prev.workoutLogs]
+                .reverse()
+                .find(l => l.routineId === session.routineId && !isLogEmpty(l))
+
+            const finalizedExercises = routine?.exercises.map(routineEx => {
+                const recordedEx = session.exercises.find(se => se.exerciseId === routineEx.id)
+                const hasRecordedSets = recordedEx && recordedEx.sets.length > 0
+
+                if (hasRecordedSets) {
+                    return recordedEx
+                }
+
+                const prevEx = prevSessionForBaseline?.exercises.find(pe => pe.exerciseId === routineEx.id)
+                return {
+                    exerciseId: routineEx.id,
+                    sets: prevEx ? prevEx.sets : Array(routineEx.suggestedSets).fill(null).map(() => ({
+                        reps: routineEx.suggestedReps,
+                        weight: routineEx.isBodyweight ? 0 : (routineEx.suggestedWeight || (routineEx.muscleGroup?.toLowerCase().includes('legs') ? 60 : 40))
+                    }))
+                }
+            }) || session.exercises
+
+            const log: WorkoutLog = {
+                id: session.id,
+                date: session.date,
+                routineId: session.routineId,
+                exercises: finalizedExercises,
+                gymVisitId: todayVisit?.id,
+                duration: Math.max(duration, 45),
+                note: isAutoFinish 
+                    ? 'session auto-recovered with baseline'
+                    : (todayVisit ? 'data synced with live session' : 'manual session recorded')
+            }
+
+            // Trigger logWorkout logic via state bypass or just call it after?
+            // Actually, we should call logWorkout(log) but logWorkout is async and uses state.
+            // To be safe, we'll finish this update then call logWorkout.
+            return { ...prev, activeSession: null }
+        })
+
+        // Re-construct the log outside for logWorkout
         const today = session.date
         const todayVisit = state.gymStats.visitHistory?.find(v => v.date === today)
-
-        // Get the full routine to check for missing exercises
         const routine = state.routines.find(r => r.id === session.routineId)
         
-        // Baseline helper
-        const isLogEmpty = (log: WorkoutLog | WorkoutSession) => {
+        const isLogEmptyLocal = (log: WorkoutLog | WorkoutSession) => {
             const volume = log.exercises.reduce((acc: number, ex) => 
                 acc + ex.sets.reduce((sacc: number, set) => sacc + (set.weight * (set.reps || 0)), 0), 0)
             return volume === 0
         }
-
-        const prevSessionForBaseline = [...state.workoutLogs]
+        const prevSessionForBaselineLocal = [...state.workoutLogs]
             .reverse()
-            .find(l => l.routineId === session.routineId && !isLogEmpty(l))
+            .find(l => l.routineId === session.routineId && !isLogEmptyLocal(l))
 
-        // Fill in missing exercises with baseline data
-        const finalizedExercises = routine?.exercises.map(routineEx => {
+        const finalizedExercisesLocal = routine?.exercises.map(routineEx => {
             const recordedEx = session.exercises.find(se => se.exerciseId === routineEx.id)
-            const hasRecordedSets = recordedEx && recordedEx.sets.length > 0
-
-            if (hasRecordedSets) {
-                return recordedEx
-            }
-
-            // Fill with baseline
-            const prevEx = prevSessionForBaseline?.exercises.find(pe => pe.exerciseId === routineEx.id)
+            if (recordedEx && recordedEx.sets.length > 0) return recordedEx
+            const prevEx = prevSessionForBaselineLocal?.exercises.find(pe => pe.exerciseId === routineEx.id)
             return {
                 exerciseId: routineEx.id,
                 sets: prevEx ? prevEx.sets : Array(routineEx.suggestedSets).fill(null).map(() => ({
                     reps: routineEx.suggestedReps,
-                    weight: (routineEx.muscleGroup?.toLowerCase().includes('legs') ? 60 : 40)
+                    weight: routineEx.isBodyweight ? 0 : (routineEx.suggestedWeight || (routineEx.muscleGroup?.toLowerCase().includes('legs') ? 60 : 40))
                 }))
             }
         }) || session.exercises
 
-        // Finalize the log
-        const log: WorkoutLog = {
+        const logToRecord: WorkoutLog = {
             id: session.id,
             date: session.date,
             routineId: session.routineId,
-            exercises: finalizedExercises,
+            exercises: finalizedExercisesLocal,
             gymVisitId: todayVisit?.id,
-            duration: Math.max(duration, 45), // Minimum 45m for auto-finished sessions
+            duration: Math.max(duration, 45),
             note: isAutoFinish 
                 ? 'session auto-recovered with baseline'
                 : (todayVisit ? 'data synced with live session' : 'manual session recorded')
         }
 
-        await logWorkout(log)
-        setState(prev => ({ ...prev, activeSession: null }))
+        await logWorkout(logToRecord)
         persistData({ activeSession: null })
     }
 

@@ -1,5 +1,6 @@
 import type { WorkoutRoutine, Exercise } from '../types'
 import { MUSCLE_GROUPS, getMuscleGroupsForExercise } from './fitness-utils'
+import { EXERCISES } from '../constants/exercises'
 
 /**
  * Generates a PPL (Push/Pull/Legs) routine that rotates monthly.
@@ -62,13 +63,59 @@ export function getMonthlyRoutine(date: Date): WorkoutRoutine[] {
   return routines
 }
 
+export function shuffleExercises(routineName: string): Exercise[] {
+  const isPush = routineName.toLowerCase().includes('push')
+  const isPull = routineName.toLowerCase().includes('pull')
+  const isLegs = routineName.toLowerCase().includes('legs')
+
+  const month = new Date().getMonth()
+  const cycle = month % 3
+  const reps = [10, 5, 15][cycle]
+  const sets = [3, 5, 3][cycle]
+
+  const getExercises = (groups: string[], count: number) => {
+    const pool = EXERCISES.filter(ex => groups.includes(ex.muscleGroup))
+    const shuffled = [...pool].sort(() => Math.random() - 0.5)
+    return shuffled.slice(0, count).map(ex => ({
+      ...ex,
+      id: Math.random().toString(36).substr(2, 9),
+      suggestedReps: reps,
+      suggestedSets: sets
+    }))
+  }
+
+  if (isPush) {
+    return [
+      ...getExercises(['Chest'], 2),
+      ...getExercises(['Shoulders'], 2),
+      ...getExercises(['Triceps'], 1)
+    ]
+  }
+  if (isPull) {
+    return [
+      ...getExercises(['Back'], 3),
+      ...getExercises(['Shoulders'], 1), // Face pulls etc
+      ...getExercises(['Biceps'], 1)
+    ]
+  }
+  if (isLegs) {
+    return getExercises(['Legs'], 5)
+  }
+
+  return []
+}
+
 function createExercise(name: string, group: string, reps: number, sets: number): Exercise {
+  const bodyweightExercises = ['pullups', 'pushups', 'dips', 'plank', 'squats (bodyweight)']
+  const isBodyweight = bodyweightExercises.some(ex => name.toLowerCase().includes(ex))
+  
   return {
     id: Math.random().toString(36).substr(2, 9),
     name,
     muscleGroup: group,
     muscleGroups: getMuscleGroupsForExercise(name).length > 0 ? getMuscleGroupsForExercise(name) : [group],
     suggestedReps: reps,
-    suggestedSets: sets
+    suggestedSets: sets,
+    isBodyweight
   }
 }

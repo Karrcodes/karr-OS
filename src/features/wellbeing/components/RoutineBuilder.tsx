@@ -3,9 +3,10 @@
 import React, { useState } from 'react'
 import { useWellbeing } from '../contexts/WellbeingContext'
 import { ExerciseLibrary } from './ExerciseLibrary'
+import { getMonthlyRoutine, shuffleExercises } from '../utils/routine-generator'
 import type { Exercise, WorkoutRoutine } from '../types'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, X, Save, Trash2, Dumbbell, Calendar } from 'lucide-react'
+import { Plus, X, Save, Trash2, Dumbbell, Calendar, Shuffle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface RoutineBuilderProps {
@@ -14,11 +15,27 @@ interface RoutineBuilderProps {
 }
 
 export function RoutineBuilder({ initialRoutine, onSave }: RoutineBuilderProps) {
-    const { addRoutine, updateRoutine } = useWellbeing()
+    const { addRoutine, updateRoutine, routines } = useWellbeing()
     const [name, setName] = useState(initialRoutine?.name || '')
     const [day, setDay] = useState(initialRoutine?.day || '')
     const [selectedExercises, setSelectedExercises] = useState<Exercise[]>(initialRoutine?.exercises || [])
     const [showLibrary, setShowLibrary] = useState(false)
+
+    // Sync state when initialRoutine changes (needed for the switcher)
+    React.useEffect(() => {
+        if (initialRoutine) {
+            setName(initialRoutine.name)
+            setDay(initialRoutine.day || '')
+            setSelectedExercises(initialRoutine.exercises)
+        }
+    }, [initialRoutine])
+
+    const handleShuffle = () => {
+        const newExercises = shuffleExercises(name)
+        if (newExercises.length > 0) {
+            setSelectedExercises(newExercises)
+        }
+    }
 
     const handleAddExercise = (exercise: Exercise) => {
         if (selectedExercises.find(e => e.id === exercise.id)) {
@@ -65,6 +82,14 @@ export function RoutineBuilder({ initialRoutine, onSave }: RoutineBuilderProps) 
                     <h2 className="text-3xl font-black text-black uppercase tracking-tighter">Build Your Routine</h2>
                 </div>
                 <div className="flex items-center gap-2">
+                    <button 
+                        onClick={handleShuffle}
+                        className="px-6 py-3 bg-rose-500/10 text-rose-500 rounded-2xl text-[12px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all flex items-center gap-2"
+                        title="Spin the block with new exercises"
+                    >
+                        <Shuffle className="w-4 h-4" />
+                        Shuffle
+                    </button>
                     <button onClick={handleSave} disabled={!name || selectedExercises.length === 0} className="px-6 py-3 bg-black text-white rounded-2xl text-[12px] font-black uppercase tracking-widest hover:scale-105 transition-transform disabled:opacity-20 flex items-center gap-2">
                         <Save className="w-4 h-4" />
                         Save Routine
