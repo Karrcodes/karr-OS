@@ -149,7 +149,7 @@ export function GlobalQuickAction() {
         { id: 'task', label: 'Task', icon: CheckSquare, color: 'bg-violet-600', glow: 'shadow-violet-600/40', locked: false },
     ], [])
 
-    if (!mounted || pathname === '/intelligence' || pathname === '/home' || pathname === '/') return null
+    if (!mounted || pathname === '/intelligence' || pathname === '/home' || pathname === '/' || pathname.includes('/session')) return null
 
     const inputHeight = 'h-[48px]'
     const inputBase = cn(inputHeight, 'w-full bg-black/[0.03] border border-black/5 rounded-2xl px-4 text-[13px] font-bold outline-none transition-all flex items-center box-border focus:ring-4 focus:ring-black/5 focus:border-black/10')
