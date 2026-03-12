@@ -21,6 +21,48 @@ import { cn } from '@/lib/utils'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { MonzoSyncControls } from './MonzoSyncControls'
 
+// --- Helper Components ---
+
+function SummaryCard({ label, value, icon, color, sub, tooltip, isShimmering }: { label: string; value: string; icon: React.ReactNode; color: string; sub?: string; tooltip?: string | React.ReactNode; isShimmering?: boolean }) {
+    return (
+        <div className="rounded-xl border border-black/[0.07] bg-white p-4 hover:bg-black/[0.01] transition-colors shadow-sm flex flex-col h-full">
+            <div className="flex flex-col gap-2 mb-3">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color}12` }}>
+                    <span style={{ color }}>{icon}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <p className="text-[11px] uppercase tracking-wider text-black/40 font-semibold">{label}</p>
+                    {tooltip && <InfoTooltip content={tooltip} side="bottom" />}
+                </div>
+            </div>
+            <div className="mt-auto pt-2">
+                <div className="text-2xl font-bold text-black tracking-tight privacy-blur leading-none">
+                    <Skeleton show={isShimmering}>
+                        {value}
+                    </Skeleton>
+                </div>
+                <div className="h-[28px] mt-1 flex items-start">
+                    {sub && <p className="text-[11px] text-black/35 leading-tight">{sub}</p>}
+                </div>
+            </div>
+        </div>
+    )
+}
+
+function SectionBlock({ title, desc, children }: { title?: string; desc?: string; children: React.ReactNode }) {
+    return (
+        <div className="rounded-2xl border border-black/[0.08] bg-white p-5 shadow-sm">
+            {(title || desc) && (
+                <div className="flex items-baseline gap-2 mb-4">
+                    {title && <h2 className="text-[14px] font-bold text-black">{title}</h2>}
+                    {desc && <span className="text-[11px] text-black/35">{desc}</span>}
+                </div>
+            )}
+            {children}
+        </div>
+    )
+}
+
 export function CommandCenter() {
     const { pots, loading: pLoading, isSyncing, refetch: refetchPots, syncMonzo } = usePots()
     const { obligations, loading: oLoading } = useRecurring()
@@ -33,7 +75,6 @@ export function CommandCenter() {
     useEffect(() => {
         if (searchParams.get('monzo') === 'connected') {
             syncMonzo().then(() => {
-                // Clear the param to avoid re-syncing on manual refresh
                 const newParams = new URLSearchParams(searchParams.toString())
                 newParams.delete('monzo')
                 router.replace('/finances?' + newParams.toString())
@@ -42,7 +83,6 @@ export function CommandCenter() {
     }, [searchParams])
 
     const summary = useMemo(() => {
-        // Total Liquid is everything: Main Accounts + All Pots
         const totalLiquid = pots.reduce((s, p) => s + p.balance, 0)
         let totalDebt = 0
         let monthlyObligations = 0
@@ -54,12 +94,10 @@ export function CommandCenter() {
 
         obligations.forEach(o => {
             if (o.end_date || o.payments_left) {
-                // Use explicitly stored payments_left if set; otherwise derive from dates
                 const paymentsLeft = countRemainingPayments(o.next_due_date, o.end_date, o.frequency, now, o.payments_left)
                 totalDebt += o.amount * paymentsLeft
             }
 
-            // Exactly calculate how much is due in the remaining current calendar month
             let current = new Date(o.next_due_date)
             current.setHours(0, 0, 0, 0)
 
@@ -89,45 +127,53 @@ export function CommandCenter() {
         return { totalLiquid, totalDebt, monthlyObligations }
     }, [pots, obligations])
 
+    const displayPockets = useMemo(() => {
+        return pots.filter(p => {
+            const nameLower = p.name.toLowerCase();
+            const isPrimaryAccount = p.monzo_id?.startsWith('acc_') && (
+                nameLower.includes('general') ||
+                nameLower.includes('joint account')
+            );
+            if (isPrimaryAccount) return false;
+
+            const isSavingsSide = p.type === 'savings' ||
+                                (p.target_amount || 0) > 0 ||
+                                nameLower.includes('goal') ||
+                                nameLower.includes('savings');
+            if (isSavingsSide) return false;
+
+            if (!p.monzo_id && (nameLower.includes('general') || nameLower.includes('joint account'))) {
+                const hasLinked = pots.some(other => other.monzo_id?.startsWith('acc_') && other.profile === p.profile);
+                if (hasLinked) return false;
+            }
+
+            return true;
+        }).sort((a, b) => (b.balance || 0) - (a.balance || 0))
+    }, [pots])
+
     const combinedGoals = useMemo(() => {
-        // Map Monzo savings pots to Goal interface
         const potGoals = pots
-            .filter(p =>
-                p.type === 'savings' ||
-                p.target_amount > 0 ||
-                p.name.toLowerCase().includes('goal')
-            )
+            .filter(p => {
+                const nameLower = p.name.toLowerCase();
+                return p.type === 'savings' ||
+                       (p.target_amount || 0) > 0 ||
+                       nameLower.includes('goal') ||
+                       nameLower.includes('savings');
+            })
             .map(p => ({
                 id: p.id,
                 name: p.name,
-                target_amount: p.target_amount > 0 ? p.target_amount : p.balance,
                 current_amount: p.balance,
+                target_amount: p.target_amount || 0,
                 deadline: null,
-                is_recurring: p.name.toLowerCase().includes('rent'),
                 profile: p.profile,
-                created_at: p.created_at
+                created_at: p.last_synced_at || new Date().toISOString(),
+                category: 'savings' as const,
+                last_update: p.last_synced_at || new Date().toISOString()
             }))
 
-        return [...goals, ...potGoals].sort((a, b) => (b.current_amount || 0) - (a.current_amount || 0))
-    }, [pots, goals])
-
-    const displayPockets = useMemo(() => {
-        return pots.filter(p => {
-            // A. PHYSICAL ACCOUNTS (acc_...) - These go in the big summary card
-            const isPhysicalAccount = p.monzo_id?.startsWith('acc_')
-            if (isPhysicalAccount) return false
-
-            // B. SAVINGS GOALS - These go in the savings section
-            const isSavingsGoal = p.type === 'savings' || p.target_amount > 0 || p.name.toLowerCase().includes('goal')
-            if (isSavingsGoal) return false
-
-            // C. UNLINKED LOCAL POTS - If it doesn't have a Monzo ID and is named "General", it's likely a primary account placeholder
-            if (!p.monzo_id && p.name.toLowerCase().includes('general')) return false
-
-            // D. SPENDING POTS - Everything else (starting with pot_ or local custom pots)
-            return true
-        }).sort((a, b) => (b.balance || 0) - (a.balance || 0))
-    }, [pots])
+        return [...goals, ...potGoals].sort((a, b: any) => (b.current_amount || 0) - (a.current_amount || 0))
+    }, [pots, goals, activeProfile])
 
     const loading = pLoading || oLoading || gLoading
 
@@ -340,46 +386,6 @@ export function CommandCenter() {
                 </div>
                 <KarrFooter />
             </div>
-        </div>
-    )
-}
-
-function SummaryCard({ label, value, icon, color, sub, tooltip, isShimmering }: { label: string; value: string; icon: React.ReactNode; color: string; sub?: string; tooltip?: string | React.ReactNode; isShimmering?: boolean }) {
-    return (
-        <div className="rounded-xl border border-black/[0.07] bg-white p-4 hover:bg-black/[0.01] transition-colors shadow-sm flex flex-col h-full">
-            <div className="flex flex-col gap-2 mb-3">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color}12` }}>
-                    <span style={{ color }}>{icon}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                    <p className="text-[11px] uppercase tracking-wider text-black/40 font-semibold">{label}</p>
-                    {tooltip && <InfoTooltip content={tooltip} side="bottom" />}
-                </div>
-            </div>
-            <div className="mt-auto pt-2">
-                <div className="text-2xl font-bold text-black tracking-tight privacy-blur leading-none">
-                    <Skeleton show={isShimmering}>
-                        {value}
-                    </Skeleton>
-                </div>
-                <div className="h-[28px] mt-1 flex items-start">
-                    {sub && <p className="text-[11px] text-black/35 leading-tight">{sub}</p>}
-                </div>
-            </div>
-        </div>
-    )
-}
-
-function SectionBlock({ title, desc, children }: { title?: string; desc?: string; children: React.ReactNode }) {
-    return (
-        <div className="rounded-2xl border border-black/[0.08] bg-white p-5 shadow-sm">
-            {(title || desc) && (
-                <div className="flex items-baseline gap-2 mb-4">
-                    {title && <h2 className="text-[14px] font-bold text-black">{title}</h2>}
-                    {desc && <span className="text-[11px] text-black/35">{desc}</span>}
-                </div>
-            )}
-            {children}
         </div>
     )
 }
