@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react'
-import type { WellbeingProfile, MetricEntry, MacroTargets, WellbeingState, WellbeingGoal, ActivityLevel, WorkoutRoutine, WorkoutLog, WorkoutSession, WorkoutSet, TheGymGroupStats, MealLog, MoodValue, MoodEntry, Reflection, GymBusyness, GymVisit, DashboardLayout, LibraryMeal, FridgeItem, Milestone } from '../types'
+import type { WellbeingProfile, MetricEntry, MacroTargets, WellbeingState, WellbeingGoal, ActivityLevel, WorkoutRoutine, WorkoutLog, WorkoutSession, WorkoutSet, ExerciseLog, TheGymGroupStats, MealLog, MoodValue, MoodEntry, Reflection, GymBusyness, GymVisit, DashboardLayout, LibraryMeal, FridgeItem, Milestone } from '../types'
 import { GymService } from '../services/gymService'
 import { supabase } from '@/lib/supabase'
 import { getGymRecommendation } from '../utils/fitness-utils'
@@ -49,6 +49,9 @@ interface WellbeingContextType extends WellbeingState {
     setActiveRoutineId: (id: string) => Promise<void>
     updateRoutine: (id: string, updates: Partial<WorkoutRoutine>) => Promise<void>
     deleteRoutine: (id: string) => Promise<void>
+    deleteWorkoutLog: (id: string) => Promise<void>
+    clearWorkoutLogs: () => Promise<void>
+    bulkAddWorkoutLogs: (logs: WorkoutLog[]) => Promise<void>
 }
 
 export const WellbeingContext = createContext<WellbeingContextType | undefined>(undefined)
@@ -393,6 +396,25 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
         const persistenceData: any = { workoutLogs }
         if (milestonesChanged) persistenceData.milestones = updatedMilestones
         await persistData(persistenceData)
+    }
+
+    const bulkAddWorkoutLogs = async (logs: WorkoutLog[]) => {
+        const today = new Date().toISOString().split('T')[0]
+        const todayVisit = state.gymStats.visitHistory?.find(v => v.date === today)
+        
+        const finalLogs = logs.map(log => ({
+            ...log,
+            gymVisitId: todayVisit?.id || log.gymVisitId
+        }))
+        
+        const workoutLogs = [...state.workoutLogs, ...finalLogs]
+        setState(prev => ({ ...prev, workoutLogs }))
+        await persistData({ workoutLogs })
+    }
+
+    const clearWorkoutLogs = async () => {
+        setState(prev => ({ ...prev, workoutLogs: [] }))
+        await persistData({ workoutLogs: [] })
     }
 
     const bulkAddMilestones = async (newMilestones: Milestone[]) => {
@@ -743,19 +765,96 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
             const weekAgoStr = weekAgo.toISOString().split('T')[0]
             const weeklyVisits = visitHistory.filter(v => v.date >= weekAgoStr).length
 
-            const gymStats = { 
-                ...state.gymStats, 
-                busyness: primaryBusyness || state.gymStats.busyness,
-                allBusyness,
-                visitHistory, 
-                weeklyVisits,
-                totalVisits: visitHistory.length,
-                lastVisit: visitHistory[0] || null,
-                lastSyncTime: new Date().toISOString()
-            }
-            
-            setState(prev => ({ ...prev, gymStats, isSyncingGym: false }))
-            await persistData({ gymStats })
+            // Perform auto-logging BASELINE logic inside a functional update to ensure we have the absolute latest logs
+            setState(prev => {
+                const gymStats = { 
+                    ...prev.gymStats, 
+                    busyness: primaryBusyness || prev.gymStats.busyness,
+                    allBusyness,
+                    visitHistory, 
+                    weeklyVisits,
+                    totalVisits: visitHistory.length,
+                    lastVisit: visitHistory[0] || null,
+                    lastSyncTime: new Date().toISOString()
+                }
+
+                // Check for unassociated visits using the absolute latest logs (prev.workoutLogs)
+                // A visit is "unassociated" if there is no log for that date/ID, OR if the log is empty (0 volume)
+                const isLogEmpty = (log: WorkoutLog) => {
+                    const volume = log.exercises.reduce((acc, ex) => 
+                        acc + ex.sets.reduce((sacc, set) => sacc + (set.weight * (set.reps || 0)), 0), 0)
+                    return volume === 0
+                }
+
+                const unassociatedVisits = visitHistory.filter(v => 
+                    !prev.workoutLogs.some(log => (log.gymVisitId === v.id || log.date === v.date) && !isLogEmpty(log))
+                )
+
+                const newLogs: WorkoutLog[] = []
+                for (const visit of unassociatedVisits) {
+                    const routine = prev.routines.find(r => r.id === prev.activeRoutineId) || prev.routines[0]
+                    if (!routine) continue
+
+                    const prevSession = [...prev.workoutLogs]
+                        .reverse()
+                        .find(l => l.routineId === routine.id && !isLogEmpty(l))
+
+                    const log: WorkoutLog = {
+                        id: Math.random().toString(36).substring(2, 9),
+                        date: visit.date,
+                        routineId: routine.id,
+                        gymVisitId: visit.id,
+                        duration: 60,
+                        note: 'no session recorded, baseline used',
+                        exercises: routine.exercises.map(ex => {
+                            const prevEx = prevSession?.exercises.find(pe => pe.exerciseId === ex.id)
+                            return {
+                                exerciseId: ex.id,
+                                sets: prevEx ? prevEx.sets : Array(ex.suggestedSets).fill(null).map(() => ({
+                                    reps: ex.suggestedReps,
+                                    weight: (ex.muscleGroup?.toLowerCase().includes('legs') ? 60 : 40)
+                                }))
+                            }
+                        })
+                    }
+                    newLogs.push(log)
+                }
+
+                const combinedLogs = [...prev.workoutLogs, ...newLogs]
+                
+                // Deduplicate: Keep one log per date
+                // Priority: 1. Manual/Synced (non-empty), 2. Baseline (non-empty), 3. Empty
+                const logsByDate: Record<string, WorkoutLog> = {}
+                combinedLogs.forEach(log => {
+                    const existing = logsByDate[log.date]
+                    const logEmpty = isLogEmpty(log)
+                    const logIsBaseline = log.note?.includes('baseline')
+                    
+                    if (!existing) {
+                        logsByDate[log.date] = log
+                        return
+                    }
+
+                    const existingEmpty = isLogEmpty(existing)
+                    const existingIsBaseline = existing.note?.includes('baseline')
+
+                    // Replace existing if:
+                    // 1. Existing is empty and new is not
+                    // 2. Existing is baseline and new is manual (non-empty)
+                    if (existingEmpty && !logEmpty) {
+                        logsByDate[log.date] = log
+                    } else if (existingIsBaseline && !logIsBaseline && !logEmpty) {
+                        logsByDate[log.date] = log
+                    }
+                })
+
+                const workoutLogs = Object.values(logsByDate).sort((a, b) => 
+                    new Date(b.date).getTime() - new Date(a.date).getTime()
+                )
+
+                persistData({ gymStats, workoutLogs })
+                return { ...prev, gymStats, workoutLogs, isSyncingGym: false }
+            })
         } catch (e: any) { 
             console.error('Gym sync failed:', e) 
             if (e.message?.includes('403') || e.message?.includes('401')) {
@@ -769,6 +868,9 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
     // Periodic Resync (Every 30 mins)
     useEffect(() => {
         if (state.gymStats.isIntegrated && !state.loading) {
+            // Run once on load
+            syncGymData()
+            
             const interval = setInterval(() => {
                 syncGymData()
             }, 30 * 60 * 1000)
@@ -844,14 +946,15 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
         
         const activeSession: WorkoutSession = { 
             ...state.activeSession,
-            exercises: state.activeSession.exercises.map(ex => 
+            exercises: state.activeSession.exercises.map((ex: ExerciseLog) => 
                 ex.exerciseId === exerciseId 
-                    ? { ...ex, sets: ex.sets.map((s, i) => i === setIndex ? { ...s, ...updates } : s) }
+                    ? { ...ex, sets: ex.sets.map((s: WorkoutSet, i: number) => i === setIndex ? { ...s, ...updates } : s) }
                     : ex
             )
         }
         
         setState(prev => ({ ...prev, activeSession }))
+        persistData({ activeSession })
     }
 
     const togglePauseSession = () => {
@@ -861,18 +964,61 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
         persistData({ activeSession })
     }
 
-    const finishSession = async () => {
-        if (!state.activeSession) return
+    const finishSession = async (isAutoFinish = false) => {
+        const session = state.activeSession
+        if (!session) return
 
-        const duration = Math.round((new Date().getTime() - new Date(state.activeSession.startTime).getTime()) / 60000)
+        const duration = Math.round((new Date().getTime() - new Date(session.startTime).getTime()) / 60000)
         
+        // Find if there's a gym visit today to link
+        const today = session.date
+        const todayVisit = state.gymStats.visitHistory?.find(v => v.date === today)
+
+        // Get the full routine to check for missing exercises
+        const routine = state.routines.find(r => r.id === session.routineId)
+        
+        // Baseline helper
+        const isLogEmpty = (log: WorkoutLog | WorkoutSession) => {
+            const volume = log.exercises.reduce((acc: number, ex) => 
+                acc + ex.sets.reduce((sacc: number, set) => sacc + (set.weight * (set.reps || 0)), 0), 0)
+            return volume === 0
+        }
+
+        const prevSessionForBaseline = [...state.workoutLogs]
+            .reverse()
+            .find(l => l.routineId === session.routineId && !isLogEmpty(l))
+
+        // Fill in missing exercises with baseline data
+        const finalizedExercises = routine?.exercises.map(routineEx => {
+            const recordedEx = session.exercises.find(se => se.exerciseId === routineEx.id)
+            const hasRecordedSets = recordedEx && recordedEx.sets.length > 0
+
+            if (hasRecordedSets) {
+                return recordedEx
+            }
+
+            // Fill with baseline
+            const prevEx = prevSessionForBaseline?.exercises.find(pe => pe.exerciseId === routineEx.id)
+            return {
+                exerciseId: routineEx.id,
+                sets: prevEx ? prevEx.sets : Array(routineEx.suggestedSets).fill(null).map(() => ({
+                    reps: routineEx.suggestedReps,
+                    weight: (routineEx.muscleGroup?.toLowerCase().includes('legs') ? 60 : 40)
+                }))
+            }
+        }) || session.exercises
+
         // Finalize the log
         const log: WorkoutLog = {
-            id: state.activeSession.id,
-            date: state.activeSession.date,
-            routineId: state.activeSession.routineId,
-            exercises: state.activeSession.exercises,
-            duration
+            id: session.id,
+            date: session.date,
+            routineId: session.routineId,
+            exercises: finalizedExercises,
+            gymVisitId: todayVisit?.id,
+            duration: Math.max(duration, 45), // Minimum 45m for auto-finished sessions
+            note: isAutoFinish 
+                ? 'session auto-recovered with baseline'
+                : (todayVisit ? 'data synced with live session' : 'manual session recorded')
         }
 
         await logWorkout(log)
@@ -880,9 +1026,29 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
         persistData({ activeSession: null })
     }
 
+    // Auto-recover orphaned sessions (sessions from previous days)
+    useEffect(() => {
+        if (!state.loading && state.activeSession) {
+            const sessionDate = state.activeSession.date
+            const today = new Date().toISOString().split('T')[0]
+            if (sessionDate < today) {
+                console.log('Auto-recovering orphaned session from', sessionDate)
+                finishSession(true)
+            }
+        }
+    }, [state.loading, state.activeSession?.date])
+
     const cancelSession = () => {
         setState(prev => ({ ...prev, activeSession: null }))
         persistData({ activeSession: null })
+    }
+
+    const deleteWorkoutLog = async (id: string) => {
+        setState(prev => {
+            const workoutLogs = prev.workoutLogs.filter(l => l.id !== id)
+            persistData({ workoutLogs })
+            return { ...prev, workoutLogs }
+        })
     }
 
     const value = useMemo(() => ({
@@ -923,11 +1089,14 @@ export function WellbeingProvider({ children }: { children: ReactNode }) {
         setActiveRoutineId,
         updateRoutine,
         deleteRoutine,
+        deleteWorkoutLog,
+        clearWorkoutLogs,
+        bulkAddWorkoutLogs,
         macros,
         dailyNutrition,
         gymRecommendation,
         isSyncingGym: state.isSyncingGym
-    }), [state, macros, dailyNutrition, gymRecommendation])
+    }), [state, macros, dailyNutrition, gymRecommendation, clearWorkoutLogs, bulkAddWorkoutLogs])
 
     return <WellbeingContext.Provider value={value}>{children}</WellbeingContext.Provider>
 }

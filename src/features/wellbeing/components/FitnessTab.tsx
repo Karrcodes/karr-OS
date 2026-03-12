@@ -8,17 +8,19 @@ import { EditRoutineModal } from './EditRoutineModal'
 import { GymConnectionModal } from './GymConnectionModal'
 import { MilestoneTracker } from './MilestoneTracker'
 import { FitnessHeatmap } from './FitnessHeatmap'
+import { WorkoutAnalytics } from './WorkoutAnalytics'
 import { useRouter } from 'next/navigation'
-import { Dumbbell, Activity, CheckCircle2, Info, Plus, Calendar, Trophy, ChevronRight, Play, ArrowRight, List, Repeat } from 'lucide-react'
+import { Dumbbell, Activity, CheckCircle2, Info, Plus, Calendar, Trophy, ChevronRight, Play, ArrowRight, List, Repeat, History } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export function FitnessTab() {
     const { routines, activeRoutineId, activeSession, startSession, gymStats, syncGymData, gymRecommendation, logWorkout, workoutLogs, profile } = useWellbeing()
     const [isGymModalOpen, setIsGymModalOpen] = useState(false)
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
     const [isSwitcherOpen, setIsSwitcherOpen] = useState(false)
+    const [showAnalytics, setShowAnalytics] = useState(false)
     const router = useRouter()
 
     const activeRoutine = routines.find((r: any) => r.id === activeRoutineId) || routines[0]
@@ -83,9 +85,18 @@ export function FitnessTab() {
                     <>
                         {/* Active Protocol (Minimalist Launchpad) */}
                         <section className="bg-black text-white rounded-[32px] p-6 md:p-8 relative overflow-hidden flex flex-col group shadow-2xl h-auto md:h-[320px] lg:h-auto lg:min-h-full lg:col-span-1 max-w-[400px] mx-auto lg:max-w-none lg:mx-0 w-full">
-                            <div className="flex items-center gap-2 relative z-10 shrink-0 mb-3">
-                                <Dumbbell className="w-4 h-4 text-emerald-500" />
-                                <h3 className="text-[10px] font-black text-white/50 uppercase tracking-[0.4em]">Active Protocol</h3>
+                            <div className="flex items-center justify-between relative z-10 shrink-0 mb-3">
+                                <div className="flex items-center gap-2">
+                                    <Dumbbell className="w-4 h-4 text-emerald-500" />
+                                    <h3 className="text-[10px] font-black text-white/50 uppercase tracking-[0.4em]">Active Protocol</h3>
+                                </div>
+                                <button 
+                                    onClick={() => setShowAnalytics(true)}
+                                    className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors group/hist"
+                                    title="Workout History & Analytics"
+                                >
+                                    <History className="w-4 h-4 text-white/30 group-hover/hist:text-white transition-colors" />
+                                </button>
                             </div>
 
                             <div className="flex flex-col flex-1 min-h-0 justify-between">
@@ -203,6 +214,12 @@ export function FitnessTab() {
                     routine={activeRoutine}
                 />
             )}
+
+            <AnimatePresence>
+                {showAnalytics && (
+                    <WorkoutAnalytics onClose={() => setShowAnalytics(false)} />
+                )}
+            </AnimatePresence>
         </div>
     )
 }

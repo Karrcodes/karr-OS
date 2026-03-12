@@ -59,6 +59,7 @@ export interface WorkoutLog {
     exercises: ExerciseLog[]
     gymVisitId?: string
     duration?: number // in minutes
+    note?: string
 }
 
 export interface WorkoutSession extends WorkoutLog {
