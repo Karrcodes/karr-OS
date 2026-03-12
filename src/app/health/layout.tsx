@@ -83,7 +83,7 @@ function GymOccupancySwitcher({ allBusyness, gymLocationId, gymStats }: {
 }
 
 function HealthLayoutContent({ children }: { children: React.ReactNode }) {
-    const { profile, syncGymData, gymStats, weightHistory, loading, isSyncingGym, activeSession } = useWellbeing()
+    const { profile, syncGymData, gymStats, weightHistory, loading, isSyncingGym, activeSession, routines, startSession } = useWellbeing()
     const [isGymModalOpen, setIsGymModalOpen] = useState(false)
     const [isQuickLogOpen, setIsQuickLogOpen] = useState(false)
     const [isLibraryOpen, setIsLibraryOpen] = useState(false)
@@ -97,14 +97,28 @@ function HealthLayoutContent({ children }: { children: React.ReactNode }) {
     // Open modal based on ?open= query param (from GlobalQuickAction FAB)
     useEffect(() => {
         const openParam = searchParams.get('open')
-        if (openParam === 'quicklog') { setIsQuickLogOpen(true) }
+        const routineParam = searchParams.get('routine')
+        if (openParam === 'workout' && routineParam) {
+            // Find the matching routine by name keyword, then start the session
+            const matchingRoutine = routines.find(r =>
+                r.name.toLowerCase().includes(routineParam.toLowerCase())
+            )
+            if (matchingRoutine) {
+                startSession(matchingRoutine.id)
+                router.replace('/health/fitness/session', { scroll: false })
+            } else if (routines.length > 0) {
+                // Fallback to first routine
+                startSession(routines[0].id)
+                router.replace('/health/fitness/session', { scroll: false })
+            }
+        } else if (openParam === 'quicklog') { setIsQuickLogOpen(true) }
         else if (openParam === 'library') { setIsLibraryOpen(true) }
         else if (openParam === 'fridge') { setIsFridgeOpen(true) }
-        if (openParam) {
+        if (openParam && openParam !== 'workout') {
             // Clean up the URL without re-navigating
             router.replace(pathname, { scroll: false })
         }
-    }, [searchParams])
+    }, [searchParams, routines])
 
     useEffect(() => {
         if (gymStats.isIntegrated && !loading) {

@@ -140,7 +140,7 @@ export function GlobalQuickAction() {
     }
 
     const actions = useMemo(() => [
-        { id: 'gym', label: 'Workout', icon: TrendingUp, color: 'bg-rose-500', glow: 'shadow-rose-500/40', locked: true },
+        { id: 'gym', label: 'Workout', icon: TrendingUp, color: 'bg-rose-500', glow: 'shadow-rose-500/40', locked: false },
         { id: 'meal', label: 'Meal', icon: Utensils, color: 'bg-emerald-500', glow: 'shadow-emerald-500/40', locked: false },
         { id: 'content', label: 'Content', icon: Video, color: 'bg-red-500', glow: 'shadow-red-500/40', locked: false },
         { id: 'note', label: 'Canvas', icon: PenLine, color: 'bg-indigo-500', glow: 'shadow-indigo-500/40', locked: false },
@@ -421,7 +421,36 @@ export function GlobalQuickAction() {
                                     </div>
                                 )}
 
-                                {/* MEAL FORM */}
+                                {/* GYM / WORKOUT FORM */}
+                                {activeAction === 'gym' && (
+                                    <div className="space-y-3">
+                                        <p className="text-[10px] font-black text-black/30 uppercase tracking-widest text-center pb-2">Choose a Routine</p>
+                                        {[
+                                            { id: 'push', label: 'Push Day', sublabel: 'Chest, Shoulders & Triceps', icon: TrendingUp, color: 'bg-rose-500 text-white', glow: 'shadow-rose-500/20', param: 'push' },
+                                            { id: 'pull', label: 'Pull Day', sublabel: 'Back & Biceps', icon: TrendingUp, color: 'bg-blue-500 text-white', glow: 'shadow-blue-500/20', param: 'pull' },
+                                            { id: 'legs', label: 'Leg Day', sublabel: 'Quads, Hamstrings & Calves', icon: TrendingUp, color: 'bg-emerald-500 text-white', glow: 'shadow-emerald-500/20', param: 'legs' },
+                                        ].map(opt => (
+                                            <button
+                                                key={opt.id}
+                                                onClick={() => {
+                                                    setActiveAction(null)
+                                                    setIsOpen(false)
+                                                    router.push(`/health/fitness?open=workout&routine=${opt.param}`)
+                                                }}
+                                                className="w-full flex items-center gap-4 p-4 rounded-[20px] border border-black/5 bg-white hover:shadow-md transition-all text-left group"
+                                            >
+                                                <div className={cn("w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-lg", opt.color, opt.glow)}>
+                                                    <opt.icon className="w-5 h-5" strokeWidth={2.5} />
+                                                </div>
+                                                <div>
+                                                    <div className="text-[12px] font-black uppercase tracking-tight text-black">{opt.label}</div>
+                                                    <div className="text-[10px] font-bold text-black/30 mt-0.5">{opt.sublabel}</div>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+
                                 {activeAction === 'meal' && (
                                     <div className="space-y-3">
                                         <p className="text-[10px] font-black text-black/30 uppercase tracking-widest text-center pb-2">Choose an Action</p>
