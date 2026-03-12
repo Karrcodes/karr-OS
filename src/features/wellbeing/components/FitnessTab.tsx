@@ -99,7 +99,7 @@ export function FitnessTab() {
                                 </div>
                             </div>
 
-                            <div className="flex flex-col space-y-8 mt-1">
+                            <div className="flex flex-col space-y-4 pt-2">
                                 <div className="flex flex-row items-start justify-between space-y-0 relative z-10 w-full">
                                     <div className="space-y-0.5 flex flex-col">
                                         <h2 className="text-3xl font-black uppercase tracking-tighter leading-none">{displayTitle}</h2>
@@ -153,7 +153,7 @@ export function FitnessTab() {
                                 ) : (
                                     <>
                                         {/* Minimalist Play Button Layout */}
-                                        <div className="w-full flex flex-col items-center relative z-10">
+                                        <div className="w-full flex flex-col items-center relative z-10 pt-2">
                                             <button 
                                                 onClick={() => {
                                                     if (!activeSession) {
