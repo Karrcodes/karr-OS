@@ -90,6 +90,7 @@ export function getNextProgressiveMilestone(
         currentValue: currentMilestone.targetValue,
         completed: false,
         dateCompleted: undefined,
+        parentId: currentMilestone.id,
         description: `Hit ${currentMilestone.targetValue + increment}kg for 5 reps`
     }
 }

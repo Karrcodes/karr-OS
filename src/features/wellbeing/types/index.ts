@@ -220,6 +220,7 @@ export interface Milestone {
     type: 'weight' | 'lift' | 'consistency'
     completed: boolean
     dateCompleted?: string
+    parentId?: string
 }
 
 export interface WellbeingState {
